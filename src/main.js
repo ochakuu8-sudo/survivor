@@ -18,18 +18,16 @@ gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 const TILE = 16;
 const ATLAS_SIZE = 256;
 const WORLD_SIZE = 3200;
-const MAX_QUADS = 40000;
+const MAX_QUADS = 60000;
 const DPR_LIMIT = 2;
+const GRID_CELL_SIZE = 96;
+const GRID_ROW_STRIDE = 1024;
+const MAX_ENEMIES = 1400;
+const PROJECTILE_QUERY_RADIUS = 36;
 
 const keys = new Set();
-const virtualInput = {
-  up: false,
-  down: false,
-  left: false,
-  right: false,
-};
-const pointer = { x: 0, y: 0, down: false };
 const view = { width: 1, height: 1 };
+const enemyGrid = new Map();
 
 window.addEventListener('keydown', (event) => {
   keys.add(event.key.toLowerCase());
@@ -39,70 +37,6 @@ window.addEventListener('keydown', (event) => {
 });
 
 window.addEventListener('keyup', (event) => keys.delete(event.key.toLowerCase()));
-canvas.addEventListener('pointermove', (event) => {
-  const rect = canvas.getBoundingClientRect();
-  pointer.x = event.clientX - rect.left;
-  pointer.y = event.clientY - rect.top;
-});
-canvas.addEventListener('pointerdown', (event) => {
-  pointer.down = true;
-  canvas.setPointerCapture?.(event.pointerId);
-});
-canvas.addEventListener('pointerup', (event) => {
-  pointer.down = false;
-  canvas.releasePointerCapture?.(event.pointerId);
-});
-
-function createMobileControls() {
-  const panel = document.createElement('div');
-  panel.className = 'mobile-controls';
-  panel.setAttribute('aria-label', 'Mobile movement controls');
-
-  const controls = [
-    ['up', '↑', '上へ移動'],
-    ['left', '←', '左へ移動'],
-    ['down', '↓', '下へ移動'],
-    ['right', '→', '右へ移動'],
-  ];
-
-  for (const [direction, label, ariaLabel] of controls) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = `ctrl-button ctrl-${direction}`;
-    button.textContent = label;
-    button.setAttribute('aria-label', ariaLabel);
-
-    const press = (event) => {
-      event.preventDefault();
-      virtualInput[direction] = true;
-      button.classList.add('pressed');
-      button.setPointerCapture?.(event.pointerId);
-    };
-    const release = (event) => {
-      event.preventDefault();
-      virtualInput[direction] = false;
-      button.classList.remove('pressed');
-      if (event.pointerId !== undefined) {
-        button.releasePointerCapture?.(event.pointerId);
-      }
-    };
-
-    button.addEventListener('pointerdown', press);
-    button.addEventListener('pointerup', release);
-    button.addEventListener('pointercancel', release);
-    button.addEventListener('lostpointercapture', () => {
-      virtualInput[direction] = false;
-      button.classList.remove('pressed');
-    });
-    button.addEventListener('contextmenu', (event) => event.preventDefault());
-    panel.appendChild(button);
-  }
-
-  const center = document.createElement('div');
-  center.className = 'ctrl-center';
-  panel.appendChild(center);
-  document.body.appendChild(panel);
-}
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -373,6 +307,15 @@ function distance(x, y) {
   return Math.hypot(x, y);
 }
 
+function distanceSq(x, y) {
+  return x * x + y * y;
+}
+
+function overlaps(x1, y1, r1, x2, y2, r2) {
+  const radius = r1 + r2;
+  return distanceSq(x1 - x2, y1 - y2) < radius * radius;
+}
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -380,6 +323,65 @@ function clamp(value, min, max) {
 function normalize(x, y) {
   const len = Math.hypot(x, y) || 1;
   return { x: x / len, y: y / len };
+}
+
+function gridKey(cellX, cellY) {
+  return cellX + cellY * GRID_ROW_STRIDE;
+}
+
+function gridCell(value) {
+  return Math.floor(value / GRID_CELL_SIZE);
+}
+
+function addEnemyToGrid(enemy) {
+  const key = gridKey(gridCell(enemy.x), gridCell(enemy.y));
+  let bucket = enemyGrid.get(key);
+  if (!bucket) {
+    bucket = [];
+    enemyGrid.set(key, bucket);
+  }
+  bucket.push(enemy);
+}
+
+function rebuildEnemyGrid() {
+  enemyGrid.clear();
+  for (const enemy of enemies) {
+    if (!enemy.dead) addEnemyToGrid(enemy);
+  }
+}
+
+function findProjectileHit(shot) {
+  const minCellX = gridCell(shot.x - PROJECTILE_QUERY_RADIUS);
+  const maxCellX = gridCell(shot.x + PROJECTILE_QUERY_RADIUS);
+  const minCellY = gridCell(shot.y - PROJECTILE_QUERY_RADIUS);
+  const maxCellY = gridCell(shot.y + PROJECTILE_QUERY_RADIUS);
+
+  for (let cellY = minCellY; cellY <= maxCellY; cellY += 1) {
+    for (let cellX = minCellX; cellX <= maxCellX; cellX += 1) {
+      const bucket = enemyGrid.get(gridKey(cellX, cellY));
+      if (!bucket) continue;
+
+      for (const enemy of bucket) {
+        if (enemy.dead) continue;
+        if (overlaps(shot.x, shot.y, shot.r, enemy.x, enemy.y, enemy.r)) {
+          return enemy;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function compactDeadEnemies() {
+  let write = 0;
+  for (let read = 0; read < enemies.length; read += 1) {
+    if (!enemies[read].dead) {
+      enemies[write] = enemies[read];
+      write += 1;
+    }
+  }
+  enemies.length = write;
 }
 
 const player = {
@@ -409,7 +411,7 @@ let spawnTimer = 0;
 let score = 0;
 let gameOver = false;
 let messageTimer = 4;
-let message = 'WASD / Arrow keys / touch panel to move. Attacks are automatic.';
+let message = 'WASD / Arrow keys / floating touch stick to move. Attacks are automatic.';
 
 function spawnEnemy() {
   const angle = rand(0, Math.PI * 2);
@@ -427,6 +429,7 @@ function spawnEnemy() {
     damage: type === 'slime' ? 10 : 7,
     sprite: type,
     wobble: rand(0, Math.PI * 2),
+    dead: false,
   });
 }
 
@@ -434,7 +437,8 @@ function fireProjectile() {
   let nearest = null;
   let nearestDistance = Infinity;
   for (const enemy of enemies) {
-    const d = distance(enemy.x - player.x, enemy.y - player.y);
+    if (enemy.dead) continue;
+    const d = distanceSq(enemy.x - player.x, enemy.y - player.y);
     if (d < nearestDistance) {
       nearest = enemy;
       nearestDistance = d;
@@ -477,10 +481,10 @@ function update(dt) {
 
   let mx = 0;
   let my = 0;
-  if (keys.has('w') || keys.has('arrowup') || virtualInput.up) my -= 1;
-  if (keys.has('s') || keys.has('arrowdown') || virtualInput.down) my += 1;
-  if (keys.has('a') || keys.has('arrowleft') || virtualInput.left) mx -= 1;
-  if (keys.has('d') || keys.has('arrowright') || virtualInput.right) mx += 1;
+  if (keys.has('w') || keys.has('arrowup')) my -= 1;
+  if (keys.has('s') || keys.has('arrowdown')) my += 1;
+  if (keys.has('a') || keys.has('arrowleft')) mx -= 1;
+  if (keys.has('d') || keys.has('arrowright')) mx += 1;
   const movement = normalize(mx, my);
   if (mx !== 0 || my !== 0) {
     player.x += movement.x * player.speed * dt;
@@ -491,11 +495,11 @@ function update(dt) {
   player.y = clamp(player.y, 24, WORLD_SIZE - 24);
 
   spawnTimer -= dt;
-  const spawnInterval = Math.max(0.16, 0.9 - elapsed / 180);
-  if (spawnTimer <= 0 && enemies.length < 650) {
+  const spawnInterval = Math.max(0.11, 0.78 - elapsed / 210);
+  if (spawnTimer <= 0 && enemies.length < MAX_ENEMIES) {
     spawnTimer = spawnInterval;
-    const count = elapsed > 90 ? 3 : elapsed > 35 ? 2 : 1;
-    for (let i = 0; i < count; i += 1) spawnEnemy();
+    const count = elapsed > 120 ? 5 : elapsed > 75 ? 4 : elapsed > 35 ? 2 : 1;
+    for (let i = 0; i < count && enemies.length < MAX_ENEMIES; i += 1) spawnEnemy();
   }
 
   player.fireCooldown -= dt;
@@ -504,15 +508,14 @@ function update(dt) {
     fireProjectile();
   }
 
-  for (let i = enemies.length - 1; i >= 0; i -= 1) {
-    const enemy = enemies[i];
+  for (const enemy of enemies) {
+    if (enemy.dead) continue;
     enemy.wobble += dt * 5;
     const dir = normalize(player.x - enemy.x, player.y - enemy.y);
     enemy.x += dir.x * enemy.speed * dt;
     enemy.y += dir.y * enemy.speed * dt;
 
-    const hitDistance = enemy.r + player.r;
-    if (distance(player.x - enemy.x, player.y - enemy.y) < hitDistance && player.invuln <= 0) {
+    if (overlaps(player.x, player.y, player.r, enemy.x, enemy.y, enemy.r) && player.invuln <= 0) {
       player.hp -= enemy.damage;
       player.invuln = 0.45;
       if (player.hp <= 0) {
@@ -524,6 +527,9 @@ function update(dt) {
     }
   }
 
+  rebuildEnemyGrid();
+  let killedEnemy = false;
+
   for (let i = projectiles.length - 1; i >= 0; i -= 1) {
     const shot = projectiles[i];
     shot.x += shot.vx * dt;
@@ -531,19 +537,25 @@ function update(dt) {
     shot.life -= dt;
     let consumed = shot.life <= 0;
 
-    for (let j = enemies.length - 1; j >= 0 && !consumed; j -= 1) {
-      const enemy = enemies[j];
-      if (distance(shot.x - enemy.x, shot.y - enemy.y) < shot.r + enemy.r) {
+    if (!consumed) {
+      const enemy = findProjectileHit(shot);
+      if (enemy) {
         enemy.hp -= shot.damage;
         consumed = true;
         if (enemy.hp <= 0) {
+          enemy.dead = true;
+          killedEnemy = true;
           score += 1;
           gems.push({ x: enemy.x, y: enemy.y, value: enemy.sprite === 'bat' ? 2 : 1, r: 7 });
-          enemies.splice(j, 1);
         }
       }
     }
+
     if (consumed) projectiles.splice(i, 1);
+  }
+
+  if (killedEnemy) {
+    compactDeadEnemies();
   }
 
   for (let i = gems.length - 1; i >= 0; i -= 1) {
@@ -615,7 +627,7 @@ function render() {
   hud.innerHTML = `
     <div class="hud-row"><strong>Runtime Atlas Survivor</strong></div>
     <div>Lv. ${player.level} | HP ${Math.ceil(player.hp)}/${player.maxHp} | XP ${player.xp}/${player.nextXp}</div>
-    <div>Kills ${score} | Enemies ${enemies.length} | Time ${Math.floor(elapsed)}s</div>
+    <div>Kills ${score} | Enemies ${enemies.length}/${MAX_ENEMIES} | Grid cells ${enemyGrid.size} | Time ${Math.floor(elapsed)}s</div>
     <div class="hint ${messageTimer > 0 ? '' : 'hidden'}">${message}</div>
   `;
 }
@@ -643,8 +655,6 @@ atlasPreview.className = 'atlas-preview';
 atlasPreview.innerHTML = '<summary>runtime atlas</summary>';
 atlasPreview.appendChild(atlas.canvas);
 document.body.appendChild(atlasPreview);
-
-createMobileControls();
 
 window.addEventListener('resize', resize);
 resize();
