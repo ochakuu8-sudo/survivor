@@ -51,6 +51,13 @@ body {
   backdrop-filter: blur(4px);
 }
 
+.compact-hud {
+  min-width: 240px;
+  max-width: min(360px, calc(100vw - 24px));
+  font-size: 13px;
+  line-height: 1.38;
+}
+
 .hud-row {
   margin-bottom: 4px;
   color: #ffcf57;
@@ -94,173 +101,6 @@ body {
   display: none !important;
 }
 
-.skill-tree-toggle {
-  position: fixed;
-  right: 14px;
-  top: 14px;
-  z-index: 30;
-  padding: 10px 13px;
-  border: 1px solid rgba(255, 207, 87, 0.42);
-  border-radius: 10px;
-  background: rgba(27, 22, 12, 0.86);
-  color: #ffcf57;
-  font: 700 13px/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.38);
-  text-shadow: 0 1px 0 #000;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.skill-tree-toggle:active {
-  transform: translateY(1px);
-}
-
-.skill-tree {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 18px;
-  background: rgba(2, 3, 5, 0.72);
-  backdrop-filter: blur(3px);
-  transition: opacity 150ms ease;
-}
-
-.skill-tree-panel {
-  width: min(1040px, 100%);
-  max-height: min(760px, 92vh);
-  overflow: auto;
-  border: 1px solid rgba(255, 207, 87, 0.28);
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at top left, rgba(120, 28, 34, 0.28), transparent 30%),
-    rgba(12, 13, 18, 0.96);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.58);
-  color: #eef2f5;
-}
-
-.skill-tree-header {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px;
-  border-bottom: 1px solid rgba(255, 207, 87, 0.18);
-  background: rgba(12, 13, 18, 0.96);
-}
-
-.skill-tree-title {
-  color: #ffcf57;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.skill-tree-points {
-  margin-top: 4px;
-  color: #ff9fa4;
-  font-size: 13px;
-}
-
-.skill-tree-close {
-  appearance: none;
-  width: 38px;
-  height: 38px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #eef2f5;
-  font-size: 24px;
-  line-height: 1;
-}
-
-.skill-tree-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
-  gap: 14px;
-  padding: 16px;
-}
-
-.skill-tree-branch {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-}
-
-.skill-tree-branch-title {
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: rgba(255, 207, 87, 0.11);
-  color: #ffcf57;
-  font-weight: 800;
-  text-align: center;
-  letter-spacing: 0.06em;
-}
-
-.skill-node {
-  appearance: none;
-  width: 100%;
-  min-height: 96px;
-  padding: 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.055);
-  color: #eef2f5;
-  text-align: left;
-  font: inherit;
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18);
-}
-
-.skill-node.available {
-  border-color: rgba(255, 207, 87, 0.62);
-  background: rgba(255, 207, 87, 0.14);
-  cursor: pointer;
-}
-
-.skill-node.unlocked {
-  border-color: rgba(118, 238, 158, 0.52);
-  background: rgba(50, 148, 86, 0.22);
-}
-
-.skill-node.locked {
-  opacity: 0.56;
-}
-
-.skill-node-name,
-.skill-node-desc,
-.skill-node-cost {
-  display: block;
-}
-
-.skill-node-name {
-  color: #fff6c7;
-  font-weight: 800;
-}
-
-.skill-node-desc {
-  margin-top: 6px;
-  color: #d8dee6;
-  font-size: 12px;
-}
-
-.skill-node-cost {
-  margin-top: 8px;
-  color: #ff9fa4;
-  font-size: 11px;
-}
-
-.skill-tree-footer {
-  padding: 0 16px 16px;
-  color: #aeb6c2;
-  font-size: 12px;
-}
-
 @media (pointer: coarse), (max-width: 820px) {
   .hud {
     right: 12px;
@@ -270,23 +110,5 @@ body {
 
   .atlas-preview {
     display: none;
-  }
-
-  .skill-tree-toggle {
-    top: auto;
-    right: max(14px, env(safe-area-inset-right));
-    bottom: max(14px, env(safe-area-inset-bottom));
-  }
-
-  .skill-tree {
-    padding: 10px;
-  }
-
-  .skill-tree-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .skill-tree-panel {
-    max-height: 88vh;
   }
 }
