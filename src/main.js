@@ -22,6 +22,12 @@ const MAX_QUADS = 40000;
 const DPR_LIMIT = 2;
 
 const keys = new Set();
+const virtualInput = {
+  up: false,
+  down: false,
+  left: false,
+  right: false,
+};
 const pointer = { x: 0, y: 0, down: false };
 const view = { width: 1, height: 1 };
 
@@ -46,6 +52,57 @@ canvas.addEventListener('pointerup', (event) => {
   pointer.down = false;
   canvas.releasePointerCapture?.(event.pointerId);
 });
+
+function createMobileControls() {
+  const panel = document.createElement('div');
+  panel.className = 'mobile-controls';
+  panel.setAttribute('aria-label', 'Mobile movement controls');
+
+  const controls = [
+    ['up', '↑', '上へ移動'],
+    ['left', '←', '左へ移動'],
+    ['down', '↓', '下へ移動'],
+    ['right', '→', '右へ移動'],
+  ];
+
+  for (const [direction, label, ariaLabel] of controls) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `ctrl-button ctrl-${direction}`;
+    button.textContent = label;
+    button.setAttribute('aria-label', ariaLabel);
+
+    const press = (event) => {
+      event.preventDefault();
+      virtualInput[direction] = true;
+      button.classList.add('pressed');
+      button.setPointerCapture?.(event.pointerId);
+    };
+    const release = (event) => {
+      event.preventDefault();
+      virtualInput[direction] = false;
+      button.classList.remove('pressed');
+      if (event.pointerId !== undefined) {
+        button.releasePointerCapture?.(event.pointerId);
+      }
+    };
+
+    button.addEventListener('pointerdown', press);
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('lostpointercapture', () => {
+      virtualInput[direction] = false;
+      button.classList.remove('pressed');
+    });
+    button.addEventListener('contextmenu', (event) => event.preventDefault());
+    panel.appendChild(button);
+  }
+
+  const center = document.createElement('div');
+  center.className = 'ctrl-center';
+  panel.appendChild(center);
+  document.body.appendChild(panel);
+}
 
 const vertexShaderSource = `
 attribute vec2 a_position;
@@ -352,7 +409,7 @@ let spawnTimer = 0;
 let score = 0;
 let gameOver = false;
 let messageTimer = 4;
-let message = 'WASD / Arrow keys to move. Attacks are automatic.';
+let message = 'WASD / Arrow keys / touch panel to move. Attacks are automatic.';
 
 function spawnEnemy() {
   const angle = rand(0, Math.PI * 2);
@@ -420,10 +477,10 @@ function update(dt) {
 
   let mx = 0;
   let my = 0;
-  if (keys.has('w') || keys.has('arrowup')) my -= 1;
-  if (keys.has('s') || keys.has('arrowdown')) my += 1;
-  if (keys.has('a') || keys.has('arrowleft')) mx -= 1;
-  if (keys.has('d') || keys.has('arrowright')) mx += 1;
+  if (keys.has('w') || keys.has('arrowup') || virtualInput.up) my -= 1;
+  if (keys.has('s') || keys.has('arrowdown') || virtualInput.down) my += 1;
+  if (keys.has('a') || keys.has('arrowleft') || virtualInput.left) mx -= 1;
+  if (keys.has('d') || keys.has('arrowright') || virtualInput.right) mx += 1;
   const movement = normalize(mx, my);
   if (mx !== 0 || my !== 0) {
     player.x += movement.x * player.speed * dt;
@@ -586,6 +643,8 @@ atlasPreview.className = 'atlas-preview';
 atlasPreview.innerHTML = '<summary>runtime atlas</summary>';
 atlasPreview.appendChild(atlas.canvas);
 document.body.appendChild(atlasPreview);
+
+createMobileControls();
 
 window.addEventListener('resize', resize);
 resize();
