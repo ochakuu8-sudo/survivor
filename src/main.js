@@ -12,14 +12,18 @@ if (!gl) {
   throw new Error('WebGL is not supported by this browser.');
 }
 
+gl.enable(gl.BLEND);
+gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
 const TILE = 16;
 const ATLAS_SIZE = 256;
 const WORLD_SIZE = 3200;
-const MAX_QUADS = 12000;
+const MAX_QUADS = 40000;
 const DPR_LIMIT = 2;
 
 const keys = new Set();
 const pointer = { x: 0, y: 0, down: false };
+const view = { width: 1, height: 1 };
 
 window.addEventListener('keydown', (event) => {
   keys.add(event.key.toLowerCase());
@@ -34,12 +38,13 @@ canvas.addEventListener('pointermove', (event) => {
   pointer.x = event.clientX - rect.left;
   pointer.y = event.clientY - rect.top;
 });
-canvas.addEventListener('pointerdown', () => {
+canvas.addEventListener('pointerdown', (event) => {
   pointer.down = true;
   canvas.setPointerCapture?.(event.pointerId);
 });
-canvas.addEventListener('pointerup', () => {
+canvas.addEventListener('pointerup', (event) => {
   pointer.down = false;
+  canvas.releasePointerCapture?.(event.pointerId);
 });
 
 const vertexShaderSource = `
@@ -117,6 +122,7 @@ function rect(ctx, x, y, w, h, color) {
 }
 
 const spriteSources = {
+  solid: makeSprite((ctx) => rect(ctx, 0, 0, TILE, TILE, '#ffffff')),
   player: makeSprite((ctx) => {
     rect(ctx, 6, 1, 4, 2, '#f7f1b7');
     rect(ctx, 4, 3, 8, 3, '#f7f1b7');
@@ -182,10 +188,10 @@ const spriteSources = {
 };
 
 function buildRuntimeAtlas(sources) {
-  const atlas = document.createElement('canvas');
-  atlas.width = ATLAS_SIZE;
-  atlas.height = ATLAS_SIZE;
-  const ctx = atlas.getContext('2d');
+  const atlasCanvas = document.createElement('canvas');
+  atlasCanvas.width = ATLAS_SIZE;
+  atlasCanvas.height = ATLAS_SIZE;
+  const ctx = atlasCanvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, ATLAS_SIZE, ATLAS_SIZE);
 
@@ -223,13 +229,13 @@ function buildRuntimeAtlas(sources) {
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlasCanvas);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
-  return { atlas, texture, sprites };
+  return { canvas: atlasCanvas, texture, sprites };
 }
 
 const atlas = buildRuntimeAtlas(spriteSources);
@@ -262,15 +268,14 @@ function pushQuad(spriteName, x, y, w, h, color = [1, 1, 1, 1], flipX = false) {
   const y1 = Math.floor(y + h);
   const [r, g, b, a] = color;
   const offset = quadCount * verticesPerQuad * floatsPerVertex;
-  const values = [
+  vertexData.set([
     x0, y0, u0, v0, r, g, b, a,
     x1, y0, u1, v0, r, g, b, a,
     x0, y1, u0, v1, r, g, b, a,
     x0, y1, u0, v1, r, g, b, a,
     x1, y0, u1, v0, r, g, b, a,
     x1, y1, u1, v1, r, g, b, a,
-  ];
-  vertexData.set(values, offset);
+  ], offset);
   quadCount += 1;
 }
 
@@ -283,7 +288,7 @@ function flush(cameraX, cameraY) {
   gl.clearColor(0.06, 0.12, 0.09, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.useProgram(program);
-  gl.uniform2f(locations.resolution, canvas.width, canvas.height);
+  gl.uniform2f(locations.resolution, view.width, view.height);
   gl.uniform2f(locations.camera, cameraX, cameraY);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, atlas.texture);
@@ -307,7 +312,7 @@ function rand(min, max) {
   return Math.random() * (max - min) + min;
 }
 
-function length(x, y) {
+function distance(x, y) {
   return Math.hypot(x, y);
 }
 
@@ -346,20 +351,21 @@ let elapsed = 0;
 let spawnTimer = 0;
 let score = 0;
 let gameOver = false;
-let messageTimer = 0;
+let messageTimer = 4;
 let message = 'WASD / Arrow keys to move. Attacks are automatic.';
 
 function spawnEnemy() {
   const angle = rand(0, Math.PI * 2);
-  const distance = Math.max(canvas.width, canvas.height) * 0.65 + rand(80, 260);
+  const spawnRadius = Math.max(view.width, view.height) * 0.65 + rand(80, 260);
   const type = Math.random() < 0.72 ? 'slime' : 'bat';
   const waveScale = 1 + elapsed / 180;
+  const maxHp = (type === 'slime' ? 26 : 18) * waveScale;
   enemies.push({
-    x: clamp(player.x + Math.cos(angle) * distance, 32, WORLD_SIZE - 32),
-    y: clamp(player.y + Math.sin(angle) * distance, 32, WORLD_SIZE - 32),
+    x: clamp(player.x + Math.cos(angle) * spawnRadius, 32, WORLD_SIZE - 32),
+    y: clamp(player.y + Math.sin(angle) * spawnRadius, 32, WORLD_SIZE - 32),
     r: type === 'slime' ? 11 : 9,
-    hp: (type === 'slime' ? 26 : 18) * waveScale,
-    maxHp: (type === 'slime' ? 26 : 18) * waveScale,
+    hp: maxHp,
+    maxHp,
     speed: (type === 'slime' ? rand(44, 62) : rand(76, 98)) * (1 + elapsed / 420),
     damage: type === 'slime' ? 10 : 7,
     sprite: type,
@@ -371,7 +377,7 @@ function fireProjectile() {
   let nearest = null;
   let nearestDistance = Infinity;
   for (const enemy of enemies) {
-    const d = length(enemy.x - player.x, enemy.y - player.y);
+    const d = distance(enemy.x - player.x, enemy.y - player.y);
     if (d < nearestDistance) {
       nearest = enemy;
       nearestDistance = d;
@@ -429,7 +435,7 @@ function update(dt) {
 
   spawnTimer -= dt;
   const spawnInterval = Math.max(0.16, 0.9 - elapsed / 180);
-  if (spawnTimer <= 0) {
+  if (spawnTimer <= 0 && enemies.length < 650) {
     spawnTimer = spawnInterval;
     const count = elapsed > 90 ? 3 : elapsed > 35 ? 2 : 1;
     for (let i = 0; i < count; i += 1) spawnEnemy();
@@ -449,7 +455,7 @@ function update(dt) {
     enemy.y += dir.y * enemy.speed * dt;
 
     const hitDistance = enemy.r + player.r;
-    if (length(player.x - enemy.x, player.y - enemy.y) < hitDistance && player.invuln <= 0) {
+    if (distance(player.x - enemy.x, player.y - enemy.y) < hitDistance && player.invuln <= 0) {
       player.hp -= enemy.damage;
       player.invuln = 0.45;
       if (player.hp <= 0) {
@@ -470,7 +476,7 @@ function update(dt) {
 
     for (let j = enemies.length - 1; j >= 0 && !consumed; j -= 1) {
       const enemy = enemies[j];
-      if (length(shot.x - enemy.x, shot.y - enemy.y) < shot.r + enemy.r) {
+      if (distance(shot.x - enemy.x, shot.y - enemy.y) < shot.r + enemy.r) {
         enemy.hp -= shot.damage;
         consumed = true;
         if (enemy.hp <= 0) {
@@ -485,7 +491,7 @@ function update(dt) {
 
   for (let i = gems.length - 1; i >= 0; i -= 1) {
     const gem = gems[i];
-    const d = length(player.x - gem.x, player.y - gem.y);
+    const d = distance(player.x - gem.x, player.y - gem.y);
     if (d < player.magnet) {
       const dir = normalize(player.x - gem.x, player.y - gem.y);
       const pull = 1200 / Math.max(32, d);
@@ -500,19 +506,19 @@ function update(dt) {
 }
 
 function drawBar(x, y, w, h, value, backColor, fillColor) {
-  pushQuad('grassA', x, y, w, h, backColor);
-  pushQuad('grassA', x, y, Math.max(1, w * clamp(value, 0, 1)), h, fillColor);
+  pushQuad('solid', x, y, w, h, backColor);
+  pushQuad('solid', x, y, Math.max(1, w * clamp(value, 0, 1)), h, fillColor);
 }
 
 function render() {
-  const cameraX = Math.floor(player.x - canvas.width / 2);
-  const cameraY = Math.floor(player.y - canvas.height / 2);
+  const cameraX = Math.floor(player.x - view.width / 2);
+  const cameraY = Math.floor(player.y - view.height / 2);
   beginRender();
 
   const startTileX = Math.floor(cameraX / TILE) - 1;
   const startTileY = Math.floor(cameraY / TILE) - 1;
-  const endTileX = Math.ceil((cameraX + canvas.width) / TILE) + 1;
-  const endTileY = Math.ceil((cameraY + canvas.height) / TILE) + 1;
+  const endTileX = Math.ceil((cameraX + view.width) / TILE) + 1;
+  const endTileY = Math.ceil((cameraY + view.height) / TILE) + 1;
   for (let ty = startTileY; ty <= endTileY; ty += 1) {
     for (let tx = startTileX; tx <= endTileX; tx += 1) {
       const hash = Math.abs((tx * 73856093) ^ (ty * 19349663));
@@ -559,13 +565,15 @@ function render() {
 
 function resize() {
   const dpr = Math.min(window.devicePixelRatio || 1, DPR_LIMIT);
-  const width = Math.floor(window.innerWidth * dpr);
-  const height = Math.floor(window.innerHeight * dpr);
+  view.width = window.innerWidth;
+  view.height = window.innerHeight;
+  const width = Math.floor(view.width * dpr);
+  const height = Math.floor(view.height * dpr);
   if (canvas.width !== width || canvas.height !== height) {
     canvas.width = width;
     canvas.height = height;
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
+    canvas.style.width = `${view.width}px`;
+    canvas.style.height = `${view.height}px`;
   }
 }
 
@@ -576,7 +584,7 @@ document.body.appendChild(hud);
 const atlasPreview = document.createElement('details');
 atlasPreview.className = 'atlas-preview';
 atlasPreview.innerHTML = '<summary>runtime atlas</summary>';
-atlasPreview.appendChild(atlas.atlas);
+atlasPreview.appendChild(atlas.canvas);
 document.body.appendChild(atlasPreview);
 
 window.addEventListener('resize', resize);
