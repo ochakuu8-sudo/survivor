@@ -1,33 +1,40 @@
 // Camera zoom-out shim.
-// main-v7 renders in CSS-pixel world units. This module widens the WebGL
-// projection and shifts the camera so the player remains centered.
+// Instead of only widening the shader projection, this widens the virtual
+// viewport that the game sees. That makes tile generation / runtime atlas draw
+// preparation cover the larger visible area too.
 
 const ZOOM_OUT = 1.35;
-const uniformNames = new WeakMap();
-const lastResolution = { width: window.innerWidth, height: window.innerHeight };
-
-const originalGetUniformLocation = WebGLRenderingContext.prototype.getUniformLocation;
-WebGLRenderingContext.prototype.getUniformLocation = function patchedGetUniformLocation(program, name) {
-  const location = originalGetUniformLocation.call(this, program, name);
-  if (location) uniformNames.set(location, name);
-  return location;
+const realViewport = {
+  get width() {
+    return window.visualViewport?.width || document.documentElement.clientWidth || screen.width;
+  },
+  get height() {
+    return window.visualViewport?.height || document.documentElement.clientHeight || screen.height;
+  },
 };
 
-const originalUniform2f = WebGLRenderingContext.prototype.uniform2f;
-WebGLRenderingContext.prototype.uniform2f = function patchedUniform2f(location, x, y) {
-  const name = uniformNames.get(location);
+window.__GAME_VIEW_ZOOM__ = ZOOM_OUT;
 
-  if (name === 'u_resolution') {
-    lastResolution.width = x;
-    lastResolution.height = y;
-    return originalUniform2f.call(this, location, x * ZOOM_OUT, y * ZOOM_OUT);
+function defineScaledViewportProperty(name, getValue) {
+  try {
+    Object.defineProperty(window, name, {
+      configurable: true,
+      get: () => Math.round(getValue() * ZOOM_OUT),
+    });
+  } catch {
+    // Some browsers may not allow overriding viewport properties. In that case
+    // the game simply keeps the normal camera distance instead of crashing.
   }
+}
 
-  if (name === 'u_camera') {
-    const cameraX = x - (lastResolution.width * (ZOOM_OUT - 1)) / 2;
-    const cameraY = y - (lastResolution.height * (ZOOM_OUT - 1)) / 2;
-    return originalUniform2f.call(this, location, cameraX, cameraY);
+defineScaledViewportProperty('innerWidth', () => realViewport.width);
+defineScaledViewportProperty('innerHeight', () => realViewport.height);
+
+const style = document.createElement('style');
+style.textContent = `
+  #game {
+    width: 100vw !important;
+    height: 100vh !important;
   }
-
-  return originalUniform2f.call(this, location, x, y);
-};
+`;
+document.head.appendChild(style);
