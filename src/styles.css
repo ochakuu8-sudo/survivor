@@ -495,6 +495,8 @@ h1 {
 .attach-chip {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
   min-height: 28px;
   max-width: 100%;
   padding: 4px 6px;
@@ -511,6 +513,56 @@ h1 {
 .attachment-row .attach-chip {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.attach-rarity-label {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border-radius: 5px;
+  color: #241737;
+  background: #d9f7ff;
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.attach-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.attach-rarity-normal {
+  border-color: rgba(157, 247, 255, 0.3);
+  background: rgba(85, 246, 199, 0.13);
+}
+
+.attach-rarity-rare {
+  border-color: rgba(113, 189, 255, 0.52);
+  background: rgba(73, 120, 255, 0.22);
+}
+
+.attach-rarity-rare .attach-rarity-label {
+  color: #eef8ff;
+  background: #3278ff;
+}
+
+.attach-rarity-epic {
+  border-color: rgba(255, 93, 209, 0.56);
+  background: rgba(174, 74, 255, 0.23);
+}
+
+.attach-rarity-epic .attach-rarity-label {
+  color: #fff9f2;
+  background: #b455ff;
+}
+
+.attach-rarity-legend {
+  border-color: rgba(255, 228, 107, 0.78);
+  background: rgba(255, 180, 48, 0.22);
+}
+
+.attach-rarity-legend .attach-rarity-label {
+  color: #241737;
+  background: #ffe46b;
 }
 
 .attachment-reroll,

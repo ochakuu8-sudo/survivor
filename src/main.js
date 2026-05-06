@@ -79,9 +79,23 @@ const OFFER_TYPE_LABELS = {
 };
 
 const MAX_WEAPONS = 3;
-const MAX_WEAPON_ATTACHMENTS = 3;
-const WEAPON_UPGRADE_BASE_COST = 10;
-const ATTACHMENT_REROLL_BASE_COST = 7;
+const MAX_WEAPON_ATTACHMENTS = 5;
+const WEAPON_UPGRADE_SLOT_COSTS = [11, 21, 35, 54, 78];
+const ATTACHMENT_REROLL_SLOT_COSTS = [8, 17, 30, 47, 68];
+const RARITY_ORDER = ["normal", "rare", "epic", "legend"];
+const ATTACHMENT_RARITIES = {
+  normal: { label: "ノーマル", short: "N", power: 1 },
+  rare: { label: "レア", short: "R", power: 1.65 },
+  epic: { label: "エピック", short: "E", power: 2.4 },
+  legend: { label: "レジェンド", short: "L", power: 3.4 },
+};
+const ATTACHMENT_RARITY_TABLES = [
+  { normal: 80, rare: 20, epic: 0, legend: 0 },
+  { normal: 65, rare: 30, epic: 5, legend: 0 },
+  { normal: 50, rare: 38, epic: 12, legend: 0 },
+  { normal: 35, rare: 45, epic: 20, legend: 0 },
+  { normal: 20, rare: 40, epic: 30, legend: 10 },
+];
 const WEAPON_STAT_KEYS = [
   "damage",
   "fireRate",
@@ -242,6 +256,8 @@ function syncGearAttachments() {
     weapon.attachments.map((attachment) => ({
       key: attachment.key,
       name: attachment.name,
+      rarity: attachment.rarity,
+      rarityLabel: rarityLabel(attachment.rarity),
       weaponId: weapon.id,
       weaponName: weapon.name,
     })),
@@ -252,7 +268,7 @@ function recomputeWeaponAttachments(weapon) {
   restoreWeaponBaseStats(weapon);
   weapon.attachments.forEach((attachment) => {
     const definition = findAttachmentDefinition(attachment.key);
-    if (definition) definition.attach(weapon);
+    if (definition) definition.attach(weapon, rarityPower(attachment.rarity), attachment);
   });
   syncGearAttachments();
 }
@@ -970,49 +986,208 @@ function extendWeaponReach(weapon, multiplier) {
   if (weapon.kind === "chain") weapon.chainRange *= 1 + (multiplier - 1) * 0.7;
 }
 
-function addWeaponPierce(weapon) {
-  weapon.pierce += 1;
-  if (weapon.kind === "laser") weapon.lineWidth += 4;
-  if (weapon.kind === "sustainedLaser") weapon.lineWidth += 5;
-  if (weapon.kind === "flame") weapon.cone = Math.min(0.95, weapon.cone + 0.08);
-  if (weapon.kind === "sword") weapon.cone = Math.min(0.98, weapon.cone + 0.08);
-  if (weapon.kind === "chain") weapon.chainCount += 1;
-  if (weapon.explosionRadius > 0) weapon.explosionRadius += 16;
-  if (weapon.areaRadius > 0) weapon.areaRadius += 10;
-  if (weapon.kind === "projectile") weapon.radius += 1;
+function addWeaponPierce(weapon, amount = 1) {
+  const rounded = Math.max(1, Math.round(amount));
+  weapon.pierce += rounded;
+  if (weapon.kind === "laser") weapon.lineWidth += 3 + rounded;
+  if (weapon.kind === "sustainedLaser") weapon.lineWidth += 4 + rounded;
+  if (weapon.kind === "flame") weapon.cone = Math.min(1.05, weapon.cone + 0.06 + rounded * 0.015);
+  if (weapon.kind === "sword") weapon.cone = Math.min(1.05, weapon.cone + 0.06 + rounded * 0.015);
+  if (weapon.kind === "chain") weapon.chainCount += rounded;
+  if (weapon.explosionRadius > 0) weapon.explosionRadius += 12 + rounded * 6;
+  if (weapon.areaRadius > 0) weapon.areaRadius += 8 + rounded * 4;
+  if (weapon.kind === "projectile") weapon.radius += Math.max(1, Math.round(rounded * 0.65));
+}
+
+function expandWeaponArea(weapon, power) {
+  const areaBoost = 1 + 0.08 * power;
+  if (weapon.explosionRadius > 0) weapon.explosionRadius *= areaBoost;
+  if (weapon.areaRadius > 0) weapon.areaRadius *= areaBoost;
+  if (weapon.kind === "laser" || weapon.kind === "sustainedLaser") weapon.lineWidth *= areaBoost;
+  if (weapon.kind === "flame" || weapon.kind === "sword") weapon.cone = Math.min(1.08, weapon.cone + 0.05 * power);
+  if (weapon.radius > 0) weapon.radius += power;
+}
+
+function rarityRank(rarity) {
+  return Math.max(0, RARITY_ORDER.indexOf(rarity));
+}
+
+function rarityPower(rarity) {
+  return ATTACHMENT_RARITIES[rarity]?.power || ATTACHMENT_RARITIES.normal.power;
+}
+
+function rarityLabel(rarity) {
+  return ATTACHMENT_RARITIES[rarity]?.label || ATTACHMENT_RARITIES.normal.label;
+}
+
+function rarityShortLabel(rarity) {
+  return ATTACHMENT_RARITIES[rarity]?.short || ATTACHMENT_RARITIES.normal.short;
+}
+
+function hasWeaponAttachment(weapon, key) {
+  return weapon.attachments.some((attachment) => attachment.key === key);
+}
+
+function slotIndexForAttachment(index) {
+  return clamp(index, 0, MAX_WEAPON_ATTACHMENTS - 1);
+}
+
+function rarityTableForSlot(slotIndex) {
+  return ATTACHMENT_RARITY_TABLES[slotIndexForAttachment(slotIndex)];
+}
+
+function formatRarityOdds(slotIndex) {
+  const table = rarityTableForSlot(slotIndex);
+  return RARITY_ORDER
+    .filter((rarity) => table[rarity] > 0)
+    .map((rarity) => `${rarityShortLabel(rarity)}${table[rarity]}%`)
+    .join(" / ");
 }
 
 const ACTIVE_ATTACHMENTS = [
   {
     key: "powerCore",
     name: "威力コア",
+    minRarity: "normal",
+    category: "stat",
     text: "武器の基礎ダメージを上げる。爆発武器は爆風威力も上がる。",
-    attach: (weapon) => {
-      boostWeaponImpact(weapon, 5);
+    attach: (weapon, power) => {
+      boostWeaponImpact(weapon, Math.round(4 * power));
     },
   },
   {
     key: "rapidMechanism",
     name: "高速機構",
+    minRarity: "normal",
+    category: "stat",
     text: "武器の攻撃頻度を上げる。設置武器は置き直しが早くなる。",
-    attach: (weapon) => {
-      weapon.fireRate *= 1.16;
+    attach: (weapon, power) => {
+      weapon.fireRate *= 1 + 0.1 * power;
     },
   },
   {
     key: "rangeTube",
     name: "射程チューブ",
+    minRarity: "normal",
+    category: "stat",
     text: "弾、炎、斬撃、設置攻撃の届く距離を広げる。",
-    attach: (weapon) => {
-      extendWeaponReach(weapon, 1.16);
+    attach: (weapon, power) => {
+      extendWeaponReach(weapon, 1 + 0.1 * power);
     },
   },
   {
     key: "areaLens",
     name: "範囲レンズ",
+    minRarity: "normal",
+    category: "stat",
     text: "武器の当たり幅や巻き込み範囲を広げる。",
-    attach: (weapon) => {
-      addWeaponPierce(weapon);
+    attach: (weapon, power) => {
+      addWeaponPierce(weapon, 0.8 + power * 0.35);
+      expandWeaponArea(weapon, power);
+    },
+  },
+  {
+    key: "stableGrip",
+    name: "安定グリップ",
+    minRarity: "normal",
+    category: "stat",
+    text: "武器のブレを抑え、弾速と手応えを少し上げる。",
+    attach: (weapon, power) => {
+      weapon.spread *= Math.max(0.55, 1 - 0.08 * power);
+      weapon.jitter *= Math.max(0.45, 1 - 0.12 * power);
+      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1 + 0.07 * power;
+      boostWeaponImpact(weapon, Math.round(1.5 * power));
+    },
+  },
+  {
+    key: "splitChamber",
+    name: "分裂チャンバー",
+    minRarity: "rare",
+    category: "special",
+    text: "弾数や攻撃幅を増やす特殊改造。レア以上で出現する。",
+    attach: (weapon, power) => {
+      if (weapon.kind === "flame" || weapon.kind === "sword") {
+        weapon.cone = Math.min(1.12, weapon.cone + 0.07 * power);
+      } else if (weapon.kind === "orbit") {
+        weapon.areaRadius += 7 * power;
+        weapon.orbitSpeed *= 1 + 0.05 * power;
+      } else {
+        weapon.projectiles += Math.max(1, Math.floor(power));
+        weapon.spread += 0.025 * power;
+      }
+    },
+  },
+  {
+    key: "blastPrimer",
+    name: "爆裂プライマー",
+    minRarity: "rare",
+    category: "special",
+    text: "着弾や設置攻撃に小さな爆発性を持たせる。レア以上で出現する。",
+    attach: (weapon, power) => {
+      const radius = 44 + 18 * power;
+      weapon.explosionRadius = Math.max(weapon.explosionRadius, radius);
+      weapon.explosionDamage = Math.max(weapon.explosionDamage, weapon.damage * (0.45 + 0.11 * power));
+      if (weapon.kind === "timedBomb") weapon.fuse = Math.max(0.75, weapon.fuse - 0.12 * power);
+    },
+  },
+  {
+    key: "sustainEmitter",
+    name: "持続エミッター",
+    minRarity: "rare",
+    category: "special",
+    text: "炎、レーザー、回転武器の持続と当たり続ける力を伸ばす。",
+    attach: (weapon, power) => {
+      weapon.duration *= 1 + 0.14 * power;
+      if (weapon.tickRate > 0) weapon.tickRate *= 1 + 0.12 * power;
+      if (weapon.kind === "flame" || weapon.kind === "sustainedLaser") weapon.fireRate *= 1 + 0.05 * power;
+      if (weapon.kind === "orbit") weapon.orbitRadius *= 1 + 0.07 * power;
+    },
+  },
+  {
+    key: "overclockLink",
+    name: "過給リンク",
+    minRarity: "epic",
+    category: "synergy",
+    text: "威力コアや高速機構と噛み合うシナジー改造。エピック以上で出現する。",
+    attach: (weapon, power) => {
+      const hasPower = hasWeaponAttachment(weapon, "powerCore");
+      const hasRapid = hasWeaponAttachment(weapon, "rapidMechanism");
+      if (hasPower) boostWeaponImpact(weapon, Math.round(2.5 * power));
+      if (hasRapid) weapon.fireRate *= 1 + 0.08 * power;
+      if (!hasPower && !hasRapid) {
+        boostWeaponImpact(weapon, Math.round(1.5 * power));
+        weapon.fireRate *= 1 + 0.04 * power;
+      }
+    },
+  },
+  {
+    key: "focusPrism",
+    name: "収束プリズム",
+    minRarity: "epic",
+    category: "synergy",
+    text: "射程チューブや範囲レンズと噛み合うシナジー改造。エピック以上で出現する。",
+    attach: (weapon, power) => {
+      const hasRange = hasWeaponAttachment(weapon, "rangeTube");
+      const hasArea = hasWeaponAttachment(weapon, "areaLens");
+      if (hasRange) extendWeaponReach(weapon, 1 + 0.055 * power);
+      if (hasArea) expandWeaponArea(weapon, power * 0.7);
+      if (hasRange && hasArea) boostWeaponImpact(weapon, Math.round(2 * power));
+    },
+  },
+  {
+    key: "nightLegend",
+    name: "夜街の伝説",
+    minRarity: "legend",
+    category: "legend",
+    text: "5枠目でだけ出る伝説級改造。武器全体を大きく底上げする。",
+    attach: (weapon, power) => {
+      boostWeaponImpact(weapon, Math.round(4 * power));
+      weapon.fireRate *= 1 + 0.07 * power;
+      extendWeaponReach(weapon, 1 + 0.06 * power);
+      expandWeaponArea(weapon, power);
+      if (weapon.kind !== "flame" && weapon.kind !== "sword" && weapon.kind !== "orbit") {
+        weapon.projectiles += 1;
+      }
     },
   },
 ];
@@ -1442,26 +1617,53 @@ function rerollCost() {
 }
 
 function weaponUpgradeCost(weapon) {
-  const attachmentCount = weapon?.attachments.length || 0;
-  return Math.floor(WEAPON_UPGRADE_BASE_COST + game.wave * 1.6 + attachmentCount * 6);
+  const slotIndex = slotIndexForAttachment(weapon?.attachments.length || 0);
+  return Math.floor(WEAPON_UPGRADE_SLOT_COSTS[slotIndex] + game.wave * (1.4 + slotIndex * 0.7));
 }
 
-function attachmentRerollCost(weapon) {
-  const attachmentCount = weapon?.attachments.length || 0;
-  return Math.floor(ATTACHMENT_REROLL_BASE_COST + game.wave * 1.3 + attachmentCount * 3);
+function attachmentRerollCost(weapon, attachmentIndex = 0) {
+  const slotIndex = slotIndexForAttachment(attachmentIndex);
+  return Math.floor(ATTACHMENT_REROLL_SLOT_COSTS[slotIndex] + game.wave * (1.1 + slotIndex * 0.55));
 }
 
-function pickRandomAttachment(excludedKeys = new Set()) {
-  const candidates = ACTIVE_ATTACHMENTS.filter((attachment) => !excludedKeys.has(attachment.key));
-  const pool = candidates.length > 0 ? candidates : ACTIVE_ATTACHMENTS;
-  return pool[Math.floor(Math.random() * pool.length)];
+function rollAttachmentRarity(slotIndex) {
+  const table = rarityTableForSlot(slotIndex);
+  const roll = Math.random() * 100;
+  let cursor = 0;
+  for (const rarity of RARITY_ORDER) {
+    cursor += table[rarity] || 0;
+    if (roll < cursor) return rarity;
+  }
+  return "normal";
+}
+
+function attachmentCanAppear(attachment, rarity) {
+  return rarityRank(rarity) >= rarityRank(attachment.minRarity || "normal");
+}
+
+function pickRandomAttachment(slotIndex, excludedKeys = new Set()) {
+  const rarity = rollAttachmentRarity(slotIndex);
+  let candidates = ACTIVE_ATTACHMENTS.filter((attachment) =>
+    attachmentCanAppear(attachment, rarity) && !excludedKeys.has(attachment.key),
+  );
+  if (candidates.length === 0) {
+    candidates = ACTIVE_ATTACHMENTS.filter((attachment) => attachmentCanAppear(attachment, rarity));
+  }
+  if (candidates.length === 0) return null;
+  const definition = candidates[Math.floor(Math.random() * candidates.length)];
+  return { definition, rarity };
 }
 
 function addAttachmentToWeapon(weapon, attachment) {
   if (!weapon || !attachment || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return false;
+  const definition = attachment.definition || findAttachmentDefinition(attachment.key) || attachment;
+  if (!definition?.key) return false;
+  const rarity = attachment.rarity || "normal";
   weapon.attachments.push({
-    key: attachment.key,
-    name: attachment.name,
+    key: definition.key,
+    name: definition.name,
+    rarity,
+    category: definition.category || "stat",
   });
   recomputeWeaponAttachments(weapon);
   return true;
@@ -1474,7 +1676,7 @@ function upgradeWeaponAttachment(weaponId) {
   if (game.money < cost) return;
 
   const ownedKeys = new Set(weapon.attachments.map((attachment) => attachment.key));
-  const attachment = pickRandomAttachment(ownedKeys);
+  const attachment = pickRandomAttachment(weapon.attachments.length, ownedKeys);
   if (!addAttachmentToWeapon(weapon, attachment)) return;
 
   game.money -= cost;
@@ -1490,10 +1692,13 @@ function rerollWeaponAttachment(weaponId, attachmentIndex) {
   if (game.money < cost) return;
 
   const excludedKeys = new Set(weapon.attachments.map((attachment) => attachment.key));
-  const replacement = pickRandomAttachment(excludedKeys);
+  const replacement = pickRandomAttachment(attachmentIndex, excludedKeys);
+  if (!replacement) return;
   weapon.attachments[attachmentIndex] = {
-    key: replacement.key,
-    name: replacement.name,
+    key: replacement.definition.key,
+    name: replacement.definition.name,
+    rarity: replacement.rarity,
+    category: replacement.definition.category || "stat",
   };
   recomputeWeaponAttachments(weapon);
 
@@ -1659,13 +1864,22 @@ function renderGearInventory() {
         row.className = "attachment-row";
 
         const chip = document.createElement("span");
-        chip.className = "attach-chip";
-        chip.textContent = attachment.name;
+        chip.className = `attach-chip attach-rarity-${attachment.rarity || "normal"}`;
+
+        const rarity = document.createElement("span");
+        rarity.className = "attach-rarity-label";
+        rarity.textContent = rarityLabel(attachment.rarity);
+
+        const attachmentName = document.createElement("span");
+        attachmentName.className = "attach-name";
+        attachmentName.textContent = attachment.name;
+
+        chip.append(rarity, attachmentName);
 
         const rerollButton = document.createElement("button");
         rerollButton.type = "button";
         rerollButton.className = "attachment-reroll";
-        const cost = attachmentRerollCost(weapon);
+        const cost = attachmentRerollCost(weapon, attachmentIndex);
         rerollButton.textContent = `入替 ${cost}枚`;
         rerollButton.disabled = game.money < cost;
         rerollButton.addEventListener("click", () => rerollWeaponAttachment(weapon.id, attachmentIndex));
@@ -1699,7 +1913,7 @@ function renderGearInventory() {
       upgradeNote.className = "weapon-upgrade-note";
       upgradeNote.textContent = weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS
         ? "装着枠が満杯"
-        : "ランダムなアタッチメントを1個付与";
+        : `次枠: ${formatRarityOdds(weapon.attachments.length)}`;
 
       upgradeActions.append(upgradeButton, upgradeNote);
       attachmentTrack.append(upgradeActions);
