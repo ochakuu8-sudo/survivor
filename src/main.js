@@ -1221,6 +1221,18 @@ function findWeapon(id) {
   return game.player.gear.weapons.find((weapon) => weapon.id === id) || null;
 }
 
+function weaponKindLabel(weapon) {
+  if (weapon.name.includes("ノコギリ")) return "投てき";
+  const labels = {
+    projectile: "弾丸",
+    flame: "火炎",
+    laser: "レーザー",
+    bomb: "爆発",
+    chain: "電撃",
+  };
+  return labels[weapon.kind] || "武器";
+}
+
 function renderShop() {
   hud.shopCash.textContent = String(game.money);
   hud.offers.replaceChildren();
@@ -1264,54 +1276,87 @@ function renderShop() {
     hud.offers.append(card);
   });
 
-  hud.gearInventory.replaceChildren();
-  const gear = game.player.gear;
-  [
-    ["weapon", "武器", gear.weapons],
-    ["attachment", "アタッチメント", gear.attachments],
-    ["relic", "レリック", gear.relics],
-  ].forEach(([type, label, items]) => {
-    const item = document.createElement("div");
-    item.className = `gear-slot gear-slot-${type}`;
-    const span = document.createElement("span");
-    span.textContent = label;
-    const strong = document.createElement("strong");
-    if (type === "weapon") {
-      strong.textContent = `${items.length}/${MAX_WEAPONS}`;
-    } else {
-      strong.textContent = items.length > 0
-        ? (type === "attachment" ? "装着済み" : "所持中")
-        : (type === "attachment" ? "未装着" : "未所持");
-    }
-    const small = document.createElement("small");
-    small.textContent = gearListText(type, items);
-    item.append(span, strong, small);
-    hud.gearInventory.append(item);
-  });
+  renderGearInventory();
 
   const cost = rerollCost();
   hud.reroll.textContent = `リロール ${cost}枚`;
   hud.reroll.disabled = game.money < cost;
 }
 
-function gearListText(type, items) {
-  if (items.length === 0) {
-    if (type === "attachment") return "武器に未装着";
-    if (type === "relic") return "未所持";
-    return "未装備";
+function renderGearInventory() {
+  hud.gearInventory.replaceChildren();
+  const gear = game.player.gear;
+
+  const board = document.createElement("div");
+  board.className = "loadout-board";
+
+  for (let index = 0; index < MAX_WEAPONS; index += 1) {
+    const weapon = gear.weapons[index];
+    const slot = document.createElement("article");
+    slot.className = `weapon-slot ${weapon ? "weapon-slot-filled" : "weapon-slot-empty"}`;
+
+    const top = document.createElement("div");
+    top.className = "weapon-slot-top";
+
+    const label = document.createElement("span");
+    label.className = "slot-index";
+    label.textContent = `武器 ${index + 1}`;
+
+    const status = document.createElement("span");
+    status.className = `slot-status ${weapon ? "slot-status-equipped" : "slot-status-empty"}`;
+    status.textContent = weapon ? "装備中" : "空き";
+
+    top.append(label, status);
+
+    const name = document.createElement("strong");
+    name.className = "weapon-slot-name";
+    name.textContent = weapon ? weapon.name : "未装備";
+
+    const kind = document.createElement("small");
+    kind.className = "weapon-slot-kind";
+    kind.textContent = weapon ? weaponKindLabel(weapon) : "武器スロット";
+
+    const attachmentTrack = document.createElement("div");
+    attachmentTrack.className = "attachment-track";
+
+    const attachmentTitle = document.createElement("span");
+    attachmentTitle.className = "attachment-title";
+    attachmentTitle.textContent = "アタッチメント";
+
+    const attachmentList = document.createElement("div");
+    attachmentList.className = "attachment-list";
+
+    const attachments = weapon?.attachments || [];
+    if (attachments.length > 0) {
+      attachments.forEach((attachment) => {
+        const chip = document.createElement("span");
+        chip.className = "attach-chip";
+        chip.textContent = attachment;
+        attachmentList.append(chip);
+      });
+    } else {
+      const empty = document.createElement("span");
+      empty.className = "attach-chip attach-chip-empty";
+      empty.textContent = "未装着";
+      attachmentList.append(empty);
+    }
+
+    attachmentTrack.append(attachmentTitle, attachmentList);
+    slot.append(top, name, kind, attachmentTrack);
+    board.append(slot);
   }
-  if (type === "weapon") {
-    return items.map((weapon) => {
-      if (weapon.attachments.length === 0) return weapon.name;
-      return `${weapon.name}（${weapon.attachments.join("、")}）`;
-    }).join(" / ");
-  }
-  if (type === "attachment") {
-    const recentAttachments = items.slice(-4).map((attachment) => `${attachment.name}→${attachment.weaponName}`).join(" / ");
-    return items.length > 4 ? `${recentAttachments} ほか${items.length - 4}` : recentAttachments;
-  }
-  const recent = items.slice(-4).join(" / ");
-  return items.length > 4 ? `${recent} ほか${items.length - 4}` : recent;
+
+  const relicShelf = document.createElement("div");
+  relicShelf.className = "relic-shelf";
+  const relicLabel = document.createElement("span");
+  relicLabel.textContent = "レリック";
+  const relicCount = document.createElement("strong");
+  relicCount.textContent = `${gear.relics.length}`;
+  const relicList = document.createElement("small");
+  relicList.textContent = gear.relics.length > 0 ? gear.relics.slice(-5).join(" / ") : "未所持";
+  relicShelf.append(relicLabel, relicCount, relicList);
+
+  hud.gearInventory.append(board, relicShelf);
 }
 
 function updateHud() {

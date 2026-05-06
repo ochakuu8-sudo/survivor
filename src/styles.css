@@ -144,7 +144,9 @@ button:disabled {
 .hud-label,
 .panel-kicker,
 .shop-cash span,
-.gear-slot span {
+.slot-index,
+.attachment-title,
+.relic-shelf span {
   color: #9df7ff;
   font-size: 0.68rem;
   font-weight: 800;
@@ -181,7 +183,7 @@ button:disabled {
   z-index: 10;
   left: 50%;
   top: 50%;
-  width: min(940px, calc(100vw - 28px));
+  width: min(1040px, calc(100vw - 28px));
   max-height: min(760px, calc(100vh - 28px));
   overflow: auto;
   padding: 22px;
@@ -335,48 +337,153 @@ h1 {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 16px;
-  align-items: end;
+  align-items: stretch;
   margin-top: 18px;
 }
 
 .gear-inventory {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
-.gear-slot {
+.loadout-board {
   display: grid;
-  min-width: 180px;
-  padding: 9px 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.weapon-slot {
+  display: grid;
+  align-content: start;
+  min-height: 142px;
+  min-width: 0;
+  padding: 10px;
   border: 2px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.15);
 }
 
-.gear-slot strong {
-  margin-top: 2px;
+.weapon-slot-filled {
+  border-color: rgba(255, 93, 150, 0.46);
+  background:
+    linear-gradient(180deg, rgba(255, 93, 150, 0.12), transparent 42%),
+    rgba(255, 255, 255, 0.1);
+}
+
+.weapon-slot-empty {
+  border-style: dashed;
+  border-color: rgba(255, 249, 242, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.weapon-slot-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.slot-status {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 0.64rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.slot-status-equipped {
+  color: #241737;
+  background: #ffe46b;
+}
+
+.slot-status-empty {
+  color: rgba(255, 249, 242, 0.72);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.weapon-slot-name {
+  display: block;
+  min-width: 0;
+  margin-top: 8px;
+  color: #fff9f2;
+  font-size: 0.98rem;
+  line-height: 1.14;
+  overflow-wrap: anywhere;
+}
+
+.weapon-slot-kind {
+  display: block;
+  margin-top: 4px;
+  color: #ffe46b;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.attachment-track {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 249, 242, 0.16);
+}
+
+.attachment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+}
+
+.attach-chip {
+  max-width: 100%;
+  padding: 4px 6px;
+  border: 1px solid rgba(85, 246, 199, 0.26);
+  border-radius: 6px;
+  color: #eaffff;
+  background: rgba(85, 246, 199, 0.15);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.16;
+  overflow-wrap: anywhere;
+}
+
+.attach-chip-empty {
+  color: rgba(255, 249, 242, 0.62);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.relic-shelf {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 2px solid rgba(255, 228, 107, 0.34);
+  border-radius: 8px;
+  background: rgba(255, 228, 107, 0.1);
+}
+
+.relic-shelf strong {
+  color: #ffe46b;
   font-size: 0.95rem;
+  line-height: 1;
 }
 
-.gear-slot-weapon {
-  border-color: rgba(255, 93, 150, 0.36);
-}
-
-.gear-slot-attachment {
-  border-color: rgba(85, 246, 199, 0.34);
-}
-
-.gear-slot-relic {
-  border-color: rgba(255, 228, 107, 0.34);
-}
-
-.gear-slot small {
+.relic-shelf small {
   margin-top: 5px;
   color: #d9f7ff;
   font-size: 0.78rem;
   font-style: normal;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .shop-actions {
@@ -530,8 +637,12 @@ h1 {
     flex: 1;
   }
 
-  .gear-slot {
-    min-width: min(180px, 100%);
+  .loadout-board {
+    grid-template-columns: 1fr;
+  }
+
+  .weapon-slot {
+    min-height: 116px;
   }
 }
 
