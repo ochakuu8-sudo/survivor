@@ -109,7 +109,7 @@ button:disabled {
   left: max(14px, env(safe-area-inset-left));
   right: max(14px, env(safe-area-inset-right));
   display: grid;
-  grid-template-columns: minmax(56px, auto) minmax(76px, auto) minmax(150px, 1fr) minmax(64px, auto) minmax(64px, auto);
+  grid-template-columns: minmax(52px, auto) minmax(72px, auto) minmax(140px, 1fr) minmax(58px, auto) minmax(58px, auto);
   gap: 8px;
   align-items: stretch;
   pointer-events: none;
@@ -117,12 +117,12 @@ button:disabled {
 
 .hud-block,
 .hud-meter {
-  min-height: 52px;
-  padding: 8px 10px;
+  min-height: 48px;
+  padding: 7px 9px;
   border: 2px solid rgba(255, 249, 242, 0.35);
   border-radius: 8px;
   background: rgba(33, 28, 78, 0.86);
-  box-shadow: 0 8px 0 rgba(19, 15, 50, 0.52);
+  box-shadow: 0 6px 0 rgba(19, 15, 50, 0.52);
   backdrop-filter: blur(4px);
 }
 
@@ -133,7 +133,7 @@ button:disabled {
 }
 
 .hud-block strong {
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
@@ -161,7 +161,7 @@ button:disabled {
 
 .meter-shell {
   position: relative;
-  height: 14px;
+  height: 12px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(15, 18, 55, 0.78);
@@ -412,16 +412,32 @@ h1 {
 @media (max-width: 760px) {
   #hud {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
   }
 
   .hud-meter {
     grid-column: 1 / -1;
     order: 2;
+    gap: 8px;
   }
 
   .hud-block,
   .hud-meter {
-    min-height: 46px;
+    min-height: 38px;
+    padding: 5px 7px;
+    box-shadow: 0 4px 0 rgba(19, 15, 50, 0.48);
+  }
+
+  .hud-block strong {
+    font-size: 0.92rem;
+  }
+
+  .hud-label {
+    font-size: 0.58rem;
+  }
+
+  .meter-shell {
+    height: 9px;
   }
 
   .offers {
@@ -448,15 +464,28 @@ h1 {
 
 @media (max-width: 480px) {
   #hud {
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    gap: 6px;
+    top: max(6px, env(safe-area-inset-top));
+    left: max(6px, env(safe-area-inset-left));
+    right: max(6px, env(safe-area-inset-right));
+    gap: 4px;
   }
 
   .hud-block,
   .hud-meter {
-    padding: 7px 8px;
+    min-height: 34px;
+    padding: 4px 6px;
+  }
+
+  .hud-block strong {
+    font-size: 0.86rem;
+  }
+
+  .hud-label {
+    font-size: 0.54rem;
+  }
+
+  .meter-shell {
+    height: 8px;
   }
 
   .offers {
@@ -485,15 +514,33 @@ h1 {
 
 @media (max-height: 520px) and (orientation: landscape) {
   #hud {
-    grid-template-columns: repeat(5, minmax(58px, auto));
+    grid-template-columns: repeat(5, minmax(52px, auto));
     right: auto;
-    width: min(560px, calc(100vw - 156px));
+    width: min(500px, calc(100vw - 150px));
+    gap: 4px;
   }
 
   .hud-block,
   .hud-meter {
-    min-height: 42px;
-    padding: 6px 8px;
+    min-height: 32px;
+    padding: 4px 6px;
+  }
+
+  .hud-meter {
+    grid-column: auto;
+    order: 0;
+  }
+
+  .hud-block strong {
+    font-size: 0.84rem;
+  }
+
+  .hud-label {
+    font-size: 0.52rem;
+  }
+
+  .meter-shell {
+    height: 7px;
   }
 
   .stick {
