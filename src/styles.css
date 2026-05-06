@@ -371,6 +371,7 @@ h1 {
 }
 
 .offer button,
+.weapon-slot button,
 .shop-actions button,
 #restartBtn {
   min-height: 42px;
@@ -401,6 +402,7 @@ h1 {
 .weapon-slot {
   display: grid;
   align-content: start;
+  gap: 0;
   min-height: 142px;
   min-width: 0;
   padding: 10px;
@@ -478,13 +480,22 @@ h1 {
 }
 
 .attachment-list {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.attachment-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
+  align-items: stretch;
   min-width: 0;
 }
 
 .attach-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
   max-width: 100%;
   padding: 4px 6px;
   border: 1px solid rgba(85, 246, 199, 0.26);
@@ -495,6 +506,43 @@ h1 {
   font-weight: 800;
   line-height: 1.16;
   overflow-wrap: anywhere;
+}
+
+.attachment-row .attach-chip {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.attachment-reroll,
+.weapon-upgrade-button {
+  min-height: 32px;
+  border-color: rgba(255, 228, 107, 0.62);
+  color: #241737;
+  background: #ffe46b;
+  font-size: 0.68rem;
+}
+
+.attachment-reroll {
+  flex: 0 0 auto;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+.weapon-upgrade-actions {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.weapon-upgrade-button {
+  width: 100%;
+}
+
+.weapon-upgrade-note {
+  color: rgba(255, 249, 242, 0.66);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .attach-chip-empty {

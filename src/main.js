@@ -79,6 +79,38 @@ const OFFER_TYPE_LABELS = {
 };
 
 const MAX_WEAPONS = 3;
+const MAX_WEAPON_ATTACHMENTS = 3;
+const WEAPON_UPGRADE_BASE_COST = 10;
+const ATTACHMENT_REROLL_BASE_COST = 7;
+const WEAPON_STAT_KEYS = [
+  "damage",
+  "fireRate",
+  "bulletSpeed",
+  "projectiles",
+  "pierce",
+  "spread",
+  "life",
+  "range",
+  "cone",
+  "lineWidth",
+  "explosionRadius",
+  "explosionDamage",
+  "chainCount",
+  "chainRange",
+  "duration",
+  "tickRate",
+  "fuse",
+  "areaRadius",
+  "orbitRadius",
+  "orbitSpeed",
+  "radius",
+  "jitter",
+  "kick",
+  "bulletTint",
+  "bulletGlow",
+  "effectTint",
+  "effectGlow",
+];
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -142,7 +174,7 @@ function makeRng(seed) {
 function createWeapon(template) {
   const bulletSpeed = template.bulletSpeed ?? 690;
   const life = template.life || 0.72;
-  return {
+  const weapon = {
     id: nextWeaponId(),
     name: template.name,
     kind: template.kind || "projectile",
@@ -176,11 +208,53 @@ function createWeapon(template) {
     shootTimer: template.shootTimer ?? 0.45,
     attachments: [],
   };
+  weapon.baseStats = snapshotWeaponStats(weapon);
+  return weapon;
 }
 
 function nextWeaponId() {
   weaponId += 1;
   return weaponId - 1;
+}
+
+function snapshotWeaponStats(weapon) {
+  const stats = {};
+  WEAPON_STAT_KEYS.forEach((key) => {
+    const value = weapon[key];
+    stats[key] = Array.isArray(value) ? [...value] : value;
+  });
+  return stats;
+}
+
+function restoreWeaponBaseStats(weapon) {
+  Object.entries(weapon.baseStats || snapshotWeaponStats(weapon)).forEach(([key, value]) => {
+    weapon[key] = Array.isArray(value) ? [...value] : value;
+  });
+}
+
+function findAttachmentDefinition(key) {
+  return ACTIVE_ATTACHMENTS.find((attachment) => attachment.key === key) || null;
+}
+
+function syncGearAttachments() {
+  if (!game.player?.gear) return;
+  game.player.gear.attachments = game.player.gear.weapons.flatMap((weapon) =>
+    weapon.attachments.map((attachment) => ({
+      key: attachment.key,
+      name: attachment.name,
+      weaponId: weapon.id,
+      weaponName: weapon.name,
+    })),
+  );
+}
+
+function recomputeWeaponAttachments(weapon) {
+  restoreWeaponBaseStats(weapon);
+  weapon.attachments.forEach((attachment) => {
+    const definition = findAttachmentDefinition(attachment.key);
+    if (definition) definition.attach(weapon);
+  });
+  syncGearAttachments();
 }
 
 function buildAtlas() {
@@ -844,10 +918,6 @@ function resetRun() {
 }
 
 function startNextWave() {
-  if (hasPendingAttachmentSelection()) {
-    renderShop();
-    return;
-  }
   game.mode = "fight";
   game.wave += 1;
   game.timeLeft = WAVE_SECONDS;
@@ -911,6 +981,41 @@ function addWeaponPierce(weapon) {
   if (weapon.areaRadius > 0) weapon.areaRadius += 10;
   if (weapon.kind === "projectile") weapon.radius += 1;
 }
+
+const ACTIVE_ATTACHMENTS = [
+  {
+    key: "powerCore",
+    name: "威力コア",
+    text: "武器の基礎ダメージを上げる。爆発武器は爆風威力も上がる。",
+    attach: (weapon) => {
+      boostWeaponImpact(weapon, 5);
+    },
+  },
+  {
+    key: "rapidMechanism",
+    name: "高速機構",
+    text: "武器の攻撃頻度を上げる。設置武器は置き直しが早くなる。",
+    attach: (weapon) => {
+      weapon.fireRate *= 1.16;
+    },
+  },
+  {
+    key: "rangeTube",
+    name: "射程チューブ",
+    text: "弾、炎、斬撃、設置攻撃の届く距離を広げる。",
+    attach: (weapon) => {
+      extendWeaponReach(weapon, 1.16);
+    },
+  },
+  {
+    key: "areaLens",
+    name: "範囲レンズ",
+    text: "武器の当たり幅や巻き込み範囲を広げる。",
+    attach: (weapon) => {
+      addWeaponPierce(weapon);
+    },
+  },
+];
 
 function generateOffers() {
   const pool = [
@@ -1281,54 +1386,14 @@ function generateOffers() {
     },
   ];
 
-  const activeAttachments = [
-    {
-      type: "attachment",
-      name: "威力コア",
-      text: "武器の基礎ダメージを上げる。爆発武器は爆風威力も上がる。",
-      baseCost: 16,
-      attach: (weapon) => {
-        boostWeaponImpact(weapon, 5);
-      },
-    },
-    {
-      type: "attachment",
-      name: "高速機構",
-      text: "武器の攻撃頻度を上げる。設置武器は置き直しが早くなる。",
-      baseCost: 14,
-      attach: (weapon) => {
-        weapon.fireRate *= 1.16;
-      },
-    },
-    {
-      type: "attachment",
-      name: "射程チューブ",
-      text: "弾、炎、斬撃、設置攻撃の届く距離を広げる。",
-      baseCost: 14,
-      attach: (weapon) => {
-        extendWeaponReach(weapon, 1.16);
-      },
-    },
-    {
-      type: "attachment",
-      name: "範囲レンズ",
-      text: "武器の当たり幅や巻き込み範囲を広げる。",
-      baseCost: 17,
-      attach: (weapon) => {
-        addWeaponPierce(weapon);
-      },
-    },
-  ];
-
   const activePool = [
     ...activeWeapons,
-    ...activeAttachments,
     ...pool.filter((item) => item.type === "relic"),
   ];
 
   const picks = [];
   const used = new Set();
-  for (const type of game.player.gear.weapons.length < MAX_WEAPONS ? ["weapon", "attachment", "relic"] : ["attachment", "relic"]) {
+  for (const type of game.player.gear.weapons.length < MAX_WEAPONS ? ["weapon", "relic"] : ["relic"]) {
     addOfferPick(activePool, picks, used, type);
   }
   let guard = 0;
@@ -1376,18 +1441,71 @@ function rerollCost() {
   return Math.floor(4 + game.wave * 1.5 + game.rerolls * 3);
 }
 
+function weaponUpgradeCost(weapon) {
+  const attachmentCount = weapon?.attachments.length || 0;
+  return Math.floor(WEAPON_UPGRADE_BASE_COST + game.wave * 1.6 + attachmentCount * 6);
+}
+
+function attachmentRerollCost(weapon) {
+  const attachmentCount = weapon?.attachments.length || 0;
+  return Math.floor(ATTACHMENT_REROLL_BASE_COST + game.wave * 1.3 + attachmentCount * 3);
+}
+
+function pickRandomAttachment(excludedKeys = new Set()) {
+  const candidates = ACTIVE_ATTACHMENTS.filter((attachment) => !excludedKeys.has(attachment.key));
+  const pool = candidates.length > 0 ? candidates : ACTIVE_ATTACHMENTS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function addAttachmentToWeapon(weapon, attachment) {
+  if (!weapon || !attachment || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return false;
+  weapon.attachments.push({
+    key: attachment.key,
+    name: attachment.name,
+  });
+  recomputeWeaponAttachments(weapon);
+  return true;
+}
+
+function upgradeWeaponAttachment(weaponId) {
+  const weapon = findWeapon(weaponId);
+  if (!weapon || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return;
+  const cost = weaponUpgradeCost(weapon);
+  if (game.money < cost) return;
+
+  const ownedKeys = new Set(weapon.attachments.map((attachment) => attachment.key));
+  const attachment = pickRandomAttachment(ownedKeys);
+  if (!addAttachmentToWeapon(weapon, attachment)) return;
+
+  game.money -= cost;
+  game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
+  renderShop();
+  updateHud();
+}
+
+function rerollWeaponAttachment(weaponId, attachmentIndex) {
+  const weapon = findWeapon(weaponId);
+  if (!weapon || !weapon.attachments[attachmentIndex]) return;
+  const cost = attachmentRerollCost(weapon);
+  if (game.money < cost) return;
+
+  const excludedKeys = new Set(weapon.attachments.map((attachment) => attachment.key));
+  const replacement = pickRandomAttachment(excludedKeys);
+  weapon.attachments[attachmentIndex] = {
+    key: replacement.key,
+    name: replacement.name,
+  };
+  recomputeWeaponAttachments(weapon);
+
+  game.money -= cost;
+  game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
+  renderShop();
+  updateHud();
+}
+
 function buyOffer(index) {
   const offer = game.offers[index];
   if (!offer || !canBuyOffer(offer)) return;
-
-  if (offer.type === "attachment") {
-    game.money -= offer.cost;
-    offer.bought = true;
-    offer.choosing = true;
-    renderShop();
-    updateHud();
-    return;
-  }
 
   game.money -= offer.cost;
   offer.bought = true;
@@ -1400,25 +1518,8 @@ function buyOffer(index) {
 function canBuyOffer(offer) {
   if (!offer || offer.bought || game.money < offer.cost) return false;
   if (offer.type === "weapon") return game.player.gear.weapons.length < MAX_WEAPONS;
-  if (offer.type === "attachment") return game.player.gear.weapons.length > 0;
+  if (offer.type === "attachment") return false;
   return true;
-}
-
-function hasPendingAttachmentSelection() {
-  return game.offers.some((offer) => offer.type === "attachment" && offer.choosing);
-}
-
-function attachOfferToWeapon(index, weaponId) {
-  const offer = game.offers[index];
-  const weapon = findWeapon(weaponId);
-  if (!offer || offer.type !== "attachment" || !offer.bought || !offer.choosing || !weapon) return;
-  offer.choosing = false;
-  offer.targetWeaponId = weapon.id;
-  offer.targetWeaponName = weapon.name;
-  applyOffer(offer, weapon);
-  game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
-  renderShop();
-  updateHud();
 }
 
 function applyOffer(offer, targetWeapon = null) {
@@ -1430,27 +1531,12 @@ function applyOffer(offer, targetWeapon = null) {
   if (offer.type === "attachment") {
     const weapon = targetWeapon || findWeapon(offer.targetWeaponId);
     if (!weapon) return;
-    offer.attach(weapon);
-    weapon.attachments.push(offer.name);
-    game.player.gear.attachments.push({
-      name: offer.name,
-      weaponId: weapon.id,
-      weaponName: weapon.name,
-    });
+    addAttachmentToWeapon(weapon, offer);
     return;
   }
 
   offer.apply();
   game.player.gear.relics.push(offer.name);
-}
-
-function chooseAttachmentTarget() {
-  const weapons = game.player.gear.weapons;
-  if (weapons.length === 0) return null;
-  return weapons.reduce((best, weapon) => {
-    if (!best) return weapon;
-    return weapon.attachments.length < best.attachments.length ? weapon : best;
-  }, null);
 }
 
 function findWeapon(id) {
@@ -1475,7 +1561,6 @@ function weaponKindLabel(weapon) {
 function renderShop() {
   hud.shopCash.textContent = String(game.money);
   hud.offers.replaceChildren();
-  const hasPendingAttachment = hasPendingAttachmentSelection();
 
   game.offers.forEach((offer, index) => {
     const card = document.createElement("article");
@@ -1495,13 +1580,7 @@ function renderShop() {
     meta.className = "offer-meta";
     meta.textContent = offer.type === "weapon"
       ? `武器スロット ${game.player.gear.weapons.length}/${MAX_WEAPONS}`
-      : offer.type === "attachment"
-        ? offer.choosing
-          ? "購入済み: 装着先を選んでください"
-          : offer.bought
-          ? `装着先: ${offer.targetWeaponName || "武器"}`
-          : "購入後に装着先を選択"
-        : "プレイヤーが所持";
+      : "プレイヤーが所持";
 
     const price = document.createElement("div");
     price.className = "price";
@@ -1511,21 +1590,12 @@ function renderShop() {
 
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = offer.type === "attachment"
-      ? offer.choosing
-        ? "装着待ち"
-        : offer.bought
-        ? "装着済み"
-        : "購入"
-      : offer.bought ? "購入済み" : "購入";
-    button.disabled = !canBuyOffer(offer) || offer.choosing;
+    button.textContent = offer.bought ? "購入済み" : "購入";
+    button.disabled = !canBuyOffer(offer);
     button.addEventListener("click", () => buyOffer(index));
 
     price.append(cost, button);
     card.append(type, title, body, meta, price);
-    if (offer.type === "attachment" && offer.choosing) {
-      card.append(createAttachmentTargetPicker(index));
-    }
     hud.offers.append(card);
   });
 
@@ -1533,32 +1603,8 @@ function renderShop() {
 
   const cost = rerollCost();
   hud.reroll.textContent = `リロール ${cost}枚`;
-  hud.reroll.disabled = game.money < cost || hasPendingAttachment;
-  hud.nextWave.disabled = hasPendingAttachment;
-}
-
-function createAttachmentTargetPicker(offerIndex) {
-  const picker = document.createElement("div");
-  picker.className = "attachment-targets";
-
-  const prompt = document.createElement("span");
-  prompt.className = "target-prompt";
-  prompt.textContent = "装着する武器";
-
-  const buttons = document.createElement("div");
-  buttons.className = "target-buttons";
-
-  game.player.gear.weapons.forEach((weapon, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "target-button";
-    button.textContent = `武器${index + 1}: ${weapon.name}`;
-    button.addEventListener("click", () => attachOfferToWeapon(offerIndex, weapon.id));
-    buttons.append(button);
-  });
-
-  picker.append(prompt, buttons);
-  return picker;
+  hud.reroll.disabled = game.money < cost;
+  hud.nextWave.disabled = false;
 }
 
 function renderGearInventory() {
@@ -1599,27 +1645,66 @@ function renderGearInventory() {
 
     const attachmentTitle = document.createElement("span");
     attachmentTitle.className = "attachment-title";
-    attachmentTitle.textContent = "アタッチメント";
+    attachmentTitle.textContent = weapon
+      ? `アタッチメント ${weapon.attachments.length}/${MAX_WEAPON_ATTACHMENTS}`
+      : "アタッチメント";
 
     const attachmentList = document.createElement("div");
     attachmentList.className = "attachment-list";
 
     const attachments = weapon?.attachments || [];
     if (attachments.length > 0) {
-      attachments.forEach((attachment) => {
+      attachments.forEach((attachment, attachmentIndex) => {
+        const row = document.createElement("div");
+        row.className = "attachment-row";
+
         const chip = document.createElement("span");
         chip.className = "attach-chip";
-        chip.textContent = attachment;
-        attachmentList.append(chip);
+        chip.textContent = attachment.name;
+
+        const rerollButton = document.createElement("button");
+        rerollButton.type = "button";
+        rerollButton.className = "attachment-reroll";
+        const cost = attachmentRerollCost(weapon);
+        rerollButton.textContent = `入替 ${cost}枚`;
+        rerollButton.disabled = game.money < cost;
+        rerollButton.addEventListener("click", () => rerollWeaponAttachment(weapon.id, attachmentIndex));
+
+        row.append(chip, rerollButton);
+        attachmentList.append(row);
       });
     } else {
       const empty = document.createElement("span");
       empty.className = "attach-chip attach-chip-empty";
-      empty.textContent = "未装着";
+      empty.textContent = weapon ? "空き" : "未装着";
       attachmentList.append(empty);
     }
 
     attachmentTrack.append(attachmentTitle, attachmentList);
+    if (weapon) {
+      const upgradeActions = document.createElement("div");
+      upgradeActions.className = "weapon-upgrade-actions";
+
+      const upgradeButton = document.createElement("button");
+      upgradeButton.type = "button";
+      upgradeButton.className = "weapon-upgrade-button";
+      const upgradeCost = weaponUpgradeCost(weapon);
+      upgradeButton.textContent = weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS
+        ? "強化上限"
+        : `強化 ${upgradeCost}枚`;
+      upgradeButton.disabled = weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS || game.money < upgradeCost;
+      upgradeButton.addEventListener("click", () => upgradeWeaponAttachment(weapon.id));
+
+      const upgradeNote = document.createElement("small");
+      upgradeNote.className = "weapon-upgrade-note";
+      upgradeNote.textContent = weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS
+        ? "装着枠が満杯"
+        : "ランダムなアタッチメントを1個付与";
+
+      upgradeActions.append(upgradeButton, upgradeNote);
+      attachmentTrack.append(upgradeActions);
+    }
+
     slot.append(top, name, kind, attachmentTrack);
     board.append(slot);
   }
@@ -2938,7 +3023,6 @@ function frame(now) {
 }
 
 hud.reroll.addEventListener("click", () => {
-  if (hasPendingAttachmentSelection()) return;
   const cost = rerollCost();
   if (game.money < cost) return;
   game.money -= cost;
