@@ -144,7 +144,7 @@ button:disabled {
 .hud-label,
 .panel-kicker,
 .shop-cash span,
-.stat span {
+.gear-slot span {
   color: #9df7ff;
   font-size: 0.68rem;
   font-weight: 800;
@@ -330,53 +330,44 @@ h1 {
   margin-top: 18px;
 }
 
-.stats {
+.gear-inventory {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.stat {
+.gear-slot {
   display: grid;
-  min-width: 96px;
+  min-width: 180px;
   padding: 9px 10px;
   border: 2px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.1);
 }
 
-.stat strong {
+.gear-slot strong {
   margin-top: 2px;
   font-size: 0.95rem;
 }
 
-.gear-stat {
-  min-width: 170px;
-}
-
-.gear-stat-weapon {
+.gear-slot-weapon {
   border-color: rgba(255, 93, 150, 0.36);
 }
 
-.gear-stat-attachment {
+.gear-slot-attachment {
   border-color: rgba(85, 246, 199, 0.34);
 }
 
-.gear-stat-relic {
+.gear-slot-relic {
   border-color: rgba(255, 228, 107, 0.34);
 }
 
-.gear-stat small {
+.gear-slot small {
   margin-top: 5px;
   color: #d9f7ff;
   font-size: 0.78rem;
   font-style: normal;
   line-height: 1.35;
-}
-
-.performance-stat {
-  min-width: 92px;
-  opacity: 0.88;
 }
 
 .shop-actions {
@@ -530,7 +521,7 @@ h1 {
     flex: 1;
   }
 
-  .gear-stat {
+  .gear-slot {
     min-width: min(180px, 100%);
   }
 }

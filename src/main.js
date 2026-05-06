@@ -17,7 +17,7 @@ const hud = {
   shop: document.querySelector("#shop"),
   offers: document.querySelector("#offers"),
   shopCash: document.querySelector("#shopCash"),
-  stats: document.querySelector("#stats"),
+  gearInventory: document.querySelector("#gearInventory"),
   reroll: document.querySelector("#rerollBtn"),
   nextWave: document.querySelector("#nextWaveBtn"),
   gameOver: document.querySelector("#gameOver"),
@@ -785,7 +785,7 @@ function generateOffers() {
     {
       type: "weapon",
       name: "路地裏ピストル",
-      text: "扱いやすい武器。攻撃力 +6。",
+      text: "扱いやすい武器。弾の手応えが少し重くなる。",
       baseCost: 12,
       apply: () => {
         game.player.damage += 6;
@@ -794,7 +794,7 @@ function generateOffers() {
     {
       type: "weapon",
       name: "釘打ち銃",
-      text: "連射寄りの武器。連射速度 +18%、攻撃力 +2。",
+      text: "連射寄りの武器。短い間隔で弾を撃てる。",
       baseCost: 13,
       apply: () => {
         game.player.fireRate *= 1.18;
@@ -804,7 +804,7 @@ function generateOffers() {
     {
       type: "weapon",
       name: "二連バレル",
-      text: "弾を増やす武器。発射弾 +1、攻撃力 -8%。",
+      text: "散らして撃つ武器。弾数は増えるが、一発は少し軽くなる。",
       baseCost: 24,
       apply: () => {
         game.player.projectiles += 1;
@@ -814,7 +814,7 @@ function generateOffers() {
     {
       type: "weapon",
       name: "貫通ライフル",
-      text: "列を抜く武器。弾の貫通 +1、弾速 +12%。",
+      text: "列を抜く武器。弾が敵を貫きやすくなる。",
       baseCost: 18,
       apply: () => {
         game.player.pierce += 1;
@@ -824,7 +824,7 @@ function generateOffers() {
     {
       type: "attachment",
       name: "改造トリガー",
-      text: "武器用アタッチメント。連射速度 +16%。",
+      text: "引き金を短くし、武器の手数を増やす。",
       baseCost: 13,
       apply: () => {
         game.player.fireRate *= 1.16;
@@ -833,7 +833,7 @@ function generateOffers() {
     {
       type: "attachment",
       name: "密輸弾薬",
-      text: "武器用アタッチメント。弾速 +28%、攻撃力 +4。",
+      text: "弾薬の質を上げ、着弾の勢いを強める。",
       baseCost: 16,
       apply: () => {
         game.player.bulletSpeed *= 1.28;
@@ -843,7 +843,7 @@ function generateOffers() {
     {
       type: "attachment",
       name: "スクラップ磁石",
-      text: "回収用アタッチメント。回収範囲 +34。",
+      text: "コインを拾いやすくする回収パーツ。",
       baseCost: 9,
       apply: () => {
         game.player.pickup += 34;
@@ -852,7 +852,7 @@ function generateOffers() {
     {
       type: "attachment",
       name: "軽量スニーカー",
-      text: "機動用アタッチメント。移動速度 +22。",
+      text: "足回りを軽くして、逃げ回りやすくする。",
       baseCost: 10,
       apply: () => {
         game.player.speed += 22;
@@ -861,7 +861,7 @@ function generateOffers() {
     {
       type: "relic",
       name: "錆びた守り札",
-      text: "レリック。最大体力 +22、体力を22回復。",
+      text: "倒れにくくなる古いお守り。傷も少し塞がる。",
       baseCost: 14,
       apply: () => {
         game.player.maxHp += 22;
@@ -871,7 +871,7 @@ function generateOffers() {
     {
       type: "relic",
       name: "割れた防犯バッジ",
-      text: "レリック。防御 +3。",
+      text: "噛まれた時の痛みを和らげる。",
       baseCost: 11,
       apply: () => {
         game.player.armor += 3;
@@ -880,7 +880,7 @@ function generateOffers() {
     {
       type: "relic",
       name: "応急テープ",
-      text: "レリック。毎秒0.7体力を回復。",
+      text: "戦闘中に少しずつ傷を塞ぐ。",
       baseCost: 18,
       apply: () => {
         game.player.regen += 0.7;
@@ -889,7 +889,7 @@ function generateOffers() {
     {
       type: "relic",
       name: "壊れかけの電池",
-      text: "レリック。攻撃力 +10、防御 -2。",
+      text: "危ない力を引き出すが、身を守りにくくなる。",
       baseCost: 15,
       apply: () => {
         game.player.damage += 10;
@@ -994,7 +994,7 @@ function renderShop() {
     hud.offers.append(card);
   });
 
-  hud.stats.replaceChildren();
+  hud.gearInventory.replaceChildren();
   const gear = game.player.gear;
   [
     ["weapon", "武器", gear.weapons],
@@ -1002,33 +1002,15 @@ function renderShop() {
     ["relic", "レリック", gear.relics],
   ].forEach(([type, label, items]) => {
     const item = document.createElement("div");
-    item.className = `stat gear-stat gear-stat-${type}`;
+    item.className = `gear-slot gear-slot-${type}`;
     const span = document.createElement("span");
     span.textContent = label;
     const strong = document.createElement("strong");
-    strong.textContent = `${items.length}個`;
+    strong.textContent = items.length > 0 ? "装備中" : "未装備";
     const small = document.createElement("small");
     small.textContent = gearListText(items);
     item.append(span, strong, small);
-    hud.stats.append(item);
-  });
-
-  const performanceStats = [
-    ["火力", `${game.player.damage.toFixed(1)} / ${game.player.projectiles}発`],
-    ["連射", `${game.player.fireRate.toFixed(2)}/秒`],
-    ["耐久", `${Math.round(game.player.maxHp)} / 防御${Math.round(game.player.armor)}`],
-    ["回収", Math.round(game.player.pickup)],
-  ];
-
-  performanceStats.forEach(([label, value]) => {
-    const item = document.createElement("div");
-    item.className = "stat performance-stat";
-    const span = document.createElement("span");
-    span.textContent = label;
-    const strong = document.createElement("strong");
-    strong.textContent = String(value);
-    item.append(span, strong);
-    hud.stats.append(item);
+    hud.gearInventory.append(item);
   });
 
   const cost = rerollCost();
