@@ -1508,7 +1508,7 @@ function update(dt) {
 
 function updateWeaponTimers(player, dt) {
   for (const weapon of player.gear.weapons) {
-    weapon.shootTimer -= dt;
+    weapon.shootTimer = Math.max(0, weapon.shootTimer - dt);
   }
 }
 
@@ -1908,7 +1908,7 @@ function autoShoot() {
     if (!best) continue;
 
     fireWeapon(weapon, best);
-    weapon.shootTimer += 1 / weapon.fireRate;
+    weapon.shootTimer = 1 / weapon.fireRate;
     game.shake = Math.max(game.shake, weapon.kick);
   }
 }
