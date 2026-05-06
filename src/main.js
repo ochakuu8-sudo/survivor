@@ -160,6 +160,12 @@ function createWeapon(template) {
     explosionDamage: template.explosionDamage || template.damage,
     chainCount: template.chainCount || 0,
     chainRange: template.chainRange || 170,
+    duration: template.duration || 0,
+    tickRate: template.tickRate || 0,
+    fuse: template.fuse || life,
+    areaRadius: template.areaRadius || 0,
+    orbitRadius: template.orbitRadius || 0,
+    orbitSpeed: template.orbitSpeed || 4.2,
     radius: template.radius || 9,
     jitter: template.jitter || 0,
     kick: template.kick || 1.8,
@@ -811,10 +817,15 @@ function resetRun() {
     gear: {
       weapons: [
         createWeapon({
-          name: "古い拳銃",
-          damage: 18,
-          fireRate: 1.65,
-          bulletSpeed: 690,
+          name: "石",
+          damage: 34,
+          fireRate: 0.72,
+          bulletSpeed: 560,
+          life: 0.78,
+          radius: 12,
+          kick: 2.8,
+          bulletTint: [0.88, 0.84, 0.74],
+          bulletGlow: "glowAmber",
         }),
       ],
       attachments: [],
@@ -880,18 +891,25 @@ function boostWeaponImpact(weapon, amount) {
 
 function extendWeaponReach(weapon, multiplier) {
   weapon.range *= multiplier;
-  weapon.bulletSpeed *= multiplier;
-  weapon.life *= 1 + (multiplier - 1) * 0.45;
-  if (weapon.explosionRadius > 0) weapon.explosionRadius += 10;
+  if (weapon.bulletSpeed > 1) {
+    weapon.bulletSpeed *= multiplier;
+    weapon.life *= 1 + (multiplier - 1) * 0.45;
+  }
+  if (weapon.kind === "sustainedLaser") weapon.duration *= 1 + (multiplier - 1) * 0.75;
+  if (weapon.orbitRadius > 0) weapon.orbitRadius *= 1 + (multiplier - 1) * 0.65;
   if (weapon.kind === "chain") weapon.chainRange *= 1 + (multiplier - 1) * 0.7;
 }
 
 function addWeaponPierce(weapon) {
   weapon.pierce += 1;
   if (weapon.kind === "laser") weapon.lineWidth += 4;
-  if (weapon.kind === "flame") weapon.cone = Math.min(0.82, weapon.cone + 0.07);
+  if (weapon.kind === "sustainedLaser") weapon.lineWidth += 5;
+  if (weapon.kind === "flame") weapon.cone = Math.min(0.95, weapon.cone + 0.08);
+  if (weapon.kind === "sword") weapon.cone = Math.min(0.98, weapon.cone + 0.08);
   if (weapon.kind === "chain") weapon.chainCount += 1;
   if (weapon.explosionRadius > 0) weapon.explosionRadius += 16;
+  if (weapon.areaRadius > 0) weapon.areaRadius += 10;
+  if (weapon.kind === "projectile") weapon.radius += 1;
 }
 
 function generateOffers() {
@@ -1146,14 +1164,176 @@ function generateOffers() {
     },
   ];
 
+  const activeWeapons = [
+    {
+      type: "weapon",
+      name: "豆鉄砲",
+      text: "短射程のマシンガン。軽い弾を近距離にばらまく。",
+      baseCost: 14,
+      weapon: {
+        damage: 5,
+        fireRate: 8.2,
+        bulletSpeed: 620,
+        life: 0.34,
+        range: 220,
+        radius: 7,
+        jitter: 0.2,
+        kick: 0.8,
+        bulletTint: [1, 0.92, 0.55],
+        bulletGlow: "glowAmber",
+      },
+    },
+    {
+      type: "weapon",
+      name: "火炎放射器",
+      text: "前方に炎を吹きつける。近くの群れをまとめて焼く。",
+      baseCost: 22,
+      weapon: {
+        kind: "flame",
+        damage: 6,
+        fireRate: 5.5,
+        bulletSpeed: 1,
+        range: 195,
+        cone: 0.62,
+        kick: 1.2,
+        effectTint: [1, 0.42, 0.12],
+        effectGlow: "glowRed",
+      },
+    },
+    {
+      type: "weapon",
+      name: "時限爆弾",
+      text: "その場に爆弾を置く。数秒後に広い範囲を爆破する。",
+      baseCost: 25,
+      weapon: {
+        kind: "timedBomb",
+        damage: 0,
+        explosionDamage: 54,
+        fireRate: 0.42,
+        bulletSpeed: 0,
+        fuse: 2.2,
+        life: 2.2,
+        range: 260,
+        radius: 15,
+        explosionRadius: 150,
+        kick: 3.4,
+        bulletTint: [0.95, 0.72, 0.34],
+        bulletGlow: "glowRed",
+        effectTint: [1, 0.52, 0.16],
+        effectGlow: "glowRed",
+      },
+    },
+    {
+      type: "weapon",
+      name: "レーザー",
+      text: "設置した光線がしばらく残り、触れた敵を連続で焼く。",
+      baseCost: 27,
+      weapon: {
+        kind: "sustainedLaser",
+        damage: 18,
+        fireRate: 0.48,
+        bulletSpeed: 1,
+        range: 560,
+        lineWidth: 18,
+        duration: 1.35,
+        tickRate: 8,
+        pierce: 8,
+        kick: 2.0,
+        effectTint: [0.48, 1, 1],
+        effectGlow: "glowCyan",
+      },
+    },
+    {
+      type: "weapon",
+      name: "モーニングスター",
+      text: "自分の周囲を回る鉄球で、近くの敵を巻き込む。",
+      baseCost: 21,
+      weapon: {
+        kind: "orbit",
+        damage: 20,
+        fireRate: 2.6,
+        bulletSpeed: 1,
+        range: 145,
+        areaRadius: 38,
+        orbitRadius: 82,
+        orbitSpeed: 4.6,
+        kick: 1.5,
+        effectTint: [0.84, 0.88, 1],
+        effectGlow: "glowCyan",
+      },
+    },
+    {
+      type: "weapon",
+      name: "ソード",
+      text: "自身の前方を扇形に斬る。近距離の敵をまとめて払う。",
+      baseCost: 18,
+      weapon: {
+        kind: "sword",
+        damage: 24,
+        fireRate: 1.35,
+        bulletSpeed: 1,
+        range: 135,
+        cone: 0.66,
+        kick: 2.1,
+        effectTint: [0.74, 0.96, 1],
+        effectGlow: "glowCyan",
+      },
+    },
+  ];
+
+  const activeAttachments = [
+    {
+      type: "attachment",
+      name: "威力コア",
+      text: "武器の基礎ダメージを上げる。爆発武器は爆風威力も上がる。",
+      baseCost: 16,
+      attach: (weapon) => {
+        boostWeaponImpact(weapon, 5);
+      },
+    },
+    {
+      type: "attachment",
+      name: "高速機構",
+      text: "武器の攻撃頻度を上げる。設置武器は置き直しが早くなる。",
+      baseCost: 14,
+      attach: (weapon) => {
+        weapon.fireRate *= 1.16;
+      },
+    },
+    {
+      type: "attachment",
+      name: "射程チューブ",
+      text: "弾、炎、斬撃、設置攻撃の届く距離を広げる。",
+      baseCost: 14,
+      attach: (weapon) => {
+        extendWeaponReach(weapon, 1.16);
+      },
+    },
+    {
+      type: "attachment",
+      name: "範囲レンズ",
+      text: "武器の当たり幅や巻き込み範囲を広げる。",
+      baseCost: 17,
+      attach: (weapon) => {
+        addWeaponPierce(weapon);
+      },
+    },
+  ];
+
+  const activePool = [
+    ...activeWeapons,
+    ...activeAttachments,
+    ...pool.filter((item) => item.type === "relic"),
+  ];
+
   const picks = [];
   const used = new Set();
   for (const type of game.player.gear.weapons.length < MAX_WEAPONS ? ["weapon", "attachment", "relic"] : ["attachment", "relic"]) {
-    addOfferPick(pool, picks, used, type);
+    addOfferPick(activePool, picks, used, type);
   }
   let guard = 0;
   while (picks.length < 4 && guard < 40) {
-    addOfferPick(pool, picks, used);
+    addOfferPick(activePool, picks, used);
     guard += 1;
   }
   game.offers = shuffle(picks);
@@ -1278,13 +1458,16 @@ function findWeapon(id) {
 }
 
 function weaponKindLabel(weapon) {
-  if (weapon.name.includes("ノコギリ")) return "投てき";
   const labels = {
-    projectile: "弾丸",
+    projectile: "投射",
     flame: "火炎",
     laser: "レーザー",
+    sustainedLaser: "設置レーザー",
     bomb: "爆発",
+    timedBomb: "時限爆弾",
     chain: "電撃",
+    orbit: "回転",
+    sword: "斬撃",
   };
   return labels[weapon.kind] || "武器";
 }
@@ -1678,6 +1861,10 @@ function updateBullets(dt) {
       if (bullet.explosionRadius > 0) explodeBullet(bullet);
       continue;
     }
+    if (bullet.collides === false) {
+      next.push(bullet);
+      continue;
+    }
 
     let keep = true;
     const bulletCellX = Math.floor(bullet.x / COLLISION_CELL_SIZE);
@@ -1759,7 +1946,7 @@ function damageEnemiesInRadius(x, y, radius, amount, edgeScale = 0.65) {
   return hits;
 }
 
-function damageEnemiesInLine(x1, y1, x2, y2, halfWidth, amount, maxHits = Infinity) {
+function damageEnemiesInLine(x1, y1, x2, y2, halfWidth, amount, maxHits = Infinity, sparkCount = 2, sparkSpeed = 110) {
   const hits = [];
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
@@ -1776,7 +1963,7 @@ function damageEnemiesInLine(x1, y1, x2, y2, halfWidth, amount, maxHits = Infini
   for (let i = 0; i < limit; i += 1) {
     const hit = hits[i];
     const falloff = Math.max(0.72, 1 - i * 0.04);
-    damageEnemy(hit.enemy, amount * falloff, hit.enemy.x, hit.enemy.y, 2, 110);
+    damageEnemy(hit.enemy, amount * falloff, hit.enemy.x, hit.enemy.y, sparkCount, sparkSpeed);
   }
   if (limit > 0) removeDeadEnemies();
   return limit;
@@ -1893,6 +2080,25 @@ function updateEffects(dt) {
   const kept = [];
   for (const effect of game.effects) {
     effect.life -= dt;
+    if (effect.type === "damageLine" && effect.life > 0) {
+      const tickRate = effect.tickRate || 8;
+      const tickInterval = 1 / tickRate;
+      effect.tickTimer = (effect.tickTimer ?? 0) - dt;
+      while (effect.tickTimer <= 0) {
+        damageEnemiesInLine(
+          effect.x1,
+          effect.y1,
+          effect.x2,
+          effect.y2,
+          effect.width * 0.5,
+          (effect.damage || 1) / tickRate,
+          effect.maxHits || Infinity,
+          0,
+          0,
+        );
+        effect.tickTimer += tickInterval;
+      }
+    }
     if (effect.life > 0) kept.push(effect);
   }
   game.effects = kept;
@@ -1951,6 +2157,22 @@ function fireWeapon(weapon, target) {
     fireLaser(weapon, angle);
     return;
   }
+  if (weapon.kind === "sustainedLaser") {
+    fireSustainedLaser(weapon, angle);
+    return;
+  }
+  if (weapon.kind === "timedBomb") {
+    fireTimedBomb(weapon, angle);
+    return;
+  }
+  if (weapon.kind === "orbit") {
+    fireOrbit(weapon);
+    return;
+  }
+  if (weapon.kind === "sword") {
+    fireSword(weapon, angle);
+    return;
+  }
   if (weapon.kind === "chain") {
     fireChain(weapon, target);
     return;
@@ -1972,6 +2194,7 @@ function fireBullet(angle, weapon) {
   const speed = weapon.bulletSpeed;
   const bonus = p.weaponPowerBonus;
   game.bullets.push({
+    kind: "projectile",
     x: p.x + Math.cos(angle) * 25,
     y: p.y + Math.sin(angle) * 25,
     vx: Math.cos(angle) * speed,
@@ -1998,42 +2221,51 @@ function fireFlame(weapon, angle) {
   const originY = p.y + Math.sin(angle) * 20;
   damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus);
 
-  const flameCount = 11;
+  const flameCount = 17;
   for (let i = 0; i < flameCount; i += 1) {
     const fan = flameCount === 1 ? 0 : i / (flameCount - 1);
-    const flameAngle = angle + (fan - 0.5) * weapon.cone * 2 + (Math.random() - 0.5) * 0.16;
-    const start = weapon.range * (0.12 + Math.random() * 0.1);
-    const length = weapon.range * (0.34 + Math.random() * 0.52);
+    const flameAngle = angle + (fan - 0.5) * weapon.cone * 2 + (Math.random() - 0.5) * 0.22;
+    const start = weapon.range * (0.06 + Math.random() * 0.08);
+    const length = weapon.range * (0.38 + Math.random() * 0.55);
     const startX = originX + Math.cos(flameAngle) * start;
     const startY = originY + Math.sin(flameAngle) * start;
     const endX = originX + Math.cos(flameAngle) * length;
     const endY = originY + Math.sin(flameAngle) * length;
+    const hotTint = i % 3 === 0 ? [1, 0.86, 0.22] : [1, 0.42, 0.08];
     addEffect({
       type: "line",
       x1: startX,
       y1: startY,
       x2: endX,
       y2: endY,
-      width: 8 + Math.random() * 12,
-      life: 0.15,
-      maxLife: 0.15,
+      width: 7 + Math.random() * 15,
+      life: 0.13 + Math.random() * 0.05,
+      maxLife: 0.18,
       glow: weapon.effectGlow,
-      tint: weapon.effectTint,
+      tint: hotTint,
     });
-    if (i % 2 === 0) {
-      addEffect({
-        type: "burst",
-        x: endX,
-        y: endY,
-        radius: 22 + Math.random() * 18,
-        life: 0.18,
-        maxLife: 0.18,
-        glow: weapon.effectGlow,
-        tint: weapon.effectTint,
-      });
-    }
+    addEffect({
+      type: "burst",
+      x: originX + Math.cos(flameAngle) * (length * (0.72 + Math.random() * 0.28)),
+      y: originY + Math.sin(flameAngle) * (length * (0.72 + Math.random() * 0.28)),
+      radius: 13 + Math.random() * 22,
+      life: 0.14 + Math.random() * 0.08,
+      maxLife: 0.22,
+      glow: weapon.effectGlow,
+      tint: hotTint,
+    });
   }
-  addSparks(originX + Math.cos(angle) * 36, originY + Math.sin(angle) * 36, 2, 80);
+  addEffect({
+    type: "burst",
+    x: originX + Math.cos(angle) * 38,
+    y: originY + Math.sin(angle) * 38,
+    radius: 38,
+    life: 0.16,
+    maxLife: 0.16,
+    glow: "glowAmber",
+    tint: [1, 0.9, 0.34],
+  });
+  addSparks(originX + Math.cos(angle) * 36, originY + Math.sin(angle) * 36, 3, 100);
 }
 
 function fireLaser(weapon, angle) {
@@ -2067,6 +2299,137 @@ function fireLaser(weapon, angle) {
     glow: "white",
     tint: [1, 1, 1],
   });
+}
+
+function fireSustainedLaser(weapon, angle) {
+  const p = game.player;
+  const startX = p.x + Math.cos(angle) * 28;
+  const startY = p.y + Math.sin(angle) * 28;
+  const endX = startX + Math.cos(angle) * weapon.range;
+  const endY = startY + Math.sin(angle) * weapon.range;
+  const duration = Math.max(0.35, weapon.duration || 1.2);
+  addEffect({
+    type: "damageLine",
+    x1: startX,
+    y1: startY,
+    x2: endX,
+    y2: endY,
+    width: weapon.lineWidth,
+    damage: weapon.damage + p.weaponPowerBonus,
+    tickRate: weapon.tickRate || 8,
+    tickTimer: 0,
+    maxHits: weapon.pierce + 1,
+    life: duration,
+    maxLife: duration,
+    glow: weapon.effectGlow,
+    tint: weapon.effectTint,
+  });
+  addEffect({
+    type: "burst",
+    x: startX,
+    y: startY,
+    radius: weapon.lineWidth * 1.45,
+    life: 0.2,
+    maxLife: 0.2,
+    glow: weapon.effectGlow,
+    tint: weapon.effectTint,
+  });
+}
+
+function fireTimedBomb(weapon, angle) {
+  const p = game.player;
+  const placeX = p.x + Math.cos(angle) * 18;
+  const placeY = p.y + Math.sin(angle) * 18;
+  const fuse = Math.max(0.45, weapon.fuse || weapon.life || 2);
+  game.bullets.push({
+    kind: "timedBomb",
+    x: placeX,
+    y: placeY,
+    vx: 0,
+    vy: 0,
+    angle: game.elapsed,
+    radius: weapon.radius,
+    damage: 0,
+    life: fuse,
+    maxLife: fuse,
+    pierce: 0,
+    explosionRadius: weapon.explosionRadius,
+    explosionDamage: weapon.explosionDamage + p.weaponPowerBonus,
+    bulletTint: weapon.bulletTint,
+    bulletGlow: weapon.bulletGlow,
+    effectTint: weapon.effectTint,
+    effectGlow: weapon.effectGlow,
+    collides: false,
+    hitIds: new Set(),
+  });
+  addEffect({
+    type: "burst",
+    x: placeX,
+    y: placeY,
+    radius: 24,
+    life: 0.18,
+    maxLife: 0.18,
+    glow: weapon.effectGlow,
+    tint: weapon.effectTint,
+  });
+}
+
+function fireOrbit(weapon) {
+  const p = game.player;
+  const spin = game.elapsed * (weapon.orbitSpeed || 4.2) + weapon.id * 1.73;
+  const orbitRadius = weapon.orbitRadius || 78;
+  const areaRadius = weapon.areaRadius || 34;
+  const x = p.x + Math.cos(spin) * orbitRadius;
+  const y = p.y + Math.sin(spin) * orbitRadius;
+  damageEnemiesInRadius(x, y, areaRadius, weapon.damage + p.weaponPowerBonus, 0.72);
+  addEffect({
+    type: "line",
+    x1: p.x,
+    y1: p.y,
+    x2: x,
+    y2: y,
+    width: 6,
+    life: 0.16,
+    maxLife: 0.16,
+    glow: weapon.effectGlow,
+    tint: weapon.effectTint,
+  });
+  addEffect({
+    type: "burst",
+    x,
+    y,
+    radius: areaRadius,
+    life: 0.22,
+    maxLife: 0.22,
+    glow: weapon.effectGlow,
+    tint: weapon.effectTint,
+  });
+}
+
+function fireSword(weapon, angle) {
+  const p = game.player;
+  const originX = p.x + Math.cos(angle) * 14;
+  const originY = p.y + Math.sin(angle) * 14;
+  damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus);
+  const slashCount = 5;
+  for (let i = 0; i < slashCount; i += 1) {
+    const t = slashCount === 1 ? 0 : i / (slashCount - 1);
+    const slashAngle = angle + (t - 0.5) * weapon.cone * 1.75;
+    const inner = weapon.range * 0.28;
+    const outer = weapon.range * (0.9 + Math.random() * 0.12);
+    addEffect({
+      type: "line",
+      x1: originX + Math.cos(slashAngle) * inner,
+      y1: originY + Math.sin(slashAngle) * inner,
+      x2: originX + Math.cos(slashAngle) * outer,
+      y2: originY + Math.sin(slashAngle) * outer,
+      width: 8 + i * 1.4,
+      life: 0.16,
+      maxLife: 0.16,
+      glow: weapon.effectGlow,
+      tint: weapon.effectTint,
+    });
+  }
 }
 
 function fireChain(weapon, target) {
@@ -2318,23 +2681,40 @@ function drawWorld(view, camX, camY, zoom) {
 
   for (const bullet of game.bullets) {
     const screen = worldToScreen(bullet.x, bullet.y, view, camX, camY, zoom);
-    renderer.draw(bullet.bulletGlow || "glowAmber", screen.x, screen.y, 42 * zoom, 30 * zoom, { alpha: 0.32 });
-    renderer.draw("bulletReadable", screen.x, screen.y, bullet.radius * 4.2 * zoom, bullet.radius * 1.55 * zoom, {
-      rotation: bullet.angle,
-      tint: bullet.bulletTint || [1, 1, 1],
-    });
+    if (bullet.kind === "timedBomb") {
+      const fuseAlpha = clamp(bullet.life / (bullet.maxLife || bullet.life), 0, 1);
+      const blink = Math.sin(game.elapsed * (10 + (1 - fuseAlpha) * 18)) > 0 ? 1 : 0.45;
+      renderer.draw(bullet.bulletGlow || "glowRed", screen.x, screen.y, 52 * zoom, 52 * zoom, { alpha: 0.22 + (1 - fuseAlpha) * 0.22 });
+      renderer.draw("shadow", screen.x, screen.y + 11 * zoom, 34 * zoom, 13 * zoom, { alpha: 0.58 });
+      renderer.draw("white", screen.x, screen.y, bullet.radius * 2.2 * zoom, bullet.radius * 2.2 * zoom, {
+        rotation: game.elapsed * 0.7,
+        tint: bullet.bulletTint || [1, 0.75, 0.35],
+        alpha: 0.92,
+      });
+      renderer.draw("white", screen.x, screen.y - bullet.radius * 1.35 * zoom, 7 * zoom, 7 * zoom, {
+        tint: [1, 0.22, 0.16],
+        alpha: blink,
+      });
+    } else {
+      renderer.draw(bullet.bulletGlow || "glowAmber", screen.x, screen.y, 42 * zoom, 30 * zoom, { alpha: 0.32 });
+      renderer.draw("bulletReadable", screen.x, screen.y, bullet.radius * 4.2 * zoom, bullet.radius * 1.55 * zoom, {
+        rotation: bullet.angle,
+        tint: bullet.bulletTint || [1, 1, 1],
+      });
+    }
   }
 }
 
 function drawEffects(view, camX, camY, zoom) {
   for (const effect of game.effects) {
     const alpha = clamp(effect.life / effect.maxLife, 0, 1);
-    if (effect.type === "line") {
+    if (effect.type === "line" || effect.type === "damageLine") {
+      const pulse = effect.type === "damageLine" ? 1 + Math.sin(game.elapsed * 26) * 0.12 : 1;
       drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * 1.9, view, camX, camY, zoom, {
         tint: effect.tint || [1, 1, 1],
-        alpha: alpha * 0.3,
+        alpha: alpha * (effect.type === "damageLine" ? 0.42 : 0.3),
       });
-      drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width, view, camX, camY, zoom, {
+      drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * pulse, view, camX, camY, zoom, {
         tint: effect.tint || [1, 1, 1],
         alpha: alpha * 0.9,
       });
