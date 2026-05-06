@@ -20,11 +20,15 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
   min-width: 320px;
   background: #18224a;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button {
@@ -35,6 +39,7 @@ button {
   font: inherit;
   font-weight: 800;
   cursor: pointer;
+  touch-action: manipulation;
   transition:
     transform 120ms ease,
     background 120ms ease,
@@ -64,6 +69,7 @@ button:disabled {
 #app {
   position: relative;
   isolation: isolate;
+  min-height: 100dvh;
 }
 
 #game {
@@ -72,6 +78,7 @@ button:disabled {
   height: 100%;
   background: #20306f;
   image-rendering: pixelated;
+  touch-action: none;
 }
 
 #vignette,
@@ -184,6 +191,8 @@ button:disabled {
   box-shadow: 0 14px 0 rgba(18, 14, 52, 0.72);
   transform: translate(-50%, -50%);
   backdrop-filter: blur(18px);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .panel.narrow {
@@ -312,6 +321,94 @@ h1 {
   line-height: 1.5;
 }
 
+#touchControls {
+  display: none;
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+#touchControls.disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stick {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 132px;
+  height: 132px;
+  border: 2px solid rgba(255, 249, 242, 0.38);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 249, 242, 0.12), rgba(85, 246, 199, 0.1)),
+    rgba(33, 28, 78, 0.62);
+  box-shadow:
+    0 8px 0 rgba(19, 15, 50, 0.45),
+    inset 0 0 0 12px rgba(255, 255, 255, 0.04);
+  opacity: 0;
+  pointer-events: none;
+  touch-action: none;
+  backdrop-filter: blur(8px);
+  transform: translate(-50%, -50%) scale(0.82);
+  transition:
+    opacity 100ms ease,
+    transform 100ms ease;
+}
+
+.stick.active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.stick::before,
+.stick::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+}
+
+.stick::before {
+  width: 72px;
+  height: 72px;
+  border: 2px solid rgba(157, 247, 255, 0.28);
+}
+
+.stick::after {
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 243, 196, 0.58);
+}
+
+.stick-thumb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  border: 2px solid rgba(255, 243, 196, 0.82);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, #55f6c7, #2ec6cf 52%, #2677c5),
+    #55f6c7;
+  box-shadow:
+    0 5px 0 rgba(19, 15, 50, 0.48),
+    inset 0 7px 0 rgba(255, 255, 255, 0.24);
+  transform: translate(-50%, -50%);
+}
+
+@media (hover: none), (pointer: coarse) {
+  #touchControls {
+    display: block;
+  }
+}
+
 @media (max-width: 760px) {
   #hud {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -368,5 +465,39 @@ h1 {
 
   .panel {
     padding: 16px;
+  }
+
+  .stick {
+    width: 112px;
+    height: 112px;
+  }
+
+  .stick::before {
+    width: 60px;
+    height: 60px;
+  }
+
+  .stick-thumb {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  #hud {
+    grid-template-columns: repeat(5, minmax(58px, auto));
+    right: auto;
+    width: min(560px, calc(100vw - 156px));
+  }
+
+  .hud-block,
+  .hud-meter {
+    min-height: 42px;
+    padding: 6px 8px;
+  }
+
+  .stick {
+    width: 108px;
+    height: 108px;
   }
 }

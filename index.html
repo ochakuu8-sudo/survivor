@@ -2,7 +2,7 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>夜街サバイバー</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="src/styles.css" />
@@ -66,6 +66,12 @@
         <p id="resultText"></p>
         <button id="restartBtn" type="button" class="primary">やり直す</button>
       </section>
+
+      <div id="touchControls" aria-hidden="true">
+        <div id="moveStick" class="stick">
+          <div id="moveThumb" class="stick-thumb"></div>
+        </div>
+      </div>
     </main>
 
     <script type="module" src="src/main.js"></script>

@@ -21,13 +21,22 @@ const hud = {
   gameOver: document.querySelector("#gameOver"),
   result: document.querySelector("#resultText"),
   restart: document.querySelector("#restartBtn"),
+  touchControls: document.querySelector("#touchControls"),
+  moveStick: document.querySelector("#moveStick"),
+  moveThumb: document.querySelector("#moveThumb"),
 };
 
 const keys = new Set();
 const pointer = {
   down: false,
+  activeId: null,
+  startX: 0,
+  startY: 0,
   x: 0,
   y: 0,
+  moveX: 0,
+  moveY: 0,
+  strength: 0,
 };
 
 let renderer;
@@ -955,6 +964,7 @@ function updateHud() {
   hud.kills.textContent = String(game.waveKills);
   hud.hp.style.width = `${clamp((game.player.hp / game.player.maxHp) * 100, 0, 100)}%`;
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
+  syncTouchControls();
 }
 
 function formatTime(value) {
@@ -1007,23 +1017,19 @@ function updateMovement(dt) {
   if (keys.has("KeyD") || keys.has("ArrowRight")) x += 1;
   if (keys.has("KeyW") || keys.has("ArrowUp")) y -= 1;
   if (keys.has("KeyS") || keys.has("ArrowDown")) y += 1;
+  const hasKeyboardInput = x !== 0 || y !== 0;
 
-  if (x === 0 && y === 0 && pointer.down) {
-    const view = viewSize();
-    const dx = pointer.x - view.w / 2;
-    const dy = pointer.y - view.h / 2;
-    const input = normalize(dx, dy);
-    if (input.len > 28) {
-      x = input.x;
-      y = input.y;
-    }
+  if (!hasKeyboardInput && pointer.down) {
+    x = pointer.moveX;
+    y = pointer.moveY;
   }
 
   const move = normalize(x, y);
+  const speedScale = hasKeyboardInput ? 1 : clamp(pointer.strength, 0, 1);
   p.moveX = move.x;
   p.moveY = move.y;
-  p.x += move.x * p.speed * dt;
-  p.y += move.y * p.speed * dt;
+  p.x += move.x * p.speed * speedScale * dt;
+  p.y += move.y * p.speed * speedScale * dt;
 }
 
 function updateCamera(dt) {
@@ -1561,6 +1567,85 @@ function resize() {
   renderer.resize(size.width, size.height, size.dpr);
 }
 
+function syncTouchControls() {
+  if (!hud.touchControls) return;
+  const isFighting = game.mode === "fight";
+  hud.touchControls.classList.toggle("disabled", !isFighting);
+  if (!isFighting && pointer.down) resetVirtualMove();
+}
+
+function beginVirtualMove(event) {
+  if (game.mode !== "fight") return;
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+  event.preventDefault();
+
+  pointer.down = true;
+  pointer.activeId = event.pointerId;
+  pointer.startX = event.clientX;
+  pointer.startY = event.clientY;
+  pointer.x = event.clientX;
+  pointer.y = event.clientY;
+  showVirtualStick(pointer.startX, pointer.startY);
+
+  if (event.currentTarget?.setPointerCapture) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  updateVirtualMove(event);
+}
+
+function showVirtualStick(x, y) {
+  if (!hud.moveStick) return;
+  hud.moveStick.style.left = `${x}px`;
+  hud.moveStick.style.top = `${y}px`;
+  hud.moveStick.classList.add("active");
+}
+
+function updateVirtualMove(event) {
+  if (!pointer.down || event.pointerId !== pointer.activeId) return;
+  event.preventDefault();
+
+  pointer.x = event.clientX;
+  pointer.y = event.clientY;
+
+  const dx = pointer.x - pointer.startX;
+  const dy = pointer.y - pointer.startY;
+  const input = normalize(dx, dy);
+  const stickSize = hud.moveStick ? hud.moveStick.getBoundingClientRect().width : 128;
+  const radius = Math.max(34, stickSize * 0.34);
+  const deadZone = radius * 0.18;
+  const rawStrength = clamp((input.len - deadZone) / (radius - deadZone), 0, 1);
+
+  pointer.strength = rawStrength;
+  pointer.moveX = rawStrength > 0 ? input.x : 0;
+  pointer.moveY = rawStrength > 0 ? input.y : 0;
+
+  if (hud.moveThumb) {
+    const distance = Math.min(input.len, radius);
+    const thumbX = input.x * distance;
+    const thumbY = input.y * distance;
+    hud.moveThumb.style.transform = `translate(-50%, -50%) translate(${thumbX}px, ${thumbY}px)`;
+  }
+}
+
+function endVirtualMove(event) {
+  if (event && event.pointerId !== pointer.activeId) return;
+  resetVirtualMove();
+}
+
+function resetVirtualMove() {
+  pointer.down = false;
+  pointer.activeId = null;
+  pointer.moveX = 0;
+  pointer.moveY = 0;
+  pointer.strength = 0;
+  if (hud.moveStick) {
+    hud.moveStick.classList.remove("active");
+  }
+  if (hud.moveThumb) {
+    hud.moveThumb.style.transform = "translate(-50%, -50%)";
+  }
+}
+
 function bindInput() {
   window.addEventListener("keydown", (event) => {
     keys.add(event.code);
@@ -1569,21 +1654,13 @@ function bindInput() {
   window.addEventListener("keyup", (event) => keys.delete(event.code));
 
   canvas.addEventListener("pointerdown", (event) => {
-    pointer.down = true;
-    pointer.x = event.clientX;
-    pointer.y = event.clientY;
-    canvas.setPointerCapture(event.pointerId);
+    beginVirtualMove(event);
   });
-  canvas.addEventListener("pointermove", (event) => {
-    pointer.x = event.clientX;
-    pointer.y = event.clientY;
-  });
-  canvas.addEventListener("pointerup", () => {
-    pointer.down = false;
-  });
-  canvas.addEventListener("pointercancel", () => {
-    pointer.down = false;
-  });
+  canvas.addEventListener("pointermove", updateVirtualMove);
+
+  window.addEventListener("pointerup", endVirtualMove);
+  window.addEventListener("pointercancel", endVirtualMove);
+  window.addEventListener("blur", resetVirtualMove);
 }
 
 function frame(now) {
