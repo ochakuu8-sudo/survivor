@@ -1694,14 +1694,9 @@ function attachmentCanAppear(attachment, rarity) {
   return rarityRank(rarity) >= rarityRank(attachment.minRarity || "normal");
 }
 
-function pickRandomAttachment(slotIndex, excludedKeys = new Set()) {
+function pickRandomAttachment(slotIndex) {
   const rarity = rollAttachmentRarity(slotIndex);
-  let candidates = ACTIVE_ATTACHMENTS.filter((attachment) =>
-    attachmentCanAppear(attachment, rarity) && !excludedKeys.has(attachment.key),
-  );
-  if (candidates.length === 0) {
-    candidates = ACTIVE_ATTACHMENTS.filter((attachment) => attachmentCanAppear(attachment, rarity));
-  }
+  const candidates = ACTIVE_ATTACHMENTS.filter((attachment) => attachmentCanAppear(attachment, rarity));
   if (candidates.length === 0) return null;
   const definition = candidates[Math.floor(Math.random() * candidates.length)];
   return { definition, rarity };
@@ -1728,8 +1723,7 @@ function upgradeWeaponAttachment(weaponId) {
   const cost = weaponUpgradeCost(weapon);
   if (game.money < cost) return;
 
-  const ownedKeys = new Set(weapon.attachments.map((attachment) => attachment.key));
-  const attachment = pickRandomAttachment(weapon.attachments.length, ownedKeys);
+  const attachment = pickRandomAttachment(weapon.attachments.length);
   const attachmentIndex = weapon.attachments.length;
   if (!addAttachmentToWeapon(weapon, attachment)) return;
 
@@ -1746,8 +1740,7 @@ function rerollWeaponAttachment(weaponId, attachmentIndex) {
   const cost = attachmentRerollCost(weapon);
   if (game.money < cost) return;
 
-  const excludedKeys = new Set(weapon.attachments.map((attachment) => attachment.key));
-  const replacement = pickRandomAttachment(attachmentIndex, excludedKeys);
+  const replacement = pickRandomAttachment(attachmentIndex);
   if (!replacement) return;
   weapon.attachments[attachmentIndex] = {
     key: replacement.definition.key,
