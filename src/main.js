@@ -69,6 +69,18 @@ const game = {
   offers: [],
 };
 
+const OFFER_TYPE_LABELS = {
+  weapon: "武器",
+  attachment: "アタッチメント",
+  relic: "レリック",
+};
+
+const GEAR_KEYS = {
+  weapon: "weapons",
+  attachment: "attachments",
+  relic: "relics",
+};
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -717,6 +729,11 @@ function resetRun() {
     shootTimer: 0.45,
     moveX: 0,
     moveY: 0,
+    gear: {
+      weapons: ["古い拳銃"],
+      attachments: [],
+      relics: [],
+    },
   };
   game.enemies = [];
   game.bullets = [];
@@ -766,57 +783,28 @@ function endRun() {
 function generateOffers() {
   const pool = [
     {
-      name: "中空弾",
-      text: "攻撃力 +6。",
+      type: "weapon",
+      name: "路地裏ピストル",
+      text: "扱いやすい武器。攻撃力 +6。",
       baseCost: 12,
       apply: () => {
         game.player.damage += 6;
       },
     },
     {
-      name: "改造トリガー",
-      text: "連射速度 +18%。",
+      type: "weapon",
+      name: "釘打ち銃",
+      text: "連射寄りの武器。連射速度 +18%、攻撃力 +2。",
       baseCost: 13,
       apply: () => {
         game.player.fireRate *= 1.18;
+        game.player.damage += 2;
       },
     },
     {
-      name: "軽いスニーカー",
-      text: "移動速度 +22。",
-      baseCost: 10,
-      apply: () => {
-        game.player.speed += 22;
-      },
-    },
-    {
-      name: "スクラップ磁石",
-      text: "回収範囲 +34。",
-      baseCost: 9,
-      apply: () => {
-        game.player.pickup += 34;
-      },
-    },
-    {
-      name: "補強パーカー",
-      text: "最大体力 +22、体力を22回復。",
-      baseCost: 14,
-      apply: () => {
-        game.player.maxHp += 22;
-        game.player.hp = clamp(game.player.hp + 22, 1, game.player.maxHp);
-      },
-    },
-    {
-      name: "路上の防具板",
-      text: "防御 +3。",
-      baseCost: 11,
-      apply: () => {
-        game.player.armor += 3;
-      },
-    },
-    {
+      type: "weapon",
       name: "二連バレル",
-      text: "発射弾 +1、攻撃力 -8%。",
+      text: "弾を増やす武器。発射弾 +1、攻撃力 -8%。",
       baseCost: 24,
       apply: () => {
         game.player.projectiles += 1;
@@ -824,65 +812,129 @@ function generateOffers() {
       },
     },
     {
-      name: "貫通クリップ",
-      text: "弾の貫通 +1。",
-      baseCost: 17,
-      apply: () => {
-        game.player.pierce += 1;
-      },
-    },
-    {
-      name: "苦いコーヒー",
-      text: "移動速度 +15%、最大体力 -8。",
-      baseCost: 8,
-      apply: () => {
-        game.player.speed *= 1.15;
-        game.player.maxHp = Math.max(35, game.player.maxHp - 8);
-        game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
-      },
-    },
-    {
-      name: "壊れかけの電池",
-      text: "攻撃力 +10、防御 -2。",
-      baseCost: 15,
-      apply: () => {
-        game.player.damage += 10;
-        game.player.armor -= 2;
-      },
-    },
-    {
-      name: "応急テープ",
-      text: "毎秒0.7体力を回復。",
+      type: "weapon",
+      name: "貫通ライフル",
+      text: "列を抜く武器。弾の貫通 +1、弾速 +12%。",
       baseCost: 18,
       apply: () => {
-        game.player.regen += 0.7;
+        game.player.pierce += 1;
+        game.player.bulletSpeed *= 1.12;
       },
     },
     {
+      type: "attachment",
+      name: "改造トリガー",
+      text: "武器用アタッチメント。連射速度 +16%。",
+      baseCost: 13,
+      apply: () => {
+        game.player.fireRate *= 1.16;
+      },
+    },
+    {
+      type: "attachment",
       name: "密輸弾薬",
-      text: "弾速 +28%、攻撃力 +4。",
+      text: "武器用アタッチメント。弾速 +28%、攻撃力 +4。",
       baseCost: 16,
       apply: () => {
         game.player.bulletSpeed *= 1.28;
         game.player.damage += 4;
       },
     },
+    {
+      type: "attachment",
+      name: "スクラップ磁石",
+      text: "回収用アタッチメント。回収範囲 +34。",
+      baseCost: 9,
+      apply: () => {
+        game.player.pickup += 34;
+      },
+    },
+    {
+      type: "attachment",
+      name: "軽量スニーカー",
+      text: "機動用アタッチメント。移動速度 +22。",
+      baseCost: 10,
+      apply: () => {
+        game.player.speed += 22;
+      },
+    },
+    {
+      type: "relic",
+      name: "錆びた守り札",
+      text: "レリック。最大体力 +22、体力を22回復。",
+      baseCost: 14,
+      apply: () => {
+        game.player.maxHp += 22;
+        game.player.hp = clamp(game.player.hp + 22, 1, game.player.maxHp);
+      },
+    },
+    {
+      type: "relic",
+      name: "割れた防犯バッジ",
+      text: "レリック。防御 +3。",
+      baseCost: 11,
+      apply: () => {
+        game.player.armor += 3;
+      },
+    },
+    {
+      type: "relic",
+      name: "応急テープ",
+      text: "レリック。毎秒0.7体力を回復。",
+      baseCost: 18,
+      apply: () => {
+        game.player.regen += 0.7;
+      },
+    },
+    {
+      type: "relic",
+      name: "壊れかけの電池",
+      text: "レリック。攻撃力 +10、防御 -2。",
+      baseCost: 15,
+      apply: () => {
+        game.player.damage += 10;
+        game.player.armor -= 2;
+      },
+    },
   ];
 
   const picks = [];
   const used = new Set();
-  while (picks.length < 4) {
-    const index = Math.floor(Math.random() * pool.length);
-    if (used.has(index)) continue;
-    used.add(index);
-    const template = pool[index];
-    picks.push({
-      ...template,
-      cost: Math.max(4, Math.round(template.baseCost * (1 + game.wave * 0.14) + Math.random() * 4)),
-      bought: false,
-    });
+  for (const type of ["weapon", "attachment", "relic"]) {
+    addOfferPick(pool, picks, used, type);
   }
-  game.offers = picks;
+  while (picks.length < 4) {
+    addOfferPick(pool, picks, used);
+  }
+  game.offers = shuffle(picks);
+}
+
+function addOfferPick(pool, picks, used, type = "") {
+  const candidates = [];
+  pool.forEach((offer, index) => {
+    if (used.has(index)) return;
+    if (type && offer.type !== type) return;
+    candidates.push(index);
+  });
+  if (candidates.length === 0) return;
+
+  const index = candidates[Math.floor(Math.random() * candidates.length)];
+  used.add(index);
+  const template = pool[index];
+  picks.push({
+    ...template,
+    cost: Math.max(4, Math.round(template.baseCost * (1 + game.wave * 0.14) + Math.random() * 4)),
+    bought: false,
+  });
+}
+
+function shuffle(items) {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
 
 function rerollCost() {
@@ -895,9 +947,16 @@ function buyOffer(index) {
   game.money -= offer.cost;
   offer.bought = true;
   offer.apply();
+  rememberGear(offer);
   game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
   renderShop();
   updateHud();
+}
+
+function rememberGear(offer) {
+  const key = GEAR_KEYS[offer.type];
+  if (!key || !game.player.gear) return;
+  game.player.gear[key].push(offer.name);
 }
 
 function renderShop() {
@@ -906,7 +965,11 @@ function renderShop() {
 
   game.offers.forEach((offer, index) => {
     const card = document.createElement("article");
-    card.className = "offer";
+    card.className = `offer offer-${offer.type}`;
+
+    const type = document.createElement("span");
+    type.className = `offer-type offer-type-${offer.type}`;
+    type.textContent = OFFER_TYPE_LABELS[offer.type] || "装備";
 
     const title = document.createElement("h2");
     title.textContent = offer.name;
@@ -927,25 +990,39 @@ function renderShop() {
     button.addEventListener("click", () => buyOffer(index));
 
     price.append(cost, button);
-    card.append(title, body, price);
+    card.append(type, title, body, price);
     hud.offers.append(card);
   });
 
-  const stats = [
-    ["攻撃力", game.player.damage.toFixed(1)],
+  hud.stats.replaceChildren();
+  const gear = game.player.gear;
+  [
+    ["weapon", "武器", gear.weapons],
+    ["attachment", "アタッチメント", gear.attachments],
+    ["relic", "レリック", gear.relics],
+  ].forEach(([type, label, items]) => {
+    const item = document.createElement("div");
+    item.className = `stat gear-stat gear-stat-${type}`;
+    const span = document.createElement("span");
+    span.textContent = label;
+    const strong = document.createElement("strong");
+    strong.textContent = `${items.length}個`;
+    const small = document.createElement("small");
+    small.textContent = gearListText(items);
+    item.append(span, strong, small);
+    hud.stats.append(item);
+  });
+
+  const performanceStats = [
+    ["火力", `${game.player.damage.toFixed(1)} / ${game.player.projectiles}発`],
     ["連射", `${game.player.fireRate.toFixed(2)}/秒`],
-    ["移動", Math.round(game.player.speed)],
-    ["最大体力", Math.round(game.player.maxHp)],
-    ["防御", Math.round(game.player.armor)],
-    ["回収範囲", Math.round(game.player.pickup)],
-    ["弾数", game.player.projectiles],
-    ["貫通", game.player.pierce],
+    ["耐久", `${Math.round(game.player.maxHp)} / 防御${Math.round(game.player.armor)}`],
+    ["回収", Math.round(game.player.pickup)],
   ];
 
-  hud.stats.replaceChildren();
-  stats.forEach(([label, value]) => {
+  performanceStats.forEach(([label, value]) => {
     const item = document.createElement("div");
-    item.className = "stat";
+    item.className = "stat performance-stat";
     const span = document.createElement("span");
     span.textContent = label;
     const strong = document.createElement("strong");
@@ -957,6 +1034,12 @@ function renderShop() {
   const cost = rerollCost();
   hud.reroll.textContent = `リロール ${cost}枚`;
   hud.reroll.disabled = game.money < cost;
+}
+
+function gearListText(items) {
+  if (items.length === 0) return "未装備";
+  const recent = items.slice(-3).join(" / ");
+  return items.length > 3 ? `${recent} ほか${items.length - 3}` : recent;
 }
 
 function updateHud() {
