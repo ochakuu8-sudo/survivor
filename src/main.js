@@ -279,6 +279,12 @@ function buildAtlas() {
   add("playerReadable", 72, 72, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelPlayer, 1, "rgba(17, 12, 43, 0.58)");
   });
+  add("playerWalkAReadable", 72, 72, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelPlayer(target, width, height, -1), 1, "rgba(17, 12, 43, 0.58)");
+  });
+  add("playerWalkBReadable", 72, 72, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelPlayer(target, width, height, 1), 1, "rgba(17, 12, 43, 0.58)");
+  });
 
   add("zombieA", 72, 72, (ctx, w, h) => drawPixelZombie(ctx, w, h, "#98f06e", "#5131a8", "#ff7a5c"));
   add("zombieB", 72, 72, (ctx, w, h) => drawPixelZombie(ctx, w, h, "#c5ff6b", "#f04d8b", "#ffe46b"));
@@ -305,6 +311,10 @@ function buildAtlas() {
   });
   add("cashReadable", 44, 44, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelCash, 1, "rgba(17, 12, 43, 0.5)");
+  });
+
+  add("walkDust", 34, 22, (ctx, w, h) => {
+    drawPixelWalkDust(ctx, w, h);
   });
 
   add("spark", 40, 40, (ctx, w, h) => {
@@ -418,6 +428,16 @@ function drawPixelBullet(ctx) {
   ctx.fillRect(42, 8, 4, 4);
 }
 
+function drawPixelWalkDust(ctx, w, h) {
+  ctx.fillStyle = "rgba(35, 25, 76, 0.22)";
+  ctx.fillRect(6, 13, 22, 5);
+  ctx.fillStyle = "rgba(157, 247, 255, 0.24)";
+  ctx.fillRect(8, 10, 8, 4);
+  ctx.fillRect(19, 9, 7, 4);
+  ctx.fillStyle = "rgba(255, 243, 196, 0.22)";
+  ctx.fillRect(14, 7, 8, 4);
+}
+
 function drawPixelCash(ctx) {
   ctx.fillStyle = "rgba(35, 25, 76, 0.28)";
   ctx.beginPath();
@@ -488,9 +508,15 @@ function drawPixelCar(ctx, w, h) {
   px(ctx, x + 2, y + 18, 8, 8, "#ff7a5c");
 }
 
-function drawPixelPlayer(ctx, w, h) {
+function drawPixelPlayer(ctx, w, h, step = 0) {
   const x = w / 2 - 20;
-  const y = h / 2 - 30;
+  const y = h / 2 - 30 + (step === 0 ? 0 : -1);
+  const leftLift = step < 0 ? -1 : step > 0 ? 2 : 0;
+  const rightLift = step > 0 ? -1 : step < 0 ? 2 : 0;
+  const leftShift = step < 0 ? -2 : step > 0 ? 1 : 0;
+  const rightShift = step > 0 ? 2 : step < 0 ? -1 : 0;
+  const leftArmLift = step < 0 ? 2 : step > 0 ? -2 : 0;
+  const rightArmLift = step > 0 ? 2 : step < 0 ? -2 : 0;
   px(ctx, x + 2, y + 56, 36, 7, "rgba(35, 25, 76, 0.26)");
   px(ctx, x + 5, y + 9, 30, 22, "#f4bf91");
   px(ctx, x + 3, y + 3, 30, 9, "#2b184c");
@@ -512,17 +538,17 @@ function drawPixelPlayer(ctx, w, h) {
   px(ctx, x + 16, y + 35, 8, 5, "#fff3c4");
   px(ctx, x + 15, y + 45, 4, 4, "#5a2825");
   px(ctx, x + 23, y + 50, 5, 3, "#8b5a1f");
-  px(ctx, x + 0, y + 33, 8, 21, "#a94424");
-  px(ctx, x + 32, y + 33, 8, 21, "#a94424");
-  px(ctx, x + 1, y + 51, 7, 3, "#d8d0b0");
-  px(ctx, x + 32, y + 51, 7, 3, "#d8d0b0");
-  px(ctx, x + 1, y + 54, 7, 4, "#f4bf91");
-  px(ctx, x + 32, y + 54, 7, 4, "#f4bf91");
+  px(ctx, x + 0, y + 33 + leftArmLift, 8, 21, "#a94424");
+  px(ctx, x + 32, y + 33 + rightArmLift, 8, 21, "#a94424");
+  px(ctx, x + 1, y + 51 + leftArmLift, 7, 3, "#d8d0b0");
+  px(ctx, x + 32, y + 51 + rightArmLift, 7, 3, "#d8d0b0");
+  px(ctx, x + 1, y + 54 + leftArmLift, 7, 4, "#f4bf91");
+  px(ctx, x + 32, y + 54 + rightArmLift, 7, 4, "#f4bf91");
   px(ctx, x + 33, y + 45, 5, 8, "#742f27");
-  px(ctx, x + 9, y + 56, 9, 13, "#26345f");
-  px(ctx, x + 23, y + 56, 9, 13, "#26345f");
-  px(ctx, x + 7, y + 66, 13, 4, "#2a2336");
-  px(ctx, x + 21, y + 66, 13, 4, "#2a2336");
+  px(ctx, x + 9 + leftShift, y + 56 + leftLift, 9, 13, "#26345f");
+  px(ctx, x + 23 + rightShift, y + 56 + rightLift, 9, 13, "#26345f");
+  px(ctx, x + 7 + leftShift, y + 66 + leftLift, 13, 4, "#2a2336");
+  px(ctx, x + 21 + rightShift, y + 66 + rightLift, 13, 4, "#2a2336");
   px(ctx, x + 17, y + 47, 7, 5, "#3b2f3d");
 }
 
@@ -779,6 +805,8 @@ function resetRun() {
     weaponPowerBonus: 0,
     moveX: 0,
     moveY: 0,
+    walkTime: 0,
+    walkDustTimer: 0,
     gear: {
       weapons: [
         createWeapon({
@@ -1439,6 +1467,17 @@ function updateMovement(dt) {
   p.moveY = move.y;
   p.x += move.x * p.speed * speedScale * dt;
   p.y += move.y * p.speed * speedScale * dt;
+  if (move.len > 0 && speedScale > 0.05) {
+    p.walkTime = (p.walkTime + dt * (7.5 + speedScale * 3.5)) % 1000;
+    p.walkDustTimer -= dt;
+    if (p.walkDustTimer <= 0) {
+      addWalkDust(p.x - move.x * 15, p.y + 24 - move.y * 8, move.x, move.y);
+      p.walkDustTimer = 0.13;
+    }
+  } else {
+    p.walkTime = 0;
+    p.walkDustTimer = 0;
+  }
 }
 
 function updateCamera(dt) {
@@ -2019,6 +2058,22 @@ function addSparks(x, y, count, speed, sprite = "spark") {
   }
 }
 
+function addWalkDust(x, y, moveX, moveY) {
+  const side = Math.random() > 0.5 ? 1 : -1;
+  const sideX = -moveY * side;
+  const sideY = moveX * side;
+  game.particles.push({
+    x: x + sideX * 7,
+    y: y + sideY * 5,
+    vx: -moveX * (26 + Math.random() * 18) + sideX * 12,
+    vy: -moveY * (18 + Math.random() * 14) + sideY * 8,
+    life: 0.2,
+    maxLife: 0.2,
+    size: 18 + Math.random() * 8,
+    sprite: "walkDust",
+  });
+}
+
 function render() {
   const view = viewSize();
   const zoom = cameraZoom(view);
@@ -2215,10 +2270,15 @@ function drawWorldLine(x1, y1, x2, y2, width, view, camX, camY, zoom, options = 
 
 function drawPlayer(player, view, camX, camY, zoom) {
   const screen = worldToScreen(player.x, player.y, view, camX, camY, zoom);
+  const moving = Math.hypot(player.moveX, player.moveY) > 0.05;
+  const walkPulse = moving ? Math.sin(player.walkTime * TAU) : 0;
+  const sprite = moving
+    ? (Math.floor(player.walkTime * 8) % 2 === 0 ? "playerWalkAReadable" : "playerWalkBReadable")
+    : "playerReadable";
   const lean = clamp(player.moveX, -1, 1) * 0.08;
   renderer.draw("glowCyan", screen.x, screen.y + 4 * zoom, 94 * zoom, 82 * zoom, { alpha: 0.2 });
-  renderer.draw("shadow", screen.x, screen.y + 25 * zoom, 72 * zoom, 32 * zoom, { alpha: 0.82 });
-  renderer.draw("playerReadable", screen.x, screen.y - 3 * zoom, 62 * zoom, 62 * zoom, { rotation: lean });
+  renderer.draw("shadow", screen.x, screen.y + 25 * zoom, 72 * (1 + Math.abs(walkPulse) * 0.08) * zoom, 32 * zoom, { alpha: 0.82 });
+  renderer.draw(sprite, screen.x, screen.y + (-3 + (moving ? walkPulse * 1.2 : 0)) * zoom, 62 * zoom, 62 * zoom, { rotation: lean });
 }
 
 function drawEnemy(enemy, view, camX, camY, zoom) {
