@@ -11,6 +11,7 @@ const hud = {
   wave: document.querySelector("#waveText"),
   time: document.querySelector("#timeText"),
   hp: document.querySelector("#hpFill"),
+  hpText: document.querySelector("#hpText"),
   cash: document.querySelector("#cashText"),
   kills: document.querySelector("#killText"),
   hitFlash: document.querySelector("#hitFlash"),
@@ -1459,6 +1460,7 @@ function updateHud() {
   hud.cash.textContent = String(game.money);
   hud.kills.textContent = String(game.waveKills);
   hud.hp.style.width = `${clamp((game.player.hp / game.player.maxHp) * 100, 0, 100)}%`;
+  if (hud.hpText) hud.hpText.textContent = `${Math.ceil(game.player.hp)}/${Math.ceil(game.player.maxHp)}`;
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
   syncTouchControls();
 }
@@ -1602,7 +1604,9 @@ function spawnEnemy() {
     hp: baseHp,
     maxHp: baseHp,
     speed: 78 + wave * 3,
-    damage: 13 + wave * 1.1,
+    attackDamage: Math.round(9 + wave * 0.8),
+    attackCooldown: Math.max(0.74, 1.08 - wave * 0.012),
+    attackTimer: 0,
     value: 2 + Math.floor(wave / 2),
     sprite: "zombieA",
     readableSprite: "zombieAReadable",
@@ -1616,7 +1620,8 @@ function spawnEnemy() {
     enemy.hp = baseHp * 0.72;
     enemy.maxHp = enemy.hp;
     enemy.speed = 122 + wave * 4;
-    enemy.damage = 10 + wave;
+    enemy.attackDamage = Math.round(7 + wave * 0.65);
+    enemy.attackCooldown = Math.max(0.52, 0.76 - wave * 0.008);
     enemy.value = 2 + Math.floor(wave / 3);
     enemy.sprite = "zombieB";
     enemy.readableSprite = "zombieBReadable";
@@ -1625,7 +1630,8 @@ function spawnEnemy() {
     enemy.hp = baseHp * 2.85;
     enemy.maxHp = enemy.hp;
     enemy.speed = 58 + wave * 2.4;
-    enemy.damage = 23 + wave * 1.4;
+    enemy.attackDamage = Math.round(18 + wave * 1.1);
+    enemy.attackCooldown = Math.max(1.0, 1.36 - wave * 0.012);
     enemy.value = 6 + wave;
     enemy.sprite = "zombieBig";
     enemy.readableSprite = "zombieBigReadable";
@@ -1638,18 +1644,25 @@ function updateEnemies(dt) {
   const p = game.player;
   for (const enemy of game.enemies) {
     enemy.hit = Math.max(0, enemy.hit - dt * 5);
+    enemy.attackTimer = Math.max(0, (enemy.attackTimer ?? 0) - dt);
+    if (enemy.attackTimer < 0.0001) enemy.attackTimer = 0;
     const dir = normalize(p.x - enemy.x, p.y - enemy.y);
     enemy.x += dir.x * enemy.speed * dt;
     enemy.y += dir.y * enemy.speed * dt;
 
     const minDist = p.radius + enemy.radius;
-    if (dir.len < minDist && dir.len > 0.01) {
-      const push = (minDist - dir.len) * 0.5;
-      enemy.x -= dir.x * push;
-      enemy.y -= dir.y * push;
-      p.x += dir.x * push * 0.18;
-      p.y += dir.y * push * 0.18;
-      damagePlayer(enemy.damage * dt);
+    if (dir.len < minDist) {
+      if (dir.len > 0.01) {
+        const push = (minDist - dir.len) * 0.5;
+        enemy.x -= dir.x * push;
+        enemy.y -= dir.y * push;
+        p.x += dir.x * push * 0.18;
+        p.y += dir.y * push * 0.18;
+      }
+      if (enemy.attackTimer <= 0) {
+        damagePlayer(enemy.attackDamage ?? enemy.damage ?? 1);
+        enemy.attackTimer = enemy.attackCooldown ?? 1;
+      }
     }
   }
 }
@@ -2121,9 +2134,11 @@ function removeDeadEnemies() {
 
 function damagePlayer(amount) {
   const reduction = 100 / (100 + Math.max(-20, game.player.armor) * 8);
-  game.player.hp -= amount * reduction;
-  game.damageFlash = Math.max(game.damageFlash, 0.2);
-  game.shake = Math.max(game.shake, 3.5);
+  const damage = Math.max(1, Math.round(amount * reduction));
+  game.player.hp = clamp(game.player.hp - damage, 0, game.player.maxHp);
+  game.damageFlash = Math.max(game.damageFlash, clamp(damage / game.player.maxHp * 3, 0.2, 0.42));
+  game.shake = Math.max(game.shake, 3.5 + damage * 0.03);
+  return damage;
 }
 
 function addSparks(x, y, count, speed, sprite = "spark") {

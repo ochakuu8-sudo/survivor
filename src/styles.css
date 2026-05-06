@@ -156,9 +156,17 @@ button:disabled {
 
 .hud-meter {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   gap: 10px;
   align-items: center;
+}
+
+.hp-text {
+  min-width: 54px;
+  color: #fff9f2;
+  font-size: 0.78rem;
+  line-height: 1;
+  text-align: right;
 }
 
 .meter-shell {
@@ -648,6 +656,11 @@ h1 {
     font-size: 0.58rem;
   }
 
+  .hp-text {
+    min-width: 48px;
+    font-size: 0.72rem;
+  }
+
   .meter-shell {
     height: 9px;
   }
@@ -702,6 +715,11 @@ h1 {
 
   .hud-label {
     font-size: 0.54rem;
+  }
+
+  .hp-text {
+    min-width: 44px;
+    font-size: 0.68rem;
   }
 
   .meter-shell {
@@ -785,6 +803,11 @@ h1 {
 
   .hud-label {
     font-size: 0.52rem;
+  }
+
+  .hp-text {
+    min-width: 42px;
+    font-size: 0.66rem;
   }
 
   .meter-shell {
