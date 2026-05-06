@@ -818,7 +818,7 @@ function resetRun() {
       weapons: [
         createWeapon({
           name: "石",
-          damage: 34,
+          damage: 40,
           fireRate: 0.72,
           bulletSpeed: 560,
           life: 0.78,
