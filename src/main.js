@@ -70,6 +70,7 @@ const game = {
   particles: [],
   effects: [],
   offers: [],
+  selectedAttachment: null,
 };
 
 const OFFER_TYPE_LABELS = {
@@ -928,6 +929,7 @@ function resetRun() {
   game.particles = [];
   game.effects = [];
   game.offers = [];
+  game.selectedAttachment = null;
   hud.shop.classList.add("hidden");
   hud.gameOver.classList.add("hidden");
   updateHud();
@@ -1042,6 +1044,57 @@ function formatRarityOdds(slotIndex) {
     .filter((rarity) => table[rarity] > 0)
     .map((rarity) => `${rarityShortLabel(rarity)}${table[rarity]}%`)
     .join(" / ");
+}
+
+function attachmentCategoryLabel(category) {
+  const labels = {
+    stat: "ステータス",
+    special: "特殊効果",
+    synergy: "シナジー",
+    legend: "伝説効果",
+  };
+  return labels[category] || "効果";
+}
+
+function attachmentMinimumRarityLabel(definition) {
+  return rarityLabel(definition?.minRarity || "normal");
+}
+
+function attachmentEffectSummary(definition, rarity) {
+  if (!definition) return "";
+  const power = rarityPower(rarity);
+  if (definition.category === "stat") {
+    return `効果量 ${power.toFixed(2)}倍`;
+  }
+  if (definition.category === "special") {
+    return `特殊効果量 ${power.toFixed(2)}倍`;
+  }
+  if (definition.category === "synergy") {
+    return `既存アタッチメントとの連動量 ${power.toFixed(2)}倍`;
+  }
+  return `総合強化 ${power.toFixed(2)}倍`;
+}
+
+function getSelectedAttachmentInfo() {
+  const selected = game.selectedAttachment;
+  if (!selected) return null;
+  const weapon = findWeapon(selected.weaponId);
+  if (!weapon) {
+    game.selectedAttachment = null;
+    return null;
+  }
+  const attachment = weapon.attachments[selected.attachmentIndex];
+  if (!attachment) {
+    game.selectedAttachment = null;
+    return null;
+  }
+  const definition = findAttachmentDefinition(attachment.key);
+  return {
+    weapon,
+    attachment,
+    definition,
+    attachmentIndex: selected.attachmentIndex,
+  };
 }
 
 const ACTIVE_ATTACHMENTS = [
@@ -1677,9 +1730,11 @@ function upgradeWeaponAttachment(weaponId) {
 
   const ownedKeys = new Set(weapon.attachments.map((attachment) => attachment.key));
   const attachment = pickRandomAttachment(weapon.attachments.length, ownedKeys);
+  const attachmentIndex = weapon.attachments.length;
   if (!addAttachmentToWeapon(weapon, attachment)) return;
 
   game.money -= cost;
+  game.selectedAttachment = { weaponId: weapon.id, attachmentIndex };
   game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
   renderShop();
   updateHud();
@@ -1703,6 +1758,7 @@ function rerollWeaponAttachment(weaponId, attachmentIndex) {
   recomputeWeaponAttachments(weapon);
 
   game.money -= cost;
+  game.selectedAttachment = { weaponId: weapon.id, attachmentIndex };
   game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
   renderShop();
   updateHud();
@@ -1812,6 +1868,68 @@ function renderShop() {
   hud.nextWave.disabled = false;
 }
 
+function createAttachmentInfoPanel() {
+  const info = getSelectedAttachmentInfo();
+  if (!info) return null;
+
+  const { weapon, attachment, definition, attachmentIndex } = info;
+  const panel = document.createElement("aside");
+  panel.className = `attachment-info-panel attach-rarity-${attachment.rarity || "normal"}`;
+
+  const head = document.createElement("div");
+  head.className = "attachment-info-head";
+
+  const titleBlock = document.createElement("div");
+  titleBlock.className = "attachment-info-title";
+
+  const rarity = document.createElement("span");
+  rarity.className = "attach-rarity-label";
+  rarity.textContent = rarityLabel(attachment.rarity);
+
+  const title = document.createElement("strong");
+  title.textContent = attachment.name;
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "attachment-info-close";
+  close.textContent = "閉じる";
+  close.addEventListener("click", () => {
+    game.selectedAttachment = null;
+    renderGearInventory();
+  });
+
+  titleBlock.append(rarity, title);
+  head.append(titleBlock, close);
+
+  const meta = document.createElement("div");
+  meta.className = "attachment-info-meta";
+  const slot = document.createElement("span");
+  slot.textContent = `${weapon.name} / ${attachmentIndex + 1}枠目`;
+  const category = document.createElement("span");
+  category.textContent = attachmentCategoryLabel(attachment.category);
+  const minimum = document.createElement("span");
+  minimum.textContent = `出現: ${attachmentMinimumRarityLabel(definition)}以上`;
+  meta.append(slot, category, minimum);
+
+  const text = document.createElement("p");
+  text.textContent = definition?.text || "効果情報がまだ設定されていません。";
+
+  const summary = document.createElement("strong");
+  summary.className = "attachment-info-summary";
+  summary.textContent = attachmentEffectSummary(definition, attachment.rarity);
+
+  const reroll = document.createElement("button");
+  reroll.type = "button";
+  reroll.className = "attachment-info-reroll";
+  const cost = attachmentRerollCost(weapon, attachmentIndex);
+  reroll.textContent = `この枠を入替 ${cost}枚`;
+  reroll.disabled = game.money < cost;
+  reroll.addEventListener("click", () => rerollWeaponAttachment(weapon.id, attachmentIndex));
+
+  panel.append(head, meta, text, summary, reroll);
+  return panel;
+}
+
 function renderGearInventory() {
   hud.gearInventory.replaceChildren();
   const gear = game.player.gear;
@@ -1863,8 +1981,16 @@ function renderGearInventory() {
         const row = document.createElement("div");
         row.className = "attachment-row";
 
-        const chip = document.createElement("span");
-        chip.className = `attach-chip attach-rarity-${attachment.rarity || "normal"}`;
+        const isSelected = game.selectedAttachment?.weaponId === weapon.id
+          && game.selectedAttachment?.attachmentIndex === attachmentIndex;
+
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `attach-chip attach-info-button attach-rarity-${attachment.rarity || "normal"} ${isSelected ? "attach-chip-selected" : ""}`;
+        chip.addEventListener("click", () => {
+          game.selectedAttachment = { weaponId: weapon.id, attachmentIndex };
+          renderGearInventory();
+        });
 
         const rarity = document.createElement("span");
         rarity.className = "attach-rarity-label";
@@ -1933,7 +2059,10 @@ function renderGearInventory() {
   relicList.textContent = gear.relics.length > 0 ? gear.relics.slice(-5).join(" / ") : "未所持";
   relicShelf.append(relicLabel, relicCount, relicList);
 
-  hud.gearInventory.append(board, relicShelf);
+  const attachmentInfoPanel = createAttachmentInfoPanel();
+  hud.gearInventory.append(board);
+  if (attachmentInfoPanel) hud.gearInventory.append(attachmentInfoPanel);
+  hud.gearInventory.append(relicShelf);
 }
 
 function updateHud() {

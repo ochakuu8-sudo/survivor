@@ -248,10 +248,27 @@ h1 {
   line-height: 1.1;
 }
 
+.shop-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  gap: 14px;
+  align-items: start;
+}
+
+.shop-side {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
 .offers {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+}
+
+.shop-side .offers {
+  grid-template-columns: 1fr;
 }
 
 .offer {
@@ -388,7 +405,7 @@ h1 {
 
 .gear-inventory {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -510,6 +527,26 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+.weapon-slot .attach-info-button {
+  width: 100%;
+  min-height: 34px;
+  border-radius: 6px;
+  padding: 5px 7px;
+  color: #eaffff;
+  text-align: left;
+  box-shadow: none;
+  transform: none;
+}
+
+.weapon-slot .attach-info-button:hover:not(:disabled) {
+  transform: none;
+}
+
+.attach-chip-selected {
+  outline: 2px solid #ffe46b;
+  outline-offset: 2px;
+}
+
 .attachment-row .attach-chip {
   flex: 1 1 auto;
   min-width: 0;
@@ -574,6 +611,11 @@ h1 {
   font-size: 0.68rem;
 }
 
+.weapon-slot .attachment-reroll,
+.weapon-slot .weapon-upgrade-button {
+  min-height: 32px;
+}
+
 .attachment-reroll {
   flex: 0 0 auto;
   padding: 0 8px;
@@ -595,6 +637,86 @@ h1 {
   font-size: 0.66rem;
   font-weight: 700;
   line-height: 1.25;
+}
+
+.attachment-info-panel {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px;
+  border: 2px solid rgba(157, 247, 255, 0.38);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(85, 246, 199, 0.1), transparent 44%),
+    rgba(255, 255, 255, 0.08);
+}
+
+.attachment-info-head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.attachment-info-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.attachment-info-title strong {
+  min-width: 0;
+  color: #fff9f2;
+  font-size: 1rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.attachment-info-close {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 10px;
+  color: #eaffff;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.68rem;
+}
+
+.attachment-info-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.attachment-info-meta span {
+  padding: 4px 6px;
+  border: 1px solid rgba(255, 249, 242, 0.16);
+  border-radius: 6px;
+  color: #d9f7ff;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.attachment-info-panel p {
+  color: #d9f7ff;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.attachment-info-summary {
+  color: #ffe46b;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.attachment-info-reroll {
+  justify-self: start;
+  min-height: 34px;
+  padding: 0 12px;
 }
 
 .attach-chip-empty {
@@ -769,13 +891,17 @@ h1 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .shop-footer,
+  .shop-layout,
   .panel-head {
     grid-template-columns: 1fr;
   }
 
-  .shop-footer {
+  .shop-layout {
     align-items: stretch;
+  }
+
+  .shop-side .offers {
+    grid-template-columns: 1fr;
   }
 
   .shop-actions {
