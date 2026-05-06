@@ -832,6 +832,10 @@ function resetRun() {
 }
 
 function startNextWave() {
+  if (hasPendingAttachmentSelection()) {
+    renderShop();
+    return;
+  }
   game.mode = "fight";
   game.wave += 1;
   game.timeLeft = WAVE_SECONDS;
@@ -1173,12 +1177,8 @@ function addOfferPick(pool, picks, used, type = "") {
     ...template,
     cost: Math.max(4, Math.round(template.baseCost * (1 + game.wave * 0.14) + Math.random() * 4)),
     bought: false,
+    choosing: false,
   };
-  if (offer.type === "attachment") {
-    const target = chooseAttachmentTarget();
-    offer.targetWeaponId = target?.id || null;
-    offer.targetWeaponName = target?.name || "";
-  }
   picks.push(offer);
 }
 
@@ -1198,6 +1198,16 @@ function rerollCost() {
 function buyOffer(index) {
   const offer = game.offers[index];
   if (!offer || !canBuyOffer(offer)) return;
+
+  if (offer.type === "attachment") {
+    game.money -= offer.cost;
+    offer.bought = true;
+    offer.choosing = true;
+    renderShop();
+    updateHud();
+    return;
+  }
+
   game.money -= offer.cost;
   offer.bought = true;
   applyOffer(offer);
@@ -1209,18 +1219,35 @@ function buyOffer(index) {
 function canBuyOffer(offer) {
   if (!offer || offer.bought || game.money < offer.cost) return false;
   if (offer.type === "weapon") return game.player.gear.weapons.length < MAX_WEAPONS;
-  if (offer.type === "attachment") return Boolean(findWeapon(offer.targetWeaponId) || chooseAttachmentTarget());
+  if (offer.type === "attachment") return game.player.gear.weapons.length > 0;
   return true;
 }
 
-function applyOffer(offer) {
+function hasPendingAttachmentSelection() {
+  return game.offers.some((offer) => offer.type === "attachment" && offer.choosing);
+}
+
+function attachOfferToWeapon(index, weaponId) {
+  const offer = game.offers[index];
+  const weapon = findWeapon(weaponId);
+  if (!offer || offer.type !== "attachment" || !offer.bought || !offer.choosing || !weapon) return;
+  offer.choosing = false;
+  offer.targetWeaponId = weapon.id;
+  offer.targetWeaponName = weapon.name;
+  applyOffer(offer, weapon);
+  game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
+  renderShop();
+  updateHud();
+}
+
+function applyOffer(offer, targetWeapon = null) {
   if (offer.type === "weapon") {
     game.player.gear.weapons.push(createWeapon({ name: offer.name, ...offer.weapon }));
     return;
   }
 
   if (offer.type === "attachment") {
-    const weapon = findWeapon(offer.targetWeaponId) || chooseAttachmentTarget();
+    const weapon = targetWeapon || findWeapon(offer.targetWeaponId);
     if (!weapon) return;
     offer.attach(weapon);
     weapon.attachments.push(offer.name);
@@ -1264,6 +1291,7 @@ function weaponKindLabel(weapon) {
 function renderShop() {
   hud.shopCash.textContent = String(game.money);
   hud.offers.replaceChildren();
+  const hasPendingAttachment = hasPendingAttachmentSelection();
 
   game.offers.forEach((offer, index) => {
     const card = document.createElement("article");
@@ -1284,7 +1312,11 @@ function renderShop() {
     meta.textContent = offer.type === "weapon"
       ? `武器スロット ${game.player.gear.weapons.length}/${MAX_WEAPONS}`
       : offer.type === "attachment"
-        ? `装着先: ${offer.targetWeaponName || "武器"}`
+        ? offer.choosing
+          ? "購入済み: 装着先を選んでください"
+          : offer.bought
+          ? `装着先: ${offer.targetWeaponName || "武器"}`
+          : "購入後に装着先を選択"
         : "プレイヤーが所持";
 
     const price = document.createElement("div");
@@ -1295,12 +1327,21 @@ function renderShop() {
 
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = offer.bought ? "購入済み" : offer.type === "attachment" ? "装着" : "購入";
-    button.disabled = !canBuyOffer(offer);
+    button.textContent = offer.type === "attachment"
+      ? offer.choosing
+        ? "装着待ち"
+        : offer.bought
+        ? "装着済み"
+        : "購入"
+      : offer.bought ? "購入済み" : "購入";
+    button.disabled = !canBuyOffer(offer) || offer.choosing;
     button.addEventListener("click", () => buyOffer(index));
 
     price.append(cost, button);
     card.append(type, title, body, meta, price);
+    if (offer.type === "attachment" && offer.choosing) {
+      card.append(createAttachmentTargetPicker(index));
+    }
     hud.offers.append(card);
   });
 
@@ -1308,7 +1349,32 @@ function renderShop() {
 
   const cost = rerollCost();
   hud.reroll.textContent = `リロール ${cost}枚`;
-  hud.reroll.disabled = game.money < cost;
+  hud.reroll.disabled = game.money < cost || hasPendingAttachment;
+  hud.nextWave.disabled = hasPendingAttachment;
+}
+
+function createAttachmentTargetPicker(offerIndex) {
+  const picker = document.createElement("div");
+  picker.className = "attachment-targets";
+
+  const prompt = document.createElement("span");
+  prompt.className = "target-prompt";
+  prompt.textContent = "装着する武器";
+
+  const buttons = document.createElement("div");
+  buttons.className = "target-buttons";
+
+  game.player.gear.weapons.forEach((weapon, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "target-button";
+    button.textContent = `武器${index + 1}: ${weapon.name}`;
+    button.addEventListener("click", () => attachOfferToWeapon(offerIndex, weapon.id));
+    buttons.append(button);
+  });
+
+  picker.append(prompt, buttons);
+  return picker;
 }
 
 function renderGearInventory() {
@@ -1468,11 +1534,11 @@ function updateMovement(dt) {
   p.x += move.x * p.speed * speedScale * dt;
   p.y += move.y * p.speed * speedScale * dt;
   if (move.len > 0 && speedScale > 0.05) {
-    p.walkTime = (p.walkTime + dt * (7.5 + speedScale * 3.5)) % 1000;
+    p.walkTime = (p.walkTime + dt * (1.45 + speedScale * 1.1)) % 1;
     p.walkDustTimer -= dt;
     if (p.walkDustTimer <= 0) {
       addWalkDust(p.x - move.x * 15, p.y + 24 - move.y * 8, move.x, move.y);
-      p.walkDustTimer = 0.13;
+      p.walkDustTimer = 0.18;
     }
   } else {
     p.walkTime = 0;
@@ -1919,21 +1985,40 @@ function fireFlame(weapon, angle) {
   const originY = p.y + Math.sin(angle) * 20;
   damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus);
 
-  for (let i = 0; i < 5; i += 1) {
-    const flameAngle = angle + (Math.random() - 0.5) * weapon.cone * 1.55;
-    const length = weapon.range * (0.48 + Math.random() * 0.5);
+  const flameCount = 11;
+  for (let i = 0; i < flameCount; i += 1) {
+    const fan = flameCount === 1 ? 0 : i / (flameCount - 1);
+    const flameAngle = angle + (fan - 0.5) * weapon.cone * 2 + (Math.random() - 0.5) * 0.16;
+    const start = weapon.range * (0.12 + Math.random() * 0.1);
+    const length = weapon.range * (0.34 + Math.random() * 0.52);
+    const startX = originX + Math.cos(flameAngle) * start;
+    const startY = originY + Math.sin(flameAngle) * start;
+    const endX = originX + Math.cos(flameAngle) * length;
+    const endY = originY + Math.sin(flameAngle) * length;
     addEffect({
       type: "line",
-      x1: originX,
-      y1: originY,
-      x2: originX + Math.cos(flameAngle) * length,
-      y2: originY + Math.sin(flameAngle) * length,
-      width: 18 + Math.random() * 14,
-      life: 0.16,
-      maxLife: 0.16,
+      x1: startX,
+      y1: startY,
+      x2: endX,
+      y2: endY,
+      width: 8 + Math.random() * 12,
+      life: 0.15,
+      maxLife: 0.15,
       glow: weapon.effectGlow,
       tint: weapon.effectTint,
     });
+    if (i % 2 === 0) {
+      addEffect({
+        type: "burst",
+        x: endX,
+        y: endY,
+        radius: 22 + Math.random() * 18,
+        life: 0.18,
+        maxLife: 0.18,
+        glow: weapon.effectGlow,
+        tint: weapon.effectTint,
+      });
+    }
   }
   addSparks(originX + Math.cos(angle) * 36, originY + Math.sin(angle) * 36, 2, 80);
 }
@@ -2273,7 +2358,7 @@ function drawPlayer(player, view, camX, camY, zoom) {
   const moving = Math.hypot(player.moveX, player.moveY) > 0.05;
   const walkPulse = moving ? Math.sin(player.walkTime * TAU) : 0;
   const sprite = moving
-    ? (Math.floor(player.walkTime * 8) % 2 === 0 ? "playerWalkAReadable" : "playerWalkBReadable")
+    ? (Math.floor(player.walkTime * 2) % 2 === 0 ? "playerWalkAReadable" : "playerWalkBReadable")
     : "playerReadable";
   const lean = clamp(player.moveX, -1, 1) * 0.08;
   renderer.draw("glowCyan", screen.x, screen.y + 4 * zoom, 94 * zoom, 82 * zoom, { alpha: 0.2 });
@@ -2458,6 +2543,7 @@ function frame(now) {
 }
 
 hud.reroll.addEventListener("click", () => {
+  if (hasPendingAttachmentSelection()) return;
   const cost = rerollCost();
   if (game.money < cost) return;
   game.money -= cost;

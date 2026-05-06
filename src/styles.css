@@ -326,6 +326,42 @@ h1 {
   margin-top: 16px;
 }
 
+.attachment-targets {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 9px;
+  border: 1px solid rgba(85, 246, 199, 0.28);
+  border-radius: 8px;
+  background: rgba(85, 246, 199, 0.1);
+}
+
+.target-prompt {
+  color: #9df7ff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.target-buttons {
+  display: grid;
+  gap: 6px;
+}
+
+.offer .target-button {
+  min-height: 34px;
+  padding: 0 9px;
+  color: #10273a;
+  background: #55f6c7;
+  font-size: 0.76rem;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.offer .target-button:hover:not(:disabled) {
+  background: #84ffda;
+}
+
 .offer button,
 .shop-actions button,
 #restartBtn {
