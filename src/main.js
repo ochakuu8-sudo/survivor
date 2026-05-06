@@ -3,7 +3,7 @@ const TILE_SIZE = 96;
 const WAVE_SECONDS = 45;
 const COLLISION_CELL_SIZE = 128;
 const BACKGROUND_CACHE_LIMIT = 4096;
-const MOBILE_CAMERA_ZOOM = 0.45;
+const MOBILE_CAMERA_ZOOM = 0.5;
 const TOUCH_TABLET_CAMERA_ZOOM = 0.82;
 
 const canvas = document.querySelector("#game");
