@@ -3,6 +3,8 @@ const TILE_SIZE = 96;
 const WAVE_SECONDS = 45;
 const COLLISION_CELL_SIZE = 128;
 const BACKGROUND_CACHE_LIMIT = 4096;
+const MOBILE_CAMERA_ZOOM = 0.72;
+const TOUCH_TABLET_CAMERA_ZOOM = 0.82;
 
 const canvas = document.querySelector("#game");
 const hud = {
@@ -1051,23 +1053,26 @@ function spawnEnemies(dt) {
 
 function spawnEnemy() {
   const view = viewSize();
+  const zoom = cameraZoom(view);
+  const visibleW = view.w / zoom;
+  const visibleH = view.h / zoom;
   const margin = 95;
   const side = Math.floor(Math.random() * 4);
   let x = game.player.x;
   let y = game.player.y;
 
   if (side === 0) {
-    x += (Math.random() - 0.5) * (view.w + margin * 2);
-    y -= view.h / 2 + margin;
+    x += (Math.random() - 0.5) * (visibleW + margin * 2);
+    y -= visibleH / 2 + margin;
   } else if (side === 1) {
-    x += view.w / 2 + margin;
-    y += (Math.random() - 0.5) * (view.h + margin * 2);
+    x += visibleW / 2 + margin;
+    y += (Math.random() - 0.5) * (visibleH + margin * 2);
   } else if (side === 2) {
-    x += (Math.random() - 0.5) * (view.w + margin * 2);
-    y += view.h / 2 + margin;
+    x += (Math.random() - 0.5) * (visibleW + margin * 2);
+    y += visibleH / 2 + margin;
   } else {
-    x -= view.w / 2 + margin;
-    y += (Math.random() - 0.5) * (view.h + margin * 2);
+    x -= visibleW / 2 + margin;
+    y += (Math.random() - 0.5) * (visibleH + margin * 2);
   }
 
   const roll = Math.random();
@@ -1356,6 +1361,7 @@ function addSparks(x, y, count, speed, sprite = "spark") {
 
 function render() {
   const view = viewSize();
+  const zoom = cameraZoom(view);
   const shakeX = (Math.random() - 0.5) * game.shake;
   const shakeY = (Math.random() - 0.5) * game.shake;
   const camX = game.camera.x + shakeX;
@@ -1363,9 +1369,9 @@ function render() {
 
   renderer.clear();
   renderer.begin();
-  drawBackground(view, camX, camY);
+  drawBackground(view, camX, camY, zoom);
   drawBackgroundDepth(view);
-  drawWorld(view, camX, camY);
+  drawWorld(view, camX, camY, zoom);
   renderer.flush();
 }
 
@@ -1376,11 +1382,13 @@ function drawBackgroundDepth(view) {
   });
 }
 
-function drawBackground(view, camX, camY) {
-  const startX = Math.floor((camX - view.w / 2) / TILE_SIZE) - 1;
-  const endX = Math.floor((camX + view.w / 2) / TILE_SIZE) + 1;
-  const startY = Math.floor((camY - view.h / 2) / TILE_SIZE) - 1;
-  const endY = Math.floor((camY + view.h / 2) / TILE_SIZE) + 1;
+function drawBackground(view, camX, camY, zoom) {
+  const visibleW = view.w / zoom;
+  const visibleH = view.h / zoom;
+  const startX = Math.floor((camX - visibleW / 2) / TILE_SIZE) - 1;
+  const endX = Math.floor((camX + visibleW / 2) / TILE_SIZE) + 1;
+  const startY = Math.floor((camY - visibleH / 2) / TILE_SIZE) - 1;
+  const endY = Math.floor((camY + visibleH / 2) / TILE_SIZE) + 1;
 
   for (let ty = startY; ty <= endY; ty += 1) {
     for (let tx = startX; tx <= endX; tx += 1) {
@@ -1388,11 +1396,11 @@ function drawBackground(view, camX, camY) {
       const type = tile.type;
       const worldX = tx * TILE_SIZE + TILE_SIZE / 2;
       const worldY = ty * TILE_SIZE + TILE_SIZE / 2;
-      const screen = worldToScreen(worldX, worldY, view, camX, camY);
-      renderer.draw(type, screen.x, screen.y, TILE_SIZE + 1, TILE_SIZE + 1);
+      const screen = worldToScreen(worldX, worldY, view, camX, camY, zoom);
+      renderer.draw(type, screen.x, screen.y, (TILE_SIZE + 2) * zoom, (TILE_SIZE + 2) * zoom);
 
       if (tile.prop) {
-        drawProp(tile.prop, tx, ty, view, camX, camY, tile.propOffset, tile.propY);
+        drawProp(tile.prop, tx, ty, view, camX, camY, zoom, tile.propOffset, tile.propY);
       }
     }
   }
@@ -1456,29 +1464,29 @@ function tileSprite(tx, ty) {
   return "pavement";
 }
 
-function drawProp(name, tx, ty, view, camX, camY, roll, yRoll) {
+function drawProp(name, tx, ty, view, camX, camY, zoom, roll, yRoll) {
   const worldX = tx * TILE_SIZE + 24 + roll * 48;
   const worldY = ty * TILE_SIZE + 18 + yRoll * 54;
-  const screen = worldToScreen(worldX, worldY, view, camX, camY);
-  if (name === "sign") renderer.draw("glowRed", screen.x, screen.y - 18, 110, 90, { alpha: 0.55 });
-  if (name === "car") renderer.draw("glowAmber", screen.x + 12, screen.y, 120, 70, { alpha: 0.24 });
-  renderer.draw(name, screen.x, screen.y, atlas.sprites[name].w, atlas.sprites[name].h, {
+  const screen = worldToScreen(worldX, worldY, view, camX, camY, zoom);
+  if (name === "sign") renderer.draw("glowRed", screen.x, screen.y - 18 * zoom, 110 * zoom, 90 * zoom, { alpha: 0.55 });
+  if (name === "car") renderer.draw("glowAmber", screen.x + 12 * zoom, screen.y, 120 * zoom, 70 * zoom, { alpha: 0.24 });
+  renderer.draw(name, screen.x, screen.y, atlas.sprites[name].w * zoom, atlas.sprites[name].h * zoom, {
     rotation: (roll - 0.5) * 0.6,
   });
 }
 
-function drawWorld(view, camX, camY) {
+function drawWorld(view, camX, camY, zoom) {
   for (const pickup of game.pickups) {
-    const screen = worldToScreen(pickup.x, pickup.y + Math.sin(pickup.bob) * 4, view, camX, camY);
-    renderer.draw("shadow", screen.x, screen.y + 13, 36, 14, { alpha: 0.55 });
-    renderer.draw("glowAmber", screen.x, screen.y, 42, 42, { alpha: 0.2 });
-    renderer.draw("cashReadable", screen.x, screen.y, 25, 25, { rotation: Math.sin(pickup.bob) * 0.15 });
+    const screen = worldToScreen(pickup.x, pickup.y + Math.sin(pickup.bob) * 4, view, camX, camY, zoom);
+    renderer.draw("shadow", screen.x, screen.y + 13 * zoom, 36 * zoom, 14 * zoom, { alpha: 0.55 });
+    renderer.draw("glowAmber", screen.x, screen.y, 42 * zoom, 42 * zoom, { alpha: 0.2 });
+    renderer.draw("cashReadable", screen.x, screen.y, 25 * zoom, 25 * zoom, { rotation: Math.sin(pickup.bob) * 0.15 });
   }
 
   for (const particle of game.particles) {
     const alpha = clamp(particle.life / particle.maxLife, 0, 1);
-    const screen = worldToScreen(particle.x, particle.y, view, camX, camY);
-    const size = particle.size * (1.2 - alpha * 0.2);
+    const screen = worldToScreen(particle.x, particle.y, view, camX, camY, zoom);
+    const size = particle.size * (1.2 - alpha * 0.2) * zoom;
     renderer.draw(particle.sprite, screen.x, screen.y, size, size, { alpha });
   }
 
@@ -1487,54 +1495,54 @@ function drawWorld(view, camX, camY) {
   actors.sort((a, b) => a.y - b.y);
 
   for (const actor of actors) {
-    if (actor.kind === "player") drawPlayer(actor.item, view, camX, camY);
-    else drawEnemy(actor.item, view, camX, camY);
+    if (actor.kind === "player") drawPlayer(actor.item, view, camX, camY, zoom);
+    else drawEnemy(actor.item, view, camX, camY, zoom);
   }
 
   for (const bullet of game.bullets) {
-    const screen = worldToScreen(bullet.x, bullet.y, view, camX, camY);
-    renderer.draw("glowAmber", screen.x, screen.y, 42, 30, { alpha: 0.32 });
-    renderer.draw("bulletReadable", screen.x, screen.y, 38, 14, { rotation: bullet.angle });
+    const screen = worldToScreen(bullet.x, bullet.y, view, camX, camY, zoom);
+    renderer.draw("glowAmber", screen.x, screen.y, 42 * zoom, 30 * zoom, { alpha: 0.32 });
+    renderer.draw("bulletReadable", screen.x, screen.y, 38 * zoom, 14 * zoom, { rotation: bullet.angle });
   }
 }
 
-function drawPlayer(player, view, camX, camY) {
-  const screen = worldToScreen(player.x, player.y, view, camX, camY);
+function drawPlayer(player, view, camX, camY, zoom) {
+  const screen = worldToScreen(player.x, player.y, view, camX, camY, zoom);
   const lean = clamp(player.moveX, -1, 1) * 0.08;
-  renderer.draw("glowCyan", screen.x, screen.y + 4, 94, 82, { alpha: 0.2 });
-  renderer.draw("shadow", screen.x, screen.y + 25, 72, 32, { alpha: 0.82 });
-  renderer.draw("playerReadable", screen.x, screen.y - 3, 62, 62, { rotation: lean });
+  renderer.draw("glowCyan", screen.x, screen.y + 4 * zoom, 94 * zoom, 82 * zoom, { alpha: 0.2 });
+  renderer.draw("shadow", screen.x, screen.y + 25 * zoom, 72 * zoom, 32 * zoom, { alpha: 0.82 });
+  renderer.draw("playerReadable", screen.x, screen.y - 3 * zoom, 62 * zoom, 62 * zoom, { rotation: lean });
 }
 
-function drawEnemy(enemy, view, camX, camY) {
-  const screen = worldToScreen(enemy.x, enemy.y, view, camX, camY);
-  const size = enemy.radius * (enemy.sprite === "zombieBig" ? 3.0 : 2.7);
+function drawEnemy(enemy, view, camX, camY, zoom) {
+  const screen = worldToScreen(enemy.x, enemy.y, view, camX, camY, zoom);
+  const size = enemy.radius * (enemy.sprite === "zombieBig" ? 3.0 : 2.7) * zoom;
   const wobble = Math.sin(game.elapsed * 7 + enemy.wobble) * 0.08;
   const tint = enemy.hit > 0 ? [1, 0.52, 0.52] : [1, 1, 1];
-  renderer.draw("glowEnemyRed", screen.x, screen.y - enemy.radius * 0.12, size * 1.15, size * 1.05, {
+  renderer.draw("glowEnemyRed", screen.x, screen.y - enemy.radius * 0.12 * zoom, size * 1.15, size * 1.05, {
     alpha: enemy.sprite === "zombieBig" ? 0.13 : 0.09,
   });
-  renderer.draw("shadow", screen.x, screen.y + enemy.radius * 0.8, size * 1.02, size * 0.45, { alpha: 0.74 });
-  renderer.draw(enemy.readableSprite, screen.x, screen.y - enemy.radius * 0.15, size, size, {
+  renderer.draw("shadow", screen.x, screen.y + enemy.radius * 0.8 * zoom, size * 1.02, size * 0.45, { alpha: 0.74 });
+  renderer.draw(enemy.readableSprite, screen.x, screen.y - enemy.radius * 0.15 * zoom, size, size, {
     rotation: wobble,
     tint,
   });
 
   if (enemy.hp < enemy.maxHp) {
-    const barW = enemy.radius * 2.2;
-    const y = screen.y - enemy.radius * 2.1;
-    renderer.draw("white", screen.x, y, barW, 5, { tint: [0.12, 0.12, 0.15], alpha: 0.72 });
-    renderer.draw("white", screen.x - barW * (1 - enemy.hp / enemy.maxHp) * 0.5, y, barW * enemy.hp / enemy.maxHp, 5, {
+    const barW = enemy.radius * 2.2 * zoom;
+    const y = screen.y - enemy.radius * 2.1 * zoom;
+    renderer.draw("white", screen.x, y, barW, 5 * zoom, { tint: [0.12, 0.12, 0.15], alpha: 0.72 });
+    renderer.draw("white", screen.x - barW * (1 - enemy.hp / enemy.maxHp) * 0.5, y, barW * enemy.hp / enemy.maxHp, 5 * zoom, {
       tint: [0.44, 0.96, 0.78],
       alpha: 0.9,
     });
   }
 }
 
-function worldToScreen(x, y, view, camX, camY) {
+function worldToScreen(x, y, view, camX, camY, zoom = 1) {
   return {
-    x: x - camX + view.w / 2,
-    y: y - camY + view.h / 2,
+    x: (x - camX) * zoom + view.w / 2,
+    y: (y - camY) * zoom + view.h / 2,
   };
 }
 
@@ -1543,6 +1551,16 @@ function viewSize() {
     w: canvas.width / renderer.dpr,
     h: canvas.height / renderer.dpr,
   };
+}
+
+function cameraZoom(view) {
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches ?? false;
+  const narrowViewport = window.innerWidth <= 760;
+  const shortSide = Math.min(view.w, view.h);
+  if (coarsePointer || narrowViewport) {
+    return shortSide <= 520 ? MOBILE_CAMERA_ZOOM : TOUCH_TABLET_CAMERA_ZOOM;
+  }
+  return 1;
 }
 
 function measureCanvas() {
