@@ -306,6 +306,15 @@ h1 {
   line-height: 1.42;
 }
 
+.offer-meta {
+  display: block;
+  margin-top: 9px;
+  color: #9df7ff;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
 .offer .price {
   align-self: end;
   display: flex;

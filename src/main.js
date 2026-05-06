@@ -44,6 +44,7 @@ const pointer = {
 let renderer;
 let atlas;
 let enemyId = 1;
+let weaponId = 1;
 let lastFrame = performance.now();
 const enemyCollisionGrid = new Map();
 const backgroundTileCache = new Map();
@@ -75,11 +76,7 @@ const OFFER_TYPE_LABELS = {
   relic: "レリック",
 };
 
-const GEAR_KEYS = {
-  weapon: "weapons",
-  attachment: "attachments",
-  relic: "relics",
-};
+const MAX_WEAPONS = 3;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -120,6 +117,27 @@ function makeRng(seed) {
     r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
     return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+function createWeapon(template) {
+  return {
+    id: nextWeaponId(),
+    name: template.name,
+    damage: template.damage,
+    fireRate: template.fireRate,
+    bulletSpeed: template.bulletSpeed,
+    projectiles: template.projectiles || 1,
+    pierce: template.pierce || 0,
+    spread: template.spread ?? 0.18,
+    life: template.life || 0.72,
+    shootTimer: template.shootTimer ?? 0.45,
+    attachments: [],
+  };
+}
+
+function nextWeaponId() {
+  weaponId += 1;
+  return weaponId - 1;
 }
 
 function buildAtlas() {
@@ -711,6 +729,7 @@ function resetRun() {
   game.damageFlash = 0;
   game.camera.x = 0;
   game.camera.y = 0;
+  weaponId = 1;
   game.player = {
     x: 0,
     y: 0,
@@ -718,19 +737,21 @@ function resetRun() {
     hp: 100,
     maxHp: 100,
     speed: 215,
-    damage: 18,
-    fireRate: 1.65,
-    bulletSpeed: 690,
     pickup: 150,
     armor: 0,
-    projectiles: 1,
-    pierce: 0,
     regen: 0,
-    shootTimer: 0.45,
+    weaponPowerBonus: 0,
     moveX: 0,
     moveY: 0,
     gear: {
-      weapons: ["古い拳銃"],
+      weapons: [
+        createWeapon({
+          name: "古い拳銃",
+          damage: 18,
+          fireRate: 1.65,
+          bulletSpeed: 690,
+        }),
+      ],
       attachments: [],
       relics: [],
     },
@@ -787,8 +808,10 @@ function generateOffers() {
       name: "路地裏ピストル",
       text: "扱いやすい武器。弾の手応えが少し重くなる。",
       baseCost: 12,
-      apply: () => {
-        game.player.damage += 6;
+      weapon: {
+        damage: 24,
+        fireRate: 1.45,
+        bulletSpeed: 700,
       },
     },
     {
@@ -796,9 +819,10 @@ function generateOffers() {
       name: "釘打ち銃",
       text: "連射寄りの武器。短い間隔で弾を撃てる。",
       baseCost: 13,
-      apply: () => {
-        game.player.fireRate *= 1.18;
-        game.player.damage += 2;
+      weapon: {
+        damage: 13,
+        fireRate: 2.5,
+        bulletSpeed: 650,
       },
     },
     {
@@ -806,9 +830,12 @@ function generateOffers() {
       name: "二連バレル",
       text: "散らして撃つ武器。弾数は増えるが、一発は少し軽くなる。",
       baseCost: 24,
-      apply: () => {
-        game.player.projectiles += 1;
-        game.player.damage *= 0.92;
+      weapon: {
+        damage: 14,
+        fireRate: 1.18,
+        bulletSpeed: 620,
+        projectiles: 2,
+        spread: 0.2,
       },
     },
     {
@@ -816,9 +843,12 @@ function generateOffers() {
       name: "貫通ライフル",
       text: "列を抜く武器。弾が敵を貫きやすくなる。",
       baseCost: 18,
-      apply: () => {
-        game.player.pierce += 1;
-        game.player.bulletSpeed *= 1.12;
+      weapon: {
+        damage: 27,
+        fireRate: 0.95,
+        bulletSpeed: 760,
+        pierce: 1,
+        life: 0.82,
       },
     },
     {
@@ -826,8 +856,8 @@ function generateOffers() {
       name: "改造トリガー",
       text: "引き金を短くし、武器の手数を増やす。",
       baseCost: 13,
-      apply: () => {
-        game.player.fireRate *= 1.16;
+      attach: (weapon) => {
+        weapon.fireRate *= 1.18;
       },
     },
     {
@@ -835,27 +865,28 @@ function generateOffers() {
       name: "密輸弾薬",
       text: "弾薬の質を上げ、着弾の勢いを強める。",
       baseCost: 16,
-      apply: () => {
-        game.player.bulletSpeed *= 1.28;
-        game.player.damage += 4;
+      attach: (weapon) => {
+        weapon.damage += 5;
+        weapon.bulletSpeed *= 1.12;
       },
     },
     {
       type: "attachment",
-      name: "スクラップ磁石",
-      text: "コインを拾いやすくする回収パーツ。",
-      baseCost: 9,
-      apply: () => {
-        game.player.pickup += 34;
+      name: "貫通クリップ",
+      text: "弾が敵の群れを抜けやすくなる。",
+      baseCost: 17,
+      attach: (weapon) => {
+        weapon.pierce += 1;
       },
     },
     {
       type: "attachment",
-      name: "軽量スニーカー",
-      text: "足回りを軽くして、逃げ回りやすくする。",
-      baseCost: 10,
-      apply: () => {
-        game.player.speed += 22;
+      name: "ロングバレル",
+      text: "遠くの敵まで弾が届きやすくなる。",
+      baseCost: 14,
+      attach: (weapon) => {
+        weapon.bulletSpeed *= 1.18;
+        weapon.life *= 1.12;
       },
     },
     {
@@ -892,19 +923,39 @@ function generateOffers() {
       text: "危ない力を引き出すが、身を守りにくくなる。",
       baseCost: 15,
       apply: () => {
-        game.player.damage += 10;
+        game.player.weaponPowerBonus += 8;
         game.player.armor -= 2;
+      },
+    },
+    {
+      type: "relic",
+      name: "スクラップ磁石",
+      text: "落ちたコインがこちらへ寄りやすくなる。",
+      baseCost: 9,
+      apply: () => {
+        game.player.pickup += 34;
+      },
+    },
+    {
+      type: "relic",
+      name: "軽量スニーカー",
+      text: "足回りを軽くして、逃げ回りやすくする。",
+      baseCost: 10,
+      apply: () => {
+        game.player.speed += 22;
       },
     },
   ];
 
   const picks = [];
   const used = new Set();
-  for (const type of ["weapon", "attachment", "relic"]) {
+  for (const type of game.player.gear.weapons.length < MAX_WEAPONS ? ["weapon", "attachment", "relic"] : ["attachment", "relic"]) {
     addOfferPick(pool, picks, used, type);
   }
-  while (picks.length < 4) {
+  let guard = 0;
+  while (picks.length < 4 && guard < 40) {
     addOfferPick(pool, picks, used);
+    guard += 1;
   }
   game.offers = shuffle(picks);
 }
@@ -914,6 +965,9 @@ function addOfferPick(pool, picks, used, type = "") {
   pool.forEach((offer, index) => {
     if (used.has(index)) return;
     if (type && offer.type !== type) return;
+    if (offer.type === "weapon" && game.player.gear.weapons.length >= MAX_WEAPONS) return;
+    if (offer.type === "weapon" && game.player.gear.weapons.some((weapon) => weapon.name === offer.name)) return;
+    if (offer.type === "attachment" && game.player.gear.weapons.length === 0) return;
     candidates.push(index);
   });
   if (candidates.length === 0) return;
@@ -921,11 +975,17 @@ function addOfferPick(pool, picks, used, type = "") {
   const index = candidates[Math.floor(Math.random() * candidates.length)];
   used.add(index);
   const template = pool[index];
-  picks.push({
+  const offer = {
     ...template,
     cost: Math.max(4, Math.round(template.baseCost * (1 + game.wave * 0.14) + Math.random() * 4)),
     bought: false,
-  });
+  };
+  if (offer.type === "attachment") {
+    const target = chooseAttachmentTarget();
+    offer.targetWeaponId = target?.id || null;
+    offer.targetWeaponName = target?.name || "";
+  }
+  picks.push(offer);
 }
 
 function shuffle(items) {
@@ -943,20 +1003,56 @@ function rerollCost() {
 
 function buyOffer(index) {
   const offer = game.offers[index];
-  if (!offer || offer.bought || game.money < offer.cost) return;
+  if (!offer || !canBuyOffer(offer)) return;
   game.money -= offer.cost;
   offer.bought = true;
-  offer.apply();
-  rememberGear(offer);
+  applyOffer(offer);
   game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
   renderShop();
   updateHud();
 }
 
-function rememberGear(offer) {
-  const key = GEAR_KEYS[offer.type];
-  if (!key || !game.player.gear) return;
-  game.player.gear[key].push(offer.name);
+function canBuyOffer(offer) {
+  if (!offer || offer.bought || game.money < offer.cost) return false;
+  if (offer.type === "weapon") return game.player.gear.weapons.length < MAX_WEAPONS;
+  if (offer.type === "attachment") return Boolean(findWeapon(offer.targetWeaponId) || chooseAttachmentTarget());
+  return true;
+}
+
+function applyOffer(offer) {
+  if (offer.type === "weapon") {
+    game.player.gear.weapons.push(createWeapon({ name: offer.name, ...offer.weapon }));
+    return;
+  }
+
+  if (offer.type === "attachment") {
+    const weapon = findWeapon(offer.targetWeaponId) || chooseAttachmentTarget();
+    if (!weapon) return;
+    offer.attach(weapon);
+    weapon.attachments.push(offer.name);
+    game.player.gear.attachments.push({
+      name: offer.name,
+      weaponId: weapon.id,
+      weaponName: weapon.name,
+    });
+    return;
+  }
+
+  offer.apply();
+  game.player.gear.relics.push(offer.name);
+}
+
+function chooseAttachmentTarget() {
+  const weapons = game.player.gear.weapons;
+  if (weapons.length === 0) return null;
+  return weapons.reduce((best, weapon) => {
+    if (!best) return weapon;
+    return weapon.attachments.length < best.attachments.length ? weapon : best;
+  }, null);
+}
+
+function findWeapon(id) {
+  return game.player.gear.weapons.find((weapon) => weapon.id === id) || null;
 }
 
 function renderShop() {
@@ -977,6 +1073,14 @@ function renderShop() {
     const body = document.createElement("p");
     body.textContent = offer.text;
 
+    const meta = document.createElement("small");
+    meta.className = "offer-meta";
+    meta.textContent = offer.type === "weapon"
+      ? `武器スロット ${game.player.gear.weapons.length}/${MAX_WEAPONS}`
+      : offer.type === "attachment"
+        ? `装着先: ${offer.targetWeaponName || "武器"}`
+        : "プレイヤーが所持";
+
     const price = document.createElement("div");
     price.className = "price";
 
@@ -985,12 +1089,12 @@ function renderShop() {
 
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = offer.bought ? "購入済み" : "購入";
-    button.disabled = offer.bought || game.money < offer.cost;
+    button.textContent = offer.bought ? "購入済み" : offer.type === "attachment" ? "装着" : "購入";
+    button.disabled = !canBuyOffer(offer);
     button.addEventListener("click", () => buyOffer(index));
 
     price.append(cost, button);
-    card.append(type, title, body, price);
+    card.append(type, title, body, meta, price);
     hud.offers.append(card);
   });
 
@@ -1006,9 +1110,15 @@ function renderShop() {
     const span = document.createElement("span");
     span.textContent = label;
     const strong = document.createElement("strong");
-    strong.textContent = items.length > 0 ? "装備中" : "未装備";
+    if (type === "weapon") {
+      strong.textContent = `${items.length}/${MAX_WEAPONS}`;
+    } else {
+      strong.textContent = items.length > 0
+        ? (type === "attachment" ? "装着済み" : "所持中")
+        : (type === "attachment" ? "未装着" : "未所持");
+    }
     const small = document.createElement("small");
-    small.textContent = gearListText(items);
+    small.textContent = gearListText(type, items);
     item.append(span, strong, small);
     hud.gearInventory.append(item);
   });
@@ -1018,10 +1128,24 @@ function renderShop() {
   hud.reroll.disabled = game.money < cost;
 }
 
-function gearListText(items) {
-  if (items.length === 0) return "未装備";
-  const recent = items.slice(-3).join(" / ");
-  return items.length > 3 ? `${recent} ほか${items.length - 3}` : recent;
+function gearListText(type, items) {
+  if (items.length === 0) {
+    if (type === "attachment") return "武器に未装着";
+    if (type === "relic") return "未所持";
+    return "未装備";
+  }
+  if (type === "weapon") {
+    return items.map((weapon) => {
+      if (weapon.attachments.length === 0) return weapon.name;
+      return `${weapon.name}（${weapon.attachments.join("、")}）`;
+    }).join(" / ");
+  }
+  if (type === "attachment") {
+    const recentAttachments = items.slice(-4).map((attachment) => `${attachment.name}→${attachment.weaponName}`).join(" / ");
+    return items.length > 4 ? `${recentAttachments} ほか${items.length - 4}` : recentAttachments;
+  }
+  const recent = items.slice(-4).join(" / ");
+  return items.length > 4 ? `${recent} ほか${items.length - 4}` : recent;
 }
 
 function updateHud() {
@@ -1057,7 +1181,7 @@ function update(dt) {
 
   updateMovement(dt);
   p.hp = clamp(p.hp + p.regen * dt, 0, p.maxHp);
-  p.shootTimer -= dt;
+  updateWeaponTimers(p, dt);
 
   spawnEnemies(dt);
   updateEnemies(dt);
@@ -1074,6 +1198,12 @@ function update(dt) {
   }
 
   updateHud();
+}
+
+function updateWeaponTimers(player, dt) {
+  for (const weapon of player.gear.weapons) {
+    weapon.shootTimer -= dt;
+  }
 }
 
 function updateMovement(dt) {
@@ -1329,33 +1459,41 @@ function updateParticles(dt) {
 
 function autoShoot() {
   const p = game.player;
-  if (p.shootTimer > 0 || game.enemies.length === 0) return;
+  if (game.enemies.length === 0) return;
 
+  for (const weapon of p.gear.weapons) {
+    if (weapon.shootTimer > 0) continue;
+
+    const best = findTargetForWeapon(p, weapon);
+    if (!best) continue;
+
+    const angle = Math.atan2(best.y - p.y, best.x - p.x);
+    const spread = weapon.projectiles === 1 ? 0 : weapon.spread;
+    for (let i = 0; i < weapon.projectiles; i += 1) {
+      const offset = (i - (weapon.projectiles - 1) / 2) * spread;
+      fireBullet(angle + offset, weapon);
+    }
+    weapon.shootTimer += 1 / weapon.fireRate;
+    game.shake = Math.max(game.shake, 1.8);
+  }
+}
+
+function findTargetForWeapon(player, weapon) {
   let best = null;
-  let bestDistance = 760 * 760;
+  let bestDistance = Math.pow((weapon.bulletSpeed || 690) * (weapon.life || 0.72), 2);
   for (const enemy of game.enemies) {
-    const distance = distSq(p.x, p.y, enemy.x, enemy.y);
+    const distance = distSq(player.x, player.y, enemy.x, enemy.y);
     if (distance < bestDistance) {
       bestDistance = distance;
       best = enemy;
     }
   }
-
-  if (!best) return;
-
-  const angle = Math.atan2(best.y - p.y, best.x - p.x);
-  const spread = p.projectiles === 1 ? 0 : 0.18;
-  for (let i = 0; i < p.projectiles; i += 1) {
-    const offset = (i - (p.projectiles - 1) / 2) * spread;
-    fireBullet(angle + offset);
-  }
-  p.shootTimer += 1 / p.fireRate;
-  game.shake = Math.max(game.shake, 1.8);
+  return best;
 }
 
-function fireBullet(angle) {
+function fireBullet(angle, weapon) {
   const p = game.player;
-  const speed = p.bulletSpeed;
+  const speed = weapon.bulletSpeed;
   game.bullets.push({
     x: p.x + Math.cos(angle) * 25,
     y: p.y + Math.sin(angle) * 25,
@@ -1363,9 +1501,9 @@ function fireBullet(angle) {
     vy: Math.sin(angle) * speed,
     angle,
     radius: 9,
-    damage: p.damage,
-    life: 0.72,
-    pierce: p.pierce,
+    damage: weapon.damage + p.weaponPowerBonus,
+    life: weapon.life,
+    pierce: weapon.pierce,
     hitIds: new Set(),
   });
   addSparks(p.x + Math.cos(angle) * 28, p.y + Math.sin(angle) * 28, 1, 40);
