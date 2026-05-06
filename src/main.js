@@ -67,6 +67,7 @@ const game = {
   bullets: [],
   pickups: [],
   particles: [],
+  effects: [],
   offers: [],
 };
 
@@ -90,6 +91,24 @@ function distSq(ax, ay, bx, by) {
   const dx = ax - bx;
   const dy = ay - by;
   return dx * dx + dy * dy;
+}
+
+function distanceToSegmentSq(px, py, ax, ay, bx, by) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq <= 0.0001) return distSq(px, py, ax, ay);
+  const t = clamp(((px - ax) * dx + (py - ay) * dy) / lenSq, 0, 1);
+  const x = ax + dx * t;
+  const y = ay + dy * t;
+  return distSq(px, py, x, y);
+}
+
+function angleDelta(a, b) {
+  let delta = (a - b) % TAU;
+  if (delta > Math.PI) delta -= TAU;
+  if (delta < -Math.PI) delta += TAU;
+  return delta;
 }
 
 function normalize(x, y) {
@@ -120,16 +139,33 @@ function makeRng(seed) {
 }
 
 function createWeapon(template) {
+  const bulletSpeed = template.bulletSpeed ?? 690;
+  const life = template.life || 0.72;
   return {
     id: nextWeaponId(),
     name: template.name,
+    kind: template.kind || "projectile",
     damage: template.damage,
     fireRate: template.fireRate,
-    bulletSpeed: template.bulletSpeed,
+    bulletSpeed,
     projectiles: template.projectiles || 1,
     pierce: template.pierce || 0,
     spread: template.spread ?? 0.18,
-    life: template.life || 0.72,
+    life,
+    range: template.range || bulletSpeed * life,
+    cone: template.cone ?? 0.5,
+    lineWidth: template.lineWidth || 18,
+    explosionRadius: template.explosionRadius || 0,
+    explosionDamage: template.explosionDamage || template.damage,
+    chainCount: template.chainCount || 0,
+    chainRange: template.chainRange || 170,
+    radius: template.radius || 9,
+    jitter: template.jitter || 0,
+    kick: template.kick || 1.8,
+    bulletTint: template.bulletTint ? [...template.bulletTint] : [1, 1, 1],
+    bulletGlow: template.bulletGlow || "glowAmber",
+    effectTint: template.effectTint ? [...template.effectTint] : [1, 1, 1],
+    effectGlow: template.effectGlow || "glowAmber",
     shootTimer: template.shootTimer ?? 0.45,
     attachments: [],
   };
@@ -760,6 +796,7 @@ function resetRun() {
   game.bullets = [];
   game.pickups = [];
   game.particles = [];
+  game.effects = [];
   game.offers = [];
   hud.shop.classList.add("hidden");
   hud.gameOver.classList.add("hidden");
@@ -777,6 +814,7 @@ function startNextWave() {
   game.bullets = [];
   game.pickups = [];
   game.particles = [];
+  game.effects = [];
   game.player.hp = clamp(game.player.hp + game.player.maxHp * 0.28, 1, game.player.maxHp);
   hud.shop.classList.add("hidden");
   updateHud();
@@ -789,6 +827,7 @@ function enterShop() {
   game.bullets = [];
   game.pickups = [];
   game.particles = [];
+  game.effects = [];
   game.player.hp = clamp(game.player.hp + game.player.maxHp * 0.2, 1, game.player.maxHp);
   generateOffers();
   renderShop();
@@ -799,6 +838,27 @@ function endRun() {
   game.mode = "over";
   hud.result.textContent = `第${game.wave}夜、撃破数 ${game.totalKills}、残りコイン ${game.money}枚。`;
   hud.gameOver.classList.remove("hidden");
+}
+
+function boostWeaponImpact(weapon, amount) {
+  weapon.damage += amount;
+  if (weapon.explosionRadius > 0) weapon.explosionDamage += amount * 1.35;
+}
+
+function extendWeaponReach(weapon, multiplier) {
+  weapon.range *= multiplier;
+  weapon.bulletSpeed *= multiplier;
+  weapon.life *= 1 + (multiplier - 1) * 0.45;
+  if (weapon.explosionRadius > 0) weapon.explosionRadius += 10;
+  if (weapon.kind === "chain") weapon.chainRange *= 1 + (multiplier - 1) * 0.7;
+}
+
+function addWeaponPierce(weapon) {
+  weapon.pierce += 1;
+  if (weapon.kind === "laser") weapon.lineWidth += 4;
+  if (weapon.kind === "flame") weapon.cone = Math.min(0.82, weapon.cone + 0.07);
+  if (weapon.kind === "chain") weapon.chainCount += 1;
+  if (weapon.explosionRadius > 0) weapon.explosionRadius += 16;
 }
 
 function generateOffers() {
@@ -852,6 +912,113 @@ function generateOffers() {
       },
     },
     {
+      type: "weapon",
+      name: "サブマシンガン",
+      text: "近い敵へ細かい弾幕を浴びせる。狙いは少し暴れるが、群れを削り続ける。",
+      baseCost: 19,
+      weapon: {
+        damage: 8,
+        fireRate: 6.2,
+        bulletSpeed: 730,
+        life: 0.48,
+        spread: 0.05,
+        jitter: 0.24,
+        kick: 1.0,
+      },
+    },
+    {
+      type: "weapon",
+      name: "火炎放射器",
+      text: "前方を炎でなぎ払う。近くの群れにまとめて火をつける。",
+      baseCost: 22,
+      weapon: {
+        kind: "flame",
+        damage: 7,
+        fireRate: 5.4,
+        bulletSpeed: 1,
+        range: 185,
+        cone: 0.58,
+        kick: 1.2,
+        effectTint: [1, 0.52, 0.2],
+        effectGlow: "glowRed",
+      },
+    },
+    {
+      type: "weapon",
+      name: "レーザー照射器",
+      text: "一直線に焼き切る。列になった敵をまとめて貫く。",
+      baseCost: 26,
+      weapon: {
+        kind: "laser",
+        damage: 32,
+        fireRate: 0.78,
+        bulletSpeed: 1,
+        range: 640,
+        pierce: 8,
+        lineWidth: 22,
+        kick: 2.2,
+        effectTint: [0.48, 1, 1],
+        effectGlow: "glowCyan",
+      },
+    },
+    {
+      type: "weapon",
+      name: "次元爆弾",
+      text: "着弾すると空間が弾ける。爆心の周囲をまとめて巻き込む。",
+      baseCost: 28,
+      weapon: {
+        kind: "bomb",
+        damage: 8,
+        explosionDamage: 44,
+        fireRate: 0.55,
+        bulletSpeed: 380,
+        life: 0.92,
+        range: 420,
+        radius: 12,
+        explosionRadius: 132,
+        kick: 3.4,
+        bulletTint: [0.75, 0.78, 1],
+        bulletGlow: "glowCyan",
+        effectTint: [0.84, 0.58, 1],
+        effectGlow: "glowRed",
+      },
+    },
+    {
+      type: "weapon",
+      name: "テスラコイル",
+      text: "青い火花が敵から敵へ跳ねる。散った群れにも手が届く。",
+      baseCost: 23,
+      weapon: {
+        kind: "chain",
+        damage: 17,
+        fireRate: 1.15,
+        bulletSpeed: 1,
+        range: 430,
+        chainCount: 3,
+        chainRange: 190,
+        kick: 1.7,
+        effectTint: [0.45, 0.95, 1],
+        effectGlow: "glowCyan",
+      },
+    },
+    {
+      type: "weapon",
+      name: "回転ノコギリ",
+      text: "重い刃を投げる。遅いが敵の列を削りながら進む。",
+      baseCost: 21,
+      weapon: {
+        damage: 20,
+        fireRate: 1.0,
+        bulletSpeed: 500,
+        life: 0.9,
+        radius: 13,
+        pierce: 3,
+        kick: 2.4,
+        bulletTint: [0.8, 0.95, 1],
+        bulletGlow: "glowCyan",
+      },
+    },
+    {
       type: "attachment",
       name: "改造トリガー",
       text: "引き金を短くし、武器の手数を増やす。",
@@ -866,7 +1033,7 @@ function generateOffers() {
       text: "弾薬の質を上げ、着弾の勢いを強める。",
       baseCost: 16,
       attach: (weapon) => {
-        weapon.damage += 5;
+        boostWeaponImpact(weapon, 5);
         weapon.bulletSpeed *= 1.12;
       },
     },
@@ -876,7 +1043,7 @@ function generateOffers() {
       text: "弾が敵の群れを抜けやすくなる。",
       baseCost: 17,
       attach: (weapon) => {
-        weapon.pierce += 1;
+        addWeaponPierce(weapon);
       },
     },
     {
@@ -885,8 +1052,7 @@ function generateOffers() {
       text: "遠くの敵まで弾が届きやすくなる。",
       baseCost: 14,
       attach: (weapon) => {
-        weapon.bulletSpeed *= 1.18;
-        weapon.life *= 1.12;
+        extendWeaponReach(weapon, 1.18);
       },
     },
     {
@@ -1188,6 +1354,7 @@ function update(dt) {
   updateBullets(dt);
   updatePickups(dt);
   updateParticles(dt);
+  updateEffects(dt);
   autoShoot();
   updateCamera(dt);
 
@@ -1344,7 +1511,10 @@ function updateBullets(dt) {
     bullet.life -= dt;
     bullet.x += bullet.vx * dt;
     bullet.y += bullet.vy * dt;
-    if (bullet.life <= 0) continue;
+    if (bullet.life <= 0) {
+      if (bullet.explosionRadius > 0) explodeBullet(bullet);
+      continue;
+    }
 
     let keep = true;
     const bulletCellX = Math.floor(bullet.x / COLLISION_CELL_SIZE);
@@ -1361,11 +1531,11 @@ function updateBullets(dt) {
           if (distSq(bullet.x, bullet.y, enemy.x, enemy.y) > range * range) continue;
 
           bullet.hitIds.add(enemy.id);
-          enemy.hp -= bullet.damage;
-          enemy.hit = 1;
-          addSparks(bullet.x, bullet.y, 3, 90);
-          if (enemy.hp <= 0) {
-            killEnemy(enemy);
+          damageEnemy(enemy, bullet.damage, bullet.x, bullet.y, 3, 90);
+          if (bullet.explosionRadius > 0) {
+            explodeBullet(bullet);
+            keep = false;
+            break nearbyCells;
           }
           bullet.pierce -= 1;
           if (bullet.pierce < 0) {
@@ -1379,6 +1549,105 @@ function updateBullets(dt) {
   }
   removeDeadEnemies();
   game.bullets = next;
+}
+
+function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y, sparkCount = 3, sparkSpeed = 90) {
+  if (!enemy || enemy.dead) return false;
+  enemy.hp -= amount;
+  enemy.hit = 1;
+  if (sparkCount > 0) addSparks(impactX, impactY, sparkCount, sparkSpeed);
+  if (enemy.hp <= 0) {
+    killEnemy(enemy);
+    return true;
+  }
+  return false;
+}
+
+function explodeBullet(bullet) {
+  const radius = bullet.explosionRadius || 0;
+  if (radius <= 0) return;
+  addEffect({
+    type: "burst",
+    x: bullet.x,
+    y: bullet.y,
+    radius,
+    life: 0.42,
+    maxLife: 0.42,
+    glow: bullet.effectGlow || "glowRed",
+    tint: bullet.effectTint || [1, 0.56, 0.18],
+  });
+  addSparks(bullet.x, bullet.y, 9, 150);
+  damageEnemiesInRadius(bullet.x, bullet.y, radius, bullet.explosionDamage || bullet.damage, 0.58);
+  game.shake = Math.max(game.shake, 5);
+}
+
+function damageEnemiesInRadius(x, y, radius, amount, edgeScale = 0.65) {
+  let hits = 0;
+  for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
+    const distance = Math.hypot(enemy.x - x, enemy.y - y);
+    if (distance > radius + enemy.radius) continue;
+    const centerFactor = 1 - clamp((distance - enemy.radius) / Math.max(1, radius), 0, 1);
+    const damage = amount * (edgeScale + (1 - edgeScale) * centerFactor);
+    damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 80);
+    hits += 1;
+  }
+  if (hits > 0) removeDeadEnemies();
+  return hits;
+}
+
+function damageEnemiesInLine(x1, y1, x2, y2, halfWidth, amount, maxHits = Infinity) {
+  const hits = [];
+  for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
+    const range = enemy.radius + halfWidth;
+    if (distanceToSegmentSq(enemy.x, enemy.y, x1, y1, x2, y2) > range * range) continue;
+    hits.push({
+      enemy,
+      distance: distSq(x1, y1, enemy.x, enemy.y),
+    });
+  }
+
+  hits.sort((a, b) => a.distance - b.distance);
+  const limit = Math.min(hits.length, maxHits);
+  for (let i = 0; i < limit; i += 1) {
+    const hit = hits[i];
+    const falloff = Math.max(0.72, 1 - i * 0.04);
+    damageEnemy(hit.enemy, amount * falloff, hit.enemy.x, hit.enemy.y, 2, 110);
+  }
+  if (limit > 0) removeDeadEnemies();
+  return limit;
+}
+
+function damageEnemiesInCone(x, y, angle, range, halfAngle, amount) {
+  let hits = 0;
+  for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
+    const dx = enemy.x - x;
+    const dy = enemy.y - y;
+    const distance = Math.hypot(dx, dy);
+    if (distance > range + enemy.radius) continue;
+    if (Math.abs(angleDelta(Math.atan2(dy, dx), angle)) > halfAngle) continue;
+    const nearFactor = 1 - clamp(distance / Math.max(1, range), 0, 1);
+    damageEnemy(enemy, amount * (0.78 + nearFactor * 0.32), enemy.x, enemy.y, 2, 85);
+    hits += 1;
+  }
+  if (hits > 0) removeDeadEnemies();
+  return hits;
+}
+
+function findNearestEnemyFrom(x, y, range, blocked = new Set()) {
+  let best = null;
+  let bestDistance = range * range;
+  for (const enemy of game.enemies) {
+    if (enemy.dead || blocked.has(enemy.id)) continue;
+    const distance = distSq(x, y, enemy.x, enemy.y);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = enemy;
+    }
+  }
+  return best;
 }
 
 function buildEnemyGrid() {
@@ -1457,6 +1726,27 @@ function updateParticles(dt) {
   game.particles = kept;
 }
 
+function updateEffects(dt) {
+  const kept = [];
+  for (const effect of game.effects) {
+    effect.life -= dt;
+    if (effect.life > 0) kept.push(effect);
+  }
+  game.effects = kept;
+}
+
+function addEffect(effect) {
+  const life = effect.life || 0.18;
+  game.effects.push({
+    ...effect,
+    life,
+    maxLife: effect.maxLife || life,
+  });
+  if (game.effects.length > 90) {
+    game.effects.splice(0, game.effects.length - 90);
+  }
+}
+
 function autoShoot() {
   const p = game.player;
   if (game.enemies.length === 0) return;
@@ -1467,21 +1757,17 @@ function autoShoot() {
     const best = findTargetForWeapon(p, weapon);
     if (!best) continue;
 
-    const angle = Math.atan2(best.y - p.y, best.x - p.x);
-    const spread = weapon.projectiles === 1 ? 0 : weapon.spread;
-    for (let i = 0; i < weapon.projectiles; i += 1) {
-      const offset = (i - (weapon.projectiles - 1) / 2) * spread;
-      fireBullet(angle + offset, weapon);
-    }
+    fireWeapon(weapon, best);
     weapon.shootTimer += 1 / weapon.fireRate;
-    game.shake = Math.max(game.shake, 1.8);
+    game.shake = Math.max(game.shake, weapon.kick);
   }
 }
 
 function findTargetForWeapon(player, weapon) {
   let best = null;
-  let bestDistance = Math.pow((weapon.bulletSpeed || 690) * (weapon.life || 0.72), 2);
+  let bestDistance = Math.pow(weapon.range || (weapon.bulletSpeed || 690) * (weapon.life || 0.72), 2);
   for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
     const distance = distSq(player.x, player.y, enemy.x, enemy.y);
     if (distance < bestDistance) {
       bestDistance = distance;
@@ -1491,22 +1777,148 @@ function findTargetForWeapon(player, weapon) {
   return best;
 }
 
+function fireWeapon(weapon, target) {
+  const p = game.player;
+  const angle = Math.atan2(target.y - p.y, target.x - p.x);
+  if (weapon.kind === "flame") {
+    fireFlame(weapon, angle);
+    return;
+  }
+  if (weapon.kind === "laser") {
+    fireLaser(weapon, angle);
+    return;
+  }
+  if (weapon.kind === "chain") {
+    fireChain(weapon, target);
+    return;
+  }
+  fireProjectileWeapon(weapon, angle);
+}
+
+function fireProjectileWeapon(weapon, angle) {
+  const spread = weapon.projectiles === 1 ? 0 : weapon.spread;
+  for (let i = 0; i < weapon.projectiles; i += 1) {
+    const offset = (i - (weapon.projectiles - 1) / 2) * spread;
+    const jitter = weapon.jitter > 0 ? (Math.random() - 0.5) * weapon.jitter : 0;
+    fireBullet(angle + offset + jitter, weapon);
+  }
+}
+
 function fireBullet(angle, weapon) {
   const p = game.player;
   const speed = weapon.bulletSpeed;
+  const bonus = p.weaponPowerBonus;
   game.bullets.push({
     x: p.x + Math.cos(angle) * 25,
     y: p.y + Math.sin(angle) * 25,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
     angle,
-    radius: 9,
-    damage: weapon.damage + p.weaponPowerBonus,
+    radius: weapon.radius,
+    damage: weapon.damage + bonus,
     life: weapon.life,
     pierce: weapon.pierce,
+    explosionRadius: weapon.explosionRadius,
+    explosionDamage: weapon.explosionDamage + bonus,
+    bulletTint: weapon.bulletTint,
+    bulletGlow: weapon.bulletGlow,
+    effectTint: weapon.effectTint,
+    effectGlow: weapon.effectGlow,
     hitIds: new Set(),
   });
   addSparks(p.x + Math.cos(angle) * 28, p.y + Math.sin(angle) * 28, 1, 40);
+}
+
+function fireFlame(weapon, angle) {
+  const p = game.player;
+  const originX = p.x + Math.cos(angle) * 20;
+  const originY = p.y + Math.sin(angle) * 20;
+  damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus);
+
+  for (let i = 0; i < 5; i += 1) {
+    const flameAngle = angle + (Math.random() - 0.5) * weapon.cone * 1.55;
+    const length = weapon.range * (0.48 + Math.random() * 0.5);
+    addEffect({
+      type: "line",
+      x1: originX,
+      y1: originY,
+      x2: originX + Math.cos(flameAngle) * length,
+      y2: originY + Math.sin(flameAngle) * length,
+      width: 18 + Math.random() * 14,
+      life: 0.16,
+      maxLife: 0.16,
+      glow: weapon.effectGlow,
+      tint: weapon.effectTint,
+    });
+  }
+  addSparks(originX + Math.cos(angle) * 36, originY + Math.sin(angle) * 36, 2, 80);
+}
+
+function fireLaser(weapon, angle) {
+  const p = game.player;
+  const startX = p.x + Math.cos(angle) * 26;
+  const startY = p.y + Math.sin(angle) * 26;
+  const endX = p.x + Math.cos(angle) * weapon.range;
+  const endY = p.y + Math.sin(angle) * weapon.range;
+  damageEnemiesInLine(startX, startY, endX, endY, weapon.lineWidth * 0.5, weapon.damage + p.weaponPowerBonus, weapon.pierce + 1);
+  addEffect({
+    type: "line",
+    x1: startX,
+    y1: startY,
+    x2: endX,
+    y2: endY,
+    width: weapon.lineWidth,
+    life: 0.32,
+    maxLife: 0.32,
+    glow: weapon.effectGlow,
+    tint: weapon.effectTint,
+  });
+  addEffect({
+    type: "line",
+    x1: startX,
+    y1: startY,
+    x2: endX,
+    y2: endY,
+    width: Math.max(5, weapon.lineWidth * 0.28),
+    life: 0.26,
+    maxLife: 0.26,
+    glow: "white",
+    tint: [1, 1, 1],
+  });
+}
+
+function fireChain(weapon, target) {
+  const p = game.player;
+  const blocked = new Set();
+  let fromX = p.x;
+  let fromY = p.y;
+  let enemy = target;
+  let jumps = 0;
+  const maxJumps = weapon.chainCount + 1;
+
+  while (enemy && jumps < maxJumps) {
+    const falloff = Math.max(0.62, 1 - jumps * 0.12);
+    addEffect({
+      type: "line",
+      x1: fromX,
+      y1: fromY,
+      x2: enemy.x,
+      y2: enemy.y,
+      width: 18,
+      life: 0.34,
+      maxLife: 0.34,
+      glow: weapon.effectGlow,
+      tint: weapon.effectTint,
+    });
+    damageEnemy(enemy, (weapon.damage + p.weaponPowerBonus) * falloff, enemy.x, enemy.y, 3, 120);
+    blocked.add(enemy.id);
+    fromX = enemy.x;
+    fromY = enemy.y;
+    enemy = findNearestEnemyFrom(fromX, fromY, weapon.chainRange, blocked);
+    jumps += 1;
+  }
+
+  removeDeadEnemies();
 }
 
 function killEnemy(enemy) {
@@ -1702,11 +2114,58 @@ function drawWorld(view, camX, camY, zoom) {
     else drawEnemy(actor.item, view, camX, camY, zoom);
   }
 
+  drawEffects(view, camX, camY, zoom);
+
   for (const bullet of game.bullets) {
     const screen = worldToScreen(bullet.x, bullet.y, view, camX, camY, zoom);
-    renderer.draw("glowAmber", screen.x, screen.y, 42 * zoom, 30 * zoom, { alpha: 0.32 });
-    renderer.draw("bulletReadable", screen.x, screen.y, 38 * zoom, 14 * zoom, { rotation: bullet.angle });
+    renderer.draw(bullet.bulletGlow || "glowAmber", screen.x, screen.y, 42 * zoom, 30 * zoom, { alpha: 0.32 });
+    renderer.draw("bulletReadable", screen.x, screen.y, bullet.radius * 4.2 * zoom, bullet.radius * 1.55 * zoom, {
+      rotation: bullet.angle,
+      tint: bullet.bulletTint || [1, 1, 1],
+    });
   }
+}
+
+function drawEffects(view, camX, camY, zoom) {
+  for (const effect of game.effects) {
+    const alpha = clamp(effect.life / effect.maxLife, 0, 1);
+    if (effect.type === "line") {
+      drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * 1.9, view, camX, camY, zoom, {
+        tint: effect.tint || [1, 1, 1],
+        alpha: alpha * 0.3,
+      });
+      drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width, view, camX, camY, zoom, {
+        tint: effect.tint || [1, 1, 1],
+        alpha: alpha * 0.9,
+      });
+    } else if (effect.type === "burst") {
+      const screen = worldToScreen(effect.x, effect.y, view, camX, camY, zoom);
+      const pulse = 1 + (1 - alpha) * 0.55;
+      const size = effect.radius * 2 * pulse * zoom;
+      renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, size, size, {
+        tint: effect.tint || [1, 1, 1],
+        alpha: alpha * 0.68,
+      });
+      renderer.draw("white", screen.x, screen.y, effect.radius * 1.2 * zoom, effect.radius * 1.2 * zoom, {
+        tint: effect.tint || [1, 1, 1],
+        alpha: alpha * 0.16,
+      });
+    }
+  }
+}
+
+function drawWorldLine(x1, y1, x2, y2, width, view, camX, camY, zoom, options = {}) {
+  const start = worldToScreen(x1, y1, view, camX, camY, zoom);
+  const end = worldToScreen(x2, y2, view, camX, camY, zoom);
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.hypot(dx, dy);
+  if (length <= 0.01) return;
+  renderer.draw("white", (start.x + end.x) * 0.5, (start.y + end.y) * 0.5, length, Math.max(2, width * zoom), {
+    rotation: Math.atan2(dy, dx),
+    tint: options.tint || [1, 1, 1],
+    alpha: options.alpha ?? 1,
+  });
 }
 
 function drawPlayer(player, view, camX, camY, zoom) {
