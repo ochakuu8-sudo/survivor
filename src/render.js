@@ -158,8 +158,14 @@ function drawWorld(view, camX, camY, zoom) {
 
   for (const bullet of game.bullets) {
     const screen = worldToScreen(bullet.x, bullet.y, view, camX, camY, zoom);
-    if (bullet.kind === "timedBomb") {
-      const fuseAlpha = clamp(bullet.life / (bullet.maxLife || bullet.life), 0, 1);
+    if (bullet.kind === "timedBomb" || bullet.kind === "pulseBomb") {
+      let fuseAlpha;
+      if (bullet.kind === "pulseBomb") {
+        const interval = bullet.pulseInterval || 1;
+        fuseAlpha = clamp(bullet.pulseTimer / interval, 0, 1);
+      } else {
+        fuseAlpha = clamp(bullet.life / (bullet.maxLife || bullet.life), 0, 1);
+      }
       const blink = Math.sin(game.elapsed * (10 + (1 - fuseAlpha) * 18)) > 0 ? 1 : 0.45;
       state.renderer.draw(bullet.bulletGlow || "glowRed", screen.x, screen.y, 52 * zoom, 52 * zoom, { alpha: 0.22 + (1 - fuseAlpha) * 0.22 });
       state.renderer.draw("shadow", screen.x, screen.y + 11 * zoom, 34 * zoom, 13 * zoom, { alpha: 0.58 });

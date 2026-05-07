@@ -181,6 +181,10 @@ function fireWeapon(weapon, target) {
     fireTimedBomb(weapon, angle);
     return;
   }
+  if (weapon.kind === "pulseBomb") {
+    firePulseBomb(weapon);
+    return;
+  }
   if (weapon.kind === "orbit") {
     fireOrbit(weapon);
     return;
@@ -448,6 +452,47 @@ function fireTimedBomb(weapon, angle) {
     radius: 24,
     life: 0.18,
     maxLife: 0.18,
+    glow: weapon.effectGlow,
+    tint: weapon.effectTint,
+  });
+}
+
+function firePulseBomb(weapon) {
+  const p = game.player;
+  const bonus = p.weaponPowerBonus;
+  const duration = Math.max(0.6, weapon.duration || 4.5);
+  const pulseInterval = weapon.tickRate > 0 ? 1 / weapon.tickRate : 1.0;
+  const fuse = Math.max(0, weapon.fuse ?? 0.4);
+  game.bullets.push({
+    kind: "pulseBomb",
+    x: p.x,
+    y: p.y,
+    vx: 0,
+    vy: 0,
+    angle: game.elapsed,
+    radius: weapon.radius,
+    damage: 0,
+    life: duration,
+    maxLife: duration,
+    pulseTimer: fuse,
+    pulseInterval,
+    pierce: 0,
+    explosionRadius: weapon.explosionRadius,
+    explosionDamage: (weapon.explosionDamage || 0) + bonus,
+    bulletTint: weapon.bulletTint,
+    bulletGlow: weapon.bulletGlow,
+    effectTint: weapon.effectTint,
+    effectGlow: weapon.effectGlow,
+    collides: false,
+    hitIds: new Set(),
+  });
+  addEffect({
+    type: "burst",
+    x: p.x,
+    y: p.y,
+    radius: 28,
+    life: 0.2,
+    maxLife: 0.2,
     glow: weapon.effectGlow,
     tint: weapon.effectTint,
   });

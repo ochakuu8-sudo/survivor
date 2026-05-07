@@ -11,7 +11,17 @@ export function updateBullets(dt) {
     bullet.x += bullet.vx * dt;
     bullet.y += bullet.vy * dt;
     if (bullet.life <= 0) {
+      if (bullet.kind === "pulseBomb") continue;
       if (bullet.explosionRadius > 0) explodeBullet(bullet);
+      continue;
+    }
+    if (bullet.kind === "pulseBomb") {
+      bullet.pulseTimer -= dt;
+      while (bullet.pulseTimer <= 0) {
+        explodeBullet(bullet);
+        bullet.pulseTimer += bullet.pulseInterval;
+      }
+      next.push(bullet);
       continue;
     }
     if (bullet.collides === false) {
