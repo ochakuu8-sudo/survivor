@@ -3,7 +3,7 @@ import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, lerp } from "./utils/math.js";
-import { autoShoot, createWeapon, updateWeaponTimers } from "./weapons.js";
+import { autoShoot, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
 import { spawnEnemies, updateEnemies } from "./enemies.js";
 import { updateBullets } from "./bullets.js";
@@ -11,12 +11,12 @@ import { updatePickups } from "./pickups.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects } from "./combat.js";
 import { updateMovement } from "./player.js";
-import { generateOffers, renderShop } from "./shop.js";
+import { generateOffers, prepareStarterPick, renderShop, renderStarterPick } from "./shop.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
 
 export function resetRun() {
-  game.mode = "fight";
+  game.mode = "starterPick";
   game.wave = 1;
   game.timeLeft = WAVE_SECONDS;
   game.elapsed = 0;
@@ -46,20 +46,7 @@ export function resetRun() {
     walkTime: 0,
     walkDustTimer: 0,
     gear: {
-      weapons: [
-        createWeapon({
-          name: "石",
-          damage: 40,
-          fireRate: 0.72,
-          bulletSpeed: 320,
-          life: 1.45,
-          radius: 12,
-          kick: 2.2,
-          ricochet: 1,
-          bulletGlow: "glowAmber",
-          bulletSprite: "stoneReadable",
-        }),
-      ],
+      weapons: [],
       attachments: [],
     },
   };
@@ -70,9 +57,12 @@ export function resetRun() {
   game.effects = [];
   game.offers = [];
   game.pinnedOffer = null;
+  game.starterChoices = [];
   game.player.baseStats = snapshotPlayerBaseStats(game.player);
   hud.shop.classList.add("hidden");
   hud.gameOver.classList.add("hidden");
+  prepareStarterPick();
+  renderStarterPick();
   updateHud();
 }
 

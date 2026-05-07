@@ -254,6 +254,53 @@ h1 {
   align-items: start;
 }
 
+.starter-offers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.starter-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 14px;
+  border: 2px solid rgba(255, 93, 150, 0.7);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 93, 150, 0.16), transparent 38%), #2d276d;
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.18);
+}
+
+.starter-card h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.18;
+}
+
+.starter-card p {
+  margin: 0;
+  color: #d9f7ff;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.starter-card-pick {
+  align-self: end;
+  min-height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 6px;
+  background: #ff5d96;
+  color: #10273a;
+  font-weight: 900;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.starter-card-pick:hover {
+  background: #ff85b3;
+}
+
 .shop-side {
   display: grid;
   gap: 10px;
@@ -876,6 +923,10 @@ h1 {
 
   .offer-section-attachments .offer-grid,
   .offer-section-weapons .offer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .starter-offers {
     grid-template-columns: 1fr;
   }
 

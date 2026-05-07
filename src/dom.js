@@ -14,6 +14,8 @@ export const hud = {
   gearInventory: document.querySelector("#gearInventory"),
   reroll: document.querySelector("#rerollBtn"),
   nextWave: document.querySelector("#nextWaveBtn"),
+  starterPick: document.querySelector("#starterPick"),
+  starterOffers: document.querySelector("#starterOffers"),
   gameOver: document.querySelector("#gameOver"),
   result: document.querySelector("#resultText"),
   restart: document.querySelector("#restartBtn"),

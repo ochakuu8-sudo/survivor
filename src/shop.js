@@ -27,6 +27,23 @@ const ATTACHMENT_RARITY_BASE_COST = {
 const SHOP_WEAPON_COUNT = 2;
 const SHOP_ATTACHMENT_COUNT = 4;
 
+const STONE_TEMPLATE = {
+  name: "石",
+  text: "重い石を山なりに投げる。一回跳弾して別の敵を狙う。",
+  baseCost: 0,
+  weapon: {
+    damage: 40,
+    fireRate: 0.72,
+    bulletSpeed: 320,
+    life: 1.45,
+    radius: 12,
+    kick: 2.2,
+    ricochet: 1,
+    bulletGlow: "glowAmber",
+    bulletSprite: "stoneReadable",
+  },
+};
+
 const WEAPON_POOL = [
   {
     name: "豆鉄砲",
@@ -637,4 +654,50 @@ function renderGearInventory() {
   }
 
   hud.gearInventory.append(board);
+}
+
+const STARTER_POOL = [STONE_TEMPLATE, ...WEAPON_POOL];
+
+export function prepareStarterPick() {
+  const indices = shuffle(STARTER_POOL.map((_, i) => i)).slice(0, 3);
+  game.starterChoices = indices.map((i) => STARTER_POOL[i]);
+}
+
+export function pickStarterWeapon(index) {
+  const template = game.starterChoices[index];
+  if (!template) return;
+  const weapon = createWeapon({ name: template.name, ...template.weapon });
+  game.player.gear.weapons = [weapon];
+  game.starterChoices = [];
+  game.mode = "fight";
+  hud.starterPick.classList.add("hidden");
+  updateHud();
+}
+
+export function renderStarterPick() {
+  hud.starterOffers.replaceChildren();
+  game.starterChoices.forEach((template, index) => {
+    const card = document.createElement("article");
+    card.className = "starter-card offer-weapon";
+
+    const tag = document.createElement("span");
+    tag.className = "offer-type offer-type-weapon";
+    tag.textContent = OFFER_TYPE_LABELS.weapon;
+
+    const title = document.createElement("h2");
+    title.textContent = template.name;
+
+    const text = document.createElement("p");
+    text.textContent = template.text || "";
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "starter-card-pick";
+    button.textContent = "これで始める";
+    button.addEventListener("click", () => pickStarterWeapon(index));
+
+    card.append(tag, title, text, button);
+    hud.starterOffers.append(card);
+  });
+  hud.starterPick.classList.remove("hidden");
 }
