@@ -249,104 +249,77 @@ function fireFlame(weapon, angle) {
 
   const baseTint = weapon.effectTint || [1, 0.42, 0.12];
   const glow = weapon.effectGlow || "glowRed";
-  const streamCount = 5;
-  for (let i = 0; i < streamCount; i += 1) {
-    const fan = streamCount === 1 ? 0 : i / (streamCount - 1) - 0.5;
-    const flameAngle = angle + fan * weapon.cone * 2 + (Math.random() - 0.5) * 0.06;
-    const length = weapon.range * (0.86 + Math.random() * 0.14);
-    const tipX = originX + Math.cos(flameAngle) * length;
-    const tipY = originY + Math.sin(flameAngle) * length;
 
-    addEffect({
-      type: "line",
-      x1: originX,
-      y1: originY,
-      x2: tipX,
-      y2: tipY,
-      width: 22 + Math.random() * 6,
-      life: 0.18,
-      maxLife: 0.18,
-      glow,
-      tint: [baseTint[0] * 0.85, baseTint[1] * 0.45, baseTint[2] * 0.35],
-    });
-    addEffect({
-      type: "line",
-      x1: originX,
-      y1: originY,
-      x2: originX + Math.cos(flameAngle) * length * 0.86,
-      y2: originY + Math.sin(flameAngle) * length * 0.86,
-      width: 12,
-      life: 0.16,
-      maxLife: 0.16,
-      glow,
-      tint: baseTint,
-    });
-    addEffect({
-      type: "line",
-      x1: originX,
-      y1: originY,
-      x2: originX + Math.cos(flameAngle) * length * 0.62,
-      y2: originY + Math.sin(flameAngle) * length * 0.62,
-      width: 4,
-      life: 0.13,
-      maxLife: 0.13,
-      glow: "glowAmber",
-      tint: [1, 0.92, 0.5],
-    });
-  }
+  const billowCount = 16;
+  for (let i = 0; i < billowCount; i += 1) {
+    const t = (i + Math.random()) / billowCount;
+    const distance = weapon.range * (0.08 + t * 0.86);
+    const fan = (Math.random() - 0.5) * weapon.cone * 1.9;
+    const flameAngle = angle + fan;
+    const px = originX + Math.cos(flameAngle) * distance;
+    const py = originY + Math.sin(flameAngle) * distance;
+    const heat = 1 - t;
 
-  for (let i = 0; i < 3; i += 1) {
-    const fan = (Math.random() - 0.5) * weapon.cone * 1.8;
-    const distance = weapon.range * (0.38 + Math.random() * 0.5);
-    const puffAngle = angle + fan;
+    let tint;
+    if (heat > 0.7) {
+      tint = [1, 0.95 - (1 - heat) * 0.4, 0.55 - (1 - heat) * 0.6];
+    } else if (heat > 0.4) {
+      tint = [1, 0.6 + heat * 0.22, 0.2];
+    } else {
+      tint = [baseTint[0] * 0.92, baseTint[1] * 0.65, baseTint[2] * 0.55];
+    }
+
+    const radius = 22 + heat * 16 + Math.random() * 14;
+    const life = 0.18 + Math.random() * 0.14 + heat * 0.05;
     addEffect({
       type: "burst",
-      x: originX + Math.cos(puffAngle) * distance,
-      y: originY + Math.sin(puffAngle) * distance,
-      radius: 18 + Math.random() * 16,
-      life: 0.18 + Math.random() * 0.08,
-      maxLife: 0.26,
+      x: px,
+      y: py,
+      radius,
+      life,
+      maxLife: life,
       glow,
-      tint: [baseTint[0], baseTint[1] * 0.9, baseTint[2] * 0.65],
+      tint,
     });
   }
 
   addEffect({
     type: "burst",
-    x: originX + Math.cos(angle) * 18,
-    y: originY + Math.sin(angle) * 18,
-    radius: 36,
-    life: 0.14,
-    maxLife: 0.14,
+    x: originX + Math.cos(angle) * 22,
+    y: originY + Math.sin(angle) * 22,
+    radius: 44,
+    life: 0.16,
+    maxLife: 0.16,
     glow: "glowAmber",
-    tint: [1, 0.96, 0.62],
+    tint: [1, 0.94, 0.6],
   });
   addEffect({
     type: "burst",
-    x: originX + Math.cos(angle) * 6,
-    y: originY + Math.sin(angle) * 6,
-    radius: 22,
-    life: 0.1,
-    maxLife: 0.1,
+    x: originX + Math.cos(angle) * 10,
+    y: originY + Math.sin(angle) * 10,
+    radius: 30,
+    life: 0.12,
+    maxLife: 0.12,
     glow: "glowAmber",
-    tint: [1, 1, 0.88],
+    tint: [1, 1, 0.86],
   });
 
-  const emberCount = 6;
+  const emberCount = 9;
   for (let i = 0; i < emberCount; i += 1) {
-    const fan = (Math.random() - 0.5) * weapon.cone * 1.6;
+    const fan = (Math.random() - 0.5) * weapon.cone * 1.7;
     const dir = angle + fan;
-    const speed = 220 + Math.random() * 160;
+    const speed = 180 + Math.random() * 200;
+    const heatColor = Math.random();
     game.particles.push({
-      x: originX + Math.cos(dir) * 6,
-      y: originY + Math.sin(dir) * 6,
+      x: originX + Math.cos(dir) * 8,
+      y: originY + Math.sin(dir) * 8,
       vx: Math.cos(dir) * speed,
       vy: Math.sin(dir) * speed,
-      life: 0.3 + Math.random() * 0.22,
-      maxLife: 0.52,
-      size: 9 + Math.random() * 7,
+      life: 0.32 + Math.random() * 0.28,
+      maxLife: 0.6,
+      size: 10 + Math.random() * 10,
       sprite: "spark",
-      tint: i % 3 === 0 ? [1, 0.9, 0.42] : [1, 0.5, 0.18],
+      tint: heatColor > 0.7 ? [1, 0.92, 0.5] : heatColor > 0.35 ? [1, 0.55, 0.18] : [0.85, 0.3, 0.1],
     });
   }
 }
