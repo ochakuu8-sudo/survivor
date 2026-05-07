@@ -1,0 +1,23 @@
+export const canvas = document.querySelector("#game");
+
+export const hud = {
+  wave: document.querySelector("#waveText"),
+  time: document.querySelector("#timeText"),
+  hp: document.querySelector("#hpFill"),
+  hpText: document.querySelector("#hpText"),
+  cash: document.querySelector("#cashText"),
+  kills: document.querySelector("#killText"),
+  hitFlash: document.querySelector("#hitFlash"),
+  shop: document.querySelector("#shop"),
+  offers: document.querySelector("#offers"),
+  shopCash: document.querySelector("#shopCash"),
+  gearInventory: document.querySelector("#gearInventory"),
+  reroll: document.querySelector("#rerollBtn"),
+  nextWave: document.querySelector("#nextWaveBtn"),
+  gameOver: document.querySelector("#gameOver"),
+  result: document.querySelector("#resultText"),
+  restart: document.querySelector("#restartBtn"),
+  touchControls: document.querySelector("#touchControls"),
+  moveStick: document.querySelector("#moveStick"),
+  moveThumb: document.querySelector("#moveThumb"),
+};
