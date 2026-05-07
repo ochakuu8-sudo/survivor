@@ -97,23 +97,6 @@ const WEAPON_POOL = [
     },
   },
   {
-    name: "レーザー照射器",
-    text: "一直線に焼き切る。列になった敵をまとめて貫く。",
-    baseCost: 26,
-    weapon: {
-      kind: "laser",
-      damage: 32,
-      fireRate: 0.78,
-      bulletSpeed: 1,
-      range: 640,
-      pierce: 8,
-      lineWidth: 22,
-      kick: 2.2,
-      effectTint: [0.48, 1, 1],
-      effectGlow: "glowCyan",
-    },
-  },
-  {
     name: "次元爆弾",
     text: "着弾すると空間が弾ける。爆心の周囲をまとめて巻き込む。",
     baseCost: 28,
@@ -157,7 +140,7 @@ const WEAPON_POOL = [
     },
   },
   {
-    name: "設置レーザー",
+    name: "持続レーザー",
     text: "設置した光線がしばらく残り、触れた敵を連続で焼く。",
     baseCost: 27,
     weapon: {
