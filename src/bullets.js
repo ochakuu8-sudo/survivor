@@ -47,6 +47,11 @@ export function updateBullets(dt) {
           damageEnemy(enemy, bullet.damage, bullet.x, bullet.y, 3, 90);
           if (bullet.explosionRadius > 0) {
             explodeBullet(bullet);
+            if (bullet.ricochet > 0 && redirectRicochet(bullet)) {
+              bullet.ricochet -= 1;
+              bullet.pierce = 0;
+              break nearbyCells;
+            }
             keep = false;
             break nearbyCells;
           }
