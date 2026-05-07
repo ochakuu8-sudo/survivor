@@ -4,6 +4,7 @@ import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, createWeapon, updateWeaponTimers } from "./weapons.js";
+import { snapshotPlayerBaseStats } from "./attachments.js";
 import { spawnEnemies, updateEnemies } from "./enemies.js";
 import { updateBullets } from "./bullets.js";
 import { updatePickups } from "./pickups.js";
@@ -59,7 +60,6 @@ export function resetRun() {
         }),
       ],
       attachments: [],
-      relics: [],
     },
   };
   game.enemies = [];
@@ -68,7 +68,9 @@ export function resetRun() {
   game.particles = [];
   game.effects = [];
   game.offers = [];
+  game.pinnedOffer = null;
   game.selectedAttachment = null;
+  game.player.baseStats = snapshotPlayerBaseStats(game.player);
   hud.shop.classList.add("hidden");
   hud.gameOver.classList.add("hidden");
   updateHud();

@@ -59,6 +59,7 @@ export function attachmentCategoryLabel(category) {
     special: "特殊効果",
     synergy: "シナジー",
     legend: "伝説効果",
+    support: "プレイヤー強化",
   };
   return labels[category] || "効果";
 }
@@ -78,6 +79,9 @@ export function attachmentEffectSummary(definition, rarity) {
   }
   if (definition.category === "synergy") {
     return `既存アタッチメントとの連動量 ${power.toFixed(2)}倍`;
+  }
+  if (definition.category === "support") {
+    return `プレイヤー強化量 ${power.toFixed(2)}倍`;
   }
   return `総合強化 ${power.toFixed(2)}倍`;
 }
@@ -100,13 +104,45 @@ export function syncGearAttachments() {
   );
 }
 
-export function recomputeWeaponAttachments(weapon) {
-  restoreWeaponBaseStats(weapon);
-  weapon.attachments.forEach((attachment) => {
-    const definition = findAttachmentDefinition(attachment.key);
-    if (definition) definition.attach(weapon, rarityPower(attachment.rarity), attachment);
+const PLAYER_BASE_STAT_KEYS = [
+  "maxHp",
+  "speed",
+  "pickup",
+  "armor",
+  "regen",
+  "weaponPowerBonus",
+];
+
+export function snapshotPlayerBaseStats(player) {
+  const stats = {};
+  PLAYER_BASE_STAT_KEYS.forEach((key) => {
+    stats[key] = player[key];
+  });
+  return stats;
+}
+
+function restorePlayerBaseStats() {
+  const player = game.player;
+  if (!player?.baseStats) return;
+  PLAYER_BASE_STAT_KEYS.forEach((key) => {
+    if (player.baseStats[key] !== undefined) player[key] = player.baseStats[key];
+  });
+}
+
+export function recomputeAllAttachments() {
+  if (!game.player?.gear) return;
+  restorePlayerBaseStats();
+  game.player.gear.weapons.forEach((weapon) => {
+    restoreWeaponBaseStats(weapon);
+  });
+  game.player.gear.weapons.forEach((weapon) => {
+    weapon.attachments.forEach((attachment) => {
+      const definition = findAttachmentDefinition(attachment.key);
+      if (definition) definition.attach(weapon, rarityPower(attachment.rarity), attachment);
+    });
   });
   syncGearAttachments();
+  if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
 }
 
 export function getSelectedAttachmentInfo() {
@@ -277,6 +313,67 @@ export const ACTIVE_ATTACHMENTS = [
       }
     },
   },
+  {
+    key: "vitalityCharm",
+    name: "守りのお守り",
+    minRarity: "normal",
+    category: "support",
+    text: "最大体力を底上げする。倒れにくい体になる。",
+    attach: (_weapon, power) => {
+      game.player.maxHp += Math.round(22 * power);
+    },
+  },
+  {
+    key: "guardBadge",
+    name: "古い防犯バッジ",
+    minRarity: "normal",
+    category: "support",
+    text: "被ダメージ軽減の値を上げる。",
+    attach: (_weapon, power) => {
+      game.player.armor += Math.round(3 * power);
+    },
+  },
+  {
+    key: "fieldTape",
+    name: "応急テープ",
+    minRarity: "normal",
+    category: "support",
+    text: "戦闘中の自然回復量を底上げする。",
+    attach: (_weapon, power) => {
+      game.player.regen += 0.7 * power;
+    },
+  },
+  {
+    key: "scrapMagnet",
+    name: "スクラップ磁石",
+    minRarity: "normal",
+    category: "support",
+    text: "コインの磁力範囲を広げる。",
+    attach: (_weapon, power) => {
+      game.player.pickup += Math.round(34 * power);
+    },
+  },
+  {
+    key: "lightSneaker",
+    name: "軽量スニーカー",
+    minRarity: "normal",
+    category: "support",
+    text: "移動速度を上げて立ち回りやすくする。",
+    attach: (_weapon, power) => {
+      game.player.speed += Math.round(22 * power);
+    },
+  },
+  {
+    key: "looseBattery",
+    name: "ジャンク電池",
+    minRarity: "rare",
+    category: "support",
+    text: "武器威力ボーナスを大きく上げるが、被ダメージ軽減は少し失う。",
+    attach: (_weapon, power) => {
+      game.player.weaponPowerBonus += Math.round(8 * power);
+      game.player.armor -= Math.round(2 * power);
+    },
+  },
 ];
 
 export function rollAttachmentRarity(slotIndex) {
@@ -313,8 +410,32 @@ export function addAttachmentToWeapon(weapon, attachment) {
     rarity,
     category: definition.category || "stat",
   });
-  recomputeWeaponAttachments(weapon);
+  recomputeAllAttachments();
   return true;
+}
+
+export function shopRarityTableForWave(wave) {
+  const tier = clamp(Math.floor((Math.max(1, wave) - 1) / 2), 0, ATTACHMENT_RARITY_TABLES.length - 1);
+  return ATTACHMENT_RARITY_TABLES[tier];
+}
+
+export function rollShopAttachmentRarity(wave) {
+  const table = shopRarityTableForWave(wave);
+  const roll = Math.random() * 100;
+  let cursor = 0;
+  for (const rarity of RARITY_ORDER) {
+    cursor += table[rarity] || 0;
+    if (roll < cursor) return rarity;
+  }
+  return "normal";
+}
+
+export function pickShopAttachment(wave) {
+  const rarity = rollShopAttachmentRarity(wave);
+  const candidates = ACTIVE_ATTACHMENTS.filter((attachment) => attachmentCanAppear(attachment, rarity));
+  if (candidates.length === 0) return null;
+  const definition = candidates[Math.floor(Math.random() * candidates.length)];
+  return { definition, rarity };
 }
 
 export function weaponUpgradeCost(weapon) {

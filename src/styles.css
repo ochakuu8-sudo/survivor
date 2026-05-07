@@ -263,7 +263,7 @@ h1 {
 
 .offers {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -295,6 +295,109 @@ h1 {
 .offer-relic {
   border-color: rgba(255, 228, 107, 0.7);
   background: linear-gradient(180deg, rgba(255, 228, 107, 0.13), transparent 38%), #2d276d;
+}
+
+.offer-pinned {
+  border-color: #ffe46b;
+  box-shadow: 0 0 0 2px rgba(255, 228, 107, 0.45), inset 0 -5px 0 rgba(0, 0, 0, 0.18);
+}
+
+.offer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.offer-head .offer-type {
+  margin-bottom: 0;
+}
+
+.offer-pin {
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 228, 107, 0.6);
+  border-radius: 6px;
+  background: rgba(255, 228, 107, 0.12);
+  color: #ffe46b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.offer-pin:hover:not(:disabled) {
+  background: rgba(255, 228, 107, 0.22);
+}
+
+.offer-pin-active {
+  background: #ffe46b;
+  color: #10273a;
+}
+
+.offer-pin-active:hover:not(:disabled) {
+  background: #fff3a0;
+}
+
+.offer-action {
+  align-self: end;
+  margin-top: 12px;
+}
+
+.offer-bought-tag {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 249, 242, 0.32);
+  border-radius: 6px;
+  color: #fff9f2;
+  font-size: 0.74rem;
+  font-weight: 800;
+  background: rgba(45, 39, 109, 0.6);
+}
+
+.offer-buy {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: none;
+  background: #ff5d96;
+  color: #10273a;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.offer-buy:hover:not(:disabled) {
+  background: #ff85b3;
+}
+
+.offer-targets {
+  display: grid;
+  gap: 6px;
+}
+
+.offer-target {
+  min-height: 34px;
+  padding: 0 9px;
+  border-radius: 6px;
+  border: none;
+  background: #55f6c7;
+  color: #10273a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.offer-target:hover:not(:disabled) {
+  background: #84ffda;
+}
+
+.offer-note {
+  display: block;
+  padding: 6px;
+  color: #d9f7ff;
+  font-size: 0.74rem;
 }
 
 .offer-type {
@@ -889,6 +992,10 @@ h1 {
 
   .offers {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .offer-head {
+    flex-wrap: wrap;
   }
 
   .shop-layout,

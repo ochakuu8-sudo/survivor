@@ -6,14 +6,7 @@ import {
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { clamp } from "./utils/math.js";
-import {
-  addWeaponPierce,
-  boostWeaponImpact,
-  createWeapon,
-  extendWeaponReach,
-  findWeapon,
-  weaponKindLabel,
-} from "./weapons.js";
+import { createWeapon, findWeapon, weaponKindLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
   attachmentCategoryLabel,
@@ -23,422 +16,263 @@ import {
   formatRarityOdds,
   getSelectedAttachmentInfo,
   pickRandomAttachment,
+  pickShopAttachment,
   rarityLabel,
-  recomputeWeaponAttachments,
+  rarityShortLabel,
+  recomputeAllAttachments,
   weaponUpgradeCost,
 } from "./attachments.js";
 import { updateHud } from "./hud.js";
 
-export function generateOffers() {
-  const pool = [
-    {
-      type: "weapon",
-      name: "路地裏ピストル",
-      text: "扱いやすい武器。弾の手応えが少し重くなる。",
-      baseCost: 12,
-      weapon: {
-        damage: 24,
-        fireRate: 1.45,
-        bulletSpeed: 700,
-      },
-    },
-    {
-      type: "weapon",
-      name: "釘打ち銃",
-      text: "連射寄りの武器。短い間隔で弾を撃てる。",
-      baseCost: 13,
-      weapon: {
-        damage: 13,
-        fireRate: 2.5,
-        bulletSpeed: 650,
-      },
-    },
-    {
-      type: "weapon",
-      name: "二連バレル",
-      text: "散らして撃つ武器。弾数は増えるが、一発は少し軽くなる。",
-      baseCost: 24,
-      weapon: {
-        damage: 14,
-        fireRate: 1.18,
-        bulletSpeed: 620,
-        projectiles: 2,
-        spread: 0.2,
-      },
-    },
-    {
-      type: "weapon",
-      name: "貫通ライフル",
-      text: "列を抜く武器。弾が敵を貫きやすくなる。",
-      baseCost: 18,
-      weapon: {
-        damage: 27,
-        fireRate: 0.95,
-        bulletSpeed: 760,
-        pierce: 1,
-        life: 0.82,
-      },
-    },
-    {
-      type: "weapon",
-      name: "サブマシンガン",
-      text: "近い敵へ細かい弾幕を浴びせる。狙いは少し暴れるが、群れを削り続ける。",
-      baseCost: 19,
-      weapon: {
-        damage: 8,
-        fireRate: 6.2,
-        bulletSpeed: 730,
-        life: 0.48,
-        spread: 0.05,
-        jitter: 0.24,
-        kick: 1.0,
-      },
-    },
-    {
-      type: "weapon",
-      name: "火炎放射器",
-      text: "前方を炎でなぎ払う。近くの群れにまとめて火をつける。",
-      baseCost: 22,
-      weapon: {
-        kind: "flame",
-        damage: 7,
-        fireRate: 5.4,
-        bulletSpeed: 1,
-        range: 185,
-        cone: 0.58,
-        kick: 1.2,
-        effectTint: [1, 0.52, 0.2],
-        effectGlow: "glowRed",
-      },
-    },
-    {
-      type: "weapon",
-      name: "レーザー照射器",
-      text: "一直線に焼き切る。列になった敵をまとめて貫く。",
-      baseCost: 26,
-      weapon: {
-        kind: "laser",
-        damage: 32,
-        fireRate: 0.78,
-        bulletSpeed: 1,
-        range: 640,
-        pierce: 8,
-        lineWidth: 22,
-        kick: 2.2,
-        effectTint: [0.48, 1, 1],
-        effectGlow: "glowCyan",
-      },
-    },
-    {
-      type: "weapon",
-      name: "次元爆弾",
-      text: "着弾すると空間が弾ける。爆心の周囲をまとめて巻き込む。",
-      baseCost: 28,
-      weapon: {
-        kind: "bomb",
-        damage: 8,
-        explosionDamage: 44,
-        fireRate: 0.55,
-        bulletSpeed: 380,
-        life: 0.92,
-        range: 420,
-        radius: 12,
-        explosionRadius: 132,
-        kick: 3.4,
-        bulletTint: [0.75, 0.78, 1],
-        bulletGlow: "glowCyan",
-        effectTint: [0.84, 0.58, 1],
-        effectGlow: "glowRed",
-      },
-    },
-    {
-      type: "weapon",
-      name: "テスラコイル",
-      text: "青い火花が敵から敵へ跳ねる。散った群れにも手が届く。",
-      baseCost: 23,
-      weapon: {
-        kind: "chain",
-        damage: 17,
-        fireRate: 1.15,
-        bulletSpeed: 1,
-        range: 430,
-        chainCount: 3,
-        chainRange: 190,
-        kick: 1.7,
-        effectTint: [0.45, 0.95, 1],
-        effectGlow: "glowCyan",
-      },
-    },
-    {
-      type: "weapon",
-      name: "回転ノコギリ",
-      text: "重い刃を投げる。遅いが敵の列を削りながら進む。",
-      baseCost: 21,
-      weapon: {
-        damage: 20,
-        fireRate: 1.0,
-        bulletSpeed: 500,
-        life: 0.9,
-        radius: 13,
-        pierce: 3,
-        kick: 2.4,
-        bulletTint: [0.8, 0.95, 1],
-        bulletGlow: "glowCyan",
-      },
-    },
-    {
-      type: "attachment",
-      name: "改造トリガー",
-      text: "引き金を短くし、武器の手数を増やす。",
-      baseCost: 13,
-      attach: (weapon) => {
-        weapon.fireRate *= 1.18;
-      },
-    },
-    {
-      type: "attachment",
-      name: "密輸弾薬",
-      text: "弾薬の質を上げ、着弾の勢いを強める。",
-      baseCost: 16,
-      attach: (weapon) => {
-        boostWeaponImpact(weapon, 5);
-        weapon.bulletSpeed *= 1.12;
-      },
-    },
-    {
-      type: "attachment",
-      name: "貫通クリップ",
-      text: "弾が敵の群れを抜けやすくなる。",
-      baseCost: 17,
-      attach: (weapon) => {
-        addWeaponPierce(weapon);
-      },
-    },
-    {
-      type: "attachment",
-      name: "ロングバレル",
-      text: "遠くの敵まで弾が届きやすくなる。",
-      baseCost: 14,
-      attach: (weapon) => {
-        extendWeaponReach(weapon, 1.18);
-      },
-    },
-    {
-      type: "relic",
-      name: "錆びた守り札",
-      text: "倒れにくくなる古いお守り。傷も少し塞がる。",
-      baseCost: 14,
-      apply: () => {
-        game.player.maxHp += 22;
-        game.player.hp = clamp(game.player.hp + 22, 1, game.player.maxHp);
-      },
-    },
-    {
-      type: "relic",
-      name: "割れた防犯バッジ",
-      text: "噛まれた時の痛みを和らげる。",
-      baseCost: 11,
-      apply: () => {
-        game.player.armor += 3;
-      },
-    },
-    {
-      type: "relic",
-      name: "応急テープ",
-      text: "戦闘中に少しずつ傷を塞ぐ。",
-      baseCost: 18,
-      apply: () => {
-        game.player.regen += 0.7;
-      },
-    },
-    {
-      type: "relic",
-      name: "壊れかけの電池",
-      text: "危ない力を引き出すが、身を守りにくくなる。",
-      baseCost: 15,
-      apply: () => {
-        game.player.weaponPowerBonus += 8;
-        game.player.armor -= 2;
-      },
-    },
-    {
-      type: "relic",
-      name: "スクラップ磁石",
-      text: "落ちたコインがこちらへ寄りやすくなる。",
-      baseCost: 9,
-      apply: () => {
-        game.player.pickup += 34;
-      },
-    },
-    {
-      type: "relic",
-      name: "軽量スニーカー",
-      text: "足回りを軽くして、逃げ回りやすくする。",
-      baseCost: 10,
-      apply: () => {
-        game.player.speed += 22;
-      },
-    },
-  ];
+const ATTACHMENT_RARITY_BASE_COST = {
+  normal: 11,
+  rare: 22,
+  epic: 38,
+  legend: 60,
+};
 
-  const activeWeapons = [
-    {
-      type: "weapon",
-      name: "豆鉄砲",
-      text: "短射程のマシンガン。軽い弾を近距離にばらまく。",
-      baseCost: 14,
-      weapon: {
-        damage: 5,
-        fireRate: 8.2,
-        bulletSpeed: 620,
-        life: 0.34,
-        range: 220,
-        radius: 7,
-        jitter: 0.2,
-        kick: 0.8,
-        bulletTint: [1, 0.92, 0.55],
-        bulletGlow: "glowAmber",
-      },
-    },
-    {
-      type: "weapon",
-      name: "火炎放射器",
-      text: "前方に炎を吹きつける。近くの群れをまとめて焼く。",
-      baseCost: 22,
-      weapon: {
-        kind: "flame",
-        damage: 6,
-        fireRate: 5.5,
-        bulletSpeed: 1,
-        range: 195,
-        cone: 0.62,
-        kick: 1.2,
-        effectTint: [1, 0.42, 0.12],
-        effectGlow: "glowRed",
-      },
-    },
-    {
-      type: "weapon",
-      name: "時限爆弾",
-      text: "その場に爆弾を置く。数秒後に広い範囲を爆破する。",
-      baseCost: 25,
-      weapon: {
-        kind: "timedBomb",
-        damage: 0,
-        explosionDamage: 54,
-        fireRate: 0.42,
-        bulletSpeed: 0,
-        fuse: 2.2,
-        life: 2.2,
-        range: 260,
-        radius: 15,
-        explosionRadius: 150,
-        kick: 3.4,
-        bulletTint: [0.95, 0.72, 0.34],
-        bulletGlow: "glowRed",
-        effectTint: [1, 0.52, 0.16],
-        effectGlow: "glowRed",
-      },
-    },
-    {
-      type: "weapon",
-      name: "レーザー",
-      text: "設置した光線がしばらく残り、触れた敵を連続で焼く。",
-      baseCost: 27,
-      weapon: {
-        kind: "sustainedLaser",
-        damage: 18,
-        fireRate: 0.48,
-        bulletSpeed: 1,
-        range: 560,
-        lineWidth: 18,
-        duration: 1.35,
-        tickRate: 8,
-        pierce: 8,
-        kick: 2.0,
-        effectTint: [0.48, 1, 1],
-        effectGlow: "glowCyan",
-      },
-    },
-    {
-      type: "weapon",
-      name: "モーニングスター",
-      text: "自分の周囲を回る鉄球で、近くの敵を巻き込む。",
-      baseCost: 21,
-      weapon: {
-        kind: "orbit",
-        damage: 20,
-        fireRate: 2.6,
-        bulletSpeed: 1,
-        range: 145,
-        areaRadius: 38,
-        orbitRadius: 82,
-        orbitSpeed: 4.6,
-        kick: 1.5,
-        effectTint: [0.84, 0.88, 1],
-        effectGlow: "glowCyan",
-      },
-    },
-    {
-      type: "weapon",
-      name: "ソード",
-      text: "自身の前方を扇形に斬る。近距離の敵をまとめて払う。",
-      baseCost: 18,
-      weapon: {
-        kind: "sword",
-        damage: 24,
-        fireRate: 1.35,
-        bulletSpeed: 1,
-        range: 135,
-        cone: 0.66,
-        kick: 2.1,
-        effectTint: [0.74, 0.96, 1],
-        effectGlow: "glowCyan",
-      },
-    },
-  ];
+const SHOP_WEAPON_COUNT = 2;
+const SHOP_ATTACHMENT_COUNT = 4;
 
-  const activePool = [
-    ...activeWeapons,
-    ...pool.filter((item) => item.type === "relic"),
-  ];
-
-  const picks = [];
-  const used = new Set();
-  for (const type of game.player.gear.weapons.length < MAX_WEAPONS ? ["weapon", "relic"] : ["relic"]) {
-    addOfferPick(activePool, picks, used, type);
-  }
-  let guard = 0;
-  while (picks.length < 4 && guard < 40) {
-    addOfferPick(activePool, picks, used);
-    guard += 1;
-  }
-  game.offers = shuffle(picks);
-}
-
-function addOfferPick(pool, picks, used, type = "") {
-  const candidates = [];
-  pool.forEach((offer, index) => {
-    if (used.has(index)) return;
-    if (type && offer.type !== type) return;
-    if (offer.type === "weapon" && game.player.gear.weapons.length >= MAX_WEAPONS) return;
-    if (offer.type === "weapon" && game.player.gear.weapons.some((weapon) => weapon.name === offer.name)) return;
-    if (offer.type === "attachment" && game.player.gear.weapons.length === 0) return;
-    candidates.push(index);
-  });
-  if (candidates.length === 0) return;
-
-  const index = candidates[Math.floor(Math.random() * candidates.length)];
-  used.add(index);
-  const template = pool[index];
-  const offer = {
-    ...template,
-    cost: Math.max(4, Math.round(template.baseCost * (1 + game.wave * 0.14) + Math.random() * 4)),
-    bought: false,
-    choosing: false,
-  };
-  picks.push(offer);
-}
+const WEAPON_POOL = [
+  {
+    name: "豆鉄砲",
+    text: "短射程のマシンガン。軽い弾を近距離にばらまく。",
+    baseCost: 14,
+    weapon: {
+      damage: 5,
+      fireRate: 8.2,
+      bulletSpeed: 620,
+      life: 0.34,
+      range: 220,
+      radius: 7,
+      jitter: 0.2,
+      kick: 0.8,
+      bulletTint: [1, 0.92, 0.55],
+      bulletGlow: "glowAmber",
+    },
+  },
+  {
+    name: "路地裏ピストル",
+    text: "扱いやすい武器。弾の手応えが少し重くなる。",
+    baseCost: 12,
+    weapon: {
+      damage: 24,
+      fireRate: 1.45,
+      bulletSpeed: 700,
+    },
+  },
+  {
+    name: "釘打ち銃",
+    text: "連射寄りの武器。短い間隔で弾を撃てる。",
+    baseCost: 13,
+    weapon: {
+      damage: 13,
+      fireRate: 2.5,
+      bulletSpeed: 650,
+    },
+  },
+  {
+    name: "二連バレル",
+    text: "散らして撃つ武器。弾数は増えるが、一発は少し軽くなる。",
+    baseCost: 24,
+    weapon: {
+      damage: 14,
+      fireRate: 1.18,
+      bulletSpeed: 620,
+      projectiles: 2,
+      spread: 0.2,
+    },
+  },
+  {
+    name: "貫通ライフル",
+    text: "列を抜く武器。弾が敵を貫きやすくなる。",
+    baseCost: 18,
+    weapon: {
+      damage: 27,
+      fireRate: 0.95,
+      bulletSpeed: 760,
+      pierce: 1,
+      life: 0.82,
+    },
+  },
+  {
+    name: "サブマシンガン",
+    text: "近い敵へ細かい弾幕を浴びせる。狙いは少し暴れるが、群れを削り続ける。",
+    baseCost: 19,
+    weapon: {
+      damage: 8,
+      fireRate: 6.2,
+      bulletSpeed: 730,
+      life: 0.48,
+      spread: 0.05,
+      jitter: 0.24,
+      kick: 1.0,
+    },
+  },
+  {
+    name: "火炎放射器",
+    text: "前方に炎を吹きつける。近くの群れをまとめて焼く。",
+    baseCost: 22,
+    weapon: {
+      kind: "flame",
+      damage: 6,
+      fireRate: 5.5,
+      bulletSpeed: 1,
+      range: 195,
+      cone: 0.62,
+      kick: 1.2,
+      effectTint: [1, 0.42, 0.12],
+      effectGlow: "glowRed",
+    },
+  },
+  {
+    name: "レーザー照射器",
+    text: "一直線に焼き切る。列になった敵をまとめて貫く。",
+    baseCost: 26,
+    weapon: {
+      kind: "laser",
+      damage: 32,
+      fireRate: 0.78,
+      bulletSpeed: 1,
+      range: 640,
+      pierce: 8,
+      lineWidth: 22,
+      kick: 2.2,
+      effectTint: [0.48, 1, 1],
+      effectGlow: "glowCyan",
+    },
+  },
+  {
+    name: "次元爆弾",
+    text: "着弾すると空間が弾ける。爆心の周囲をまとめて巻き込む。",
+    baseCost: 28,
+    weapon: {
+      kind: "bomb",
+      damage: 8,
+      explosionDamage: 44,
+      fireRate: 0.55,
+      bulletSpeed: 380,
+      life: 0.92,
+      range: 420,
+      radius: 12,
+      explosionRadius: 132,
+      kick: 3.4,
+      bulletTint: [0.75, 0.78, 1],
+      bulletGlow: "glowCyan",
+      effectTint: [0.84, 0.58, 1],
+      effectGlow: "glowRed",
+    },
+  },
+  {
+    name: "テスラコイル",
+    text: "青い火花が敵から敵へ跳ねる。散った群れにも手が届く。",
+    baseCost: 23,
+    weapon: {
+      kind: "chain",
+      damage: 17,
+      fireRate: 1.15,
+      bulletSpeed: 1,
+      range: 430,
+      chainCount: 3,
+      chainRange: 190,
+      kick: 1.7,
+      effectTint: [0.45, 0.95, 1],
+      effectGlow: "glowCyan",
+    },
+  },
+  {
+    name: "回転ノコギリ",
+    text: "重い刃を投げる。遅いが敵の列を削りながら進む。",
+    baseCost: 21,
+    weapon: {
+      damage: 20,
+      fireRate: 1.0,
+      bulletSpeed: 500,
+      life: 0.9,
+      radius: 13,
+      pierce: 3,
+      kick: 2.4,
+      bulletTint: [0.8, 0.95, 1],
+      bulletGlow: "glowCyan",
+    },
+  },
+  {
+    name: "時限爆弾",
+    text: "その場に爆弾を置く。数秒後に広い範囲を爆破する。",
+    baseCost: 25,
+    weapon: {
+      kind: "timedBomb",
+      damage: 0,
+      explosionDamage: 54,
+      fireRate: 0.42,
+      bulletSpeed: 0,
+      fuse: 2.2,
+      life: 2.2,
+      range: 260,
+      radius: 15,
+      explosionRadius: 150,
+      kick: 3.4,
+      bulletTint: [0.95, 0.72, 0.34],
+      bulletGlow: "glowRed",
+      effectTint: [1, 0.52, 0.16],
+      effectGlow: "glowRed",
+    },
+  },
+  {
+    name: "設置レーザー",
+    text: "設置した光線がしばらく残り、触れた敵を連続で焼く。",
+    baseCost: 27,
+    weapon: {
+      kind: "sustainedLaser",
+      damage: 18,
+      fireRate: 0.48,
+      bulletSpeed: 1,
+      range: 560,
+      lineWidth: 18,
+      duration: 1.35,
+      tickRate: 8,
+      pierce: 8,
+      kick: 2.0,
+      effectTint: [0.48, 1, 1],
+      effectGlow: "glowCyan",
+    },
+  },
+  {
+    name: "モーニングスター",
+    text: "自分の周囲を回る鉄球で、近くの敵を巻き込む。",
+    baseCost: 21,
+    weapon: {
+      kind: "orbit",
+      damage: 20,
+      fireRate: 2.6,
+      bulletSpeed: 1,
+      range: 145,
+      areaRadius: 38,
+      orbitRadius: 82,
+      orbitSpeed: 4.6,
+      kick: 1.5,
+      effectTint: [0.84, 0.88, 1],
+      effectGlow: "glowCyan",
+    },
+  },
+  {
+    name: "ソード",
+    text: "自身の前方を扇形に斬る。近距離の敵をまとめて払う。",
+    baseCost: 18,
+    weapon: {
+      kind: "sword",
+      damage: 24,
+      fireRate: 1.35,
+      bulletSpeed: 1,
+      range: 135,
+      cone: 0.66,
+      kick: 2.1,
+      effectTint: [0.74, 0.96, 1],
+      effectGlow: "glowCyan",
+    },
+  },
+];
 
 function shuffle(items) {
   const shuffled = [...items];
@@ -449,17 +283,146 @@ function shuffle(items) {
   return shuffled;
 }
 
+function rollWeaponCost(baseCost) {
+  return Math.max(4, Math.round(baseCost * (1 + game.wave * 0.14) + Math.random() * 4));
+}
+
+function rollAttachmentCost(rarity) {
+  const base = ATTACHMENT_RARITY_BASE_COST[rarity] ?? ATTACHMENT_RARITY_BASE_COST.normal;
+  return Math.max(5, Math.round(base * (1 + game.wave * 0.12) + Math.random() * 4));
+}
+
+function makeWeaponOffer() {
+  const used = new Set(game.player.gear.weapons.map((weapon) => weapon.name));
+  const candidates = WEAPON_POOL.filter((entry) => !used.has(entry.name));
+  if (candidates.length === 0) return null;
+  const template = candidates[Math.floor(Math.random() * candidates.length)];
+  return {
+    type: "weapon",
+    name: template.name,
+    text: template.text,
+    weapon: template.weapon,
+    cost: rollWeaponCost(template.baseCost),
+    bought: false,
+    pinned: false,
+  };
+}
+
+function makeAttachmentOffer() {
+  const pick = pickShopAttachment(game.wave);
+  if (!pick) return null;
+  return {
+    type: "attachment",
+    name: pick.definition.name,
+    text: pick.definition.text,
+    definition: pick.definition,
+    rarity: pick.rarity,
+    category: pick.definition.category,
+    cost: rollAttachmentCost(pick.rarity),
+    bought: false,
+    pinned: false,
+  };
+}
+
+function pinnedOfferSnapshot() {
+  if (!game.pinnedOffer) return null;
+  return { ...game.pinnedOffer, bought: false, pinned: true };
+}
+
+export function generateOffers() {
+  const picks = [];
+  const usedWeaponNames = new Set();
+
+  for (let i = 0; i < SHOP_WEAPON_COUNT; i += 1) {
+    const offer = makeWeaponOffer();
+    if (!offer) continue;
+    if (usedWeaponNames.has(offer.name)) {
+      i -= 1;
+      continue;
+    }
+    usedWeaponNames.add(offer.name);
+    picks.push(offer);
+  }
+
+  for (let i = 0; i < SHOP_ATTACHMENT_COUNT; i += 1) {
+    const offer = makeAttachmentOffer();
+    if (!offer) continue;
+    picks.push(offer);
+  }
+
+  const pinned = pinnedOfferSnapshot();
+  let injected = false;
+  if (pinned) {
+    if (pinned.type === "weapon" && !usedWeaponNames.has(pinned.name) && game.player.gear.weapons.length < MAX_WEAPONS) {
+      const slot = picks.findIndex((offer) => offer.type === "weapon");
+      if (slot >= 0) picks[slot] = pinned;
+      else picks.push(pinned);
+      injected = true;
+    } else if (pinned.type === "attachment") {
+      const slot = picks.findIndex((offer) => offer.type === "attachment");
+      if (slot >= 0) picks[slot] = pinned;
+      else picks.push(pinned);
+      injected = true;
+    }
+    if (!injected) game.pinnedOffer = null;
+  }
+
+  game.offers = shuffle(picks);
+}
+
 export function rerollCost() {
   return Math.floor(4 + game.wave * 1.5 + game.rerolls * 3);
 }
 
-export function buyOffer(index) {
+export function togglePinOffer(index) {
   const offer = game.offers[index];
-  if (!offer || !canBuyOffer(offer)) return;
+  if (!offer || offer.bought) return;
 
-  game.money -= offer.cost;
-  offer.bought = true;
-  applyOffer(offer);
+  if (offer.pinned) {
+    offer.pinned = false;
+    game.pinnedOffer = null;
+  } else {
+    game.offers.forEach((other) => {
+      if (other !== offer) other.pinned = false;
+    });
+    offer.pinned = true;
+    game.pinnedOffer = { ...offer, bought: false, pinned: true };
+  }
+  renderShop();
+}
+
+export function buyOffer(index, weaponId = null) {
+  const offer = game.offers[index];
+  if (!offer || offer.bought) return;
+
+  if (offer.type === "weapon") {
+    if (!canBuyOffer(offer)) return;
+    game.money -= offer.cost;
+    offer.bought = true;
+    if (offer.pinned) {
+      offer.pinned = false;
+      game.pinnedOffer = null;
+    }
+    applyWeaponOffer(offer);
+    afterPurchase();
+    return;
+  }
+
+  if (offer.type === "attachment") {
+    const weapon = findWeapon(weaponId);
+    if (!canBuyAttachmentOnWeapon(offer, weapon)) return;
+    game.money -= offer.cost;
+    offer.bought = true;
+    if (offer.pinned) {
+      offer.pinned = false;
+      game.pinnedOffer = null;
+    }
+    applyAttachmentOffer(offer, weapon);
+    afterPurchase();
+  }
+}
+
+function afterPurchase() {
   game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
   renderShop();
   updateHud();
@@ -467,26 +430,37 @@ export function buyOffer(index) {
 
 export function canBuyOffer(offer) {
   if (!offer || offer.bought || game.money < offer.cost) return false;
-  if (offer.type === "weapon") return game.player.gear.weapons.length < MAX_WEAPONS;
-  if (offer.type === "attachment") return false;
+  if (offer.type === "weapon") {
+    if (game.player.gear.weapons.length >= MAX_WEAPONS) return false;
+    if (game.player.gear.weapons.some((weapon) => weapon.name === offer.name)) return false;
+    return true;
+  }
+  if (offer.type === "attachment") {
+    return game.player.gear.weapons.some((weapon) => weapon.attachments.length < MAX_WEAPON_ATTACHMENTS);
+  }
+  return false;
+}
+
+function canBuyAttachmentOnWeapon(offer, weapon) {
+  if (!offer || offer.type !== "attachment" || offer.bought) return false;
+  if (game.money < offer.cost) return false;
+  if (!weapon || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return false;
   return true;
 }
 
-function applyOffer(offer, targetWeapon = null) {
-  if (offer.type === "weapon") {
-    game.player.gear.weapons.push(createWeapon({ name: offer.name, ...offer.weapon }));
-    return;
-  }
+function applyWeaponOffer(offer) {
+  game.player.gear.weapons.push(createWeapon({ name: offer.name, ...offer.weapon }));
+  recomputeAllAttachments();
+}
 
-  if (offer.type === "attachment") {
-    const weapon = targetWeapon || findWeapon(offer.targetWeaponId);
-    if (!weapon) return;
-    addAttachmentToWeapon(weapon, offer);
-    return;
-  }
-
-  offer.apply();
-  game.player.gear.relics.push(offer.name);
+function applyAttachmentOffer(offer, weapon) {
+  const attachmentIndex = weapon.attachments.length;
+  addAttachmentToWeapon(weapon, {
+    key: offer.definition.key,
+    rarity: offer.rarity,
+    definition: offer.definition,
+  });
+  game.selectedAttachment = { weaponId: weapon.id, attachmentIndex };
 }
 
 export function upgradeWeaponAttachment(weaponId) {
@@ -520,7 +494,7 @@ export function rerollWeaponAttachment(weaponId, attachmentIndex) {
     rarity: replacement.rarity,
     category: replacement.definition.category || "stat",
   };
-  recomputeWeaponAttachments(weapon);
+  recomputeAllAttachments();
 
   game.money -= cost;
   game.selectedAttachment = { weaponId: weapon.id, attachmentIndex };
@@ -535,11 +509,28 @@ export function renderShop() {
 
   game.offers.forEach((offer, index) => {
     const card = document.createElement("article");
-    card.className = `offer offer-${offer.type}`;
+    card.className = `offer offer-${offer.type}${offer.pinned ? " offer-pinned" : ""}`;
+    if (offer.type === "attachment") {
+      card.classList.add(`attach-rarity-${offer.rarity || "normal"}`);
+    }
+
+    const headRow = document.createElement("div");
+    headRow.className = "offer-head";
 
     const type = document.createElement("span");
     type.className = `offer-type offer-type-${offer.type}`;
-    type.textContent = OFFER_TYPE_LABELS[offer.type] || "装備";
+    type.textContent = offer.type === "attachment"
+      ? `${OFFER_TYPE_LABELS.attachment}・${rarityShortLabel(offer.rarity)}`
+      : OFFER_TYPE_LABELS[offer.type] || "装備";
+
+    const pinButton = document.createElement("button");
+    pinButton.type = "button";
+    pinButton.className = `offer-pin${offer.pinned ? " offer-pin-active" : ""}`;
+    pinButton.textContent = offer.pinned ? "ピン解除" : "ピン留め";
+    pinButton.disabled = offer.bought;
+    pinButton.addEventListener("click", () => togglePinOffer(index));
+
+    headRow.append(type, pinButton);
 
     const title = document.createElement("h2");
     title.textContent = offer.name;
@@ -549,24 +540,62 @@ export function renderShop() {
 
     const meta = document.createElement("small");
     meta.className = "offer-meta";
-    meta.textContent = offer.type === "weapon"
-      ? `武器スロット ${game.player.gear.weapons.length}/${MAX_WEAPONS}`
-      : "プレイヤーが所持";
+    if (offer.type === "weapon") {
+      meta.textContent = `武器スロット ${game.player.gear.weapons.length}/${MAX_WEAPONS}`;
+    } else if (offer.type === "attachment") {
+      meta.textContent = `${rarityLabel(offer.rarity)}・${attachmentCategoryLabel(offer.category)}`;
+    }
 
     const price = document.createElement("div");
     price.className = "price";
-
     const cost = document.createElement("strong");
     cost.textContent = offer.bought ? "売切" : `${offer.cost}枚`;
+    price.append(cost);
 
-    const button = document.createElement("button");
-    button.type = "button";
-    button.textContent = offer.bought ? "購入済み" : "購入";
-    button.disabled = !canBuyOffer(offer);
-    button.addEventListener("click", () => buyOffer(index));
+    card.append(headRow, title, body, meta, price);
 
-    price.append(cost, button);
-    card.append(type, title, body, meta, price);
+    const action = document.createElement("div");
+    action.className = "offer-action";
+
+    if (offer.bought) {
+      const tag = document.createElement("span");
+      tag.className = "offer-bought-tag";
+      tag.textContent = "購入済み";
+      action.append(tag);
+    } else if (offer.type === "weapon") {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "offer-buy";
+      button.textContent = "購入";
+      button.disabled = !canBuyOffer(offer);
+      button.addEventListener("click", () => buyOffer(index));
+      action.append(button);
+    } else if (offer.type === "attachment") {
+      const targets = document.createElement("div");
+      targets.className = "offer-targets";
+
+      if (game.player.gear.weapons.length === 0) {
+        const note = document.createElement("small");
+        note.className = "offer-note";
+        note.textContent = "装備先の武器がありません";
+        targets.append(note);
+      } else {
+        game.player.gear.weapons.forEach((weapon) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "offer-target";
+          const slotsUsed = weapon.attachments.length;
+          button.textContent = `${weapon.name} (${slotsUsed}/${MAX_WEAPON_ATTACHMENTS})`;
+          button.disabled = !canBuyAttachmentOnWeapon(offer, weapon);
+          button.addEventListener("click", () => buyOffer(index, weapon.id));
+          targets.append(button);
+        });
+      }
+
+      action.append(targets);
+    }
+
+    card.append(action);
     hud.offers.append(card);
   });
 
@@ -759,18 +788,7 @@ function renderGearInventory() {
     board.append(slot);
   }
 
-  const relicShelf = document.createElement("div");
-  relicShelf.className = "relic-shelf";
-  const relicLabel = document.createElement("span");
-  relicLabel.textContent = "レリック";
-  const relicCount = document.createElement("strong");
-  relicCount.textContent = `${gear.relics.length}`;
-  const relicList = document.createElement("small");
-  relicList.textContent = gear.relics.length > 0 ? gear.relics.slice(-5).join(" / ") : "未所持";
-  relicShelf.append(relicLabel, relicCount, relicList);
-
   const attachmentInfoPanel = createAttachmentInfoPanel();
   hud.gearInventory.append(board);
   if (attachmentInfoPanel) hud.gearInventory.append(attachmentInfoPanel);
-  hud.gearInventory.append(relicShelf);
 }
