@@ -174,9 +174,12 @@ function drawWorld(view, camX, camY, zoom) {
       });
     } else if (bullet.bulletSprite) {
       const stoneSize = bullet.radius * 2.4 * zoom;
-      state.renderer.draw(bullet.bulletGlow || "glowAmber", screen.x, screen.y, stoneSize * 1.5, stoneSize * 1.5, { alpha: 0.22 });
-      state.renderer.draw("shadow", screen.x, screen.y + stoneSize * 0.4, stoneSize * 1.05, stoneSize * 0.4, { alpha: 0.55 });
-      state.renderer.draw(bullet.bulletSprite, screen.x, screen.y, stoneSize, stoneSize * 0.78, {
+      const lifeFrac = bullet.maxLife ? clamp(bullet.life / bullet.maxLife, 0, 1) : 1;
+      const arc = Math.sin((1 - lifeFrac) * Math.PI);
+      const arcOffset = arc * 32 * zoom;
+      state.renderer.draw("shadow", screen.x, screen.y + stoneSize * 0.4, stoneSize * (1.05 - arc * 0.32), stoneSize * 0.4 * (1 - arc * 0.45), { alpha: 0.6 - arc * 0.32 });
+      state.renderer.draw(bullet.bulletGlow || "glowAmber", screen.x, screen.y - arcOffset, stoneSize * 1.4, stoneSize * 1.4, { alpha: 0.18 + arc * 0.1 });
+      state.renderer.draw(bullet.bulletSprite, screen.x, screen.y - arcOffset, stoneSize, stoneSize * 0.78, {
         rotation: bullet.spinSeed + game.elapsed * bullet.spinRate,
         tint: bullet.bulletTint || [1, 1, 1],
       });

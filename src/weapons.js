@@ -220,6 +220,7 @@ function fireBullet(angle, weapon) {
     radius: weapon.radius,
     damage: weapon.damage + bonus,
     life: weapon.life,
+    maxLife: weapon.life,
     pierce: weapon.pierce,
     ricochet: weapon.ricochet || 0,
     explosionRadius: weapon.explosionRadius,
@@ -230,7 +231,7 @@ function fireBullet(angle, weapon) {
     effectTint: weapon.effectTint,
     effectGlow: weapon.effectGlow,
     spinSeed: tumbles ? Math.random() * TAU : 0,
-    spinRate: tumbles ? 5 + Math.random() * 4 : 0,
+    spinRate: tumbles ? 1.8 + Math.random() * 1.6 : 0,
     hitIds: new Set(),
   });
   addSparks(p.x + Math.cos(angle) * 28, p.y + Math.sin(angle) * 28, 1, 40);
