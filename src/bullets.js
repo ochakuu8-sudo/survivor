@@ -1,7 +1,7 @@
 import { COLLISION_CELL_SIZE } from "./constants.js";
 import { game } from "./state.js";
 import { distSq, gridKey } from "./utils/math.js";
-import { buildEnemyGrid, damageEnemy, explodeBullet, removeDeadEnemies } from "./combat.js";
+import { buildEnemyGrid, damageEnemy, explodeBullet, findNearestEnemyFrom, removeDeadEnemies } from "./combat.js";
 
 export function updateBullets(dt) {
   const enemyGrid = buildEnemyGrid();
@@ -42,6 +42,11 @@ export function updateBullets(dt) {
           }
           bullet.pierce -= 1;
           if (bullet.pierce < 0) {
+            if (bullet.ricochet > 0 && redirectRicochet(bullet)) {
+              bullet.ricochet -= 1;
+              bullet.pierce = 0;
+              break nearbyCells;
+            }
             keep = false;
             break nearbyCells;
           }
@@ -52,4 +57,18 @@ export function updateBullets(dt) {
   }
   removeDeadEnemies();
   game.bullets = next;
+}
+
+function redirectRicochet(bullet) {
+  const target = findNearestEnemyFrom(bullet.x, bullet.y, 360, bullet.hitIds);
+  if (!target) return false;
+  const dx = target.x - bullet.x;
+  const dy = target.y - bullet.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 0.01) return false;
+  const speed = Math.hypot(bullet.vx, bullet.vy) || 1;
+  bullet.vx = (dx / len) * speed;
+  bullet.vy = (dy / len) * speed;
+  bullet.angle = Math.atan2(bullet.vy, bullet.vx);
+  return true;
 }

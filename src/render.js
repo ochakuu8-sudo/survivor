@@ -172,6 +172,14 @@ function drawWorld(view, camX, camY, zoom) {
         tint: [1, 0.22, 0.16],
         alpha: blink,
       });
+    } else if (bullet.bulletSprite) {
+      const stoneSize = bullet.radius * 2.4 * zoom;
+      state.renderer.draw(bullet.bulletGlow || "glowAmber", screen.x, screen.y, stoneSize * 1.5, stoneSize * 1.5, { alpha: 0.22 });
+      state.renderer.draw("shadow", screen.x, screen.y + stoneSize * 0.4, stoneSize * 1.05, stoneSize * 0.4, { alpha: 0.55 });
+      state.renderer.draw(bullet.bulletSprite, screen.x, screen.y, stoneSize, stoneSize * 0.78, {
+        rotation: bullet.spinSeed + game.elapsed * bullet.spinRate,
+        tint: bullet.bulletTint || [1, 1, 1],
+      });
     } else {
       state.renderer.draw(bullet.bulletGlow || "glowAmber", screen.x, screen.y, 42 * zoom, 30 * zoom, { alpha: 0.32 });
       state.renderer.draw("bulletReadable", screen.x, screen.y, bullet.radius * 4.2 * zoom, bullet.radius * 1.55 * zoom, {

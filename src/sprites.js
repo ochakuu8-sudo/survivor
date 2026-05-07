@@ -51,6 +51,28 @@ function drawPixelBullet(ctx) {
   ctx.fillRect(42, 8, 4, 4);
 }
 
+function drawPixelStone(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 9, cy + 6, 18, 3, "rgba(35, 25, 76, 0.34)");
+  px(ctx, cx - 11, cy - 3, 22, 9, "#3d3326");
+  px(ctx, cx - 10, cy - 5, 20, 2, "#3d3326");
+  px(ctx, cx - 9, cy + 5, 18, 1, "#2c2218");
+  px(ctx, cx - 10, cy - 3, 20, 7, "#5e5443");
+  px(ctx, cx - 9, cy - 4, 18, 1, "#5e5443");
+  px(ctx, cx - 9, cy - 3, 18, 4, "#7d6f57");
+  px(ctx, cx - 7, cy - 4, 14, 1, "#7d6f57");
+  px(ctx, cx - 7, cy - 3, 12, 2, "#9b8a6f");
+  px(ctx, cx - 4, cy - 4, 8, 1, "#9b8a6f");
+  px(ctx, cx - 4, cy - 3, 5, 1, "#d2bd97");
+  px(ctx, cx + 1, cy - 3, 2, 1, "#d2bd97");
+  px(ctx, cx - 5, cy + 1, 7, 1, "#2c2218");
+  px(ctx, cx + 3, cy + 2, 4, 1, "#2c2218");
+  px(ctx, cx - 9, cy + 3, 18, 2, "#2a1f15");
+  px(ctx, cx - 11, cy - 1, 1, 4, "#241b13");
+  px(ctx, cx + 10, cy - 1, 1, 4, "#241b13");
+}
+
 function drawPixelWalkDust(ctx, w, h) {
   ctx.fillStyle = "rgba(35, 25, 76, 0.22)";
   ctx.fillRect(6, 13, 22, 5);
@@ -325,6 +347,12 @@ export function buildAtlas() {
   });
   add("bulletReadable", 48, 20, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelBullet, 1, "rgba(17, 12, 43, 0.48)");
+  });
+  add("stone", 32, 22, (ctx, w, h) => {
+    drawPixelStone(ctx, w, h);
+  });
+  add("stoneReadable", 32, 22, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelStone, 1, "rgba(17, 12, 43, 0.6)");
   });
 
   add("cash", 44, 44, (ctx, w, h) => {

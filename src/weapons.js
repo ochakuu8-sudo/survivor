@@ -1,4 +1,4 @@
-import { WEAPON_STAT_KEYS } from "./constants.js";
+import { TAU, WEAPON_STAT_KEYS } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
 import { distSq } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -38,6 +38,7 @@ export function createWeapon(template) {
     bulletSpeed,
     projectiles: template.projectiles || 1,
     pierce: template.pierce || 0,
+    ricochet: template.ricochet || 0,
     spread: template.spread ?? 0.18,
     life,
     range: template.range || bulletSpeed * life,
@@ -60,6 +61,7 @@ export function createWeapon(template) {
     bulletGlow: template.bulletGlow || "glowAmber",
     effectTint: template.effectTint ? [...template.effectTint] : [1, 1, 1],
     effectGlow: template.effectGlow || "glowAmber",
+    bulletSprite: template.bulletSprite || null,
     shootTimer: template.shootTimer ?? 0.45,
     attachments: [],
   };
@@ -207,6 +209,7 @@ function fireBullet(angle, weapon) {
   const p = game.player;
   const speed = weapon.bulletSpeed;
   const bonus = p.weaponPowerBonus;
+  const tumbles = !!weapon.bulletSprite;
   game.bullets.push({
     kind: "projectile",
     x: p.x + Math.cos(angle) * 25,
@@ -218,12 +221,16 @@ function fireBullet(angle, weapon) {
     damage: weapon.damage + bonus,
     life: weapon.life,
     pierce: weapon.pierce,
+    ricochet: weapon.ricochet || 0,
     explosionRadius: weapon.explosionRadius,
     explosionDamage: weapon.explosionDamage + bonus,
     bulletTint: weapon.bulletTint,
     bulletGlow: weapon.bulletGlow,
+    bulletSprite: weapon.bulletSprite || null,
     effectTint: weapon.effectTint,
     effectGlow: weapon.effectGlow,
+    spinSeed: tumbles ? Math.random() * TAU : 0,
+    spinRate: tumbles ? 5 + Math.random() * 4 : 0,
     hitIds: new Set(),
   });
   addSparks(p.x + Math.cos(angle) * 28, p.y + Math.sin(angle) * 28, 1, 40);
