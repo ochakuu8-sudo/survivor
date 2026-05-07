@@ -27,24 +27,23 @@ const ATTACHMENT_RARITY_BASE_COST = {
 const SHOP_WEAPON_COUNT = 2;
 const SHOP_ATTACHMENT_COUNT = 4;
 
-const STONE_TEMPLATE = {
-  name: "石",
-  text: "重い石を山なりに投げる。一回跳弾して別の敵を狙う。",
-  baseCost: 0,
-  weapon: {
-    damage: 40,
-    fireRate: 0.72,
-    bulletSpeed: 320,
-    life: 1.45,
-    radius: 12,
-    kick: 2.2,
-    ricochet: 1,
-    bulletGlow: "glowAmber",
-    bulletSprite: "stoneReadable",
-  },
-};
-
 const WEAPON_POOL = [
+  {
+    name: "石",
+    text: "重い石を山なりに投げる。一回跳弾して別の敵を狙う。",
+    baseCost: 16,
+    weapon: {
+      damage: 40,
+      fireRate: 0.72,
+      bulletSpeed: 320,
+      life: 1.45,
+      radius: 12,
+      kick: 2.2,
+      ricochet: 1,
+      bulletGlow: "glowAmber",
+      bulletSprite: "stoneReadable",
+    },
+  },
   {
     name: "豆鉄砲",
     text: "短射程のマシンガン。軽い弾を近距離にばらまく。",
@@ -639,11 +638,9 @@ function renderGearInventory() {
   hud.gearInventory.append(board);
 }
 
-const STARTER_POOL = [STONE_TEMPLATE, ...WEAPON_POOL];
-
 export function prepareStarterPick() {
-  const indices = shuffle(STARTER_POOL.map((_, i) => i)).slice(0, 3);
-  game.starterChoices = indices.map((i) => STARTER_POOL[i]);
+  const indices = shuffle(WEAPON_POOL.map((_, i) => i)).slice(0, 3);
+  game.starterChoices = indices.map((i) => WEAPON_POOL[i]);
 }
 
 export function pickStarterWeapon(index) {
