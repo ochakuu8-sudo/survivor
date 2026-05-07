@@ -14,7 +14,6 @@ export const OFFER_TYPE_LABELS = {
 
 export const MAX_WEAPONS = 3;
 export const MAX_WEAPON_ATTACHMENTS = 5;
-export const WEAPON_UPGRADE_SLOT_COSTS = [11, 21, 35, 54, 78];
 export const ATTACHMENT_REROLL_SLOT_COSTS = [8, 17, 30, 47, 68];
 export const RARITY_ORDER = ["normal", "rare", "epic", "legend"];
 export const ATTACHMENT_RARITIES = {

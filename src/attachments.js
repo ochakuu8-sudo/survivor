@@ -4,7 +4,6 @@ import {
   ATTACHMENT_REROLL_SLOT_COSTS,
   MAX_WEAPON_ATTACHMENTS,
   RARITY_ORDER,
-  WEAPON_UPGRADE_SLOT_COSTS,
 } from "./constants.js";
 import { game } from "./state.js";
 import { clamp } from "./utils/math.js";
@@ -43,14 +42,6 @@ export function slotIndexForAttachment(index) {
 
 export function rarityTableForSlot(slotIndex) {
   return ATTACHMENT_RARITY_TABLES[slotIndexForAttachment(slotIndex)];
-}
-
-export function formatRarityOdds(slotIndex) {
-  const table = rarityTableForSlot(slotIndex);
-  return RARITY_ORDER
-    .filter((rarity) => table[rarity] > 0)
-    .map((rarity) => `${rarityShortLabel(rarity)}${table[rarity]}%`)
-    .join(" / ");
 }
 
 export function attachmentCategoryLabel(category) {
@@ -436,11 +427,6 @@ export function pickShopAttachment(wave) {
   if (candidates.length === 0) return null;
   const definition = candidates[Math.floor(Math.random() * candidates.length)];
   return { definition, rarity };
-}
-
-export function weaponUpgradeCost(weapon) {
-  const slotIndex = slotIndexForAttachment(weapon?.attachments.length || 0);
-  return Math.floor(WEAPON_UPGRADE_SLOT_COSTS[slotIndex] + game.wave * (1.4 + slotIndex * 0.7));
 }
 
 export function attachmentRerollCost(weapon, attachmentIndex = 0) {

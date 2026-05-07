@@ -262,13 +262,62 @@ h1 {
 }
 
 .offers {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.offer-section {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.offer-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 4px solid;
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.offer-section-weapons .offer-section-heading {
+  border-left-color: #ff5d96;
+  color: #ff85b3;
+  background: rgba(255, 93, 150, 0.12);
+}
+
+.offer-section-attachments .offer-section-heading {
+  border-left-color: #55f6c7;
+  color: #84ffda;
+  background: rgba(85, 246, 199, 0.1);
+}
+
+.offer-section-count {
+  color: #d9f7ff;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.offer-grid {
+  display: grid;
   gap: 10px;
 }
 
+.offer-section-weapons .offer-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.offer-section-attachments .offer-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .shop-side .offers {
-  grid-template-columns: 1fr;
+  flex-direction: column;
 }
 
 .offer {
@@ -705,41 +754,19 @@ h1 {
   background: #ffe46b;
 }
 
-.attachment-reroll,
-.weapon-upgrade-button {
+.attachment-reroll {
+  flex: 0 0 auto;
   min-height: 32px;
+  padding: 0 8px;
   border-color: rgba(255, 228, 107, 0.62);
   color: #241737;
   background: #ffe46b;
   font-size: 0.68rem;
-}
-
-.weapon-slot .attachment-reroll,
-.weapon-slot .weapon-upgrade-button {
-  min-height: 32px;
-}
-
-.attachment-reroll {
-  flex: 0 0 auto;
-  padding: 0 8px;
   white-space: nowrap;
 }
 
-.weapon-upgrade-actions {
-  display: grid;
-  gap: 5px;
-  margin-top: 8px;
-}
-
-.weapon-upgrade-button {
-  width: 100%;
-}
-
-.weapon-upgrade-note {
-  color: rgba(255, 249, 242, 0.66);
-  font-size: 0.66rem;
-  font-weight: 700;
-  line-height: 1.25;
+.weapon-slot .attachment-reroll {
+  min-height: 32px;
 }
 
 .attachment-info-panel {
@@ -990,8 +1017,12 @@ h1 {
     height: 9px;
   }
 
-  .offers {
+  .offer-section-attachments .offer-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .offer-section-weapons .offer-grid {
+    grid-template-columns: 1fr;
   }
 
   .offer-head {
@@ -1005,10 +1036,6 @@ h1 {
 
   .shop-layout {
     align-items: stretch;
-  }
-
-  .shop-side .offers {
-    grid-template-columns: 1fr;
   }
 
   .shop-actions {
@@ -1059,7 +1086,8 @@ h1 {
     height: 8px;
   }
 
-  .offers {
+  .offer-section-attachments .offer-grid,
+  .offer-section-weapons .offer-grid {
     grid-template-columns: 1fr;
   }
 
