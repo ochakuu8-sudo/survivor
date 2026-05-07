@@ -235,51 +235,108 @@ function fireFlame(weapon, angle) {
   const originY = p.y + Math.sin(angle) * 20;
   damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus);
 
-  const flameCount = 17;
-  for (let i = 0; i < flameCount; i += 1) {
-    const fan = flameCount === 1 ? 0 : i / (flameCount - 1);
-    const flameAngle = angle + (fan - 0.5) * weapon.cone * 2 + (Math.random() - 0.5) * 0.22;
-    const start = weapon.range * (0.06 + Math.random() * 0.08);
-    const length = weapon.range * (0.38 + Math.random() * 0.55);
-    const startX = originX + Math.cos(flameAngle) * start;
-    const startY = originY + Math.sin(flameAngle) * start;
-    const endX = originX + Math.cos(flameAngle) * length;
-    const endY = originY + Math.sin(flameAngle) * length;
-    const hotTint = i % 3 === 0 ? [1, 0.86, 0.22] : [1, 0.42, 0.08];
+  const baseTint = weapon.effectTint || [1, 0.42, 0.12];
+  const glow = weapon.effectGlow || "glowRed";
+  const streamCount = 5;
+  for (let i = 0; i < streamCount; i += 1) {
+    const fan = streamCount === 1 ? 0 : i / (streamCount - 1) - 0.5;
+    const flameAngle = angle + fan * weapon.cone * 2 + (Math.random() - 0.5) * 0.06;
+    const length = weapon.range * (0.86 + Math.random() * 0.14);
+    const tipX = originX + Math.cos(flameAngle) * length;
+    const tipY = originY + Math.sin(flameAngle) * length;
+
     addEffect({
       type: "line",
-      x1: startX,
-      y1: startY,
-      x2: endX,
-      y2: endY,
-      width: 7 + Math.random() * 15,
-      life: 0.13 + Math.random() * 0.05,
+      x1: originX,
+      y1: originY,
+      x2: tipX,
+      y2: tipY,
+      width: 22 + Math.random() * 6,
+      life: 0.18,
       maxLife: 0.18,
-      glow: weapon.effectGlow,
-      tint: hotTint,
+      glow,
+      tint: [baseTint[0] * 0.85, baseTint[1] * 0.45, baseTint[2] * 0.35],
     });
     addEffect({
-      type: "burst",
-      x: originX + Math.cos(flameAngle) * (length * (0.72 + Math.random() * 0.28)),
-      y: originY + Math.sin(flameAngle) * (length * (0.72 + Math.random() * 0.28)),
-      radius: 13 + Math.random() * 22,
-      life: 0.14 + Math.random() * 0.08,
-      maxLife: 0.22,
-      glow: weapon.effectGlow,
-      tint: hotTint,
+      type: "line",
+      x1: originX,
+      y1: originY,
+      x2: originX + Math.cos(flameAngle) * length * 0.86,
+      y2: originY + Math.sin(flameAngle) * length * 0.86,
+      width: 12,
+      life: 0.16,
+      maxLife: 0.16,
+      glow,
+      tint: baseTint,
+    });
+    addEffect({
+      type: "line",
+      x1: originX,
+      y1: originY,
+      x2: originX + Math.cos(flameAngle) * length * 0.62,
+      y2: originY + Math.sin(flameAngle) * length * 0.62,
+      width: 4,
+      life: 0.13,
+      maxLife: 0.13,
+      glow: "glowAmber",
+      tint: [1, 0.92, 0.5],
     });
   }
+
+  for (let i = 0; i < 3; i += 1) {
+    const fan = (Math.random() - 0.5) * weapon.cone * 1.8;
+    const distance = weapon.range * (0.38 + Math.random() * 0.5);
+    const puffAngle = angle + fan;
+    addEffect({
+      type: "burst",
+      x: originX + Math.cos(puffAngle) * distance,
+      y: originY + Math.sin(puffAngle) * distance,
+      radius: 18 + Math.random() * 16,
+      life: 0.18 + Math.random() * 0.08,
+      maxLife: 0.26,
+      glow,
+      tint: [baseTint[0], baseTint[1] * 0.9, baseTint[2] * 0.65],
+    });
+  }
+
   addEffect({
     type: "burst",
-    x: originX + Math.cos(angle) * 38,
-    y: originY + Math.sin(angle) * 38,
-    radius: 38,
-    life: 0.16,
-    maxLife: 0.16,
+    x: originX + Math.cos(angle) * 18,
+    y: originY + Math.sin(angle) * 18,
+    radius: 36,
+    life: 0.14,
+    maxLife: 0.14,
     glow: "glowAmber",
-    tint: [1, 0.9, 0.34],
+    tint: [1, 0.96, 0.62],
   });
-  addSparks(originX + Math.cos(angle) * 36, originY + Math.sin(angle) * 36, 3, 100);
+  addEffect({
+    type: "burst",
+    x: originX + Math.cos(angle) * 6,
+    y: originY + Math.sin(angle) * 6,
+    radius: 22,
+    life: 0.1,
+    maxLife: 0.1,
+    glow: "glowAmber",
+    tint: [1, 1, 0.88],
+  });
+
+  const emberCount = 6;
+  for (let i = 0; i < emberCount; i += 1) {
+    const fan = (Math.random() - 0.5) * weapon.cone * 1.6;
+    const dir = angle + fan;
+    const speed = 220 + Math.random() * 160;
+    game.particles.push({
+      x: originX + Math.cos(dir) * 6,
+      y: originY + Math.sin(dir) * 6,
+      vx: Math.cos(dir) * speed,
+      vy: Math.sin(dir) * speed,
+      life: 0.3 + Math.random() * 0.22,
+      maxLife: 0.52,
+      size: 9 + Math.random() * 7,
+      sprite: "spark",
+      tint: i % 3 === 0 ? [1, 0.9, 0.42] : [1, 0.5, 0.18],
+    });
+  }
 }
 
 function fireLaser(weapon, angle) {
@@ -395,29 +452,20 @@ function fireOrbit(weapon) {
   const areaRadius = weapon.areaRadius || 34;
   const x = p.x + Math.cos(spin) * orbitRadius;
   const y = p.y + Math.sin(spin) * orbitRadius;
-  damageEnemiesInRadius(x, y, areaRadius, weapon.damage + p.weaponPowerBonus, 0.72);
-  addEffect({
-    type: "line",
-    x1: p.x,
-    y1: p.y,
-    x2: x,
-    y2: y,
-    width: 6,
-    life: 0.16,
-    maxLife: 0.16,
-    glow: weapon.effectGlow,
-    tint: weapon.effectTint,
-  });
-  addEffect({
-    type: "burst",
-    x,
-    y,
-    radius: areaRadius,
-    life: 0.22,
-    maxLife: 0.22,
-    glow: weapon.effectGlow,
-    tint: weapon.effectTint,
-  });
+  const hits = damageEnemiesInRadius(x, y, areaRadius, weapon.damage + p.weaponPowerBonus, 0.72);
+  if (hits > 0) {
+    addEffect({
+      type: "burst",
+      x,
+      y,
+      radius: areaRadius * 0.9,
+      life: 0.22,
+      maxLife: 0.22,
+      glow: weapon.effectGlow,
+      tint: weapon.effectTint,
+    });
+    addSparks(x, y, 3, 130);
+  }
 }
 
 function fireSword(weapon, angle) {

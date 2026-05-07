@@ -138,7 +138,10 @@ function drawWorld(view, camX, camY, zoom) {
     const alpha = clamp(particle.life / particle.maxLife, 0, 1);
     const screen = worldToScreen(particle.x, particle.y, view, camX, camY, zoom);
     const size = particle.size * (1.2 - alpha * 0.2) * zoom;
-    state.renderer.draw(particle.sprite, screen.x, screen.y, size, size, { alpha });
+    state.renderer.draw(particle.sprite, screen.x, screen.y, size, size, {
+      alpha,
+      tint: particle.tint,
+    });
   }
 
   const actors = game.enemies.map((enemy) => ({ kind: "enemy", y: enemy.y, item: enemy }));
@@ -150,6 +153,7 @@ function drawWorld(view, camX, camY, zoom) {
     else drawEnemy(actor.item, view, camX, camY, zoom);
   }
 
+  drawOrbitWeapons(view, camX, camY, zoom);
   drawEffects(view, camX, camY, zoom);
 
   for (const bullet of game.bullets) {
@@ -175,6 +179,70 @@ function drawWorld(view, camX, camY, zoom) {
         tint: bullet.bulletTint || [1, 1, 1],
       });
     }
+  }
+}
+
+function drawOrbitWeapons(view, camX, camY, zoom) {
+  const player = game.player;
+  if (!player?.gear) return;
+  for (const weapon of player.gear.weapons) {
+    if (weapon.kind !== "orbit") continue;
+    const spin = game.elapsed * (weapon.orbitSpeed || 4.2) + weapon.id * 1.73;
+    const orbitRadius = weapon.orbitRadius || 78;
+    const x = player.x + Math.cos(spin) * orbitRadius;
+    const y = player.y + Math.sin(spin) * orbitRadius;
+    const headRadius = (weapon.areaRadius || 34) * 0.55;
+    const tint = weapon.effectTint || [0.84, 0.88, 1];
+    const glow = weapon.effectGlow || "glowCyan";
+
+    const linkCount = 5;
+    for (let i = 1; i <= linkCount; i += 1) {
+      const t = i / (linkCount + 1);
+      const lx = player.x + (x - player.x) * t;
+      const ly = player.y + (y - player.y) * t;
+      const ls = worldToScreen(lx, ly, view, camX, camY, zoom);
+      const linkSize = (5 - Math.abs(i - (linkCount + 1) / 2) * 0.4) * zoom;
+      state.renderer.draw("white", ls.x, ls.y + 2 * zoom, linkSize, linkSize, {
+        tint: [0.18, 0.18, 0.24],
+        alpha: 0.42,
+      });
+      state.renderer.draw("white", ls.x, ls.y, linkSize, linkSize, {
+        tint: [0.55, 0.58, 0.68],
+        alpha: 0.95,
+        rotation: Math.PI / 4,
+      });
+    }
+
+    const screen = worldToScreen(x, y, view, camX, camY, zoom);
+    state.renderer.draw("shadow", screen.x, screen.y + headRadius * 0.6 * zoom, headRadius * 1.85 * zoom, headRadius * 0.7 * zoom, {
+      alpha: 0.74,
+    });
+    state.renderer.draw(glow, screen.x, screen.y, headRadius * 4.4 * zoom, headRadius * 4.4 * zoom, {
+      alpha: 0.34,
+      tint,
+    });
+
+    const spikeCount = 4;
+    const spikeSize = headRadius * 0.55 * zoom;
+    for (let i = 0; i < spikeCount; i += 1) {
+      const a = spin * 1.6 + (i / spikeCount) * (Math.PI * 2);
+      const sx = x + Math.cos(a) * headRadius * 1.0;
+      const sy = y + Math.sin(a) * headRadius * 1.0;
+      const ss = worldToScreen(sx, sy, view, camX, camY, zoom);
+      state.renderer.draw("white", ss.x, ss.y, spikeSize, spikeSize, {
+        tint: [0.5, 0.54, 0.66],
+        rotation: a + Math.PI / 4,
+      });
+    }
+
+    state.renderer.draw("white", screen.x, screen.y, headRadius * 1.9 * zoom, headRadius * 1.9 * zoom, {
+      tint: [0.78, 0.82, 0.92],
+      rotation: spin * 1.6,
+    });
+    state.renderer.draw("white", screen.x - headRadius * 0.42 * zoom, screen.y - headRadius * 0.42 * zoom, headRadius * 0.55 * zoom, headRadius * 0.55 * zoom, {
+      tint: [1, 1, 1],
+      alpha: 0.72,
+    });
   }
 }
 
