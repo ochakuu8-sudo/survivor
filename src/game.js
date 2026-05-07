@@ -69,7 +69,6 @@ export function resetRun() {
   game.effects = [];
   game.offers = [];
   game.pinnedOffer = null;
-  game.selectedAttachment = null;
   game.player.baseStats = snapshotPlayerBaseStats(game.player);
   hud.shop.classList.add("hidden");
   hud.gameOver.classList.add("hidden");

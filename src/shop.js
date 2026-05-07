@@ -10,11 +10,6 @@ import { createWeapon, findWeapon, weaponKindLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
   attachmentCategoryLabel,
-  attachmentEffectSummary,
-  attachmentMinimumRarityLabel,
-  attachmentRerollCost,
-  getSelectedAttachmentInfo,
-  pickRandomAttachment,
   pickShopAttachment,
   rarityLabel,
   rarityShortLabel,
@@ -452,36 +447,11 @@ function applyWeaponOffer(offer) {
 }
 
 function applyAttachmentOffer(offer, weapon) {
-  const attachmentIndex = weapon.attachments.length;
   addAttachmentToWeapon(weapon, {
     key: offer.definition.key,
     rarity: offer.rarity,
     definition: offer.definition,
   });
-  game.selectedAttachment = { weaponId: weapon.id, attachmentIndex };
-}
-
-export function rerollWeaponAttachment(weaponId, attachmentIndex) {
-  const weapon = findWeapon(weaponId);
-  if (!weapon || !weapon.attachments[attachmentIndex]) return;
-  const cost = attachmentRerollCost(weapon);
-  if (game.money < cost) return;
-
-  const replacement = pickRandomAttachment(attachmentIndex);
-  if (!replacement) return;
-  weapon.attachments[attachmentIndex] = {
-    key: replacement.definition.key,
-    name: replacement.definition.name,
-    rarity: replacement.rarity,
-    category: replacement.definition.category || "stat",
-  };
-  recomputeAllAttachments();
-
-  game.money -= cost;
-  game.selectedAttachment = { weaponId: weapon.id, attachmentIndex };
-  game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
-  renderShop();
-  updateHud();
 }
 
 function buildOfferCard(offer, index) {
@@ -490,6 +460,40 @@ function buildOfferCard(offer, index) {
   if (offer.type === "attachment") {
     card.classList.add(`attach-rarity-${offer.rarity || "normal"}`);
   }
+  card.dataset.expanded = offer.expanded ? "true" : "false";
+
+  const summary = document.createElement("button");
+  summary.type = "button";
+  summary.className = "offer-summary";
+
+  const summaryType = document.createElement("span");
+  summaryType.className = `offer-type offer-type-${offer.type}`;
+  summaryType.textContent = offer.type === "attachment"
+    ? `${OFFER_TYPE_LABELS.attachment}・${rarityShortLabel(offer.rarity)}`
+    : OFFER_TYPE_LABELS[offer.type] || "装備";
+
+  const summaryName = document.createElement("strong");
+  summaryName.className = "offer-summary-name";
+  summaryName.textContent = offer.name;
+
+  const summaryPrice = document.createElement("span");
+  summaryPrice.className = "offer-summary-price";
+  summaryPrice.textContent = offer.bought ? "売切" : `${offer.cost}枚`;
+
+  const chevron = document.createElement("span");
+  chevron.className = "offer-summary-chevron";
+  chevron.setAttribute("aria-hidden", "true");
+  chevron.textContent = "▾";
+
+  summary.append(summaryType, summaryName, summaryPrice, chevron);
+  summary.addEventListener("click", () => {
+    const next = card.dataset.expanded === "true" ? "false" : "true";
+    card.dataset.expanded = next;
+    offer.expanded = next === "true";
+  });
+
+  const bodyEl = document.createElement("div");
+  bodyEl.className = "offer-body";
 
   const headRow = document.createElement("div");
   headRow.className = "offer-head";
@@ -512,8 +516,8 @@ function buildOfferCard(offer, index) {
   const title = document.createElement("h2");
   title.textContent = offer.name;
 
-  const body = document.createElement("p");
-  body.textContent = offer.text;
+  const description = document.createElement("p");
+  description.textContent = offer.text;
 
   const meta = document.createElement("small");
   meta.className = "offer-meta";
@@ -529,7 +533,7 @@ function buildOfferCard(offer, index) {
   cost.textContent = offer.bought ? "売切" : `${offer.cost}枚`;
   price.append(cost);
 
-  card.append(headRow, title, body, meta, price);
+  bodyEl.append(headRow, title, description, meta, price);
 
   const action = document.createElement("div");
   action.className = "offer-action";
@@ -572,7 +576,8 @@ function buildOfferCard(offer, index) {
     action.append(targets);
   }
 
-  card.append(action);
+  bodyEl.append(action);
+  card.append(summary, bodyEl);
   return card;
 }
 
@@ -629,68 +634,6 @@ export function renderShop() {
   hud.nextWave.disabled = false;
 }
 
-function createAttachmentInfoPanel() {
-  const info = getSelectedAttachmentInfo();
-  if (!info) return null;
-
-  const { weapon, attachment, definition, attachmentIndex } = info;
-  const panel = document.createElement("aside");
-  panel.className = `attachment-info-panel attach-rarity-${attachment.rarity || "normal"}`;
-
-  const head = document.createElement("div");
-  head.className = "attachment-info-head";
-
-  const titleBlock = document.createElement("div");
-  titleBlock.className = "attachment-info-title";
-
-  const rarity = document.createElement("span");
-  rarity.className = "attach-rarity-label";
-  rarity.textContent = rarityLabel(attachment.rarity);
-
-  const title = document.createElement("strong");
-  title.textContent = attachment.name;
-
-  const close = document.createElement("button");
-  close.type = "button";
-  close.className = "attachment-info-close";
-  close.textContent = "閉じる";
-  close.addEventListener("click", () => {
-    game.selectedAttachment = null;
-    renderGearInventory();
-  });
-
-  titleBlock.append(rarity, title);
-  head.append(titleBlock, close);
-
-  const meta = document.createElement("div");
-  meta.className = "attachment-info-meta";
-  const slot = document.createElement("span");
-  slot.textContent = `${weapon.name} / ${attachmentIndex + 1}枠目`;
-  const category = document.createElement("span");
-  category.textContent = attachmentCategoryLabel(attachment.category);
-  const minimum = document.createElement("span");
-  minimum.textContent = `出現: ${attachmentMinimumRarityLabel(definition)}以上`;
-  meta.append(slot, category, minimum);
-
-  const text = document.createElement("p");
-  text.textContent = definition?.text || "効果情報がまだ設定されていません。";
-
-  const summary = document.createElement("strong");
-  summary.className = "attachment-info-summary";
-  summary.textContent = attachmentEffectSummary(definition, attachment.rarity);
-
-  const reroll = document.createElement("button");
-  reroll.type = "button";
-  reroll.className = "attachment-info-reroll";
-  const cost = attachmentRerollCost(weapon, attachmentIndex);
-  reroll.textContent = `この枠を入替 ${cost}枚`;
-  reroll.disabled = game.money < cost;
-  reroll.addEventListener("click", () => rerollWeaponAttachment(weapon.id, attachmentIndex));
-
-  panel.append(head, meta, text, summary, reroll);
-  return panel;
-}
-
 function renderGearInventory() {
   hud.gearInventory.replaceChildren();
   const gear = game.player.gear;
@@ -738,20 +681,9 @@ function renderGearInventory() {
 
     const attachments = weapon?.attachments || [];
     if (attachments.length > 0) {
-      attachments.forEach((attachment, attachmentIndex) => {
-        const row = document.createElement("div");
-        row.className = "attachment-row";
-
-        const isSelected = game.selectedAttachment?.weaponId === weapon.id
-          && game.selectedAttachment?.attachmentIndex === attachmentIndex;
-
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = `attach-chip attach-info-button attach-rarity-${attachment.rarity || "normal"} ${isSelected ? "attach-chip-selected" : ""}`;
-        chip.addEventListener("click", () => {
-          game.selectedAttachment = { weaponId: weapon.id, attachmentIndex };
-          renderGearInventory();
-        });
+      attachments.forEach((attachment) => {
+        const chip = document.createElement("span");
+        chip.className = `attach-chip attach-rarity-${attachment.rarity || "normal"}`;
 
         const rarity = document.createElement("span");
         rarity.className = "attach-rarity-label";
@@ -762,17 +694,7 @@ function renderGearInventory() {
         attachmentName.textContent = attachment.name;
 
         chip.append(rarity, attachmentName);
-
-        const rerollButton = document.createElement("button");
-        rerollButton.type = "button";
-        rerollButton.className = "attachment-reroll";
-        const cost = attachmentRerollCost(weapon, attachmentIndex);
-        rerollButton.textContent = `入替 ${cost}枚`;
-        rerollButton.disabled = game.money < cost;
-        rerollButton.addEventListener("click", () => rerollWeaponAttachment(weapon.id, attachmentIndex));
-
-        row.append(chip, rerollButton);
-        attachmentList.append(row);
+        attachmentList.append(chip);
       });
     } else {
       const empty = document.createElement("span");
@@ -787,7 +709,5 @@ function renderGearInventory() {
     board.append(slot);
   }
 
-  const attachmentInfoPanel = createAttachmentInfoPanel();
   hud.gearInventory.append(board);
-  if (attachmentInfoPanel) hud.gearInventory.append(attachmentInfoPanel);
 }

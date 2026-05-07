@@ -38,7 +38,6 @@ export const game = {
   effects: [],
   offers: [],
   pinnedOffer: null,
-  selectedAttachment: null,
 };
 
 let enemyId = 1;

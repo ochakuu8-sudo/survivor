@@ -1,7 +1,6 @@
 import {
   ATTACHMENT_RARITIES,
   ATTACHMENT_RARITY_TABLES,
-  ATTACHMENT_REROLL_SLOT_COSTS,
   MAX_WEAPON_ATTACHMENTS,
   RARITY_ORDER,
 } from "./constants.js";
@@ -12,7 +11,6 @@ import {
   boostWeaponImpact,
   expandWeaponArea,
   extendWeaponReach,
-  findWeapon,
   restoreWeaponBaseStats,
 } from "./weapons.js";
 
@@ -36,14 +34,6 @@ export function hasWeaponAttachment(weapon, key) {
   return weapon.attachments.some((attachment) => attachment.key === key);
 }
 
-export function slotIndexForAttachment(index) {
-  return clamp(index, 0, MAX_WEAPON_ATTACHMENTS - 1);
-}
-
-export function rarityTableForSlot(slotIndex) {
-  return ATTACHMENT_RARITY_TABLES[slotIndexForAttachment(slotIndex)];
-}
-
 export function attachmentCategoryLabel(category) {
   const labels = {
     stat: "ステータス",
@@ -53,28 +43,6 @@ export function attachmentCategoryLabel(category) {
     support: "プレイヤー強化",
   };
   return labels[category] || "効果";
-}
-
-export function attachmentMinimumRarityLabel(definition) {
-  return rarityLabel(definition?.minRarity || "normal");
-}
-
-export function attachmentEffectSummary(definition, rarity) {
-  if (!definition) return "";
-  const power = rarityPower(rarity);
-  if (definition.category === "stat") {
-    return `効果量 ${power.toFixed(2)}倍`;
-  }
-  if (definition.category === "special") {
-    return `特殊効果量 ${power.toFixed(2)}倍`;
-  }
-  if (definition.category === "synergy") {
-    return `既存アタッチメントとの連動量 ${power.toFixed(2)}倍`;
-  }
-  if (definition.category === "support") {
-    return `プレイヤー強化量 ${power.toFixed(2)}倍`;
-  }
-  return `総合強化 ${power.toFixed(2)}倍`;
 }
 
 export function findAttachmentDefinition(key) {
@@ -134,28 +102,6 @@ export function recomputeAllAttachments() {
   });
   syncGearAttachments();
   if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-}
-
-export function getSelectedAttachmentInfo() {
-  const selected = game.selectedAttachment;
-  if (!selected) return null;
-  const weapon = findWeapon(selected.weaponId);
-  if (!weapon) {
-    game.selectedAttachment = null;
-    return null;
-  }
-  const attachment = weapon.attachments[selected.attachmentIndex];
-  if (!attachment) {
-    game.selectedAttachment = null;
-    return null;
-  }
-  const definition = findAttachmentDefinition(attachment.key);
-  return {
-    weapon,
-    attachment,
-    definition,
-    attachmentIndex: selected.attachmentIndex,
-  };
 }
 
 export const ACTIVE_ATTACHMENTS = [
@@ -367,27 +313,8 @@ export const ACTIVE_ATTACHMENTS = [
   },
 ];
 
-export function rollAttachmentRarity(slotIndex) {
-  const table = rarityTableForSlot(slotIndex);
-  const roll = Math.random() * 100;
-  let cursor = 0;
-  for (const rarity of RARITY_ORDER) {
-    cursor += table[rarity] || 0;
-    if (roll < cursor) return rarity;
-  }
-  return "normal";
-}
-
-export function attachmentCanAppear(attachment, rarity) {
+function attachmentCanAppear(attachment, rarity) {
   return rarityRank(rarity) >= rarityRank(attachment.minRarity || "normal");
-}
-
-export function pickRandomAttachment(slotIndex) {
-  const rarity = rollAttachmentRarity(slotIndex);
-  const candidates = ACTIVE_ATTACHMENTS.filter((attachment) => attachmentCanAppear(attachment, rarity));
-  if (candidates.length === 0) return null;
-  const definition = candidates[Math.floor(Math.random() * candidates.length)];
-  return { definition, rarity };
 }
 
 export function addAttachmentToWeapon(weapon, attachment) {
@@ -427,9 +354,4 @@ export function pickShopAttachment(wave) {
   if (candidates.length === 0) return null;
   const definition = candidates[Math.floor(Math.random() * candidates.length)];
   return { definition, rarity };
-}
-
-export function attachmentRerollCost(weapon, attachmentIndex = 0) {
-  const slotIndex = slotIndexForAttachment(attachmentIndex);
-  return Math.floor(ATTACHMENT_REROLL_SLOT_COSTS[slotIndex] + game.wave * (1.1 + slotIndex * 0.55));
 }
