@@ -219,6 +219,44 @@ function drawPixelZombie(ctx, w, h, skin, clothes, accent, scale = 1) {
   ctx.restore();
 }
 
+function drawPixelSkeleton(ctx, w, h) {
+  ctx.save();
+  ctx.translate(w / 2, h / 2);
+  const x = -20;
+  const y = -30;
+  px(ctx, x + 2, y + 56, 36, 7, "rgba(35, 25, 76, 0.32)");
+  px(ctx, x + 4, y + 9, 32, 22, "#eef2f7");
+  px(ctx, x + 8, y + 5, 24, 4, "#eef2f7");
+  px(ctx, x + 2, y + 11, 2, 16, "#cdd3df");
+  px(ctx, x + 36, y + 11, 2, 16, "#cdd3df");
+  px(ctx, x + 9, y + 15, 7, 8, "#0d1330");
+  px(ctx, x + 24, y + 15, 7, 8, "#0d1330");
+  px(ctx, x + 11, y + 17, 3, 3, "#7adaff");
+  px(ctx, x + 26, y + 17, 3, 3, "#7adaff");
+  px(ctx, x + 18, y + 22, 4, 5, "#0d1330");
+  px(ctx, x + 11, y + 28, 18, 2, "#0d1330");
+  px(ctx, x + 14, y + 28, 1, 2, "#eef2f7");
+  px(ctx, x + 19, y + 28, 1, 2, "#eef2f7");
+  px(ctx, x + 24, y + 28, 1, 2, "#eef2f7");
+  px(ctx, x + 17, y + 31, 6, 3, "#cdd3df");
+  px(ctx, x + 5, y + 34, 30, 22, "#dde3ed");
+  px(ctx, x + 8, y + 37, 24, 1, "#0d1330");
+  px(ctx, x + 8, y + 41, 24, 1, "#0d1330");
+  px(ctx, x + 8, y + 45, 24, 1, "#0d1330");
+  px(ctx, x + 8, y + 49, 24, 1, "#0d1330");
+  px(ctx, x + 19, y + 34, 2, 22, "#5b6276");
+  px(ctx, x + 7, y + 56, 26, 3, "#cdd3df");
+  px(ctx, x + 9, y + 59, 8, 10, "#dde3ed");
+  px(ctx, x + 23, y + 59, 8, 10, "#dde3ed");
+  px(ctx, x - 6, y + 35, 11, 4, "#dde3ed");
+  px(ctx, x + 35, y + 35, 11, 4, "#dde3ed");
+  px(ctx, x + 38, y + 28, 2, 18, "#9e6a25");
+  px(ctx, x + 36, y + 26, 2, 3, "#7a4f1b");
+  px(ctx, x + 36, y + 45, 2, 3, "#7a4f1b");
+  px(ctx, x + 39, y + 30, 1, 14, "#a3bcd6");
+  ctx.restore();
+}
+
 export function buildAtlas() {
   const specs = [];
   const add = (name, width, height, draw) => specs.push({ name, width, height, draw });
@@ -340,6 +378,10 @@ export function buildAtlas() {
   });
   add("zombieBigReadable", 96, 96, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelZombie(target, width, height, "#a6f771", "#7946d9", "#ff7a5c", 1.32), 2, "rgba(245, 38, 50, 0.84)");
+  });
+  add("skeletonArcher", 72, 72, (ctx, w, h) => drawPixelSkeleton(ctx, w, h));
+  add("skeletonArcherReadable", 72, 72, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelSkeleton, 2, "rgba(255, 168, 64, 0.85)");
   });
 
   add("bullet", 48, 20, (ctx, w, h) => {

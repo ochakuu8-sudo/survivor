@@ -288,6 +288,19 @@ function drawEffects(view, camX, camY, zoom) {
         tint: effect.tint || [1, 1, 1],
         alpha: alpha * 0.16,
       });
+    } else if (effect.type === "telegraph") {
+      const screen = worldToScreen(effect.x, effect.y, view, camX, camY, zoom);
+      const t = clamp(1 - alpha, 0, 1);
+      const size = effect.radius * 2 * zoom;
+      const beat = 1 + Math.sin(game.elapsed * (8 + t * 20)) * 0.05;
+      state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, size * 1.18 * beat, size * 1.18 * beat, {
+        tint: effect.tint || [1, 0.55, 0.18],
+        alpha: 0.18 + t * 0.5,
+      });
+      state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, size * 0.62 * beat, size * 0.62 * beat, {
+        tint: [1, 0.78, 0.36],
+        alpha: 0.12 + t * 0.5,
+      });
     }
   }
 }
