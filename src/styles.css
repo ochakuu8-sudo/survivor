@@ -879,13 +879,15 @@ h1 {
   transform: none;
 }
 
-.attach-rarity-label {
+.attach-stars-label {
   flex: 0 0 auto;
   padding: 2px 5px;
   border-radius: 5px;
   color: #241737;
   background: #d9f7ff;
-  font-size: 0.58rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   line-height: 1;
 }
 
@@ -894,37 +896,27 @@ h1 {
   overflow-wrap: anywhere;
 }
 
-.attach-rarity-normal {
+.attach-stars-1 {
   border-color: rgba(157, 247, 255, 0.3);
   background: rgba(85, 246, 199, 0.13);
 }
 
-.attach-rarity-rare {
-  border-color: rgba(113, 189, 255, 0.52);
-  background: rgba(73, 120, 255, 0.22);
+.attach-stars-2 {
+  border-color: rgba(174, 74, 255, 0.62);
+  background: rgba(174, 74, 255, 0.22);
 }
 
-.attach-rarity-rare .attach-rarity-label {
-  color: #eef8ff;
-  background: #3278ff;
-}
-
-.attach-rarity-epic {
-  border-color: rgba(255, 93, 209, 0.56);
-  background: rgba(174, 74, 255, 0.23);
-}
-
-.attach-rarity-epic .attach-rarity-label {
+.attach-stars-2 .attach-stars-label {
   color: #fff9f2;
   background: #b455ff;
 }
 
-.attach-rarity-legend {
+.attach-stars-3 {
   border-color: rgba(255, 228, 107, 0.78);
   background: rgba(255, 180, 48, 0.22);
 }
 
-.attach-rarity-legend .attach-rarity-label {
+.attach-stars-3 .attach-stars-label {
   color: #241737;
   background: #ffe46b;
 }

@@ -1,11 +1,5 @@
-import {
-  ATTACHMENT_RARITIES,
-  ATTACHMENT_RARITY_TABLES,
-  MAX_WEAPON_ATTACHMENTS,
-  RARITY_ORDER,
-} from "./constants.js";
+import { MAX_WEAPON_ATTACHMENTS } from "./constants.js";
 import { game } from "./state.js";
-import { clamp } from "./utils/math.js";
 import {
   addWeaponPierce,
   boostWeaponImpact,
@@ -14,24 +8,10 @@ import {
   restoreWeaponBaseStats,
 } from "./weapons.js";
 
-export function rarityRank(rarity) {
-  return Math.max(0, RARITY_ORDER.indexOf(rarity));
-}
+const STAR_LABELS = { 1: "★", 2: "★★", 3: "★★★" };
 
-export function rarityPower(rarity) {
-  return ATTACHMENT_RARITIES[rarity]?.power || ATTACHMENT_RARITIES.normal.power;
-}
-
-export function rarityLabel(rarity) {
-  return ATTACHMENT_RARITIES[rarity]?.label || ATTACHMENT_RARITIES.normal.label;
-}
-
-export function rarityShortLabel(rarity) {
-  return ATTACHMENT_RARITIES[rarity]?.short || ATTACHMENT_RARITIES.normal.short;
-}
-
-export function hasWeaponAttachment(weapon, key) {
-  return weapon.attachments.some((attachment) => attachment.key === key);
+export function starsLabel(stars) {
+  return STAR_LABELS[stars] || STAR_LABELS[1];
 }
 
 export function attachmentCategoryLabel(category) {
@@ -39,10 +19,14 @@ export function attachmentCategoryLabel(category) {
     stat: "ステータス",
     special: "特殊効果",
     synergy: "シナジー",
-    legend: "伝説効果",
     support: "プレイヤー強化",
+    unique: "ユニーク効果",
   };
   return labels[category] || "効果";
+}
+
+export function hasWeaponAttachment(weapon, key) {
+  return weapon.attachments.some((attachment) => attachment.key === key);
 }
 
 export function findAttachmentDefinition(key) {
@@ -55,8 +39,8 @@ export function syncGearAttachments() {
     weapon.attachments.map((attachment) => ({
       key: attachment.key,
       name: attachment.name,
-      rarity: attachment.rarity,
-      rarityLabel: rarityLabel(attachment.rarity),
+      stars: attachment.stars,
+      starsLabel: starsLabel(attachment.stars),
       weaponId: weapon.id,
       weaponName: weapon.name,
     })),
@@ -97,7 +81,7 @@ export function recomputeAllAttachments() {
   game.player.gear.weapons.forEach((weapon) => {
     weapon.attachments.forEach((attachment) => {
       const definition = findAttachmentDefinition(attachment.key);
-      if (definition) definition.attach(weapon, rarityPower(attachment.rarity), attachment);
+      if (definition) definition.attach(weapon, attachment);
     });
   });
   syncGearAttachments();
@@ -108,250 +92,292 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "powerCore",
     name: "威力コア",
-    minRarity: "normal",
+    stars: 1,
     category: "stat",
     text: "武器の基礎ダメージを上げる。爆発武器は爆風威力も上がる。",
-    attach: (weapon, power) => {
-      boostWeaponImpact(weapon, Math.round(4 * power));
+    attach: (weapon) => {
+      boostWeaponImpact(weapon, 6);
     },
   },
   {
     key: "rapidMechanism",
     name: "高速機構",
-    minRarity: "normal",
+    stars: 1,
     category: "stat",
-    text: "武器の攻撃頻度を上げる。設置武器は置き直しが早くなる。",
-    attach: (weapon, power) => {
-      weapon.fireRate *= 1 + 0.1 * power;
+    text: "武器の攻撃頻度を上げる。",
+    attach: (weapon) => {
+      weapon.fireRate *= 1.13;
     },
   },
   {
     key: "rangeTube",
     name: "射程チューブ",
-    minRarity: "normal",
+    stars: 1,
     category: "stat",
     text: "弾、炎、斬撃、設置攻撃の届く距離を広げる。",
-    attach: (weapon, power) => {
-      extendWeaponReach(weapon, 1 + 0.1 * power);
+    attach: (weapon) => {
+      extendWeaponReach(weapon, 1.13);
     },
   },
   {
     key: "areaLens",
     name: "範囲レンズ",
-    minRarity: "normal",
+    stars: 1,
     category: "stat",
     text: "武器の当たり幅や巻き込み範囲を広げる。",
-    attach: (weapon, power) => {
-      addWeaponPierce(weapon, 0.8 + power * 0.35);
-      expandWeaponArea(weapon, power);
+    attach: (weapon) => {
+      addWeaponPierce(weapon, 1);
+      expandWeaponArea(weapon, 1);
     },
   },
   {
     key: "stableGrip",
     name: "安定グリップ",
-    minRarity: "normal",
+    stars: 1,
     category: "stat",
     text: "武器のブレを抑え、弾速と手応えを少し上げる。",
-    attach: (weapon, power) => {
-      weapon.spread *= Math.max(0.55, 1 - 0.08 * power);
-      weapon.jitter *= Math.max(0.45, 1 - 0.12 * power);
-      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1 + 0.07 * power;
-      boostWeaponImpact(weapon, Math.round(1.5 * power));
+    attach: (weapon) => {
+      weapon.spread *= 0.78;
+      weapon.jitter *= 0.7;
+      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.08;
+      boostWeaponImpact(weapon, 2);
+    },
+  },
+  {
+    key: "vitalityCharm",
+    name: "守りのお守り",
+    stars: 1,
+    category: "support",
+    text: "最大体力を底上げする。",
+    attach: () => {
+      game.player.maxHp += 25;
+    },
+  },
+  {
+    key: "guardBadge",
+    name: "古い防犯バッジ",
+    stars: 1,
+    category: "support",
+    text: "被ダメージ軽減を上げる。",
+    attach: () => {
+      game.player.armor += 4;
+    },
+  },
+  {
+    key: "fieldTape",
+    name: "応急テープ",
+    stars: 1,
+    category: "support",
+    text: "戦闘中の自然回復量を底上げする。",
+    attach: () => {
+      game.player.regen += 0.85;
+    },
+  },
+  {
+    key: "scrapMagnet",
+    name: "スクラップ磁石",
+    stars: 1,
+    category: "support",
+    text: "コインの磁力範囲を広げる。",
+    attach: () => {
+      game.player.pickup += 36;
+    },
+  },
+  {
+    key: "lightSneaker",
+    name: "軽量スニーカー",
+    stars: 1,
+    category: "support",
+    text: "移動速度を上げる。",
+    attach: () => {
+      game.player.speed += 26;
     },
   },
   {
     key: "splitChamber",
     name: "分裂チャンバー",
-    minRarity: "rare",
+    stars: 2,
     category: "special",
-    text: "弾数や攻撃幅を増やす特殊改造。レア以上で出現する。",
-    attach: (weapon, power) => {
+    text: "弾数や攻撃幅を増やす特殊改造。",
+    attach: (weapon) => {
       if (weapon.kind === "flame" || weapon.kind === "sword") {
-        weapon.cone = Math.min(1.12, weapon.cone + 0.07 * power);
+        weapon.cone = Math.min(1.12, weapon.cone + 0.12);
       } else if (weapon.kind === "orbit") {
-        weapon.areaRadius += 7 * power;
-        weapon.orbitSpeed *= 1 + 0.05 * power;
+        weapon.areaRadius += 14;
+        weapon.orbitSpeed *= 1.1;
       } else {
-        weapon.projectiles += Math.max(1, Math.floor(power));
-        weapon.spread += 0.025 * power;
+        weapon.projectiles += 1;
+        weapon.spread += 0.05;
       }
     },
   },
   {
     key: "blastPrimer",
     name: "爆裂プライマー",
-    minRarity: "rare",
+    stars: 2,
     category: "special",
-    text: "着弾や設置攻撃に小さな爆発性を持たせる。レア以上で出現する。",
-    attach: (weapon, power) => {
-      const radius = 44 + 18 * power;
+    text: "着弾や設置攻撃に小さな爆発性を持たせる。",
+    attach: (weapon) => {
+      const radius = 64;
       weapon.explosionRadius = Math.max(weapon.explosionRadius, radius);
-      weapon.explosionDamage = Math.max(weapon.explosionDamage, weapon.damage * (0.45 + 0.11 * power));
-      if (weapon.kind === "timedBomb") weapon.fuse = Math.max(0.75, weapon.fuse - 0.12 * power);
+      weapon.explosionDamage = Math.max(weapon.explosionDamage, weapon.damage * 0.6);
+      if (weapon.kind === "timedBomb") weapon.fuse = Math.max(0.75, weapon.fuse - 0.2);
     },
   },
   {
     key: "sustainEmitter",
     name: "持続エミッター",
-    minRarity: "rare",
+    stars: 2,
     category: "special",
     text: "炎、レーザー、回転武器の持続と当たり続ける力を伸ばす。",
-    attach: (weapon, power) => {
-      weapon.duration *= 1 + 0.14 * power;
-      if (weapon.tickRate > 0) weapon.tickRate *= 1 + 0.12 * power;
-      if (weapon.kind === "flame" || weapon.kind === "sustainedLaser") weapon.fireRate *= 1 + 0.05 * power;
-      if (weapon.kind === "orbit") weapon.orbitRadius *= 1 + 0.07 * power;
+    attach: (weapon) => {
+      weapon.duration *= 1.25;
+      if (weapon.tickRate > 0) weapon.tickRate *= 1.2;
+      if (weapon.kind === "flame" || weapon.kind === "sustainedLaser") weapon.fireRate *= 1.08;
+      if (weapon.kind === "orbit") weapon.orbitRadius *= 1.1;
+    },
+  },
+  {
+    key: "ricochetCoil",
+    name: "跳弾コイル",
+    stars: 2,
+    category: "special",
+    text: "通常弾が跳ね返って次の敵を狙う。",
+    attach: (weapon) => {
+      if (weapon.kind === "projectile") {
+        weapon.ricochet = (weapon.ricochet || 0) + 1;
+      }
     },
   },
   {
     key: "overclockLink",
     name: "過給リンク",
-    minRarity: "epic",
+    stars: 2,
     category: "synergy",
-    text: "威力コアや高速機構と噛み合うシナジー改造。エピック以上で出現する。",
-    attach: (weapon, power) => {
+    text: "威力コアや高速機構と噛み合うシナジー改造。",
+    attach: (weapon) => {
       const hasPower = hasWeaponAttachment(weapon, "powerCore");
       const hasRapid = hasWeaponAttachment(weapon, "rapidMechanism");
-      if (hasPower) boostWeaponImpact(weapon, Math.round(2.5 * power));
-      if (hasRapid) weapon.fireRate *= 1 + 0.08 * power;
+      if (hasPower) boostWeaponImpact(weapon, 4);
+      if (hasRapid) weapon.fireRate *= 1.12;
       if (!hasPower && !hasRapid) {
-        boostWeaponImpact(weapon, Math.round(1.5 * power));
-        weapon.fireRate *= 1 + 0.04 * power;
+        boostWeaponImpact(weapon, 2);
+        weapon.fireRate *= 1.06;
       }
     },
   },
   {
     key: "focusPrism",
     name: "収束プリズム",
-    minRarity: "epic",
+    stars: 2,
     category: "synergy",
-    text: "射程チューブや範囲レンズと噛み合うシナジー改造。エピック以上で出現する。",
-    attach: (weapon, power) => {
+    text: "射程チューブや範囲レンズと噛み合うシナジー改造。",
+    attach: (weapon) => {
       const hasRange = hasWeaponAttachment(weapon, "rangeTube");
       const hasArea = hasWeaponAttachment(weapon, "areaLens");
-      if (hasRange) extendWeaponReach(weapon, 1 + 0.055 * power);
-      if (hasArea) expandWeaponArea(weapon, power * 0.7);
-      if (hasRange && hasArea) boostWeaponImpact(weapon, Math.round(2 * power));
-    },
-  },
-  {
-    key: "nightLegend",
-    name: "夜街の伝説",
-    minRarity: "legend",
-    category: "legend",
-    text: "5枠目でだけ出る伝説級改造。武器全体を大きく底上げする。",
-    attach: (weapon, power) => {
-      boostWeaponImpact(weapon, Math.round(4 * power));
-      weapon.fireRate *= 1 + 0.07 * power;
-      extendWeaponReach(weapon, 1 + 0.06 * power);
-      expandWeaponArea(weapon, power);
-      if (weapon.kind !== "flame" && weapon.kind !== "sword" && weapon.kind !== "orbit") {
-        weapon.projectiles += 1;
-      }
-    },
-  },
-  {
-    key: "vitalityCharm",
-    name: "守りのお守り",
-    minRarity: "normal",
-    category: "support",
-    text: "最大体力を底上げする。倒れにくい体になる。",
-    attach: (_weapon, power) => {
-      game.player.maxHp += Math.round(22 * power);
-    },
-  },
-  {
-    key: "guardBadge",
-    name: "古い防犯バッジ",
-    minRarity: "normal",
-    category: "support",
-    text: "被ダメージ軽減の値を上げる。",
-    attach: (_weapon, power) => {
-      game.player.armor += Math.round(3 * power);
-    },
-  },
-  {
-    key: "fieldTape",
-    name: "応急テープ",
-    minRarity: "normal",
-    category: "support",
-    text: "戦闘中の自然回復量を底上げする。",
-    attach: (_weapon, power) => {
-      game.player.regen += 0.7 * power;
-    },
-  },
-  {
-    key: "scrapMagnet",
-    name: "スクラップ磁石",
-    minRarity: "normal",
-    category: "support",
-    text: "コインの磁力範囲を広げる。",
-    attach: (_weapon, power) => {
-      game.player.pickup += Math.round(34 * power);
-    },
-  },
-  {
-    key: "lightSneaker",
-    name: "軽量スニーカー",
-    minRarity: "normal",
-    category: "support",
-    text: "移動速度を上げて立ち回りやすくする。",
-    attach: (_weapon, power) => {
-      game.player.speed += Math.round(22 * power);
+      if (hasRange) extendWeaponReach(weapon, 1.08);
+      if (hasArea) expandWeaponArea(weapon, 1);
+      if (hasRange && hasArea) boostWeaponImpact(weapon, 3);
     },
   },
   {
     key: "looseBattery",
     name: "ジャンク電池",
-    minRarity: "rare",
+    stars: 2,
     category: "support",
-    text: "武器威力ボーナスを大きく上げるが、被ダメージ軽減は少し失う。",
-    attach: (_weapon, power) => {
-      game.player.weaponPowerBonus += Math.round(8 * power);
-      game.player.armor -= Math.round(2 * power);
+    text: "武器威力ボーナスを大きく上げるが、被ダメージ軽減は失う。",
+    attach: () => {
+      game.player.weaponPowerBonus += 14;
+      game.player.armor -= 3;
+    },
+  },
+  {
+    key: "stoneSplitter",
+    name: "分裂の核",
+    stars: 3,
+    category: "unique",
+    compatibleWeapons: ["石"],
+    text: "石専用。跳ね返る瞬間に2つの小石へ分裂し、さらに敵を巻き込む。",
+    attach: (weapon) => {
+      weapon.splitOnRicochet = true;
     },
   },
 ];
 
-function attachmentCanAppear(attachment, rarity) {
-  return rarityRank(rarity) >= rarityRank(attachment.minRarity || "normal");
+export function pickShopAttachment(wave) {
+  const stars = pickStarsForWave(wave);
+  return pickAttachmentByStars(stars);
+}
+
+function pickStarsForWave(wave) {
+  const w = Math.max(1, wave);
+  let s1 = 80;
+  let s2 = 20;
+  let s3 = 0;
+  if (w >= 3) {
+    s1 = 60;
+    s2 = 32;
+    s3 = 8;
+  }
+  if (w >= 5) {
+    s1 = 45;
+    s2 = 38;
+    s3 = 17;
+  }
+  if (w >= 7) {
+    s1 = 32;
+    s2 = 42;
+    s3 = 26;
+  }
+  const r = Math.random() * 100;
+  if (r < s1) return 1;
+  if (r < s1 + s2) return 2;
+  return 3;
+}
+
+function pickAttachmentByStars(stars) {
+  const ownedNames = new Set();
+  game.player.gear.weapons.forEach((w) => ownedNames.add(w.name));
+  (game.player.inventory?.weapons || []).forEach((w) => ownedNames.add(w.name));
+
+  const candidates = ACTIVE_ATTACHMENTS.filter((a) => {
+    if (a.stars !== stars) return false;
+    if (a.compatibleWeapons) {
+      return a.compatibleWeapons.some((n) => ownedNames.has(n));
+    }
+    return true;
+  });
+  if (candidates.length === 0) {
+    if (stars > 1) return pickAttachmentByStars(stars - 1);
+    return null;
+  }
+  const definition = candidates[Math.floor(Math.random() * candidates.length)];
+  return { definition, stars };
+}
+
+export function canAttachToWeapon(definition, weapon) {
+  if (!definition || !weapon) return false;
+  if (weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return false;
+  if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weapon.name)) {
+    return false;
+  }
+  return true;
 }
 
 export function addAttachmentToWeapon(weapon, attachment) {
   if (!weapon || !attachment || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return false;
   const definition = attachment.definition || findAttachmentDefinition(attachment.key) || attachment;
   if (!definition?.key) return false;
-  const rarity = attachment.rarity || "normal";
+  if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weapon.name)) {
+    return false;
+  }
+  const stars = attachment.stars || definition.stars || 1;
   weapon.attachments.push({
     key: definition.key,
     name: definition.name,
-    rarity,
+    stars,
     category: definition.category || "stat",
   });
   recomputeAllAttachments();
   return true;
-}
-
-export function shopRarityTableForWave(wave) {
-  const tier = clamp(Math.floor((Math.max(1, wave) - 1) / 2), 0, ATTACHMENT_RARITY_TABLES.length - 1);
-  return ATTACHMENT_RARITY_TABLES[tier];
-}
-
-export function rollShopAttachmentRarity(wave) {
-  const table = shopRarityTableForWave(wave);
-  const roll = Math.random() * 100;
-  let cursor = 0;
-  for (const rarity of RARITY_ORDER) {
-    cursor += table[rarity] || 0;
-    if (roll < cursor) return rarity;
-  }
-  return "normal";
-}
-
-export function pickShopAttachment(wave) {
-  const rarity = rollShopAttachmentRarity(wave);
-  const candidates = ACTIVE_ATTACHMENTS.filter((attachment) => attachmentCanAppear(attachment, rarity));
-  if (candidates.length === 0) return null;
-  const definition = candidates[Math.floor(Math.random() * candidates.length)];
-  return { definition, rarity };
 }

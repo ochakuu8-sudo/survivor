@@ -85,5 +85,24 @@ function redirectRicochet(bullet) {
   bullet.vx = (dx / len) * speed;
   bullet.vy = (dy / len) * speed;
   bullet.angle = Math.atan2(bullet.vy, bullet.vx);
+
+  if (bullet.splitOnRicochet) {
+    for (const offset of [-Math.PI / 7, Math.PI / 7]) {
+      const angle = bullet.angle + offset;
+      game.bullets.push({
+        ...bullet,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        angle,
+        radius: Math.max(6, bullet.radius * 0.7),
+        damage: Math.max(1, Math.round(bullet.damage * 0.6)),
+        ricochet: 0,
+        splitOnRicochet: false,
+        hitIds: new Set(),
+        spinSeed: Math.random() * (Math.PI * 2),
+        spinRate: 5 + Math.random() * 4,
+      });
+    }
+  }
   return true;
 }

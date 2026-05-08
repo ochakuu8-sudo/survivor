@@ -10,19 +10,15 @@ import { createWeapon, findWeapon, weaponKindLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
   attachmentCategoryLabel,
+  canAttachToWeapon,
+  findAttachmentDefinition,
   pickShopAttachment,
-  rarityLabel,
-  rarityShortLabel,
   recomputeAllAttachments,
+  starsLabel,
 } from "./attachments.js";
 import { updateHud } from "./hud.js";
 
-const ATTACHMENT_RARITY_BASE_COST = {
-  normal: 11,
-  rare: 22,
-  epic: 38,
-  legend: 60,
-};
+const STAR_BASE_COST = { 1: 12, 2: 28, 3: 55 };
 
 const SHOP_WEAPON_COUNT = 2;
 const SHOP_ATTACHMENT_COUNT = 4;
@@ -208,8 +204,8 @@ function rollWeaponCost(baseCost) {
   return Math.max(4, Math.round(baseCost * (1 + game.wave * 0.14) + Math.random() * 4));
 }
 
-function rollAttachmentCost(rarity) {
-  const base = ATTACHMENT_RARITY_BASE_COST[rarity] ?? ATTACHMENT_RARITY_BASE_COST.normal;
+function rollAttachmentCost(stars) {
+  const base = STAR_BASE_COST[stars] ?? STAR_BASE_COST[1];
   return Math.max(5, Math.round(base * (1 + game.wave * 0.12) + Math.random() * 4));
 }
 
@@ -240,9 +236,9 @@ function makeAttachmentOffer() {
     name: pick.definition.name,
     text: pick.definition.text,
     definition: pick.definition,
-    rarity: pick.rarity,
+    stars: pick.stars,
     category: pick.definition.category,
-    cost: rollAttachmentCost(pick.rarity),
+    cost: rollAttachmentCost(pick.stars),
     bought: false,
     pinned: false,
   };
@@ -364,7 +360,7 @@ function applyAttachmentOffer(offer) {
   game.player.inventory.attachments.push({
     key: offer.definition.key,
     name: offer.definition.name,
-    rarity: offer.rarity,
+    stars: offer.stars,
     category: offer.definition.category || "stat",
   });
 }
@@ -399,7 +395,7 @@ export function detachAttachment(weaponId, attachmentIndex) {
   game.player.inventory.attachments.push({
     key: attachment.key,
     name: attachment.name,
-    rarity: attachment.rarity,
+    stars: attachment.stars,
     category: attachment.category || "stat",
   });
   recomputeAllAttachments();
@@ -412,8 +408,10 @@ export function attachFromInventory(inventoryIndex, weaponId) {
   if (!weapon || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return;
   const att = game.player.inventory.attachments[inventoryIndex];
   if (!att) return;
+  const definition = findAttachmentDefinition(att.key);
+  if (!canAttachToWeapon(definition, weapon)) return;
   game.player.inventory.attachments.splice(inventoryIndex, 1);
-  addAttachmentToWeapon(weapon, { key: att.key, rarity: att.rarity });
+  addAttachmentToWeapon(weapon, { key: att.key, stars: att.stars });
   renderShop();
   updateHud();
 }
@@ -422,7 +420,7 @@ function buildOfferCard(offer, index) {
   const card = document.createElement("article");
   card.className = `offer offer-${offer.type}${offer.pinned ? " offer-pinned" : ""}`;
   if (offer.type === "attachment") {
-    card.classList.add(`attach-rarity-${offer.rarity || "normal"}`);
+    card.classList.add(`attach-stars-${offer.stars || 1}`);
   }
   card.dataset.expanded = offer.expanded ? "true" : "false";
 
@@ -433,7 +431,7 @@ function buildOfferCard(offer, index) {
   const summaryType = document.createElement("span");
   summaryType.className = `offer-type offer-type-${offer.type}`;
   summaryType.textContent = offer.type === "attachment"
-    ? `${OFFER_TYPE_LABELS.attachment}・${rarityShortLabel(offer.rarity)}`
+    ? `${OFFER_TYPE_LABELS.attachment}・${starsLabel(offer.stars)}`
     : OFFER_TYPE_LABELS[offer.type] || "装備";
 
   const summaryName = document.createElement("strong");
@@ -465,7 +463,7 @@ function buildOfferCard(offer, index) {
   const type = document.createElement("span");
   type.className = `offer-type offer-type-${offer.type}`;
   type.textContent = offer.type === "attachment"
-    ? `${OFFER_TYPE_LABELS.attachment}・${rarityShortLabel(offer.rarity)}`
+    ? `${OFFER_TYPE_LABELS.attachment}・${starsLabel(offer.stars)}`
     : OFFER_TYPE_LABELS[offer.type] || "装備";
 
   const pinButton = document.createElement("button");
@@ -488,7 +486,7 @@ function buildOfferCard(offer, index) {
   if (offer.type === "weapon") {
     meta.textContent = "倉庫に追加";
   } else if (offer.type === "attachment") {
-    meta.textContent = `${rarityLabel(offer.rarity)}・${attachmentCategoryLabel(offer.category)}・倉庫に追加`;
+    meta.textContent = `${starsLabel(offer.stars)}・${attachmentCategoryLabel(offer.category)}・倉庫に追加`;
   }
 
   const price = document.createElement("div");
@@ -651,11 +649,11 @@ function renderGearInventory() {
         row.className = "attachment-row";
 
         const chip = document.createElement("span");
-        chip.className = `attach-chip attach-rarity-${attachment.rarity || "normal"}`;
+        chip.className = `attach-chip attach-stars-${attachment.stars || 1}`;
 
         const rarity = document.createElement("span");
-        rarity.className = "attach-rarity-label";
-        rarity.textContent = rarityLabel(attachment.rarity);
+        rarity.className = "attach-stars-label";
+        rarity.textContent = starsLabel(attachment.stars);
 
         const attachmentName = document.createElement("span");
         attachmentName.className = "attach-name";
@@ -737,10 +735,10 @@ function renderGearInventory() {
         tail.className = "inventory-row-tail";
         weapon.attachments.forEach((attachment) => {
           const chip = document.createElement("span");
-          chip.className = `attach-chip attach-rarity-${attachment.rarity || "normal"}`;
+          chip.className = `attach-chip attach-stars-${attachment.stars || 1}`;
           const r = document.createElement("span");
-          r.className = "attach-rarity-label";
-          r.textContent = rarityLabel(attachment.rarity);
+          r.className = "attach-stars-label";
+          r.textContent = starsLabel(attachment.stars);
           const n = document.createElement("span");
           n.className = "attach-name";
           n.textContent = attachment.name;
@@ -773,10 +771,10 @@ function renderGearInventory() {
       row.className = "inventory-row inventory-attach-row";
 
       const chip = document.createElement("span");
-      chip.className = `attach-chip attach-rarity-${attachment.rarity || "normal"}`;
+      chip.className = `attach-chip attach-stars-${attachment.stars || 1}`;
       const r = document.createElement("span");
-      r.className = "attach-rarity-label";
-      r.textContent = rarityLabel(attachment.rarity);
+      r.className = "attach-stars-label";
+      r.textContent = starsLabel(attachment.stars);
       const n = document.createElement("span");
       n.className = "attach-name";
       n.textContent = attachment.name;
