@@ -618,6 +618,21 @@ export function advanceShopStep() {
 }
 
 
+function aggregateAttachments(list) {
+  const map = new Map();
+  list.forEach((att, idx) => {
+    const key = att.key;
+    if (!map.has(key)) {
+      map.set(key, { ...att, count: 1, indices: [idx] });
+    } else {
+      const entry = map.get(key);
+      entry.count += 1;
+      entry.indices.push(idx);
+    }
+  });
+  return Array.from(map.values());
+}
+
 function renderGearInventory() {
   hud.gearInventory.replaceChildren();
   const gear = game.player.gear;
@@ -666,20 +681,21 @@ function renderGearInventory() {
 
     const attachments = weapon?.attachments || [];
     if (attachments.length > 0) {
-      attachments.forEach((attachment, attachmentIndex) => {
+      const aggregated = aggregateAttachments(attachments);
+      aggregated.forEach((agg) => {
         const row = document.createElement("div");
         row.className = "attachment-row";
 
         const chip = document.createElement("span");
-        chip.className = `attach-chip attach-stars-${attachment.stars || 1}`;
+        chip.className = `attach-chip attach-stars-${agg.stars || 1}`;
 
         const rarity = document.createElement("span");
         rarity.className = "attach-stars-label";
-        rarity.textContent = starsLabel(attachment.stars);
+        rarity.textContent = starsLabel(agg.stars);
 
         const attachmentName = document.createElement("span");
         attachmentName.className = "attach-name";
-        attachmentName.textContent = attachment.name;
+        attachmentName.textContent = agg.count > 1 ? `${agg.name} ×${agg.count}` : agg.name;
 
         chip.append(rarity, attachmentName);
 
@@ -687,7 +703,7 @@ function renderGearInventory() {
         detach.type = "button";
         detach.className = "attachment-detach";
         detach.textContent = "外す";
-        detach.addEventListener("click", () => detachAttachment(weapon.id, attachmentIndex));
+        detach.addEventListener("click", () => detachAttachment(weapon.id, agg.indices[0]));
 
         row.append(chip, detach);
         attachmentList.append(row);
@@ -788,18 +804,19 @@ function renderGearInventory() {
     empty.textContent = "未所持";
     attList.append(empty);
   } else {
-    inv.attachments.forEach((attachment, idx) => {
+    const aggregated = aggregateAttachments(inv.attachments);
+    aggregated.forEach((agg) => {
       const row = document.createElement("article");
       row.className = "inventory-row inventory-attach-row";
 
       const chip = document.createElement("span");
-      chip.className = `attach-chip attach-stars-${attachment.stars || 1}`;
+      chip.className = `attach-chip attach-stars-${agg.stars || 1}`;
       const r = document.createElement("span");
       r.className = "attach-stars-label";
-      r.textContent = starsLabel(attachment.stars);
+      r.textContent = starsLabel(agg.stars);
       const n = document.createElement("span");
       n.className = "attach-name";
-      n.textContent = attachment.name;
+      n.textContent = agg.count > 1 ? `${agg.name} ×${agg.count}` : agg.name;
       chip.append(r, n);
 
       const targets = document.createElement("div");
@@ -810,13 +827,14 @@ function renderGearInventory() {
         note.textContent = "装備中の武器がありません";
         targets.append(note);
       } else {
+        const definition = findAttachmentDefinition(agg.key);
         gear.weapons.forEach((weapon) => {
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "inventory-attach-target";
           btn.textContent = `${weapon.name} (${weapon.attachments.length}/${MAX_WEAPON_ATTACHMENTS})`;
-          btn.disabled = weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS;
-          btn.addEventListener("click", () => attachFromInventory(idx, weapon.id));
+          btn.disabled = !canAttachToWeapon(definition, weapon);
+          btn.addEventListener("click", () => attachFromInventory(agg.indices[0], weapon.id));
           targets.append(btn);
         });
       }
