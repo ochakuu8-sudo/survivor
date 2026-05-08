@@ -61,6 +61,8 @@ export function resetRun() {
   game.player.baseStats = snapshotPlayerBaseStats(game.player);
   hud.shop.classList.add("hidden");
   hud.gameOver.classList.add("hidden");
+  hud.pauseMenu.classList.add("hidden");
+  hud.debugPanel.classList.add("hidden");
   prepareStarterPick();
   renderStarterPick();
   updateHud();
@@ -101,6 +103,21 @@ export function endRun() {
   game.mode = "over";
   hud.result.textContent = `第${game.wave}夜、撃破数 ${game.totalKills}、残りコイン ${game.money}枚。`;
   hud.gameOver.classList.remove("hidden");
+  hud.pauseMenu.classList.add("hidden");
+  hud.debugPanel.classList.add("hidden");
+}
+
+export function pauseGame() {
+  if (game.mode !== "fight") return;
+  game.mode = "pause";
+  hud.pauseMenu.classList.remove("hidden");
+}
+
+export function resumeGame() {
+  if (game.mode !== "pause") return;
+  game.mode = "fight";
+  hud.pauseMenu.classList.add("hidden");
+  hud.debugPanel.classList.add("hidden");
 }
 
 function update(dt) {

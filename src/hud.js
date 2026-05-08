@@ -11,6 +11,7 @@ export function updateHud() {
   hud.hp.style.width = `${clamp((game.player.hp / game.player.maxHp) * 100, 0, 100)}%`;
   if (hud.hpText) hud.hpText.textContent = `${Math.ceil(game.player.hp)}/${Math.ceil(game.player.maxHp)}`;
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
+  if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "fight");
   syncTouchControls();
 }
 

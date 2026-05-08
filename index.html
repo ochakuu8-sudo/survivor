@@ -38,6 +38,18 @@
         </div>
       </section>
 
+      <button id="pauseBtn" type="button" class="pause-button hidden" aria-label="一時停止">II</button>
+
+      <section id="pauseMenu" class="panel narrow hidden" aria-label="一時停止メニュー">
+        <span class="panel-kicker">一時停止</span>
+        <h1>休憩中</h1>
+        <div class="pause-actions">
+          <button id="resumeBtn" type="button" class="primary">再開</button>
+          <button id="pauseDebugBtn" type="button">デバッグメニュー</button>
+          <button id="pauseRestartBtn" type="button">やり直す</button>
+        </div>
+      </section>
+
       <section id="starterPick" class="panel narrow hidden" aria-label="開始武器選択">
         <div class="panel-head">
           <div>
@@ -90,6 +102,7 @@
         <div class="debug-head">
           <strong>DEBUG</strong>
           <small>~ で開閉</small>
+          <button id="dbgClose" type="button">閉じる</button>
         </div>
         <div class="debug-row">
           <label>武器</label>

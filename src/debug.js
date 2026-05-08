@@ -20,6 +20,7 @@ export function setupDebug() {
     }
   });
 
+  hud.dbgClose.addEventListener("click", closeDebugPanel);
   hud.dbgWeaponEquip.addEventListener("click", debugEquipWeapon);
   hud.dbgAttApply.addEventListener("click", debugApplyAttachment);
   hud.dbgEnemySpawn.addEventListener("click", debugSpawnEnemy);
@@ -48,9 +49,21 @@ export function setupDebug() {
   });
 }
 
+export function openDebugPanel() {
+  hud.debugPanel.classList.remove("hidden");
+  refreshWeaponTargets();
+}
+
+export function closeDebugPanel() {
+  hud.debugPanel.classList.add("hidden");
+  if (game.mode === "pause") {
+    hud.pauseMenu.classList.remove("hidden");
+  }
+}
+
 function togglePanel() {
-  const nowHidden = hud.debugPanel.classList.toggle("hidden");
-  if (!nowHidden) refreshWeaponTargets();
+  if (hud.debugPanel.classList.contains("hidden")) openDebugPanel();
+  else closeDebugPanel();
 }
 
 function populateWeaponSelect() {

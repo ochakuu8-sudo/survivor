@@ -5,8 +5,8 @@ import { SpriteRenderer } from "./renderer.js";
 import { bindInput } from "./input.js";
 import { generateOffers, renderShop, rerollCost } from "./shop.js";
 import { updateHud } from "./hud.js";
-import { frame, prepareCanvas, resetRun, resize, startNextWave } from "./game.js";
-import { setupDebug } from "./debug.js";
+import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame, startNextWave } from "./game.js";
+import { openDebugPanel, setupDebug } from "./debug.js";
 
 hud.reroll.addEventListener("click", () => {
   const cost = rerollCost();
@@ -20,6 +20,14 @@ hud.reroll.addEventListener("click", () => {
 
 hud.nextWave.addEventListener("click", startNextWave);
 hud.restart.addEventListener("click", resetRun);
+
+hud.pauseBtn.addEventListener("click", pauseGame);
+hud.resumeBtn.addEventListener("click", resumeGame);
+hud.pauseDebugBtn.addEventListener("click", () => {
+  hud.pauseMenu.classList.add("hidden");
+  openDebugPanel();
+});
+hud.pauseRestartBtn.addEventListener("click", resetRun);
 
 const atlas = buildAtlas();
 setAtlas(atlas);
