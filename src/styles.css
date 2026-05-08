@@ -797,6 +797,92 @@ h1 {
   line-height: 1.5;
 }
 
+#debugPanel {
+  position: fixed;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 12;
+  display: grid;
+  gap: 6px;
+  width: min(320px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border: 2px solid rgba(255, 228, 107, 0.55);
+  border-radius: 8px;
+  background: rgba(15, 11, 38, 0.92);
+  color: #fff9f2;
+  font-size: 0.78rem;
+  font-family: inherit;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
+}
+
+#debugPanel.hidden {
+  display: none;
+}
+
+.debug-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 228, 107, 0.32);
+  color: #ffe46b;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.debug-head small {
+  color: #d9f7ff;
+  font-size: 0.66rem;
+}
+
+.debug-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.debug-row label {
+  flex: 0 0 56px;
+  color: #9df7ff;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.debug-row select,
+.debug-row button {
+  min-height: 26px;
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 249, 242, 0.24);
+  border-radius: 5px;
+  background: rgba(45, 39, 109, 0.7);
+  color: #fff9f2;
+  font-family: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+}
+
+.debug-row select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.debug-row button {
+  flex: 0 0 auto;
+}
+
+.debug-row button:hover {
+  background: rgba(85, 246, 199, 0.22);
+}
+
+.debug-actions {
+  flex-wrap: wrap;
+}
+
+.debug-actions button {
+  flex: 1 0 auto;
+}
+
 #touchControls {
   display: none;
   position: absolute;

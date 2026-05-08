@@ -6,6 +6,7 @@ import { bindInput } from "./input.js";
 import { generateOffers, renderShop, rerollCost } from "./shop.js";
 import { updateHud } from "./hud.js";
 import { frame, prepareCanvas, resetRun, resize, startNextWave } from "./game.js";
+import { setupDebug } from "./debug.js";
 
 hud.reroll.addEventListener("click", () => {
   const cost = rerollCost();
@@ -27,6 +28,7 @@ const renderer = new SpriteRenderer(canvas, atlas);
 setRenderer(renderer);
 renderer.resize(canvas.width, canvas.height, initialDpr);
 bindInput();
+setupDebug();
 resetRun();
 resize();
 timing.lastFrame = performance.now();

@@ -85,6 +85,53 @@
           <div id="moveThumb" class="stick-thumb"></div>
         </div>
       </div>
+
+      <aside id="debugPanel" class="hidden" aria-label="デバッグメニュー">
+        <div class="debug-head">
+          <strong>DEBUG</strong>
+          <small>~ で開閉</small>
+        </div>
+        <div class="debug-row">
+          <label>武器</label>
+          <select id="dbgWeaponSel"></select>
+          <button id="dbgWeaponEquip" type="button">装備</button>
+        </div>
+        <div class="debug-row">
+          <label>アタッチ</label>
+          <select id="dbgAttSel"></select>
+          <select id="dbgAttRarity">
+            <option value="normal">N</option>
+            <option value="rare">R</option>
+            <option value="epic">E</option>
+            <option value="legend">L</option>
+          </select>
+        </div>
+        <div class="debug-row">
+          <label>装備先</label>
+          <select id="dbgAttWeapon"></select>
+          <button id="dbgAttApply" type="button">装着</button>
+        </div>
+        <div class="debug-row">
+          <label>敵</label>
+          <select id="dbgEnemySel">
+            <option value="walker">ゾンビ歩</option>
+            <option value="runner">ゾンビ走</option>
+            <option value="brute">ゾンビ大</option>
+            <option value="archer">スケルトン</option>
+          </select>
+          <button id="dbgEnemySpawn" type="button">出現</button>
+        </div>
+        <div class="debug-row debug-actions">
+          <button id="dbgMoney" type="button">+100</button>
+          <button id="dbgHeal" type="button">回復</button>
+          <button id="dbgKillAll" type="button">全滅</button>
+          <button id="dbgInvuln" type="button">無敵 OFF</button>
+        </div>
+        <div class="debug-row debug-actions">
+          <button id="dbgShop" type="button">ショップ</button>
+          <button id="dbgNextWave" type="button">次夜</button>
+        </div>
+      </aside>
     </main>
 
     <script type="module" src="src/main.js"></script>

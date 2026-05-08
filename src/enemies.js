@@ -16,7 +16,7 @@ export function spawnEnemies(dt) {
   }
 }
 
-function spawnEnemy() {
+export function spawnEnemy(forceType) {
   const view = viewSize();
   const zoom = cameraZoom(view);
   const visibleW = view.w / zoom;
@@ -42,10 +42,12 @@ function spawnEnemy() {
 
   const roll = Math.random();
   const wave = game.wave;
-  let type = "walker";
-  if (wave >= 3 && roll < 0.12) type = "brute";
-  else if (wave >= 2 && roll < 0.34) type = "runner";
-  else if (wave >= 2 && roll < 0.48) type = "archer";
+  let type = forceType || "walker";
+  if (!forceType) {
+    if (wave >= 3 && roll < 0.12) type = "brute";
+    else if (wave >= 2 && roll < 0.34) type = "runner";
+    else if (wave >= 2 && roll < 0.48) type = "archer";
+  }
 
   const baseHp = 28 + wave * 8;
   const enemy = {

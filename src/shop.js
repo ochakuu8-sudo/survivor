@@ -27,7 +27,7 @@ const ATTACHMENT_RARITY_BASE_COST = {
 const SHOP_WEAPON_COUNT = 2;
 const SHOP_ATTACHMENT_COUNT = 4;
 
-const WEAPON_POOL = [
+export const WEAPON_POOL = [
   {
     name: "石",
     text: "重い石を山なりに投げる。一回跳弾して別の敵を狙う。",

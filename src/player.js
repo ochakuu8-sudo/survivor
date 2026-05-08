@@ -37,6 +37,7 @@ export function updateMovement(dt) {
 }
 
 export function damagePlayer(amount) {
+  if (game.debugInvincible) return 0;
   const reduction = 100 / (100 + Math.max(-20, game.player.armor) * 8);
   const damage = Math.max(1, Math.round(amount * reduction));
   game.player.hp = clamp(game.player.hp - damage, 0, game.player.maxHp);
