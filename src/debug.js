@@ -1,7 +1,7 @@
 import { MAX_WEAPONS } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { ACTIVE_ATTACHMENTS, addAttachmentToWeapon, recomputeAllAttachments } from "./attachments.js";
+import { ACTIVE_ATTACHMENTS, addAttachmentToWeapon, recomputeAllAttachments, starsLabel } from "./attachments.js";
 import { createWeapon, findWeapon } from "./weapons.js";
 import { spawnEnemy } from "./enemies.js";
 import { killEnemy } from "./combat.js";
@@ -78,10 +78,15 @@ function populateWeaponSelect() {
 
 function populateAttachmentSelect() {
   hud.dbgAttSel.replaceChildren();
-  ACTIVE_ATTACHMENTS.forEach((definition) => {
+  const sorted = [...ACTIVE_ATTACHMENTS].sort((a, b) => (a.stars || 1) - (b.stars || 1));
+  sorted.forEach((definition) => {
     const opt = document.createElement("option");
     opt.value = definition.key;
-    opt.textContent = definition.name;
+    const stars = starsLabel(definition.stars);
+    const compatibility = definition.compatibleWeapons
+      ? ` (${definition.compatibleWeapons.join("/")}専用)`
+      : "";
+    opt.textContent = `${stars} ${definition.name}${compatibility}`;
     hud.dbgAttSel.append(opt);
   });
 }
@@ -126,13 +131,17 @@ function debugEquipWeapon() {
 
 function debugApplyAttachment() {
   const key = hud.dbgAttSel.value;
-  const rarity = hud.dbgAttRarity.value;
   const weaponId = Number(hud.dbgAttWeapon.value);
   if (!key || !weaponId) return;
   const definition = ACTIVE_ATTACHMENTS.find((entry) => entry.key === key);
   const weapon = findWeapon(weaponId);
   if (!definition || !weapon) return;
-  addAttachmentToWeapon(weapon, { definition, rarity });
+  const ok = addAttachmentToWeapon(weapon, { definition });
+  if (!ok && definition.compatibleWeapons && !definition.compatibleWeapons.includes(weapon.name)) {
+    hud.dbgAttApply.textContent = "互換なし";
+    setTimeout(() => { hud.dbgAttApply.textContent = "装着"; }, 900);
+    return;
+  }
   refreshWeaponTargets();
   updateHud();
 }

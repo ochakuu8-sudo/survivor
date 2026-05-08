@@ -32,7 +32,6 @@ export const hud = {
   dbgWeaponSel: document.querySelector("#dbgWeaponSel"),
   dbgWeaponEquip: document.querySelector("#dbgWeaponEquip"),
   dbgAttSel: document.querySelector("#dbgAttSel"),
-  dbgAttRarity: document.querySelector("#dbgAttRarity"),
   dbgAttWeapon: document.querySelector("#dbgAttWeapon"),
   dbgAttApply: document.querySelector("#dbgAttApply"),
   dbgEnemySel: document.querySelector("#dbgEnemySel"),
