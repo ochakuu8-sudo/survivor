@@ -18,15 +18,10 @@ export function attachmentCategoryLabel(category) {
   const labels = {
     stat: "ステータス",
     special: "特殊効果",
-    synergy: "シナジー",
     support: "プレイヤー強化",
     unique: "ユニーク効果",
   };
   return labels[category] || "効果";
-}
-
-export function hasWeaponAttachment(weapon, key) {
-  return weapon.attachments.some((attachment) => attachment.key === key);
 }
 
 export function findAttachmentDefinition(key) {
@@ -247,37 +242,6 @@ export const ACTIVE_ATTACHMENTS = [
       if (weapon.kind === "projectile") {
         weapon.ricochet = (weapon.ricochet || 0) + 1;
       }
-    },
-  },
-  {
-    key: "overclockLink",
-    name: "過給リンク",
-    stars: 2,
-    category: "synergy",
-    text: "威力コア装着時はダメージ +4、高速機構装着時は攻撃頻度 +12%。どちらも無ければダメージ +2 / 頻度 +6%。",
-    attach: (weapon) => {
-      const hasPower = hasWeaponAttachment(weapon, "powerCore");
-      const hasRapid = hasWeaponAttachment(weapon, "rapidMechanism");
-      if (hasPower) boostWeaponImpact(weapon, 4);
-      if (hasRapid) weapon.fireRate *= 1.12;
-      if (!hasPower && !hasRapid) {
-        boostWeaponImpact(weapon, 2);
-        weapon.fireRate *= 1.06;
-      }
-    },
-  },
-  {
-    key: "focusPrism",
-    name: "収束プリズム",
-    stars: 2,
-    category: "synergy",
-    text: "射程チューブ装着時は射程 +8%、範囲レンズ装着時は範囲 +8%。両方装着で追加ダメージ +3。",
-    attach: (weapon) => {
-      const hasRange = hasWeaponAttachment(weapon, "rangeTube");
-      const hasArea = hasWeaponAttachment(weapon, "areaLens");
-      if (hasRange) extendWeaponReach(weapon, 1.08);
-      if (hasArea) expandWeaponArea(weapon, 1);
-      if (hasRange && hasArea) boostWeaponImpact(weapon, 3);
     },
   },
   {
