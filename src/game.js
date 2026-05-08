@@ -11,7 +11,7 @@ import { updatePickups } from "./pickups.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects } from "./combat.js";
 import { updateMovement } from "./player.js";
-import { generateOffers, prepareStarterPick, renderShop, renderStarterPick } from "./shop.js";
+import { generateOffers, prepareStarterPick, renderShop, renderStarterPick, setShopTab } from "./shop.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
 
@@ -100,6 +100,7 @@ export function enterShop() {
   game.player.hp = clamp(game.player.hp + game.player.maxHp * 0.2, 1, game.player.maxHp);
   generateOffers();
   renderShop();
+  setShopTab("shop");
   hud.shop.classList.remove("hidden");
 }
 

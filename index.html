@@ -64,7 +64,7 @@
         <div class="panel-head">
           <div>
             <span class="panel-kicker">装備ショップ</span>
-            <h1>武器・アタッチメント・レリック</h1>
+            <h1>武器・アタッチメント・倉庫</h1>
           </div>
           <div class="shop-cash">
             <span>コイン</span>
@@ -72,16 +72,23 @@
           </div>
         </div>
 
-        <div class="shop-layout">
-          <div id="gearInventory" class="gear-inventory"></div>
+        <div class="shop-tabs" role="tablist">
+          <button class="shop-tab shop-tab-active" data-tab="shop" type="button" role="tab" aria-selected="true">ショップ</button>
+          <button class="shop-tab" data-tab="inventory" type="button" role="tab" aria-selected="false">倉庫</button>
+        </div>
 
-          <div class="shop-side">
+        <div class="shop-tab-panels">
+          <div class="shop-tab-panel" data-panel="shop" role="tabpanel">
             <div id="offers" class="offers"></div>
-            <div class="shop-actions">
-              <button id="rerollBtn" type="button">リロール</button>
-              <button id="nextWaveBtn" type="button" class="primary">次の夜へ</button>
-            </div>
           </div>
+          <div class="shop-tab-panel shop-tab-panel-hidden" data-panel="inventory" role="tabpanel">
+            <div id="gearInventory" class="gear-inventory"></div>
+          </div>
+        </div>
+
+        <div class="shop-actions">
+          <button id="rerollBtn" type="button">リロール</button>
+          <button id="nextWaveBtn" type="button" class="primary">次の夜へ</button>
         </div>
       </section>
 

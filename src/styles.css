@@ -247,11 +247,48 @@ h1 {
   line-height: 1.1;
 }
 
-.shop-layout {
+.shop-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0 12px;
+  border-bottom: 2px solid rgba(255, 249, 242, 0.18);
+}
+
+.shop-tab {
+  flex: 1 1 auto;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: rgba(255, 249, 242, 0.6);
+  font-family: inherit;
+  font-size: 0.94rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.shop-tab:hover {
+  color: #fff9f2;
+}
+
+.shop-tab-active {
+  color: #ffe46b;
+  border-bottom-color: #ffe46b;
+}
+
+.shop-tab-panels {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
-  gap: 14px;
   align-items: start;
+}
+
+.shop-tab-panel {
+  min-width: 0;
+}
+
+.shop-tab-panel-hidden {
+  display: none;
 }
 
 .starter-offers {
@@ -299,12 +336,6 @@ h1 {
 
 .starter-card-pick:hover {
   background: #ff85b3;
-}
-
-.shop-side {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
 }
 
 .offers {
@@ -360,10 +391,6 @@ h1 {
 
 .offer-section-attachments .offer-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.shop-side .offers {
-  flex-direction: column;
 }
 
 .offer {
@@ -1291,13 +1318,8 @@ h1 {
     margin: 0;
   }
 
-  .shop-layout,
   .panel-head {
     grid-template-columns: 1fr;
-  }
-
-  .shop-layout {
-    align-items: stretch;
   }
 
   .shop-actions {

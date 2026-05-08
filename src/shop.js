@@ -543,6 +543,7 @@ function buildOfferSection(kind, label, accent) {
 }
 
 export function renderShop() {
+  ensureShopTabsBound();
   hud.shopCash.textContent = String(game.money);
   hud.offers.replaceChildren();
 
@@ -574,6 +575,28 @@ export function renderShop() {
   hud.reroll.disabled = game.money < cost;
   hud.nextWave.disabled = false;
 }
+
+let shopTabsBound = false;
+
+function ensureShopTabsBound() {
+  if (shopTabsBound) return;
+  shopTabsBound = true;
+  document.querySelectorAll(".shop-tab").forEach((btn) => {
+    btn.addEventListener("click", () => setShopTab(btn.dataset.tab));
+  });
+}
+
+export function setShopTab(name) {
+  document.querySelectorAll(".shop-tab").forEach((btn) => {
+    const active = btn.dataset.tab === name;
+    btn.classList.toggle("shop-tab-active", active);
+    btn.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  document.querySelectorAll(".shop-tab-panel").forEach((panel) => {
+    panel.classList.toggle("shop-tab-panel-hidden", panel.dataset.panel !== name);
+  });
+}
+
 
 function renderGearInventory() {
   hud.gearInventory.replaceChildren();
