@@ -22,6 +22,7 @@ export const WEAPON_STAT_KEYS = [
   "pierce",
   "ricochet",
   "splitOnRicochet",
+  "knockback",
   "spread",
   "life",
   "range",

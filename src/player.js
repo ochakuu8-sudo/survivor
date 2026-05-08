@@ -24,6 +24,8 @@ export function updateMovement(dt) {
   p.x += move.x * p.speed * speedScale * dt;
   p.y += move.y * p.speed * speedScale * dt;
   if (move.len > 0 && speedScale > 0.05) {
+    p.facingX = move.x;
+    p.facingY = move.y;
     p.walkTime = (p.walkTime + dt * (1.45 + speedScale * 1.1)) % 1;
     p.walkDustTimer -= dt;
     if (p.walkDustTimer <= 0) {

@@ -72,6 +72,7 @@ export const WEAPON_POOL = [
       spread: 0.28,
       radius: 8,
       kick: 2.6,
+      knockback: 12,
       bulletTint: [1, 0.86, 0.6],
       bulletGlow: "glowAmber",
     },

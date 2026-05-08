@@ -43,6 +43,8 @@ export function resetRun() {
     weaponPowerBonus: 0,
     moveX: 0,
     moveY: 0,
+    facingX: 1,
+    facingY: 0,
     walkTime: 0,
     walkDustTimer: 0,
     gear: {

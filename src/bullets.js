@@ -45,6 +45,11 @@ export function updateBullets(dt) {
 
           bullet.hitIds.add(enemy.id);
           damageEnemy(enemy, bullet.damage, bullet.x, bullet.y, 3, 90);
+          if (bullet.knockback > 0) {
+            const moveSpeed = Math.hypot(bullet.vx, bullet.vy) || 1;
+            enemy.x += (bullet.vx / moveSpeed) * bullet.knockback;
+            enemy.y += (bullet.vy / moveSpeed) * bullet.knockback;
+          }
           if (bullet.explosionRadius > 0) {
             explodeBullet(bullet);
             if (bullet.ricochet > 0 && redirectRicochet(bullet)) {

@@ -40,6 +40,7 @@ export function createWeapon(template) {
     pierce: template.pierce || 0,
     ricochet: template.ricochet || 0,
     splitOnRicochet: template.splitOnRicochet || false,
+    knockback: template.knockback || 0,
     spread: template.spread ?? 0.18,
     life,
     range: template.range || bulletSpeed * life,
@@ -165,7 +166,10 @@ function findTargetForWeapon(player, weapon) {
 
 function fireWeapon(weapon, target) {
   const p = game.player;
-  const angle = Math.atan2(target.y - p.y, target.x - p.x);
+  const usesFacing = weapon.kind === "flame" || weapon.kind === "sword";
+  const angle = usesFacing
+    ? Math.atan2(p.facingY ?? 0, p.facingX ?? 1)
+    : Math.atan2(target.y - p.y, target.x - p.x);
   if (weapon.kind === "flame") {
     fireFlame(weapon, angle);
     return;
@@ -229,6 +233,7 @@ function fireBullet(angle, weapon) {
     pierce: weapon.pierce,
     ricochet: weapon.ricochet || 0,
     splitOnRicochet: weapon.splitOnRicochet || false,
+    knockback: weapon.knockback || 0,
     explosionRadius: weapon.explosionRadius,
     explosionDamage: weapon.explosionDamage + bonus,
     bulletTint: weapon.bulletTint,
