@@ -68,8 +68,6 @@ function restorePlayerBaseStats() {
   });
 }
 
-export const MAX_ATTACHMENT_LEVEL = 3;
-
 export function recomputeAllAttachments() {
   if (!game.player?.gear) return;
   restorePlayerBaseStats();
@@ -79,12 +77,7 @@ export function recomputeAllAttachments() {
   game.player.gear.weapons.forEach((weapon) => {
     weapon.attachments.forEach((attachment) => {
       const definition = findAttachmentDefinition(attachment.key);
-      if (!definition) return;
-      const level = attachment.level || 1;
-      const reps = Math.pow(2, level - 1);
-      for (let i = 0; i < reps; i += 1) {
-        definition.attach(weapon, attachment);
-      }
+      if (definition) definition.attach(weapon, attachment);
     });
   });
   syncGearAttachments();
@@ -372,13 +365,11 @@ export function addAttachmentToWeapon(weapon, attachment) {
     return false;
   }
   const stars = attachment.stars || definition.stars || 1;
-  const level = attachment.level || 1;
   weapon.attachments.push({
     key: definition.key,
     name: definition.name,
     stars,
     category: definition.category || "stat",
-    level,
   });
   recomputeAllAttachments();
   return true;

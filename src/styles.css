@@ -685,24 +685,6 @@ h1 {
   background: rgba(255, 93, 150, 0.32);
 }
 
-.attachment-merge {
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 228, 107, 0.62);
-  border-radius: 5px;
-  background: rgba(255, 228, 107, 0.18);
-  color: #ffe46b;
-  font-size: 0.72rem;
-  font-weight: 800;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.attachment-merge:hover:not(:disabled) {
-  background: rgba(255, 228, 107, 0.32);
-}
-
 .attach-chip {
   display: inline-flex;
   align-items: center;

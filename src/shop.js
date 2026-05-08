@@ -7,11 +7,8 @@ import { hud } from "./dom.js";
 import { clamp } from "./utils/math.js";
 import { createWeapon, weaponKindLabel } from "./weapons.js";
 import {
-  ACTIVE_ATTACHMENTS,
   addAttachmentToWeapon,
   attachmentCategoryLabel,
-  findAttachmentDefinition,
-  MAX_ATTACHMENT_LEVEL,
   pickShopAttachment,
   recomputeAllAttachments,
   starsLabel,
@@ -233,30 +230,6 @@ export function detachAttachment(weaponId, attachmentIndex) {
   updateHud();
 }
 
-export function mergeWeaponAttachment(weaponId, key, level) {
-  if (level >= MAX_ATTACHMENT_LEVEL) return;
-  const weapon = findWeapon(weaponId);
-  if (!weapon) return;
-  const matches = [];
-  weapon.attachments.forEach((att, idx) => {
-    if (att.key === key && (att.level || 1) === level) matches.push({ att, idx });
-  });
-  if (matches.length < 2) return;
-  const removeIndices = matches.slice(0, 2).map((m) => m.idx).sort((a, b) => b - a);
-  for (const idx of removeIndices) weapon.attachments.splice(idx, 1);
-  const definition = findAttachmentDefinition(key);
-  weapon.attachments.push({
-    key,
-    name: definition?.name || matches[0].att.name,
-    stars: matches[0].att.stars || definition?.stars || 1,
-    category: matches[0].att.category || definition?.category || "stat",
-    level: level + 1,
-  });
-  recomputeAllAttachments();
-  renderShop();
-  updateHud();
-}
-
 function findWeapon(id) {
   return game.player.gear.weapons.find((weapon) => weapon.id === id) || null;
 }
@@ -264,12 +237,10 @@ function findWeapon(id) {
 function aggregateAttachments(list) {
   const map = new Map();
   list.forEach((att, idx) => {
-    const level = att.level || 1;
-    const groupKey = `${att.key}-${level}`;
-    if (!map.has(groupKey)) {
-      map.set(groupKey, { ...att, level, count: 1, indices: [idx] });
+    if (!map.has(att.key)) {
+      map.set(att.key, { ...att, count: 1, indices: [idx] });
     } else {
-      const entry = map.get(groupKey);
+      const entry = map.get(att.key);
       entry.count += 1;
       entry.indices.push(idx);
     }
@@ -278,10 +249,7 @@ function aggregateAttachments(list) {
 }
 
 function attachmentLabelText(agg) {
-  let text = agg.name;
-  if (agg.level > 1) text += ` Lv${agg.level}`;
-  if (agg.count > 1) text += ` ×${agg.count}`;
-  return text;
+  return agg.count > 1 ? `${agg.name} ×${agg.count}` : agg.name;
 }
 
 function buildOfferCard(offer, index) {
@@ -396,16 +364,6 @@ function renderGearInventory() {
       detach.addEventListener("click", () => detachAttachment(weapon.id, agg.indices[0]));
 
       row.append(chip, detach);
-
-      if (agg.count >= 2 && agg.level < MAX_ATTACHMENT_LEVEL) {
-        const merge = document.createElement("button");
-        merge.type = "button";
-        merge.className = "attachment-merge";
-        merge.textContent = `合成 → Lv${agg.level + 1}`;
-        merge.addEventListener("click", () => mergeWeaponAttachment(weapon.id, agg.key, agg.level));
-        row.append(merge);
-      }
-
       attachmentList.append(row);
     });
   } else {
