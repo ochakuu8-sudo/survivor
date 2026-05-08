@@ -214,7 +214,10 @@ function rollAttachmentCost(rarity) {
 }
 
 function makeWeaponOffer() {
-  const used = new Set(game.player.gear.weapons.map((weapon) => weapon.name));
+  const used = new Set([
+    ...game.player.gear.weapons.map((weapon) => weapon.name),
+    ...(game.player.inventory?.weapons || []).map((weapon) => weapon.name),
+  ]);
   const candidates = WEAPON_POOL.filter((entry) => !used.has(entry.name));
   if (candidates.length === 0) return null;
   const template = candidates[Math.floor(Math.random() * candidates.length)];
@@ -352,9 +355,9 @@ function afterPurchase() {
 export function canBuyOffer(offer) {
   if (!offer || offer.bought || game.money < offer.cost) return false;
   if (offer.type === "weapon") {
-    if (game.player.gear.weapons.length >= MAX_WEAPONS) return false;
-    if (game.player.gear.weapons.some((weapon) => weapon.name === offer.name)) return false;
-    return true;
+    const owned = (game.player.gear.weapons.some((weapon) => weapon.name === offer.name)
+      || (game.player.inventory?.weapons || []).some((weapon) => weapon.name === offer.name));
+    return !owned;
   }
   if (offer.type === "attachment") {
     return game.player.gear.weapons.some((weapon) => weapon.attachments.length < MAX_WEAPON_ATTACHMENTS);
@@ -370,8 +373,62 @@ function canBuyAttachmentOnWeapon(offer, weapon) {
 }
 
 function applyWeaponOffer(offer) {
-  game.player.gear.weapons.push(createWeapon({ name: offer.name, ...offer.weapon }));
+  const weapon = createWeapon({ name: offer.name, ...offer.weapon });
+  if (game.player.gear.weapons.length < MAX_WEAPONS) {
+    game.player.gear.weapons.push(weapon);
+  } else {
+    game.player.inventory.weapons.push(weapon);
+  }
   recomputeAllAttachments();
+}
+
+export function unequipWeapon(weaponId) {
+  const idx = game.player.gear.weapons.findIndex((w) => w.id === weaponId);
+  if (idx < 0) return;
+  const [weapon] = game.player.gear.weapons.splice(idx, 1);
+  game.player.inventory.weapons.push(weapon);
+  recomputeAllAttachments();
+  renderShop();
+  updateHud();
+}
+
+export function equipFromInventory(weaponId) {
+  if (game.player.gear.weapons.length >= MAX_WEAPONS) return;
+  const idx = game.player.inventory.weapons.findIndex((w) => w.id === weaponId);
+  if (idx < 0) return;
+  const [weapon] = game.player.inventory.weapons.splice(idx, 1);
+  game.player.gear.weapons.push(weapon);
+  recomputeAllAttachments();
+  renderShop();
+  updateHud();
+}
+
+export function detachAttachment(weaponId, attachmentIndex) {
+  const weapon = findWeapon(weaponId);
+  if (!weapon) return;
+  const attachment = weapon.attachments[attachmentIndex];
+  if (!attachment) return;
+  weapon.attachments.splice(attachmentIndex, 1);
+  game.player.inventory.attachments.push({
+    key: attachment.key,
+    name: attachment.name,
+    rarity: attachment.rarity,
+    category: attachment.category || "stat",
+  });
+  recomputeAllAttachments();
+  renderShop();
+  updateHud();
+}
+
+export function attachFromInventory(inventoryIndex, weaponId) {
+  const weapon = findWeapon(weaponId);
+  if (!weapon || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return;
+  const att = game.player.inventory.attachments[inventoryIndex];
+  if (!att) return;
+  game.player.inventory.attachments.splice(inventoryIndex, 1);
+  addAttachmentToWeapon(weapon, { key: att.key, rarity: att.rarity });
+  renderShop();
+  updateHud();
 }
 
 function applyAttachmentOffer(offer, weapon) {
@@ -565,6 +622,7 @@ export function renderShop() {
 function renderGearInventory() {
   hud.gearInventory.replaceChildren();
   const gear = game.player.gear;
+  const inv = game.player.inventory || { weapons: [], attachments: [] };
 
   const board = document.createElement("div");
   board.className = "loadout-board";
@@ -609,7 +667,10 @@ function renderGearInventory() {
 
     const attachments = weapon?.attachments || [];
     if (attachments.length > 0) {
-      attachments.forEach((attachment) => {
+      attachments.forEach((attachment, attachmentIndex) => {
+        const row = document.createElement("div");
+        row.className = "attachment-row";
+
         const chip = document.createElement("span");
         chip.className = `attach-chip attach-rarity-${attachment.rarity || "normal"}`;
 
@@ -622,7 +683,15 @@ function renderGearInventory() {
         attachmentName.textContent = attachment.name;
 
         chip.append(rarity, attachmentName);
-        attachmentList.append(chip);
+
+        const detach = document.createElement("button");
+        detach.type = "button";
+        detach.className = "attachment-detach";
+        detach.textContent = "外す";
+        detach.addEventListener("click", () => detachAttachment(weapon.id, attachmentIndex));
+
+        row.append(chip, detach);
+        attachmentList.append(row);
       });
     } else {
       const empty = document.createElement("span");
@@ -634,10 +703,132 @@ function renderGearInventory() {
     attachmentTrack.append(attachmentTitle, attachmentList);
 
     slot.append(top, name, kind, attachmentTrack);
+    if (weapon) {
+      const unequip = document.createElement("button");
+      unequip.type = "button";
+      unequip.className = "weapon-unequip";
+      unequip.textContent = "倉庫へ";
+      unequip.addEventListener("click", () => unequipWeapon(weapon.id));
+      slot.append(unequip);
+    }
     board.append(slot);
   }
 
   hud.gearInventory.append(board);
+
+  const inventory = document.createElement("section");
+  inventory.className = "inventory-section";
+
+  const weaponHead = document.createElement("h3");
+  weaponHead.className = "inventory-title";
+  weaponHead.textContent = `倉庫の武器 ${inv.weapons.length}`;
+  inventory.append(weaponHead);
+
+  const weaponList = document.createElement("div");
+  weaponList.className = "inventory-list";
+  if (inv.weapons.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "inventory-empty";
+    empty.textContent = "未所持";
+    weaponList.append(empty);
+  } else {
+    inv.weapons.forEach((weapon) => {
+      const row = document.createElement("article");
+      row.className = "inventory-row inventory-weapon-row";
+
+      const head = document.createElement("div");
+      head.className = "inventory-row-head";
+      const wname = document.createElement("strong");
+      wname.textContent = weapon.name;
+      const wkind = document.createElement("small");
+      wkind.textContent = `${weaponKindLabel(weapon)}・装着 ${weapon.attachments.length}/${MAX_WEAPON_ATTACHMENTS}`;
+      head.append(wname, wkind);
+
+      const equip = document.createElement("button");
+      equip.type = "button";
+      equip.className = "inventory-equip";
+      equip.textContent = gear.weapons.length >= MAX_WEAPONS ? "枠が満杯" : "装備";
+      equip.disabled = gear.weapons.length >= MAX_WEAPONS;
+      equip.addEventListener("click", () => equipFromInventory(weapon.id));
+
+      row.append(head, equip);
+
+      if (weapon.attachments.length > 0) {
+        const tail = document.createElement("div");
+        tail.className = "inventory-row-tail";
+        weapon.attachments.forEach((attachment) => {
+          const chip = document.createElement("span");
+          chip.className = `attach-chip attach-rarity-${attachment.rarity || "normal"}`;
+          const r = document.createElement("span");
+          r.className = "attach-rarity-label";
+          r.textContent = rarityLabel(attachment.rarity);
+          const n = document.createElement("span");
+          n.className = "attach-name";
+          n.textContent = attachment.name;
+          chip.append(r, n);
+          tail.append(chip);
+        });
+        row.append(tail);
+      }
+
+      weaponList.append(row);
+    });
+  }
+  inventory.append(weaponList);
+
+  const attHead = document.createElement("h3");
+  attHead.className = "inventory-title";
+  attHead.textContent = `倉庫のアタッチメント ${inv.attachments.length}`;
+  inventory.append(attHead);
+
+  const attList = document.createElement("div");
+  attList.className = "inventory-list";
+  if (inv.attachments.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "inventory-empty";
+    empty.textContent = "未所持";
+    attList.append(empty);
+  } else {
+    inv.attachments.forEach((attachment, idx) => {
+      const row = document.createElement("article");
+      row.className = "inventory-row inventory-attach-row";
+
+      const chip = document.createElement("span");
+      chip.className = `attach-chip attach-rarity-${attachment.rarity || "normal"}`;
+      const r = document.createElement("span");
+      r.className = "attach-rarity-label";
+      r.textContent = rarityLabel(attachment.rarity);
+      const n = document.createElement("span");
+      n.className = "attach-name";
+      n.textContent = attachment.name;
+      chip.append(r, n);
+
+      const targets = document.createElement("div");
+      targets.className = "inventory-attach-targets";
+      if (gear.weapons.length === 0) {
+        const note = document.createElement("small");
+        note.className = "inventory-empty";
+        note.textContent = "装備中の武器がありません";
+        targets.append(note);
+      } else {
+        gear.weapons.forEach((weapon) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "inventory-attach-target";
+          btn.textContent = `${weapon.name} (${weapon.attachments.length}/${MAX_WEAPON_ATTACHMENTS})`;
+          btn.disabled = weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS;
+          btn.addEventListener("click", () => attachFromInventory(idx, weapon.id));
+          targets.append(btn);
+        });
+      }
+
+      row.append(chip, targets);
+      attList.append(row);
+    });
+  }
+  inventory.append(attList);
+
+  hud.gearInventory.append(inventory);
 }
 
 export function prepareStarterPick() {

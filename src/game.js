@@ -49,6 +49,10 @@ export function resetRun() {
       weapons: [],
       attachments: [],
     },
+    inventory: {
+      weapons: [],
+      attachments: [],
+    },
   };
   game.enemies = [];
   game.bullets = [];
