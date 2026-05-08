@@ -471,35 +471,6 @@ h1 {
   background: #ff85b3;
 }
 
-.offer-targets {
-  display: grid;
-  gap: 6px;
-}
-
-.offer-target {
-  min-height: 34px;
-  padding: 0 9px;
-  border-radius: 6px;
-  border: none;
-  background: #55f6c7;
-  color: #10273a;
-  font-size: 0.78rem;
-  font-weight: 800;
-  text-align: left;
-  cursor: pointer;
-}
-
-.offer-target:hover:not(:disabled) {
-  background: #84ffda;
-}
-
-.offer-note {
-  display: block;
-  padding: 6px;
-  color: #d9f7ff;
-  font-size: 0.74rem;
-}
-
 .offer-type {
   width: max-content;
   margin-bottom: 8px;

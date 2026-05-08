@@ -315,35 +315,24 @@ export function togglePinOffer(index) {
   renderShop();
 }
 
-export function buyOffer(index, weaponId = null) {
+export function buyOffer(index) {
   const offer = game.offers[index];
-  if (!offer || offer.bought) return;
+  if (!offer || offer.bought || !canBuyOffer(offer)) return;
+
+  game.money -= offer.cost;
+  offer.bought = true;
+  if (offer.pinned) {
+    offer.pinned = false;
+    game.pinnedOffer = null;
+  }
 
   if (offer.type === "weapon") {
-    if (!canBuyOffer(offer)) return;
-    game.money -= offer.cost;
-    offer.bought = true;
-    if (offer.pinned) {
-      offer.pinned = false;
-      game.pinnedOffer = null;
-    }
     applyWeaponOffer(offer);
-    afterPurchase();
-    return;
+  } else if (offer.type === "attachment") {
+    applyAttachmentOffer(offer);
   }
 
-  if (offer.type === "attachment") {
-    const weapon = findWeapon(weaponId);
-    if (!canBuyAttachmentOnWeapon(offer, weapon)) return;
-    game.money -= offer.cost;
-    offer.bought = true;
-    if (offer.pinned) {
-      offer.pinned = false;
-      game.pinnedOffer = null;
-    }
-    applyAttachmentOffer(offer, weapon);
-    afterPurchase();
-  }
+  afterPurchase();
 }
 
 function afterPurchase() {
@@ -355,31 +344,29 @@ function afterPurchase() {
 export function canBuyOffer(offer) {
   if (!offer || offer.bought || game.money < offer.cost) return false;
   if (offer.type === "weapon") {
-    const owned = (game.player.gear.weapons.some((weapon) => weapon.name === offer.name)
-      || (game.player.inventory?.weapons || []).some((weapon) => weapon.name === offer.name));
+    const owned = game.player.gear.weapons.some((weapon) => weapon.name === offer.name)
+      || (game.player.inventory?.weapons || []).some((weapon) => weapon.name === offer.name);
     return !owned;
   }
   if (offer.type === "attachment") {
-    return game.player.gear.weapons.some((weapon) => weapon.attachments.length < MAX_WEAPON_ATTACHMENTS);
+    return true;
   }
   return false;
 }
 
-function canBuyAttachmentOnWeapon(offer, weapon) {
-  if (!offer || offer.type !== "attachment" || offer.bought) return false;
-  if (game.money < offer.cost) return false;
-  if (!weapon || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return false;
-  return true;
-}
-
 function applyWeaponOffer(offer) {
   const weapon = createWeapon({ name: offer.name, ...offer.weapon });
-  if (game.player.gear.weapons.length < MAX_WEAPONS) {
-    game.player.gear.weapons.push(weapon);
-  } else {
-    game.player.inventory.weapons.push(weapon);
-  }
+  game.player.inventory.weapons.push(weapon);
   recomputeAllAttachments();
+}
+
+function applyAttachmentOffer(offer) {
+  game.player.inventory.attachments.push({
+    key: offer.definition.key,
+    name: offer.definition.name,
+    rarity: offer.rarity,
+    category: offer.definition.category || "stat",
+  });
 }
 
 export function unequipWeapon(weaponId) {
@@ -429,14 +416,6 @@ export function attachFromInventory(inventoryIndex, weaponId) {
   addAttachmentToWeapon(weapon, { key: att.key, rarity: att.rarity });
   renderShop();
   updateHud();
-}
-
-function applyAttachmentOffer(offer, weapon) {
-  addAttachmentToWeapon(weapon, {
-    key: offer.definition.key,
-    rarity: offer.rarity,
-    definition: offer.definition,
-  });
 }
 
 function buildOfferCard(offer, index) {
@@ -507,9 +486,9 @@ function buildOfferCard(offer, index) {
   const meta = document.createElement("small");
   meta.className = "offer-meta";
   if (offer.type === "weapon") {
-    meta.textContent = `武器スロット ${game.player.gear.weapons.length}/${MAX_WEAPONS}`;
+    meta.textContent = "倉庫に追加";
   } else if (offer.type === "attachment") {
-    meta.textContent = `${rarityLabel(offer.rarity)}・${attachmentCategoryLabel(offer.category)}`;
+    meta.textContent = `${rarityLabel(offer.rarity)}・${attachmentCategoryLabel(offer.category)}・倉庫に追加`;
   }
 
   const price = document.createElement("div");
@@ -528,7 +507,7 @@ function buildOfferCard(offer, index) {
     tag.className = "offer-bought-tag";
     tag.textContent = "購入済み";
     action.append(tag);
-  } else if (offer.type === "weapon") {
+  } else {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "offer-buy";
@@ -536,29 +515,6 @@ function buildOfferCard(offer, index) {
     button.disabled = !canBuyOffer(offer);
     button.addEventListener("click", () => buyOffer(index));
     action.append(button);
-  } else if (offer.type === "attachment") {
-    const targets = document.createElement("div");
-    targets.className = "offer-targets";
-
-    if (game.player.gear.weapons.length === 0) {
-      const note = document.createElement("small");
-      note.className = "offer-note";
-      note.textContent = "装備先の武器がありません";
-      targets.append(note);
-    } else {
-      game.player.gear.weapons.forEach((weapon) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "offer-target";
-        const slotsUsed = weapon.attachments.length;
-        button.textContent = `${weapon.name} (${slotsUsed}/${MAX_WEAPON_ATTACHMENTS})`;
-        button.disabled = !canBuyAttachmentOnWeapon(offer, weapon);
-        button.addEventListener("click", () => buyOffer(index, weapon.id));
-        targets.append(button);
-      });
-    }
-
-    action.append(targets);
   }
 
   bodyEl.append(action);
