@@ -134,17 +134,24 @@ export function expandWeaponArea(weapon, power) {
   if (weapon.radius > 0) weapon.radius += power;
 }
 
+const TARGETLESS_KINDS = new Set(["flame", "sword", "orbit"]);
+
 export function autoShoot() {
   const p = game.player;
-  if (game.enemies.length === 0) return;
 
   for (const weapon of p.gear.weapons) {
     if (weapon.shootTimer > 0) continue;
 
-    const best = findTargetForWeapon(p, weapon);
-    if (!best) continue;
+    let target = null;
+    if (TARGETLESS_KINDS.has(weapon.kind)) {
+      // Always fire on cooldown; direction comes from facing or self-position.
+    } else {
+      if (game.enemies.length === 0) continue;
+      target = findTargetForWeapon(p, weapon);
+      if (!target) continue;
+    }
 
-    fireWeapon(weapon, best);
+    fireWeapon(weapon, target);
     weapon.shootTimer = 1 / weapon.fireRate;
     game.shake = Math.max(game.shake, weapon.kick);
   }
@@ -169,7 +176,9 @@ function fireWeapon(weapon, target) {
   const usesFacing = weapon.kind === "flame" || weapon.kind === "sword";
   const angle = usesFacing
     ? Math.atan2(p.facingY ?? 0, p.facingX ?? 1)
-    : Math.atan2(target.y - p.y, target.x - p.x);
+    : target
+      ? Math.atan2(target.y - p.y, target.x - p.x)
+      : 0;
   if (weapon.kind === "flame") {
     fireFlame(weapon, angle);
     return;
