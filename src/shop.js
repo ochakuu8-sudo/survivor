@@ -17,11 +17,12 @@ import {
   starsLabel,
 } from "./attachments.js";
 import { updateHud } from "./hud.js";
+import { pickWaveRewardWeapon } from "./game.js";
 
 const STAR_BASE_COST = { 1: 12, 2: 28, 3: 55 };
 
-const SHOP_WEAPON_COUNT = 2;
-const SHOP_ATTACHMENT_COUNT = 4;
+const SHOP_WEAPON_COUNT = 0;
+const SHOP_ATTACHMENT_COUNT = 6;
 
 export const WEAPON_POOL = [
   {
@@ -564,7 +565,8 @@ export function renderShop() {
   weaponSection.count.textContent = weaponCount > 0 ? `${weaponCount}件` : "なし";
   attachmentSection.count.textContent = attachmentCount > 0 ? `${attachmentCount}件` : "なし";
 
-  hud.offers.append(weaponSection.section, attachmentSection.section);
+  if (weaponCount > 0) hud.offers.append(weaponSection.section);
+  hud.offers.append(attachmentSection.section);
 
   renderGearInventory();
 
@@ -826,6 +828,11 @@ export function pickStarterWeapon(index) {
 
 export function renderStarterPick() {
   hud.starterOffers.replaceChildren();
+  const isReward = game.mode === "weaponReward";
+  const kicker = hud.starterPick.querySelector(".panel-kicker");
+  const heading = hud.starterPick.querySelector("h1");
+  if (kicker) kicker.textContent = isReward ? `第${game.wave}夜 報酬` : "最初の武器";
+  if (heading) heading.textContent = isReward ? "3つから1つ選んで装備に追加" : "3つから1つ選んで夜街へ";
   game.starterChoices.forEach((template, index) => {
     const card = document.createElement("article");
     card.className = "starter-card offer-weapon";
@@ -843,8 +850,11 @@ export function renderStarterPick() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "starter-card-pick";
-    button.textContent = "これで始める";
-    button.addEventListener("click", () => pickStarterWeapon(index));
+    button.textContent = isReward ? "これを選ぶ" : "これで始める";
+    button.addEventListener("click", () => {
+      if (game.mode === "weaponReward") pickWaveRewardWeapon(index);
+      else pickStarterWeapon(index);
+    });
 
     card.append(tag, title, text, button);
     hud.starterOffers.append(card);

@@ -1,10 +1,10 @@
-import { WAVE_SECONDS } from "./constants.js";
+import { MAX_WEAPONS, WAVE_SECONDS } from "./constants.js";
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, lerp } from "./utils/math.js";
-import { autoShoot, updateWeaponTimers } from "./weapons.js";
-import { snapshotPlayerBaseStats } from "./attachments.js";
+import { autoShoot, createWeapon, updateWeaponTimers } from "./weapons.js";
+import { recomputeAllAttachments, snapshotPlayerBaseStats } from "./attachments.js";
 import { spawnEnemies, updateEnemies } from "./enemies.js";
 import { updateBullets } from "./bullets.js";
 import { updatePickups } from "./pickups.js";
@@ -92,7 +92,6 @@ export function startNextWave() {
 }
 
 export function enterShop() {
-  game.mode = "shop";
   game.rerolls = 0;
   game.enemies = [];
   game.bullets = [];
@@ -101,10 +100,42 @@ export function enterShop() {
   game.particles = [];
   game.effects = [];
   game.player.hp = clamp(game.player.hp + game.player.maxHp * 0.2, 1, game.player.maxHp);
+
+  if (game.wave > 0 && game.wave % 5 === 0) {
+    enterWeaponReward();
+    return;
+  }
+  openShopUI();
+}
+
+function openShopUI() {
+  game.mode = "shop";
   generateOffers();
   renderShop();
   setShopTab("shop");
   hud.shop.classList.remove("hidden");
+}
+
+function enterWeaponReward() {
+  game.mode = "weaponReward";
+  hud.shop.classList.add("hidden");
+  prepareStarterPick();
+  renderStarterPick();
+}
+
+export function pickWaveRewardWeapon(index) {
+  const template = game.starterChoices[index];
+  if (!template) return;
+  const weapon = createWeapon({ name: template.name, ...template.weapon });
+  if (game.player.gear.weapons.length < MAX_WEAPONS) {
+    game.player.gear.weapons.push(weapon);
+  } else {
+    game.player.inventory.weapons.push(weapon);
+  }
+  recomputeAllAttachments();
+  game.starterChoices = [];
+  hud.starterPick.classList.add("hidden");
+  openShopUI();
 }
 
 export function endRun() {
