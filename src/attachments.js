@@ -297,7 +297,7 @@ export const ACTIVE_ATTACHMENTS = [
     stars: 3,
     category: "unique",
     compatibleWeapons: ["石"],
-    text: "石専用。跳ね返る瞬間に2つの小石へ分裂し、さらに敵を巻き込む。",
+    text: "石専用。跳弾するたびに石の数が倍になり、別々の敵を狙って飛ぶ。",
     attach: (weapon) => {
       weapon.splitOnRicochet = true;
     },

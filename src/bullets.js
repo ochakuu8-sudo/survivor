@@ -75,34 +75,34 @@ export function updateBullets(dt) {
 }
 
 function redirectRicochet(bullet) {
-  const target = findNearestEnemyFrom(bullet.x, bullet.y, 360, bullet.hitIds);
-  if (!target) return false;
-  const dx = target.x - bullet.x;
-  const dy = target.y - bullet.y;
-  const len = Math.hypot(dx, dy);
-  if (len < 0.01) return false;
+  const primary = findNearestEnemyFrom(bullet.x, bullet.y, 360, bullet.hitIds);
+  if (!primary) return false;
   const speed = Math.hypot(bullet.vx, bullet.vy) || 1;
-  bullet.vx = (dx / len) * speed;
-  bullet.vy = (dy / len) * speed;
+  const dxP = primary.x - bullet.x;
+  const dyP = primary.y - bullet.y;
+  const lenP = Math.hypot(dxP, dyP) || 1;
+  bullet.vx = (dxP / lenP) * speed;
+  bullet.vy = (dyP / lenP) * speed;
   bullet.angle = Math.atan2(bullet.vy, bullet.vx);
 
   if (bullet.splitOnRicochet) {
-    for (const offset of [-Math.PI / 7, Math.PI / 7]) {
-      const angle = bullet.angle + offset;
-      game.bullets.push({
-        ...bullet,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        angle,
-        radius: Math.max(6, bullet.radius * 0.7),
-        damage: Math.max(1, Math.round(bullet.damage * 0.6)),
-        ricochet: 0,
-        splitOnRicochet: false,
-        hitIds: new Set(),
-        spinSeed: Math.random() * (Math.PI * 2),
-        spinRate: 5 + Math.random() * 4,
-      });
-    }
+    const blocked = new Set(bullet.hitIds);
+    blocked.add(primary.id);
+    let secondary = findNearestEnemyFrom(bullet.x, bullet.y, 360, blocked);
+    if (!secondary) secondary = primary;
+    const dxS = secondary.x - bullet.x;
+    const dyS = secondary.y - bullet.y;
+    const lenS = Math.hypot(dxS, dyS) || 1;
+    game.bullets.push({
+      ...bullet,
+      vx: (dxS / lenS) * speed,
+      vy: (dyS / lenS) * speed,
+      angle: Math.atan2(dyS, dxS),
+      ricochet: Math.max(0, bullet.ricochet - 1),
+      hitIds: new Set(bullet.hitIds),
+      spinSeed: Math.random() * (Math.PI * 2),
+      spinRate: 5 + Math.random() * 4,
+    });
   }
   return true;
 }
