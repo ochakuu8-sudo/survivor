@@ -1,4 +1,3 @@
-import { MAX_WEAPON_ATTACHMENTS } from "./constants.js";
 import { game } from "./state.js";
 import {
   addWeaponPierce,
@@ -350,7 +349,6 @@ function pickAttachmentByStars(stars) {
 
 export function canAttachToWeapon(definition, weapon) {
   if (!definition || !weapon) return false;
-  if (weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return false;
   if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weapon.name)) {
     return false;
   }
@@ -358,7 +356,7 @@ export function canAttachToWeapon(definition, weapon) {
 }
 
 export function addAttachmentToWeapon(weapon, attachment) {
-  if (!weapon || !attachment || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return false;
+  if (!weapon || !attachment) return false;
   const definition = attachment.definition || findAttachmentDefinition(attachment.key) || attachment;
   if (!definition?.key) return false;
   if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weapon.name)) {

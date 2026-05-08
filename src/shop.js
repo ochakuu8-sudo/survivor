@@ -1,7 +1,3 @@
-import {
-  MAX_WEAPONS,
-  MAX_WEAPON_ATTACHMENTS,
-} from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { clamp } from "./utils/math.js";
@@ -213,7 +209,6 @@ export function pickReward(index) {
   const weapon = game.player.gear.weapons[0];
   if (!weapon) return;
   const definition = offer.definition;
-  if (weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return;
   if (!addAttachmentToWeapon(weapon, { key: definition.key, stars: offer.stars })) return;
   offer.taken = true;
   game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
@@ -281,10 +276,8 @@ function buildOfferCard(offer, index) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "offer-buy";
-  const weapon = game.player.gear.weapons[0];
-  const slotsFull = weapon && weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS;
-  button.textContent = offer.taken ? "選択済" : slotsFull ? "枠が満杯" : "選ぶ";
-  button.disabled = offer.taken || slotsFull;
+  button.textContent = offer.taken ? "選択済" : "選ぶ";
+  button.disabled = offer.taken;
   button.addEventListener("click", () => pickReward(index));
   action.append(button);
 
@@ -335,7 +328,7 @@ function renderGearInventory() {
   const attachmentTitle = document.createElement("span");
   attachmentTitle.className = "attachment-title";
   attachmentTitle.textContent = weapon
-    ? `アタッチメント ${weapon.attachments.length}/${MAX_WEAPON_ATTACHMENTS}`
+    ? `アタッチメント ${weapon.attachments.length}`
     : "アタッチメント";
   const attachmentList = document.createElement("div");
   attachmentList.className = "attachment-list";

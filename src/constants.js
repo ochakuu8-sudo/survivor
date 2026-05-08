@@ -13,7 +13,6 @@ export const OFFER_TYPE_LABELS = {
 };
 
 export const MAX_WEAPONS = 1;
-export const MAX_WEAPON_ATTACHMENTS = 5;
 export const WEAPON_STAT_KEYS = [
   "damage",
   "fireRate",
