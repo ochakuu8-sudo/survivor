@@ -13,6 +13,34 @@ export function addEffect(effect) {
   }
 }
 
+const DEFAULT_TELEGRAPH_TINT = [0.86, 0.2, 0.18];
+
+export function addTelegraphCircle(x, y, radius, duration, tint = DEFAULT_TELEGRAPH_TINT) {
+  addEffect({
+    type: "telegraph",
+    x,
+    y,
+    radius,
+    life: duration,
+    maxLife: duration,
+    tint,
+  });
+}
+
+export function addTelegraphLine(x1, y1, x2, y2, width, duration, tint = DEFAULT_TELEGRAPH_TINT) {
+  addEffect({
+    type: "telegraphLine",
+    x1,
+    y1,
+    x2,
+    y2,
+    width,
+    life: duration,
+    maxLife: duration,
+    tint,
+  });
+}
+
 export function addSparks(x, y, count, speed, sprite = "spark") {
   for (let i = 0; i < count; i += 1) {
     const angle = Math.random() * TAU;

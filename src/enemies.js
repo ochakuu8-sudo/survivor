@@ -2,7 +2,7 @@ import { TAU } from "./constants.js";
 import { game, nextEnemyId } from "./state.js";
 import { distanceToSegmentSq, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
-import { addEffect, addSparks } from "./effects.js";
+import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 
 export function spawnEnemies(dt) {
@@ -265,16 +265,6 @@ function updateOrc(enemy, p, dt) {
     enemy.swingTargetY = p.y;
     const swingX = enemy.x + (dx / distance) * enemy.swingRange;
     const swingY = enemy.y + (dy / distance) * enemy.swingRange;
-    addEffect({
-      type: "telegraphLine",
-      x1: enemy.x,
-      y1: enemy.y,
-      x2: swingX,
-      y2: swingY,
-      width: enemy.swingWidth,
-      life: enemy.chargeDuration,
-      maxLife: enemy.chargeDuration,
-      tint: [0.86, 0.2, 0.18],
-    });
+    addTelegraphLine(enemy.x, enemy.y, swingX, swingY, enemy.swingWidth, enemy.chargeDuration);
   }
 }
