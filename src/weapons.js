@@ -1,6 +1,6 @@
 import { TAU, WEAPON_STAT_KEYS } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
-import { distSq } from "./utils/math.js";
+import { distanceToSegmentSq, distSq } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
 import {
   damageEnemy,
@@ -134,12 +134,13 @@ export function expandWeaponArea(weapon, power) {
   if (weapon.radius > 0) weapon.radius += power;
 }
 
-const TARGETLESS_KINDS = new Set(["flame", "sword", "orbit"]);
+const TARGETLESS_KINDS = new Set(["flame", "sword"]);
 
 export function autoShoot() {
   const p = game.player;
 
   for (const weapon of p.gear.weapons) {
+    if (weapon.kind === "orbit") continue;
     if (weapon.shootTimer > 0) continue;
 
     let target = null;
@@ -154,6 +155,60 @@ export function autoShoot() {
     fireWeapon(weapon, target);
     weapon.shootTimer = 1 / weapon.fireRate;
     game.shake = Math.max(game.shake, weapon.kick);
+  }
+}
+
+export function updateOrbitWeapons(dt) {
+  const p = game.player;
+  if (!p?.gear) return;
+  for (const weapon of p.gear.weapons) {
+    if (weapon.kind !== "orbit") continue;
+
+    const orbitSpeed = weapon.orbitSpeed || 4.2;
+    const orbitRadius = weapon.orbitRadius || 78;
+    const areaRadius = weapon.areaRadius || 34;
+
+    const currSpin = game.elapsed * orbitSpeed + weapon.id * 1.73;
+    const prevSpin = (game.elapsed - dt) * orbitSpeed + weapon.id * 1.73;
+    const cx = p.x + Math.cos(currSpin) * orbitRadius;
+    const cy = p.y + Math.sin(currSpin) * orbitRadius;
+    const px = p.x + Math.cos(prevSpin) * orbitRadius;
+    const py = p.y + Math.sin(prevSpin) * orbitRadius;
+
+    if (!weapon.hitCooldowns) weapon.hitCooldowns = new Map();
+    for (const [id, cd] of weapon.hitCooldowns) {
+      const next = cd - dt;
+      if (next <= 0) weapon.hitCooldowns.delete(id);
+      else weapon.hitCooldowns.set(id, next);
+    }
+
+    const cooldownPerEnemy = 1 / Math.max(0.5, weapon.fireRate);
+    const damage = weapon.damage + p.weaponPowerBonus;
+    let hits = 0;
+
+    for (const enemy of game.enemies) {
+      if (enemy.dead) continue;
+      if (weapon.hitCooldowns.has(enemy.id)) continue;
+      const range = enemy.radius + areaRadius;
+      if (distanceToSegmentSq(enemy.x, enemy.y, px, py, cx, cy) > range * range) continue;
+      damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 90);
+      weapon.hitCooldowns.set(enemy.id, cooldownPerEnemy);
+      hits += 1;
+    }
+
+    if (hits > 0) {
+      addEffect({
+        type: "burst",
+        x: cx,
+        y: cy,
+        radius: areaRadius * 0.95,
+        life: 0.2,
+        maxLife: 0.2,
+        glow: weapon.effectGlow,
+        tint: weapon.effectTint,
+      });
+      game.shake = Math.max(game.shake, (weapon.kick || 1.5) * 0.5);
+    }
   }
 }
 

@@ -168,7 +168,7 @@ export const WEAPON_POOL = [
       bulletSpeed: 1,
       range: 145,
       areaRadius: 38,
-      orbitRadius: 82,
+      orbitRadius: 118,
       orbitSpeed: 4.6,
       kick: 1.5,
       effectTint: [0.84, 0.88, 1],

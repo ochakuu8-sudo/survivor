@@ -3,7 +3,7 @@ import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, lerp } from "./utils/math.js";
-import { autoShoot, createWeapon, updateWeaponTimers } from "./weapons.js";
+import { autoShoot, createWeapon, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { recomputeAllAttachments, snapshotPlayerBaseStats } from "./attachments.js";
 import { spawnEnemies, updateEnemies } from "./enemies.js";
 import { updateBullets } from "./bullets.js";
@@ -187,6 +187,7 @@ function update(dt) {
   updateParticles(dt);
   updateEffects(dt);
   autoShoot();
+  updateOrbitWeapons(dt);
   updateCamera(dt);
 
   if (p.hp <= 0) {
