@@ -596,6 +596,25 @@ export function setShopTab(name) {
   document.querySelectorAll(".shop-tab-panel").forEach((panel) => {
     panel.classList.toggle("shop-tab-panel-hidden", panel.dataset.panel !== name);
   });
+  if (hud.nextWave) {
+    hud.nextWave.textContent = name === "inventory" ? "次の夜へ" : "倉庫へ →";
+  }
+  if (hud.reroll) {
+    hud.reroll.classList.toggle("hidden", name !== "shop");
+  }
+}
+
+function getCurrentShopTab() {
+  const active = document.querySelector(".shop-tab.shop-tab-active");
+  return active?.dataset.tab || "shop";
+}
+
+export function advanceShopStep() {
+  if (getCurrentShopTab() === "shop") {
+    setShopTab("inventory");
+    return false;
+  }
+  return true;
 }
 
 

@@ -3,7 +3,7 @@ import { canvas, hud } from "./dom.js";
 import { buildAtlas } from "./sprites.js";
 import { SpriteRenderer } from "./renderer.js";
 import { bindInput } from "./input.js";
-import { generateOffers, renderShop, rerollCost } from "./shop.js";
+import { advanceShopStep, generateOffers, renderShop, rerollCost } from "./shop.js";
 import { updateHud } from "./hud.js";
 import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame, startNextWave } from "./game.js";
 import { openDebugPanel, setupDebug } from "./debug.js";
@@ -18,7 +18,9 @@ hud.reroll.addEventListener("click", () => {
   updateHud();
 });
 
-hud.nextWave.addEventListener("click", startNextWave);
+hud.nextWave.addEventListener("click", () => {
+  if (advanceShopStep()) startNextWave();
+});
 hud.restart.addEventListener("click", resetRun);
 
 hud.pauseBtn.addEventListener("click", pauseGame);
