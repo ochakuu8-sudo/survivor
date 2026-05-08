@@ -94,7 +94,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "威力コア",
     stars: 1,
     category: "stat",
-    text: "武器の基礎ダメージを上げる。爆発武器は爆風威力も上がる。",
+    text: "ダメージ +6。爆発武器は爆風ダメージも +8（×1.35）。",
     attach: (weapon) => {
       boostWeaponImpact(weapon, 6);
     },
@@ -104,7 +104,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "高速機構",
     stars: 1,
     category: "stat",
-    text: "武器の攻撃頻度を上げる。",
+    text: "攻撃頻度 +13%。",
     attach: (weapon) => {
       weapon.fireRate *= 1.13;
     },
@@ -114,7 +114,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "射程チューブ",
     stars: 1,
     category: "stat",
-    text: "弾、炎、斬撃、設置攻撃の届く距離を広げる。",
+    text: "射程 +13%、弾速 +13%、滞空 +6%、軌道半径 +8%（武器に応じて）。",
     attach: (weapon) => {
       extendWeaponReach(weapon, 1.13);
     },
@@ -124,7 +124,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "範囲レンズ",
     stars: 1,
     category: "stat",
-    text: "武器の当たり幅や巻き込み範囲を広げる。",
+    text: "貫通 +1、爆発半径・線幅・コーン範囲 +8%、命中幅 +1（武器に応じて）。",
     attach: (weapon) => {
       addWeaponPierce(weapon, 1);
       expandWeaponArea(weapon, 1);
@@ -135,7 +135,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "安定グリップ",
     stars: 1,
     category: "stat",
-    text: "武器のブレを抑え、弾速と手応えを少し上げる。",
+    text: "ばらつき −22%、ぶれ −30%、弾速 +8%、ダメージ +2。",
     attach: (weapon) => {
       weapon.spread *= 0.78;
       weapon.jitter *= 0.7;
@@ -148,7 +148,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "守りのお守り",
     stars: 1,
     category: "support",
-    text: "最大体力を底上げする。",
+    text: "最大体力 +25。",
     attach: () => {
       game.player.maxHp += 25;
     },
@@ -158,7 +158,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "古い防犯バッジ",
     stars: 1,
     category: "support",
-    text: "被ダメージ軽減を上げる。",
+    text: "被ダメージ軽減 +4。",
     attach: () => {
       game.player.armor += 4;
     },
@@ -168,7 +168,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "応急テープ",
     stars: 1,
     category: "support",
-    text: "戦闘中の自然回復量を底上げする。",
+    text: "戦闘中の自然回復 +0.85/秒。",
     attach: () => {
       game.player.regen += 0.85;
     },
@@ -178,7 +178,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "スクラップ磁石",
     stars: 1,
     category: "support",
-    text: "コインの磁力範囲を広げる。",
+    text: "コイン磁力範囲 +36。",
     attach: () => {
       game.player.pickup += 36;
     },
@@ -188,7 +188,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "軽量スニーカー",
     stars: 1,
     category: "support",
-    text: "移動速度を上げる。",
+    text: "移動速度 +26。",
     attach: () => {
       game.player.speed += 26;
     },
@@ -198,7 +198,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "分裂チャンバー",
     stars: 2,
     category: "special",
-    text: "弾数や攻撃幅を増やす特殊改造。",
+    text: "通常射撃: 弾数 +1・spread +0.05 / 炎・剣: コーン +0.12 rad / 回転: 範囲 +14・速度 +10%。",
     attach: (weapon) => {
       if (weapon.kind === "flame" || weapon.kind === "sword") {
         weapon.cone = Math.min(1.12, weapon.cone + 0.12);
@@ -216,7 +216,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "爆裂プライマー",
     stars: 2,
     category: "special",
-    text: "着弾や設置攻撃に小さな爆発性を持たせる。",
+    text: "着弾時に半径64の爆発を付与（爆風 = ダメージ×60%）。時限爆弾はフューズ −0.2秒。",
     attach: (weapon) => {
       const radius = 64;
       weapon.explosionRadius = Math.max(weapon.explosionRadius, radius);
@@ -229,7 +229,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "持続エミッター",
     stars: 2,
     category: "special",
-    text: "炎、レーザー、回転武器の持続と当たり続ける力を伸ばす。",
+    text: "持続時間 +25%、ティック頻度 +20%、炎・設置レーザーの発射 +8%、回転半径 +10%。",
     attach: (weapon) => {
       weapon.duration *= 1.25;
       if (weapon.tickRate > 0) weapon.tickRate *= 1.2;
@@ -242,7 +242,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "跳弾コイル",
     stars: 2,
     category: "special",
-    text: "通常弾が跳ね返って次の敵を狙う。",
+    text: "通常射撃武器の跳弾回数 +1。",
     attach: (weapon) => {
       if (weapon.kind === "projectile") {
         weapon.ricochet = (weapon.ricochet || 0) + 1;
@@ -254,7 +254,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "過給リンク",
     stars: 2,
     category: "synergy",
-    text: "威力コアや高速機構と噛み合うシナジー改造。",
+    text: "威力コア装着時はダメージ +4、高速機構装着時は攻撃頻度 +12%。どちらも無ければダメージ +2 / 頻度 +6%。",
     attach: (weapon) => {
       const hasPower = hasWeaponAttachment(weapon, "powerCore");
       const hasRapid = hasWeaponAttachment(weapon, "rapidMechanism");
@@ -271,7 +271,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "収束プリズム",
     stars: 2,
     category: "synergy",
-    text: "射程チューブや範囲レンズと噛み合うシナジー改造。",
+    text: "射程チューブ装着時は射程 +8%、範囲レンズ装着時は範囲 +8%。両方装着で追加ダメージ +3。",
     attach: (weapon) => {
       const hasRange = hasWeaponAttachment(weapon, "rangeTube");
       const hasArea = hasWeaponAttachment(weapon, "areaLens");
@@ -285,7 +285,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "ジャンク電池",
     stars: 2,
     category: "support",
-    text: "武器威力ボーナスを大きく上げるが、被ダメージ軽減は失う。",
+    text: "武器威力ボーナス +14、被ダメージ軽減 −3。",
     attach: () => {
       game.player.weaponPowerBonus += 14;
       game.player.armor -= 3;

@@ -169,7 +169,7 @@ export const WEAPON_POOL = [
       range: 145,
       areaRadius: 38,
       orbitRadius: 118,
-      orbitSpeed: 4.6,
+      orbitSpeed: 3.0,
       kick: 1.5,
       effectTint: [0.84, 0.88, 1],
       effectGlow: "glowCyan",
