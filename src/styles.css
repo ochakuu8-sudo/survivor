@@ -247,50 +247,6 @@ h1 {
   line-height: 1.1;
 }
 
-.shop-tabs {
-  display: flex;
-  gap: 6px;
-  margin: 8px 0 12px;
-  border-bottom: 2px solid rgba(255, 249, 242, 0.18);
-}
-
-.shop-tab {
-  flex: 1 1 auto;
-  padding: 10px 14px;
-  border: none;
-  border-bottom: 3px solid transparent;
-  background: transparent;
-  color: rgba(255, 249, 242, 0.6);
-  font-family: inherit;
-  font-size: 0.94rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: color 120ms ease, border-color 120ms ease;
-}
-
-.shop-tab:hover {
-  color: #fff9f2;
-}
-
-.shop-tab-active {
-  color: #ffe46b;
-  border-bottom-color: #ffe46b;
-}
-
-.shop-tab-panels {
-  display: grid;
-  align-items: start;
-}
-
-.shop-tab-panel {
-  min-width: 0;
-}
-
-.shop-tab-panel-hidden {
-  display: none;
-}
-
 .starter-offers {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -711,8 +667,7 @@ h1 {
   min-width: 0;
 }
 
-.attachment-detach,
-.weapon-unequip {
+.attachment-detach {
   flex: 0 0 auto;
   min-height: 32px;
   padding: 0 9px;
@@ -726,132 +681,11 @@ h1 {
   white-space: nowrap;
 }
 
-.weapon-unequip {
-  margin-top: 8px;
-  align-self: start;
-  background: rgba(255, 228, 107, 0.18);
-}
-
-.attachment-detach:hover:not(:disabled),
-.weapon-unequip:hover:not(:disabled) {
+.attachment-detach:hover:not(:disabled) {
   background: rgba(255, 93, 150, 0.32);
 }
 
-.inventory-section {
-  display: grid;
-  gap: 6px;
-  margin-top: 12px;
-  padding: 12px;
-  border: 2px solid rgba(157, 247, 255, 0.24);
-  border-radius: 8px;
-  background: rgba(45, 39, 109, 0.45);
-}
-
-.inventory-title {
-  margin: 4px 0 2px;
-  color: #9df7ff;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-}
-
-.inventory-list {
-  display: grid;
-  gap: 6px;
-}
-
-.inventory-empty {
-  padding: 6px 4px;
-  color: rgba(255, 249, 242, 0.62);
-  font-size: 0.78rem;
-}
-
-.inventory-row {
-  display: grid;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  background: rgba(15, 11, 38, 0.52);
-}
-
-.inventory-weapon-row {
-  grid-template-columns: 1fr auto;
-  align-items: center;
-}
-
-.inventory-row-head {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.inventory-row-head strong {
-  color: #fff9f2;
-  font-size: 0.92rem;
-}
-
-.inventory-row-head small {
-  color: #d9f7ff;
-  font-size: 0.74rem;
-}
-
-.inventory-row-tail {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.inventory-equip {
-  min-height: 34px;
-  padding: 0 12px;
-  border: none;
-  border-radius: 6px;
-  background: #55f6c7;
-  color: #10273a;
-  font-weight: 900;
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-
-.inventory-equip:disabled {
-  background: rgba(85, 246, 199, 0.32);
-  color: rgba(255, 249, 242, 0.55);
-  cursor: not-allowed;
-}
-
-.inventory-attach-row {
-  grid-template-columns: 1fr auto;
-  align-items: center;
-}
-
-.inventory-attach-targets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  justify-content: flex-end;
-}
-
-.inventory-attach-target {
-  min-height: 30px;
-  padding: 0 9px;
-  border: none;
-  border-radius: 5px;
-  background: #55f6c7;
-  color: #10273a;
-  font-size: 0.74rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.inventory-attach-target:disabled {
-  background: rgba(85, 246, 199, 0.32);
-  color: rgba(255, 249, 242, 0.55);
-  cursor: not-allowed;
-}
-
-.attachment-merge,
-.inventory-attach-merge {
+.attachment-merge {
   flex: 0 0 auto;
   min-height: 32px;
   padding: 0 10px;
@@ -865,8 +699,7 @@ h1 {
   cursor: pointer;
 }
 
-.attachment-merge:hover:not(:disabled),
-.inventory-attach-merge:hover:not(:disabled) {
+.attachment-merge:hover:not(:disabled) {
   background: rgba(255, 228, 107, 0.32);
 }
 

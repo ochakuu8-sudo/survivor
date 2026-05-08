@@ -38,7 +38,6 @@ export const game = {
   particles: [],
   effects: [],
   offers: [],
-  pinnedOffer: null,
   starterChoices: [],
 };
 

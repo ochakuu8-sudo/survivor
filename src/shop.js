@@ -1,16 +1,15 @@
 import {
   MAX_WEAPONS,
   MAX_WEAPON_ATTACHMENTS,
-  OFFER_TYPE_LABELS,
 } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { clamp } from "./utils/math.js";
-import { createWeapon, findWeapon, weaponKindLabel } from "./weapons.js";
+import { createWeapon, weaponKindLabel } from "./weapons.js";
 import {
+  ACTIVE_ATTACHMENTS,
   addAttachmentToWeapon,
   attachmentCategoryLabel,
-  canAttachToWeapon,
   findAttachmentDefinition,
   MAX_ATTACHMENT_LEVEL,
   pickShopAttachment,
@@ -18,18 +17,12 @@ import {
   starsLabel,
 } from "./attachments.js";
 import { updateHud } from "./hud.js";
-import { pickWaveRewardWeapon } from "./game.js";
-
-const STAR_BASE_COST = { 1: 12, 2: 28, 3: 55 };
-
-const SHOP_WEAPON_COUNT = 0;
-const SHOP_ATTACHMENT_COUNT = 6;
+import { startNextWave } from "./game.js";
 
 export const WEAPON_POOL = [
   {
     name: "石",
     text: "重い石を山なりに投げる。一回跳弾して別の敵を狙う。",
-    baseCost: 16,
     weapon: {
       damage: 40,
       fireRate: 0.72,
@@ -45,7 +38,6 @@ export const WEAPON_POOL = [
   {
     name: "豆鉄砲",
     text: "短射程のマシンガン。軽い弾を近距離にばらまく。",
-    baseCost: 14,
     weapon: {
       damage: 5,
       fireRate: 8.2,
@@ -62,7 +54,6 @@ export const WEAPON_POOL = [
   {
     name: "ショットガン",
     text: "近距離で群れを薙ぎ払う。複数弾が扇状に広がる。",
-    baseCost: 22,
     weapon: {
       damage: 10,
       fireRate: 0.9,
@@ -81,7 +72,6 @@ export const WEAPON_POOL = [
   {
     name: "火炎放射器",
     text: "前方に炎を吹きつける。近くの群れをまとめて焼く。",
-    baseCost: 22,
     weapon: {
       kind: "flame",
       damage: 6,
@@ -97,7 +87,6 @@ export const WEAPON_POOL = [
   {
     name: "次元爆弾",
     text: "その場に爆弾を設置し、消えるまで一定間隔で爆発する。",
-    baseCost: 28,
     weapon: {
       kind: "pulseBomb",
       damage: 0,
@@ -120,7 +109,6 @@ export const WEAPON_POOL = [
   {
     name: "時限爆弾",
     text: "その場に爆弾を置く。約2秒後に広めの範囲を一発で爆破する。",
-    baseCost: 25,
     weapon: {
       kind: "timedBomb",
       damage: 0,
@@ -142,7 +130,6 @@ export const WEAPON_POOL = [
   {
     name: "持続レーザー",
     text: "設置した光線がしばらく残り、触れた敵を連続で焼く。",
-    baseCost: 27,
     weapon: {
       kind: "sustainedLaser",
       damage: 18,
@@ -161,7 +148,6 @@ export const WEAPON_POOL = [
   {
     name: "モーニングスター",
     text: "自分の周囲を回る鉄球で、近くの敵を巻き込む。",
-    baseCost: 21,
     weapon: {
       kind: "orbit",
       damage: 20,
@@ -179,7 +165,6 @@ export const WEAPON_POOL = [
   {
     name: "ソード",
     text: "長いクールダウン後に前方を大きく薙ぐ一撃武器。",
-    baseCost: 22,
     weapon: {
       kind: "sword",
       damage: 80,
@@ -203,448 +188,49 @@ function shuffle(items) {
   return shuffled;
 }
 
-function rollWeaponCost(baseCost) {
-  return Math.max(4, Math.round(baseCost * (1 + game.wave * 0.14) + Math.random() * 4));
-}
-
-function rollAttachmentCost(stars) {
-  const base = STAR_BASE_COST[stars] ?? STAR_BASE_COST[1];
-  return Math.max(5, Math.round(base * (1 + game.wave * 0.12) + Math.random() * 4));
-}
-
-function makeWeaponOffer() {
-  const used = new Set([
-    ...game.player.gear.weapons.map((weapon) => weapon.name),
-    ...(game.player.inventory?.weapons || []).map((weapon) => weapon.name),
-  ]);
-  const candidates = WEAPON_POOL.filter((entry) => !used.has(entry.name));
-  if (candidates.length === 0) return null;
-  const template = candidates[Math.floor(Math.random() * candidates.length)];
-  return {
-    type: "weapon",
-    name: template.name,
-    text: template.text,
-    weapon: template.weapon,
-    cost: rollWeaponCost(template.baseCost),
-    bought: false,
-    pinned: false,
-  };
-}
-
-function makeAttachmentOffer() {
-  const pick = pickShopAttachment(game.wave);
-  if (!pick) return null;
-  return {
-    type: "attachment",
-    name: pick.definition.name,
-    text: pick.definition.text,
-    definition: pick.definition,
-    stars: pick.stars,
-    category: pick.definition.category,
-    cost: rollAttachmentCost(pick.stars),
-    bought: false,
-    pinned: false,
-  };
-}
-
-function pinnedOfferSnapshot() {
-  if (!game.pinnedOffer) return null;
-  return { ...game.pinnedOffer, bought: false, pinned: true };
-}
-
 export function generateOffers() {
   const picks = [];
-  const usedWeaponNames = new Set();
-
-  for (let i = 0; i < SHOP_WEAPON_COUNT; i += 1) {
-    const offer = makeWeaponOffer();
-    if (!offer) continue;
-    if (usedWeaponNames.has(offer.name)) {
-      i -= 1;
-      continue;
-    }
-    usedWeaponNames.add(offer.name);
-    picks.push(offer);
-  }
-
-  for (let i = 0; i < SHOP_ATTACHMENT_COUNT; i += 1) {
-    const offer = makeAttachmentOffer();
-    if (!offer) continue;
-    picks.push(offer);
-  }
-
-  const pinned = pinnedOfferSnapshot();
-  let injected = false;
-  if (pinned) {
-    if (pinned.type === "weapon" && !usedWeaponNames.has(pinned.name) && game.player.gear.weapons.length < MAX_WEAPONS) {
-      const slot = picks.findIndex((offer) => offer.type === "weapon");
-      if (slot >= 0) picks[slot] = pinned;
-      else picks.push(pinned);
-      injected = true;
-    } else if (pinned.type === "attachment") {
-      const slot = picks.findIndex((offer) => offer.type === "attachment");
-      if (slot >= 0) picks[slot] = pinned;
-      else picks.push(pinned);
-      injected = true;
-    }
-    if (!injected) game.pinnedOffer = null;
-  }
-
-  game.offers = shuffle(picks);
-}
-
-export function rerollCost() {
-  return Math.floor(4 + game.wave * 1.5 + game.rerolls * 3);
-}
-
-export function togglePinOffer(index) {
-  const offer = game.offers[index];
-  if (!offer || offer.bought) return;
-
-  if (offer.pinned) {
-    offer.pinned = false;
-    game.pinnedOffer = null;
-  } else {
-    game.offers.forEach((other) => {
-      if (other !== offer) other.pinned = false;
+  const seen = new Set();
+  let guard = 0;
+  while (picks.length < 3 && guard < 80) {
+    const choice = pickShopAttachment(game.wave);
+    guard += 1;
+    if (!choice) continue;
+    if (seen.has(choice.definition.key)) continue;
+    seen.add(choice.definition.key);
+    picks.push({
+      definition: choice.definition,
+      stars: choice.stars,
+      name: choice.definition.name,
+      text: choice.definition.text,
+      category: choice.definition.category,
+      taken: false,
     });
-    offer.pinned = true;
-    game.pinnedOffer = { ...offer, bought: false, pinned: true };
   }
-  renderShop();
+  game.offers = picks;
 }
 
-export function buyOffer(index) {
+export function pickReward(index) {
   const offer = game.offers[index];
-  if (!offer || offer.bought || !canBuyOffer(offer)) return;
-
-  game.money -= offer.cost;
-  offer.bought = true;
-  if (offer.pinned) {
-    offer.pinned = false;
-    game.pinnedOffer = null;
-  }
-
-  if (offer.type === "weapon") {
-    applyWeaponOffer(offer);
-  } else if (offer.type === "attachment") {
-    applyAttachmentOffer(offer);
-  }
-
-  afterPurchase();
-}
-
-function afterPurchase() {
+  if (!offer || offer.taken) return;
+  const weapon = game.player.gear.weapons[0];
+  if (!weapon) return;
+  const definition = offer.definition;
+  if (weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return;
+  if (!addAttachmentToWeapon(weapon, { key: definition.key, stars: offer.stars })) return;
+  offer.taken = true;
   game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
-  renderShop();
-  updateHud();
-}
-
-export function canBuyOffer(offer) {
-  if (!offer || offer.bought || game.money < offer.cost) return false;
-  if (offer.type === "weapon") {
-    const owned = game.player.gear.weapons.some((weapon) => weapon.name === offer.name)
-      || (game.player.inventory?.weapons || []).some((weapon) => weapon.name === offer.name);
-    return !owned;
-  }
-  if (offer.type === "attachment") {
-    return true;
-  }
-  return false;
-}
-
-function applyWeaponOffer(offer) {
-  const weapon = createWeapon({ name: offer.name, ...offer.weapon });
-  game.player.inventory.weapons.push(weapon);
-  recomputeAllAttachments();
-}
-
-function applyAttachmentOffer(offer) {
-  game.player.inventory.attachments.push({
-    key: offer.definition.key,
-    name: offer.definition.name,
-    stars: offer.stars,
-    category: offer.definition.category || "stat",
-  });
-}
-
-export function unequipWeapon(weaponId) {
-  const idx = game.player.gear.weapons.findIndex((w) => w.id === weaponId);
-  if (idx < 0) return;
-  const [weapon] = game.player.gear.weapons.splice(idx, 1);
-  game.player.inventory.weapons.push(weapon);
-  recomputeAllAttachments();
-  renderShop();
-  updateHud();
-}
-
-export function equipFromInventory(weaponId) {
-  if (game.player.gear.weapons.length >= MAX_WEAPONS) return;
-  const idx = game.player.inventory.weapons.findIndex((w) => w.id === weaponId);
-  if (idx < 0) return;
-  const [weapon] = game.player.inventory.weapons.splice(idx, 1);
-  game.player.gear.weapons.push(weapon);
-  recomputeAllAttachments();
-  renderShop();
-  updateHud();
+  startNextWave();
 }
 
 export function detachAttachment(weaponId, attachmentIndex) {
   const weapon = findWeapon(weaponId);
   if (!weapon) return;
-  const attachment = weapon.attachments[attachmentIndex];
-  if (!attachment) return;
+  if (!weapon.attachments[attachmentIndex]) return;
   weapon.attachments.splice(attachmentIndex, 1);
-  game.player.inventory.attachments.push({
-    key: attachment.key,
-    name: attachment.name,
-    stars: attachment.stars,
-    category: attachment.category || "stat",
-    level: attachment.level || 1,
-  });
   recomputeAllAttachments();
   renderShop();
   updateHud();
-}
-
-export function attachFromInventory(inventoryIndex, weaponId) {
-  const weapon = findWeapon(weaponId);
-  if (!weapon || weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS) return;
-  const att = game.player.inventory.attachments[inventoryIndex];
-  if (!att) return;
-  const definition = findAttachmentDefinition(att.key);
-  if (!canAttachToWeapon(definition, weapon)) return;
-  game.player.inventory.attachments.splice(inventoryIndex, 1);
-  addAttachmentToWeapon(weapon, {
-    key: att.key,
-    stars: att.stars,
-    level: att.level || 1,
-  });
-  renderShop();
-  updateHud();
-}
-
-function buildOfferCard(offer, index) {
-  const card = document.createElement("article");
-  card.className = `offer offer-${offer.type}${offer.pinned ? " offer-pinned" : ""}`;
-  if (offer.type === "attachment") {
-    card.classList.add(`attach-stars-${offer.stars || 1}`);
-  }
-  card.dataset.expanded = offer.expanded ? "true" : "false";
-
-  const summary = document.createElement("button");
-  summary.type = "button";
-  summary.className = "offer-summary";
-
-  const summaryType = document.createElement("span");
-  summaryType.className = `offer-type offer-type-${offer.type}`;
-  summaryType.textContent = offer.type === "attachment"
-    ? `${OFFER_TYPE_LABELS.attachment}・${starsLabel(offer.stars)}`
-    : OFFER_TYPE_LABELS[offer.type] || "装備";
-
-  const summaryName = document.createElement("strong");
-  summaryName.className = "offer-summary-name";
-  summaryName.textContent = offer.name;
-
-  const summaryPrice = document.createElement("span");
-  summaryPrice.className = "offer-summary-price";
-  summaryPrice.textContent = offer.bought ? "売切" : `${offer.cost}枚`;
-
-  const chevron = document.createElement("span");
-  chevron.className = "offer-summary-chevron";
-  chevron.setAttribute("aria-hidden", "true");
-  chevron.textContent = "▾";
-
-  summary.append(summaryType, summaryName, summaryPrice, chevron);
-  summary.addEventListener("click", () => {
-    const next = card.dataset.expanded === "true" ? "false" : "true";
-    card.dataset.expanded = next;
-    offer.expanded = next === "true";
-  });
-
-  const bodyEl = document.createElement("div");
-  bodyEl.className = "offer-body";
-
-  const headRow = document.createElement("div");
-  headRow.className = "offer-head";
-
-  const type = document.createElement("span");
-  type.className = `offer-type offer-type-${offer.type}`;
-  type.textContent = offer.type === "attachment"
-    ? `${OFFER_TYPE_LABELS.attachment}・${starsLabel(offer.stars)}`
-    : OFFER_TYPE_LABELS[offer.type] || "装備";
-
-  const pinButton = document.createElement("button");
-  pinButton.type = "button";
-  pinButton.className = `offer-pin${offer.pinned ? " offer-pin-active" : ""}`;
-  pinButton.textContent = offer.pinned ? "ピン解除" : "ピン留め";
-  pinButton.disabled = offer.bought;
-  pinButton.addEventListener("click", () => togglePinOffer(index));
-
-  headRow.append(type, pinButton);
-
-  const title = document.createElement("h2");
-  title.textContent = offer.name;
-
-  const description = document.createElement("p");
-  description.textContent = offer.text;
-
-  const meta = document.createElement("small");
-  meta.className = "offer-meta";
-  if (offer.type === "weapon") {
-    meta.textContent = "倉庫に追加";
-  } else if (offer.type === "attachment") {
-    meta.textContent = `${starsLabel(offer.stars)}・${attachmentCategoryLabel(offer.category)}・倉庫に追加`;
-  }
-
-  const price = document.createElement("div");
-  price.className = "price";
-  const cost = document.createElement("strong");
-  cost.textContent = offer.bought ? "売切" : `${offer.cost}枚`;
-  price.append(cost);
-
-  bodyEl.append(headRow, title, description, meta, price);
-
-  const action = document.createElement("div");
-  action.className = "offer-action";
-
-  if (offer.bought) {
-    const tag = document.createElement("span");
-    tag.className = "offer-bought-tag";
-    tag.textContent = "購入済み";
-    action.append(tag);
-  } else {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "offer-buy";
-    button.textContent = "購入";
-    button.disabled = !canBuyOffer(offer);
-    button.addEventListener("click", () => buyOffer(index));
-    action.append(button);
-  }
-
-  bodyEl.append(action);
-  card.append(summary, bodyEl);
-  return card;
-}
-
-function buildOfferSection(kind, label, accent) {
-  const section = document.createElement("section");
-  section.className = `offer-section offer-section-${kind}`;
-
-  const heading = document.createElement("h3");
-  heading.className = "offer-section-heading";
-  const labelEl = document.createElement("span");
-  labelEl.textContent = label;
-  const count = document.createElement("span");
-  count.className = "offer-section-count";
-  heading.append(labelEl, count);
-
-  const grid = document.createElement("div");
-  grid.className = "offer-grid";
-
-  section.append(heading, grid);
-  section.dataset.accent = accent;
-  return { section, grid, count };
-}
-
-export function renderShop() {
-  ensureShopTabsBound();
-  hud.shopCash.textContent = String(game.money);
-  hud.offers.replaceChildren();
-
-  const weaponSection = buildOfferSection("weapons", "武器", "weapon");
-  const attachmentSection = buildOfferSection("attachments", "アタッチメント", "attachment");
-
-  let weaponCount = 0;
-  let attachmentCount = 0;
-  game.offers.forEach((offer, index) => {
-    const card = buildOfferCard(offer, index);
-    if (offer.type === "weapon") {
-      weaponSection.grid.append(card);
-      weaponCount += 1;
-    } else if (offer.type === "attachment") {
-      attachmentSection.grid.append(card);
-      attachmentCount += 1;
-    }
-  });
-
-  weaponSection.count.textContent = weaponCount > 0 ? `${weaponCount}件` : "なし";
-  attachmentSection.count.textContent = attachmentCount > 0 ? `${attachmentCount}件` : "なし";
-
-  if (weaponCount > 0) hud.offers.append(weaponSection.section);
-  hud.offers.append(attachmentSection.section);
-
-  renderGearInventory();
-
-  const cost = rerollCost();
-  hud.reroll.textContent = `リロール ${cost}枚`;
-  hud.reroll.disabled = game.money < cost;
-  hud.nextWave.disabled = false;
-}
-
-let shopTabsBound = false;
-
-function ensureShopTabsBound() {
-  if (shopTabsBound) return;
-  shopTabsBound = true;
-  document.querySelectorAll(".shop-tab").forEach((btn) => {
-    btn.addEventListener("click", () => setShopTab(btn.dataset.tab));
-  });
-}
-
-export function setShopTab(name) {
-  document.querySelectorAll(".shop-tab").forEach((btn) => {
-    const active = btn.dataset.tab === name;
-    btn.classList.toggle("shop-tab-active", active);
-    btn.setAttribute("aria-selected", active ? "true" : "false");
-  });
-  document.querySelectorAll(".shop-tab-panel").forEach((panel) => {
-    panel.classList.toggle("shop-tab-panel-hidden", panel.dataset.panel !== name);
-  });
-  if (hud.nextWave) {
-    hud.nextWave.textContent = name === "inventory" ? "次の夜へ" : "倉庫へ →";
-  }
-  if (hud.reroll) {
-    hud.reroll.classList.toggle("hidden", name !== "shop");
-  }
-}
-
-function getCurrentShopTab() {
-  const active = document.querySelector(".shop-tab.shop-tab-active");
-  return active?.dataset.tab || "shop";
-}
-
-export function advanceShopStep() {
-  if (getCurrentShopTab() === "shop") {
-    setShopTab("inventory");
-    return false;
-  }
-  return true;
-}
-
-
-function aggregateAttachments(list) {
-  const map = new Map();
-  list.forEach((att, idx) => {
-    const level = att.level || 1;
-    const groupKey = `${att.key}-${level}`;
-    if (!map.has(groupKey)) {
-      map.set(groupKey, { ...att, level, count: 1, indices: [idx] });
-    } else {
-      const entry = map.get(groupKey);
-      entry.count += 1;
-      entry.indices.push(idx);
-    }
-  });
-  return Array.from(map.values());
-}
-
-function attachmentLabelText(agg) {
-  let text = agg.name;
-  if (agg.level > 1) text += ` Lv${agg.level}`;
-  if (agg.count > 1) text += ` ×${agg.count}`;
-  return text;
 }
 
 export function mergeWeaponAttachment(weaponId, key, level) {
@@ -671,259 +257,168 @@ export function mergeWeaponAttachment(weaponId, key, level) {
   updateHud();
 }
 
-export function mergeInventoryAttachment(key, level) {
-  if (level >= MAX_ATTACHMENT_LEVEL) return;
-  const inv = game.player.inventory.attachments;
-  const matches = [];
-  inv.forEach((att, idx) => {
-    if (att.key === key && (att.level || 1) === level) matches.push({ att, idx });
+function findWeapon(id) {
+  return game.player.gear.weapons.find((weapon) => weapon.id === id) || null;
+}
+
+function aggregateAttachments(list) {
+  const map = new Map();
+  list.forEach((att, idx) => {
+    const level = att.level || 1;
+    const groupKey = `${att.key}-${level}`;
+    if (!map.has(groupKey)) {
+      map.set(groupKey, { ...att, level, count: 1, indices: [idx] });
+    } else {
+      const entry = map.get(groupKey);
+      entry.count += 1;
+      entry.indices.push(idx);
+    }
   });
-  if (matches.length < 2) return;
-  const removeIndices = matches.slice(0, 2).map((m) => m.idx).sort((a, b) => b - a);
-  for (const idx of removeIndices) inv.splice(idx, 1);
-  const definition = findAttachmentDefinition(key);
-  inv.push({
-    key,
-    name: definition?.name || matches[0].att.name,
-    stars: matches[0].att.stars || definition?.stars || 1,
-    category: matches[0].att.category || definition?.category || "stat",
-    level: level + 1,
+  return Array.from(map.values());
+}
+
+function attachmentLabelText(agg) {
+  let text = agg.name;
+  if (agg.level > 1) text += ` Lv${agg.level}`;
+  if (agg.count > 1) text += ` ×${agg.count}`;
+  return text;
+}
+
+function buildOfferCard(offer, index) {
+  const card = document.createElement("article");
+  card.className = `offer offer-attachment attach-stars-${offer.stars || 1}${offer.taken ? " offer-taken" : ""}`;
+
+  const headRow = document.createElement("div");
+  headRow.className = "offer-head";
+
+  const type = document.createElement("span");
+  type.className = "offer-type offer-type-attachment";
+  type.textContent = `アタッチメント・${starsLabel(offer.stars)}`;
+  headRow.append(type);
+
+  const title = document.createElement("h2");
+  title.textContent = offer.name;
+
+  const description = document.createElement("p");
+  description.textContent = offer.text;
+
+  const meta = document.createElement("small");
+  meta.className = "offer-meta";
+  meta.textContent = `${starsLabel(offer.stars)}・${attachmentCategoryLabel(offer.category)}`;
+
+  card.append(headRow, title, description, meta);
+
+  const action = document.createElement("div");
+  action.className = "offer-action";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "offer-buy";
+  const weapon = game.player.gear.weapons[0];
+  const slotsFull = weapon && weapon.attachments.length >= MAX_WEAPON_ATTACHMENTS;
+  button.textContent = offer.taken ? "選択済" : slotsFull ? "枠が満杯" : "選ぶ";
+  button.disabled = offer.taken || slotsFull;
+  button.addEventListener("click", () => pickReward(index));
+  action.append(button);
+
+  card.append(action);
+  return card;
+}
+
+export function renderShop() {
+  hud.shopCash.textContent = String(game.money);
+  hud.offers.replaceChildren();
+
+  game.offers.forEach((offer, index) => {
+    hud.offers.append(buildOfferCard(offer, index));
   });
-  renderShop();
-  updateHud();
+
+  renderGearInventory();
 }
 
 function renderGearInventory() {
   hud.gearInventory.replaceChildren();
   const gear = game.player.gear;
-  const inv = game.player.inventory || { weapons: [], attachments: [] };
-
   const board = document.createElement("div");
   board.className = "loadout-board";
 
-  for (let index = 0; index < MAX_WEAPONS; index += 1) {
-    const weapon = gear.weapons[index];
-    const slot = document.createElement("article");
-    slot.className = `weapon-slot ${weapon ? "weapon-slot-filled" : "weapon-slot-empty"}`;
+  const weapon = gear.weapons[0];
+  const slot = document.createElement("article");
+  slot.className = `weapon-slot ${weapon ? "weapon-slot-filled" : "weapon-slot-empty"}`;
 
-    const top = document.createElement("div");
-    top.className = "weapon-slot-top";
+  const top = document.createElement("div");
+  top.className = "weapon-slot-top";
+  const label = document.createElement("span");
+  label.className = "slot-index";
+  label.textContent = "装備武器";
+  const status = document.createElement("span");
+  status.className = `slot-status ${weapon ? "slot-status-equipped" : "slot-status-empty"}`;
+  status.textContent = weapon ? "装備中" : "未装備";
+  top.append(label, status);
 
-    const label = document.createElement("span");
-    label.className = "slot-index";
-    label.textContent = `武器 ${index + 1}`;
+  const name = document.createElement("strong");
+  name.className = "weapon-slot-name";
+  name.textContent = weapon ? weapon.name : "未装備";
+  const kind = document.createElement("small");
+  kind.className = "weapon-slot-kind";
+  kind.textContent = weapon ? weaponKindLabel(weapon) : "武器スロット";
 
-    const status = document.createElement("span");
-    status.className = `slot-status ${weapon ? "slot-status-equipped" : "slot-status-empty"}`;
-    status.textContent = weapon ? "装備中" : "空き";
+  const attachmentTrack = document.createElement("div");
+  attachmentTrack.className = "attachment-track";
+  const attachmentTitle = document.createElement("span");
+  attachmentTitle.className = "attachment-title";
+  attachmentTitle.textContent = weapon
+    ? `アタッチメント ${weapon.attachments.length}/${MAX_WEAPON_ATTACHMENTS}`
+    : "アタッチメント";
+  const attachmentList = document.createElement("div");
+  attachmentList.className = "attachment-list";
 
-    top.append(label, status);
-
-    const name = document.createElement("strong");
-    name.className = "weapon-slot-name";
-    name.textContent = weapon ? weapon.name : "未装備";
-
-    const kind = document.createElement("small");
-    kind.className = "weapon-slot-kind";
-    kind.textContent = weapon ? weaponKindLabel(weapon) : "武器スロット";
-
-    const attachmentTrack = document.createElement("div");
-    attachmentTrack.className = "attachment-track";
-
-    const attachmentTitle = document.createElement("span");
-    attachmentTitle.className = "attachment-title";
-    attachmentTitle.textContent = weapon
-      ? `アタッチメント ${weapon.attachments.length}/${MAX_WEAPON_ATTACHMENTS}`
-      : "アタッチメント";
-
-    const attachmentList = document.createElement("div");
-    attachmentList.className = "attachment-list";
-
-    const attachments = weapon?.attachments || [];
-    if (attachments.length > 0) {
-      const aggregated = aggregateAttachments(attachments);
-      aggregated.forEach((agg) => {
-        const row = document.createElement("div");
-        row.className = "attachment-row";
-
-        const chip = document.createElement("span");
-        chip.className = `attach-chip attach-stars-${agg.stars || 1}`;
-
-        const rarity = document.createElement("span");
-        rarity.className = "attach-stars-label";
-        rarity.textContent = starsLabel(agg.stars);
-
-        const attachmentName = document.createElement("span");
-        attachmentName.className = "attach-name";
-        attachmentName.textContent = attachmentLabelText(agg);
-
-        chip.append(rarity, attachmentName);
-
-        const detach = document.createElement("button");
-        detach.type = "button";
-        detach.className = "attachment-detach";
-        detach.textContent = "外す";
-        detach.addEventListener("click", () => detachAttachment(weapon.id, agg.indices[0]));
-
-        row.append(chip, detach);
-
-        if (agg.count >= 2 && agg.level < MAX_ATTACHMENT_LEVEL) {
-          const merge = document.createElement("button");
-          merge.type = "button";
-          merge.className = "attachment-merge";
-          merge.textContent = `合成 → Lv${agg.level + 1}`;
-          merge.addEventListener("click", () => mergeWeaponAttachment(weapon.id, agg.key, agg.level));
-          row.append(merge);
-        }
-
-        attachmentList.append(row);
-      });
-    } else {
-      const empty = document.createElement("span");
-      empty.className = "attach-chip attach-chip-empty";
-      empty.textContent = weapon ? "空き" : "未装着";
-      attachmentList.append(empty);
-    }
-
-    attachmentTrack.append(attachmentTitle, attachmentList);
-
-    slot.append(top, name, kind, attachmentTrack);
-    if (weapon) {
-      const unequip = document.createElement("button");
-      unequip.type = "button";
-      unequip.className = "weapon-unequip";
-      unequip.textContent = "倉庫へ";
-      unequip.addEventListener("click", () => unequipWeapon(weapon.id));
-      slot.append(unequip);
-    }
-    board.append(slot);
-  }
-
-  hud.gearInventory.append(board);
-
-  const inventory = document.createElement("section");
-  inventory.className = "inventory-section";
-
-  const weaponHead = document.createElement("h3");
-  weaponHead.className = "inventory-title";
-  weaponHead.textContent = `倉庫の武器 ${inv.weapons.length}`;
-  inventory.append(weaponHead);
-
-  const weaponList = document.createElement("div");
-  weaponList.className = "inventory-list";
-  if (inv.weapons.length === 0) {
-    const empty = document.createElement("span");
-    empty.className = "inventory-empty";
-    empty.textContent = "未所持";
-    weaponList.append(empty);
-  } else {
-    inv.weapons.forEach((weapon) => {
-      const row = document.createElement("article");
-      row.className = "inventory-row inventory-weapon-row";
-
-      const head = document.createElement("div");
-      head.className = "inventory-row-head";
-      const wname = document.createElement("strong");
-      wname.textContent = weapon.name;
-      const wkind = document.createElement("small");
-      wkind.textContent = `${weaponKindLabel(weapon)}・装着 ${weapon.attachments.length}/${MAX_WEAPON_ATTACHMENTS}`;
-      head.append(wname, wkind);
-
-      const equip = document.createElement("button");
-      equip.type = "button";
-      equip.className = "inventory-equip";
-      equip.textContent = gear.weapons.length >= MAX_WEAPONS ? "枠が満杯" : "装備";
-      equip.disabled = gear.weapons.length >= MAX_WEAPONS;
-      equip.addEventListener("click", () => equipFromInventory(weapon.id));
-
-      row.append(head, equip);
-
-      if (weapon.attachments.length > 0) {
-        const tail = document.createElement("div");
-        tail.className = "inventory-row-tail";
-        weapon.attachments.forEach((attachment) => {
-          const chip = document.createElement("span");
-          chip.className = `attach-chip attach-stars-${attachment.stars || 1}`;
-          const r = document.createElement("span");
-          r.className = "attach-stars-label";
-          r.textContent = starsLabel(attachment.stars);
-          const n = document.createElement("span");
-          n.className = "attach-name";
-          n.textContent = attachment.name;
-          chip.append(r, n);
-          tail.append(chip);
-        });
-        row.append(tail);
-      }
-
-      weaponList.append(row);
-    });
-  }
-  inventory.append(weaponList);
-
-  const attHead = document.createElement("h3");
-  attHead.className = "inventory-title";
-  attHead.textContent = `倉庫のアタッチメント ${inv.attachments.length}`;
-  inventory.append(attHead);
-
-  const attList = document.createElement("div");
-  attList.className = "inventory-list";
-  if (inv.attachments.length === 0) {
-    const empty = document.createElement("span");
-    empty.className = "inventory-empty";
-    empty.textContent = "未所持";
-    attList.append(empty);
-  } else {
-    const aggregated = aggregateAttachments(inv.attachments);
+  const attachments = weapon?.attachments || [];
+  if (attachments.length > 0) {
+    const aggregated = aggregateAttachments(attachments);
     aggregated.forEach((agg) => {
-      const row = document.createElement("article");
-      row.className = "inventory-row inventory-attach-row";
+      const row = document.createElement("div");
+      row.className = "attachment-row";
 
       const chip = document.createElement("span");
       chip.className = `attach-chip attach-stars-${agg.stars || 1}`;
-      const r = document.createElement("span");
-      r.className = "attach-stars-label";
-      r.textContent = starsLabel(agg.stars);
-      const n = document.createElement("span");
-      n.className = "attach-name";
-      n.textContent = attachmentLabelText(agg);
-      chip.append(r, n);
+      const stars = document.createElement("span");
+      stars.className = "attach-stars-label";
+      stars.textContent = starsLabel(agg.stars);
+      const attachmentName = document.createElement("span");
+      attachmentName.className = "attach-name";
+      attachmentName.textContent = attachmentLabelText(agg);
+      chip.append(stars, attachmentName);
 
-      const targets = document.createElement("div");
-      targets.className = "inventory-attach-targets";
-      if (gear.weapons.length === 0) {
-        const note = document.createElement("small");
-        note.className = "inventory-empty";
-        note.textContent = "装備中の武器がありません";
-        targets.append(note);
-      } else {
-        const definition = findAttachmentDefinition(agg.key);
-        gear.weapons.forEach((weapon) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "inventory-attach-target";
-          btn.textContent = `${weapon.name} (${weapon.attachments.length}/${MAX_WEAPON_ATTACHMENTS})`;
-          btn.disabled = !canAttachToWeapon(definition, weapon);
-          btn.addEventListener("click", () => attachFromInventory(agg.indices[0], weapon.id));
-          targets.append(btn);
-        });
-        if (agg.count >= 2 && agg.level < MAX_ATTACHMENT_LEVEL) {
-          const merge = document.createElement("button");
-          merge.type = "button";
-          merge.className = "inventory-attach-merge";
-          merge.textContent = `合成 → Lv${agg.level + 1}`;
-          merge.addEventListener("click", () => mergeInventoryAttachment(agg.key, agg.level));
-          targets.append(merge);
-        }
+      const detach = document.createElement("button");
+      detach.type = "button";
+      detach.className = "attachment-detach";
+      detach.textContent = "外す";
+      detach.addEventListener("click", () => detachAttachment(weapon.id, agg.indices[0]));
+
+      row.append(chip, detach);
+
+      if (agg.count >= 2 && agg.level < MAX_ATTACHMENT_LEVEL) {
+        const merge = document.createElement("button");
+        merge.type = "button";
+        merge.className = "attachment-merge";
+        merge.textContent = `合成 → Lv${agg.level + 1}`;
+        merge.addEventListener("click", () => mergeWeaponAttachment(weapon.id, agg.key, agg.level));
+        row.append(merge);
       }
 
-      row.append(chip, targets);
-      attList.append(row);
+      attachmentList.append(row);
     });
+  } else {
+    const empty = document.createElement("span");
+    empty.className = "attach-chip attach-chip-empty";
+    empty.textContent = weapon ? "空き" : "未装着";
+    attachmentList.append(empty);
   }
-  inventory.append(attList);
 
-  hud.gearInventory.append(inventory);
+  attachmentTrack.append(attachmentTitle, attachmentList);
+  slot.append(top, name, kind, attachmentTrack);
+  board.append(slot);
+  hud.gearInventory.append(board);
 }
 
 export function prepareStarterPick() {
@@ -944,18 +439,17 @@ export function pickStarterWeapon(index) {
 
 export function renderStarterPick() {
   hud.starterOffers.replaceChildren();
-  const isReward = game.mode === "weaponReward";
   const kicker = hud.starterPick.querySelector(".panel-kicker");
   const heading = hud.starterPick.querySelector("h1");
-  if (kicker) kicker.textContent = isReward ? `第${game.wave}夜 報酬` : "最初の武器";
-  if (heading) heading.textContent = isReward ? "3つから1つ選んで装備に追加" : "3つから1つ選んで夜街へ";
+  if (kicker) kicker.textContent = "最初の武器";
+  if (heading) heading.textContent = "3つから1つ選んで夜街へ";
   game.starterChoices.forEach((template, index) => {
     const card = document.createElement("article");
     card.className = "starter-card offer-weapon";
 
     const tag = document.createElement("span");
     tag.className = "offer-type offer-type-weapon";
-    tag.textContent = OFFER_TYPE_LABELS.weapon;
+    tag.textContent = "武器";
 
     const title = document.createElement("h2");
     title.textContent = template.name;
@@ -966,11 +460,8 @@ export function renderStarterPick() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "starter-card-pick";
-    button.textContent = isReward ? "これを選ぶ" : "これで始める";
-    button.addEventListener("click", () => {
-      if (game.mode === "weaponReward") pickWaveRewardWeapon(index);
-      else pickStarterWeapon(index);
-    });
+    button.textContent = "これで始める";
+    button.addEventListener("click", () => pickStarterWeapon(index));
 
     card.append(tag, title, text, button);
     hud.starterOffers.append(card);

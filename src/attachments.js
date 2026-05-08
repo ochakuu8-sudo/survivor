@@ -339,7 +339,6 @@ function pickStarsForWave(wave) {
 function pickAttachmentByStars(stars) {
   const ownedNames = new Set();
   game.player.gear.weapons.forEach((w) => ownedNames.add(w.name));
-  (game.player.inventory?.weapons || []).forEach((w) => ownedNames.add(w.name));
 
   const candidates = ACTIVE_ATTACHMENTS.filter((a) => {
     if (a.stars !== stars) return false;

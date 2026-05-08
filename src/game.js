@@ -1,17 +1,17 @@
-import { MAX_WEAPONS, WAVE_SECONDS } from "./constants.js";
+import { WAVE_SECONDS } from "./constants.js";
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, lerp } from "./utils/math.js";
-import { autoShoot, createWeapon, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
-import { recomputeAllAttachments, snapshotPlayerBaseStats } from "./attachments.js";
+import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
+import { snapshotPlayerBaseStats } from "./attachments.js";
 import { spawnEnemies, updateEnemies } from "./enemies.js";
 import { updateBullets } from "./bullets.js";
 import { updatePickups } from "./pickups.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
 import { updateMovement } from "./player.js";
-import { generateOffers, prepareStarterPick, renderShop, renderStarterPick, setShopTab } from "./shop.js";
+import { generateOffers, prepareStarterPick, renderShop, renderStarterPick } from "./shop.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
 
@@ -52,10 +52,6 @@ export function resetRun() {
       weapons: [],
       attachments: [],
     },
-    inventory: {
-      weapons: [],
-      attachments: [],
-    },
   };
   game.enemies = [];
   game.bullets = [];
@@ -64,7 +60,6 @@ export function resetRun() {
   game.particles = [];
   game.effects = [];
   game.offers = [];
-  game.pinnedOffer = null;
   game.starterChoices = [];
   game.player.baseStats = snapshotPlayerBaseStats(game.player);
   hud.shop.classList.add("hidden");
@@ -95,7 +90,7 @@ export function startNextWave() {
 }
 
 export function enterShop() {
-  game.rerolls = 0;
+  game.mode = "shop";
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
@@ -103,42 +98,9 @@ export function enterShop() {
   game.particles = [];
   game.effects = [];
   game.player.hp = clamp(game.player.hp + game.player.maxHp * 0.2, 1, game.player.maxHp);
-
-  if (game.wave > 0 && game.wave % 5 === 0) {
-    enterWeaponReward();
-    return;
-  }
-  openShopUI();
-}
-
-function openShopUI() {
-  game.mode = "shop";
   generateOffers();
   renderShop();
-  setShopTab("shop");
   hud.shop.classList.remove("hidden");
-}
-
-function enterWeaponReward() {
-  game.mode = "weaponReward";
-  hud.shop.classList.add("hidden");
-  prepareStarterPick();
-  renderStarterPick();
-}
-
-export function pickWaveRewardWeapon(index) {
-  const template = game.starterChoices[index];
-  if (!template) return;
-  const weapon = createWeapon({ name: template.name, ...template.weapon });
-  if (game.player.gear.weapons.length < MAX_WEAPONS) {
-    game.player.gear.weapons.push(weapon);
-  } else {
-    game.player.inventory.weapons.push(weapon);
-  }
-  recomputeAllAttachments();
-  game.starterChoices = [];
-  hud.starterPick.classList.add("hidden");
-  openShopUI();
 }
 
 export function endRun() {
