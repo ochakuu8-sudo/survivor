@@ -1,6 +1,6 @@
 import { TAU } from "./constants.js";
 import { game, nextEnemyId } from "./state.js";
-import { normalize } from "./utils/math.js";
+import { distanceToSegmentSq, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
 import { addEffect, addSparks } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
@@ -95,8 +95,11 @@ export function spawnEnemy(forceType) {
     enemy.chargeDuration = Math.max(0.7, 0.95 - wave * 0.02);
     enemy.chargeCooldown = 1.6;
     enemy.chargeCooldownLeft = 0.6 + Math.random() * 0.6;
-    enemy.attackRange = 110;
-    enemy.attackRadius = 110;
+    enemy.attackRange = 130;
+    enemy.swingRange = 150;
+    enemy.swingWidth = 110;
+    enemy.swingTargetX = 0;
+    enemy.swingTargetY = 0;
     enemy.slamDamage = Math.round(28 + wave * 1.5);
   } else if (type === "archer") {
     enemy.kind = "archer";
@@ -208,21 +211,38 @@ function updateOrc(enemy, p, dt) {
   if (enemy.orcState === "charging") {
     enemy.chargeTimer -= dt;
     if (enemy.chargeTimer <= 0) {
-      const dist = Math.hypot(p.x - enemy.x, p.y - enemy.y);
-      if (dist <= enemy.attackRadius + p.radius) {
-        damagePlayer(enemy.slamDamage);
-      }
+      const dx = enemy.swingTargetX - enemy.x;
+      const dy = enemy.swingTargetY - enemy.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const reachX = enemy.x + (dx / len) * enemy.swingRange;
+      const reachY = enemy.y + (dy / len) * enemy.swingRange;
+      const halfWidth = enemy.swingWidth * 0.5;
+      const reach = halfWidth + p.radius;
+      const inRange = distanceToSegmentSq(p.x, p.y, enemy.x, enemy.y, reachX, reachY) <= reach * reach;
+      if (inRange) damagePlayer(enemy.slamDamage);
       addEffect({
-        type: "burst",
-        x: enemy.x,
-        y: enemy.y,
-        radius: enemy.attackRadius,
-        life: 0.42,
-        maxLife: 0.42,
+        type: "line",
+        x1: enemy.x,
+        y1: enemy.y,
+        x2: reachX,
+        y2: reachY,
+        width: enemy.swingWidth,
+        life: 0.18,
+        maxLife: 0.18,
         glow: "glowRed",
         tint: [1, 0.4, 0.22],
       });
-      addSparks(enemy.x, enemy.y, 12, 220);
+      addEffect({
+        type: "burst",
+        x: reachX,
+        y: reachY,
+        radius: enemy.swingWidth * 0.55,
+        life: 0.36,
+        maxLife: 0.36,
+        glow: "glowRed",
+        tint: [1, 0.4, 0.22],
+      });
+      addSparks(reachX, reachY, 12, 220);
       game.shake = Math.max(game.shake, 8);
       enemy.orcState = "idle";
       enemy.chargeCooldownLeft = enemy.chargeCooldown;
@@ -241,11 +261,17 @@ function updateOrc(enemy, p, dt) {
   if (enemy.chargeCooldownLeft <= 0 && distance <= enemy.attackRange) {
     enemy.orcState = "charging";
     enemy.chargeTimer = enemy.chargeDuration;
+    enemy.swingTargetX = p.x;
+    enemy.swingTargetY = p.y;
+    const swingX = enemy.x + (dx / distance) * enemy.swingRange;
+    const swingY = enemy.y + (dy / distance) * enemy.swingRange;
     addEffect({
-      type: "telegraph",
-      x: enemy.x,
-      y: enemy.y,
-      radius: enemy.attackRadius,
+      type: "telegraphLine",
+      x1: enemy.x,
+      y1: enemy.y,
+      x2: swingX,
+      y2: swingY,
+      width: enemy.swingWidth,
       life: enemy.chargeDuration,
       maxLife: enemy.chargeDuration,
       tint: [0.86, 0.2, 0.18],
