@@ -233,6 +233,42 @@ function drawPixelBone(ctx, w, h) {
   px(ctx, cx + 10, cy - 4, 2, 2, "#fdf8e4");
 }
 
+function drawPixelOrc(ctx, w, h) {
+  const scale = 1.4;
+  ctx.save();
+  ctx.translate(w / 2, h / 2 + (scale - 1) * 14);
+  ctx.scale(scale, scale);
+  const x = -22;
+  const y = -32;
+  px(ctx, x + 2, y + 58, 40, 7, "rgba(35, 25, 76, 0.34)");
+  px(ctx, x + 4, y + 9, 36, 22, "#5e8b3e");
+  px(ctx, x + 4, y + 4, 36, 5, "#243012");
+  px(ctx, x + 18, y, 8, 6, "#1a1208");
+  px(ctx, x + 8, y + 13, 11, 2, "#3a2419");
+  px(ctx, x + 25, y + 13, 11, 2, "#3a2419");
+  px(ctx, x + 10, y + 16, 7, 6, "#0a0606");
+  px(ctx, x + 27, y + 16, 7, 6, "#0a0606");
+  px(ctx, x + 12, y + 18, 3, 2, "#ff5050");
+  px(ctx, x + 29, y + 18, 3, 2, "#ff5050");
+  px(ctx, x + 14, y + 25, 16, 4, "#0a0606");
+  px(ctx, x + 14, y + 24, 3, 7, "#fff8d8");
+  px(ctx, x + 27, y + 24, 3, 7, "#fff8d8");
+  px(ctx, x + 5, y + 31, 34, 27, "#5d3812");
+  px(ctx, x + 5, y + 40, 34, 5, "#a76732");
+  px(ctx, x + 18, y + 40, 8, 5, "#1a1208");
+  px(ctx, x + 2, y + 31, 8, 12, "#3a2419");
+  px(ctx, x + 34, y + 31, 8, 12, "#3a2419");
+  px(ctx, x - 6, y + 35, 12, 12, "#5e8b3e");
+  px(ctx, x + 38, y + 35, 12, 12, "#5e8b3e");
+  px(ctx, x - 8, y + 44, 10, 7, "#3a2419");
+  px(ctx, x + 42, y + 44, 10, 7, "#3a2419");
+  px(ctx, x + 10, y + 58, 10, 13, "#3a2419");
+  px(ctx, x + 24, y + 58, 10, 13, "#3a2419");
+  px(ctx, x + 8, y + 67, 13, 4, "#1a1208");
+  px(ctx, x + 23, y + 67, 13, 4, "#1a1208");
+  ctx.restore();
+}
+
 function drawPixelSkeleton(ctx, w, h) {
   ctx.save();
   ctx.translate(w / 2, h / 2);
@@ -383,15 +419,15 @@ export function buildAtlas() {
 
   add("zombieA", 72, 72, (ctx, w, h) => drawPixelZombie(ctx, w, h, "#98f06e", "#5131a8", "#ff7a5c"));
   add("zombieB", 72, 72, (ctx, w, h) => drawPixelZombie(ctx, w, h, "#c5ff6b", "#f04d8b", "#ffe46b"));
-  add("zombieBig", 96, 96, (ctx, w, h) => drawPixelZombie(ctx, w, h, "#a6f771", "#7946d9", "#ff7a5c", 1.32));
+  add("orc", 96, 96, (ctx, w, h) => drawPixelOrc(ctx, w, h));
   add("zombieAReadable", 72, 72, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelZombie(target, width, height, "#98f06e", "#5131a8", "#ff7a5c"), 2, "rgba(222, 28, 45, 0.78)");
   });
   add("zombieBReadable", 72, 72, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelZombie(target, width, height, "#c5ff6b", "#f04d8b", "#ffe46b"), 2, "rgba(235, 34, 48, 0.8)");
   });
-  add("zombieBigReadable", 96, 96, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelZombie(target, width, height, "#a6f771", "#7946d9", "#ff7a5c", 1.32), 2, "rgba(245, 38, 50, 0.84)");
+  add("orcReadable", 96, 96, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelOrc, 2, "rgba(245, 38, 50, 0.84)");
   });
   add("skeletonArcher", 72, 72, (ctx, w, h) => drawPixelSkeleton(ctx, w, h));
   add("skeletonArcherReadable", 72, 72, (ctx, w, h) => {

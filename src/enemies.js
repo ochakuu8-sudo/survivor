@@ -44,7 +44,7 @@ export function spawnEnemy(forceType) {
   const wave = game.wave;
   let type = forceType || "walker";
   if (!forceType) {
-    if (wave >= 3 && roll < 0.12) type = "brute";
+    if (wave >= 3 && roll < 0.12) type = "orc";
     else if (wave >= 2 && roll < 0.34) type = "runner";
     else if (wave >= 2 && roll < 0.48) type = "archer";
   }
@@ -79,16 +79,25 @@ export function spawnEnemy(forceType) {
     enemy.value = 2 + Math.floor(wave / 3);
     enemy.sprite = "zombieB";
     enemy.readableSprite = "zombieBReadable";
-  } else if (type === "brute") {
+  } else if (type === "orc") {
+    enemy.kind = "orc";
     enemy.radius = 27;
     enemy.hp = baseHp * 2.85;
     enemy.maxHp = enemy.hp;
     enemy.speed = 58 + wave * 2.4;
-    enemy.attackDamage = Math.round(18 + wave * 1.1);
-    enemy.attackCooldown = Math.max(1.0, 1.36 - wave * 0.012);
+    enemy.attackDamage = 0;
+    enemy.attackCooldown = 9999;
     enemy.value = 6 + wave;
-    enemy.sprite = "zombieBig";
-    enemy.readableSprite = "zombieBigReadable";
+    enemy.sprite = "orc";
+    enemy.readableSprite = "orcReadable";
+    enemy.orcState = "idle";
+    enemy.chargeTimer = 0;
+    enemy.chargeDuration = Math.max(0.7, 0.95 - wave * 0.02);
+    enemy.chargeCooldown = 1.6;
+    enemy.chargeCooldownLeft = 0.6 + Math.random() * 0.6;
+    enemy.attackRange = 110;
+    enemy.attackRadius = 110;
+    enemy.slamDamage = Math.round(28 + wave * 1.5);
   } else if (type === "archer") {
     enemy.kind = "archer";
     enemy.radius = 17;
@@ -100,15 +109,9 @@ export function spawnEnemy(forceType) {
     enemy.value = 3 + Math.floor(wave / 2);
     enemy.sprite = "skeletonArcher";
     enemy.readableSprite = "skeletonArcherReadable";
-    enemy.archerState = "idle";
-    enemy.telegraphTimer = 0;
-    enemy.telegraphDuration = Math.max(0.55, 0.9 - wave * 0.02);
-    enemy.telegraphX = 0;
-    enemy.telegraphY = 0;
     enemy.shotCooldown = 0.6 + Math.random() * 0.6;
     enemy.shotInterval = Math.max(1.4, 2.4 - wave * 0.05);
     enemy.shotDamage = Math.round(16 + wave * 1.4);
-    enemy.shotRadius = 60;
     enemy.shootRange = 320;
     enemy.preferredDistance = 220;
   }
@@ -122,6 +125,8 @@ export function updateEnemies(dt) {
     enemy.hit = Math.max(0, enemy.hit - dt * 5);
     if (enemy.kind === "archer") {
       updateArcher(enemy, p, dt);
+    } else if (enemy.kind === "orc") {
+      updateOrc(enemy, p, dt);
     } else {
       updateMeleeEnemy(enemy, p, dt);
     }
@@ -158,44 +163,6 @@ function updateArcher(enemy, p, dt) {
   const dy = p.y - enemy.y;
   const distance = Math.hypot(dx, dy) || 0.0001;
 
-  if (enemy.archerState === "telegraph") {
-    enemy.telegraphTimer -= dt;
-    if (enemy.telegraphTimer <= 0) {
-      const aimX = enemy.telegraphX;
-      const aimY = enemy.telegraphY;
-      const lineDx = aimX - enemy.x;
-      const lineDy = aimY - enemy.y;
-      const lineLen = Math.hypot(lineDx, lineDy) || 0.0001;
-      const speed = 360;
-      const life = Math.max(0.6, lineLen / speed + 0.4);
-      game.enemyProjectiles.push({
-        x: enemy.x,
-        y: enemy.y - 6,
-        vx: (lineDx / lineLen) * speed,
-        vy: (lineDy / lineLen) * speed,
-        radius: 8,
-        damage: enemy.shotDamage,
-        life,
-        spinSeed: Math.random() * TAU,
-        spinRate: 7 + Math.random() * 5,
-      });
-      addEffect({
-        type: "burst",
-        x: enemy.x,
-        y: enemy.y - 6,
-        radius: 18,
-        life: 0.14,
-        maxLife: 0.14,
-        glow: "glowAmber",
-        tint: [1, 0.85, 0.5],
-      });
-      addSparks(enemy.x, enemy.y - 6, 3, 110);
-      enemy.archerState = "idle";
-      enemy.shotCooldown = enemy.shotInterval;
-    }
-    return;
-  }
-
   if (distance > enemy.shootRange) {
     const speed = enemy.speed;
     enemy.x += (dx / distance) * speed * dt;
@@ -207,20 +174,81 @@ function updateArcher(enemy, p, dt) {
   }
 
   if (enemy.shotCooldown <= 0 && distance <= enemy.shootRange) {
-    enemy.archerState = "telegraph";
-    enemy.telegraphTimer = enemy.telegraphDuration;
-    enemy.telegraphX = p.x;
-    enemy.telegraphY = p.y;
+    const speed = 360;
+    const life = Math.max(0.6, distance / speed + 0.4);
+    game.enemyProjectiles.push({
+      x: enemy.x,
+      y: enemy.y - 6,
+      vx: (dx / distance) * speed,
+      vy: (dy / distance) * speed,
+      radius: 8,
+      damage: enemy.shotDamage,
+      life,
+      spinSeed: Math.random() * TAU,
+      spinRate: 7 + Math.random() * 5,
+    });
     addEffect({
-      type: "telegraphLine",
-      x1: enemy.x,
-      y1: enemy.y,
-      x2: enemy.telegraphX,
-      y2: enemy.telegraphY,
-      width: 22,
-      life: enemy.telegraphDuration,
-      maxLife: enemy.telegraphDuration,
-      tint: [0.82, 0.18, 0.16],
+      type: "burst",
+      x: enemy.x,
+      y: enemy.y - 6,
+      radius: 18,
+      life: 0.14,
+      maxLife: 0.14,
+      glow: "glowAmber",
+      tint: [1, 0.85, 0.5],
+    });
+    addSparks(enemy.x, enemy.y - 6, 3, 110);
+    enemy.shotCooldown = enemy.shotInterval;
+  }
+}
+
+function updateOrc(enemy, p, dt) {
+  enemy.chargeCooldownLeft = Math.max(0, (enemy.chargeCooldownLeft ?? 0) - dt);
+
+  if (enemy.orcState === "charging") {
+    enemy.chargeTimer -= dt;
+    if (enemy.chargeTimer <= 0) {
+      const dist = Math.hypot(p.x - enemy.x, p.y - enemy.y);
+      if (dist <= enemy.attackRadius + p.radius) {
+        damagePlayer(enemy.slamDamage);
+      }
+      addEffect({
+        type: "burst",
+        x: enemy.x,
+        y: enemy.y,
+        radius: enemy.attackRadius,
+        life: 0.42,
+        maxLife: 0.42,
+        glow: "glowRed",
+        tint: [1, 0.4, 0.22],
+      });
+      addSparks(enemy.x, enemy.y, 12, 220);
+      game.shake = Math.max(game.shake, 8);
+      enemy.orcState = "idle";
+      enemy.chargeCooldownLeft = enemy.chargeCooldown;
+    }
+    return;
+  }
+
+  const dx = p.x - enemy.x;
+  const dy = p.y - enemy.y;
+  const distance = Math.hypot(dx, dy) || 0.0001;
+  if (distance > enemy.attackRange) {
+    enemy.x += (dx / distance) * enemy.speed * dt;
+    enemy.y += (dy / distance) * enemy.speed * dt;
+  }
+
+  if (enemy.chargeCooldownLeft <= 0 && distance <= enemy.attackRange) {
+    enemy.orcState = "charging";
+    enemy.chargeTimer = enemy.chargeDuration;
+    addEffect({
+      type: "telegraph",
+      x: enemy.x,
+      y: enemy.y,
+      radius: enemy.attackRadius,
+      life: enemy.chargeDuration,
+      maxLife: enemy.chargeDuration,
+      tint: [0.86, 0.2, 0.18],
     });
   }
 }

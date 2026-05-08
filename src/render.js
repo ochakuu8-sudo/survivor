@@ -303,14 +303,9 @@ function drawEffects(view, camX, camY, zoom) {
       const screen = worldToScreen(effect.x, effect.y, view, camX, camY, zoom);
       const t = clamp(1 - alpha, 0, 1);
       const size = effect.radius * 2 * zoom;
-      const beat = 1 + Math.sin(game.elapsed * (8 + t * 20)) * 0.05;
-      state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, size * 1.18 * beat, size * 1.18 * beat, {
-        tint: effect.tint || [1, 0.55, 0.18],
-        alpha: 0.18 + t * 0.5,
-      });
-      state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, size * 0.62 * beat, size * 0.62 * beat, {
-        tint: [1, 0.78, 0.36],
-        alpha: 0.12 + t * 0.5,
+      state.renderer.draw(effect.glow || "glowRed", screen.x, screen.y, size, size, {
+        tint: effect.tint || [0.86, 0.2, 0.18],
+        alpha: 0.18 + t * 0.26,
       });
     } else if (effect.type === "telegraphLine") {
       const t = clamp(1 - alpha, 0, 1);
@@ -351,11 +346,12 @@ function drawPlayer(player, view, camX, camY, zoom) {
 
 function drawEnemy(enemy, view, camX, camY, zoom) {
   const screen = worldToScreen(enemy.x, enemy.y, view, camX, camY, zoom);
-  const size = enemy.radius * (enemy.sprite === "zombieBig" ? 3.0 : 2.7) * zoom;
+  const isLarge = enemy.kind === "orc";
+  const size = enemy.radius * (isLarge ? 3.0 : 2.7) * zoom;
   const wobble = Math.sin(game.elapsed * 7 + enemy.wobble) * 0.08;
   const tint = enemy.hit > 0 ? [1, 0.52, 0.52] : [1, 1, 1];
   state.renderer.draw("glowEnemyRed", screen.x, screen.y - enemy.radius * 0.12 * zoom, size * 1.15, size * 1.05, {
-    alpha: enemy.sprite === "zombieBig" ? 0.13 : 0.09,
+    alpha: isLarge ? 0.13 : 0.09,
   });
   state.renderer.draw("shadow", screen.x, screen.y + enemy.radius * 0.8 * zoom, size * 1.02, size * 0.45, { alpha: 0.74 });
   state.renderer.draw(enemy.readableSprite, screen.x, screen.y - enemy.radius * 0.15 * zoom, size, size, {
