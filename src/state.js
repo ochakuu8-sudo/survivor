@@ -33,6 +33,7 @@ export const game = {
   player: null,
   enemies: [],
   bullets: [],
+  enemyProjectiles: [],
   pickups: [],
   particles: [],
   effects: [],

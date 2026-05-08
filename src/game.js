@@ -9,7 +9,7 @@ import { spawnEnemies, updateEnemies } from "./enemies.js";
 import { updateBullets } from "./bullets.js";
 import { updatePickups } from "./pickups.js";
 import { updateParticles } from "./effects.js";
-import { updateEffects } from "./combat.js";
+import { updateEffects, updateEnemyProjectiles } from "./combat.js";
 import { updateMovement } from "./player.js";
 import { generateOffers, prepareStarterPick, renderShop, renderStarterPick, setShopTab } from "./shop.js";
 import { updateHud } from "./hud.js";
@@ -56,6 +56,7 @@ export function resetRun() {
   };
   game.enemies = [];
   game.bullets = [];
+  game.enemyProjectiles = [];
   game.pickups = [];
   game.particles = [];
   game.effects = [];
@@ -81,6 +82,7 @@ export function startNextWave() {
   game.spawnClock = 0;
   game.enemies = [];
   game.bullets = [];
+  game.enemyProjectiles = [];
   game.pickups = [];
   game.particles = [];
   game.effects = [];
@@ -94,6 +96,7 @@ export function enterShop() {
   game.rerolls = 0;
   game.enemies = [];
   game.bullets = [];
+  game.enemyProjectiles = [];
   game.pickups = [];
   game.particles = [];
   game.effects = [];
@@ -146,6 +149,7 @@ function update(dt) {
   spawnEnemies(dt);
   updateEnemies(dt);
   updateBullets(dt);
+  updateEnemyProjectiles(dt);
   updatePickups(dt);
   updateParticles(dt);
   updateEffects(dt);

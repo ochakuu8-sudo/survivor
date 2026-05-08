@@ -197,6 +197,17 @@ function drawWorld(view, camX, camY, zoom) {
       });
     }
   }
+
+  for (const proj of game.enemyProjectiles) {
+    const screen = worldToScreen(proj.x, proj.y, view, camX, camY, zoom);
+    const size = (proj.radius || 8) * zoom;
+    state.renderer.draw("glowAmber", screen.x, screen.y, size * 6, size * 6, { alpha: 0.18 });
+    state.renderer.draw("shadow", screen.x, screen.y + size * 1.6, size * 4, size * 1.4, { alpha: 0.5 });
+    state.renderer.draw("boneReadable", screen.x, screen.y, size * 4.5, size * 2, {
+      rotation: (proj.spinSeed || 0) + game.elapsed * (proj.spinRate || 8),
+      tint: [1, 1, 1],
+    });
+  }
 }
 
 function drawOrbitWeapons(view, camX, camY, zoom) {
@@ -300,6 +311,17 @@ function drawEffects(view, camX, camY, zoom) {
       state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, size * 0.62 * beat, size * 0.62 * beat, {
         tint: [1, 0.78, 0.36],
         alpha: 0.12 + t * 0.5,
+      });
+    } else if (effect.type === "telegraphLine") {
+      const t = clamp(1 - alpha, 0, 1);
+      const beat = 1 + Math.sin(game.elapsed * (8 + t * 20)) * 0.06;
+      drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * 1.2 * beat, view, camX, camY, zoom, {
+        tint: effect.tint || [1, 0.55, 0.18],
+        alpha: 0.16 + t * 0.5,
+      });
+      drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * 0.55 * beat, view, camX, camY, zoom, {
+        tint: [1, 0.78, 0.36],
+        alpha: 0.1 + t * 0.5,
       });
     }
   }

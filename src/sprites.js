@@ -219,6 +219,20 @@ function drawPixelZombie(ctx, w, h, skin, clothes, accent, scale = 1) {
   ctx.restore();
 }
 
+function drawPixelBone(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 12, cy - 4, 24, 8, "#3d3326");
+  px(ctx, cx - 14, cy - 5, 4, 10, "#3d3326");
+  px(ctx, cx + 10, cy - 5, 4, 10, "#3d3326");
+  px(ctx, cx - 11, cy - 3, 22, 6, "#f4ecd8");
+  px(ctx, cx - 13, cy - 4, 4, 8, "#f4ecd8");
+  px(ctx, cx + 9, cy - 4, 4, 8, "#f4ecd8");
+  px(ctx, cx - 9, cy - 3, 18, 1, "#fdf8e4");
+  px(ctx, cx - 12, cy - 4, 2, 2, "#fdf8e4");
+  px(ctx, cx + 10, cy - 4, 2, 2, "#fdf8e4");
+}
+
 function drawPixelSkeleton(ctx, w, h) {
   ctx.save();
   ctx.translate(w / 2, h / 2);
@@ -382,6 +396,11 @@ export function buildAtlas() {
   add("skeletonArcher", 72, 72, (ctx, w, h) => drawPixelSkeleton(ctx, w, h));
   add("skeletonArcherReadable", 72, 72, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelSkeleton, 2, "rgba(255, 168, 64, 0.85)");
+  });
+
+  add("bone", 32, 14, (ctx, w, h) => drawPixelBone(ctx, w, h));
+  add("boneReadable", 32, 14, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelBone, 1, "rgba(15, 11, 38, 0.62)");
   });
 
   add("bullet", 48, 20, (ctx, w, h) => {

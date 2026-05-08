@@ -161,36 +161,35 @@ function updateArcher(enemy, p, dt) {
   if (enemy.archerState === "telegraph") {
     enemy.telegraphTimer -= dt;
     if (enemy.telegraphTimer <= 0) {
-      const tx = enemy.telegraphX;
-      const ty = enemy.telegraphY;
-      const radius = enemy.shotRadius;
-      const playerDist = Math.hypot(p.x - tx, p.y - ty);
-      if (playerDist <= radius + p.radius) {
-        damagePlayer(enemy.shotDamage);
-      }
-      addEffect({
-        type: "line",
-        x1: enemy.x,
-        y1: enemy.y - 4,
-        x2: tx,
-        y2: ty,
-        width: 3,
-        life: 0.18,
-        maxLife: 0.18,
-        glow: "glowAmber",
-        tint: [1, 0.88, 0.5],
+      const aimX = enemy.telegraphX;
+      const aimY = enemy.telegraphY;
+      const lineDx = aimX - enemy.x;
+      const lineDy = aimY - enemy.y;
+      const lineLen = Math.hypot(lineDx, lineDy) || 0.0001;
+      const speed = 360;
+      const life = Math.max(0.6, lineLen / speed + 0.4);
+      game.enemyProjectiles.push({
+        x: enemy.x,
+        y: enemy.y - 6,
+        vx: (lineDx / lineLen) * speed,
+        vy: (lineDy / lineLen) * speed,
+        radius: 8,
+        damage: enemy.shotDamage,
+        life,
+        spinSeed: Math.random() * TAU,
+        spinRate: 7 + Math.random() * 5,
       });
       addEffect({
         type: "burst",
-        x: tx,
-        y: ty,
-        radius,
-        life: 0.32,
-        maxLife: 0.32,
+        x: enemy.x,
+        y: enemy.y - 6,
+        radius: 18,
+        life: 0.14,
+        maxLife: 0.14,
         glow: "glowAmber",
-        tint: [1, 0.6, 0.25],
+        tint: [1, 0.85, 0.5],
       });
-      addSparks(tx, ty, 5, 130);
+      addSparks(enemy.x, enemy.y - 6, 3, 110);
       enemy.archerState = "idle";
       enemy.shotCooldown = enemy.shotInterval;
     }
@@ -213,13 +212,14 @@ function updateArcher(enemy, p, dt) {
     enemy.telegraphX = p.x;
     enemy.telegraphY = p.y;
     addEffect({
-      type: "telegraph",
-      x: enemy.telegraphX,
-      y: enemy.telegraphY,
-      radius: enemy.shotRadius,
+      type: "telegraphLine",
+      x1: enemy.x,
+      y1: enemy.y,
+      x2: enemy.telegraphX,
+      y2: enemy.telegraphY,
+      width: 18,
       life: enemy.telegraphDuration,
       maxLife: enemy.telegraphDuration,
-      glow: "glowAmber",
       tint: [1, 0.55, 0.18],
     });
   }

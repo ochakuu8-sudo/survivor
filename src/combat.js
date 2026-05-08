@@ -2,6 +2,7 @@ import { TAU, COLLISION_CELL_SIZE } from "./constants.js";
 import { game, enemyCollisionGrid } from "./state.js";
 import { angleDelta, clamp, distSq, distanceToSegmentSq, gridKey } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
+import { damagePlayer } from "./player.js";
 
 export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y, sparkCount = 3, sparkSpeed = 90) {
   if (!enemy || enemy.dead) return false;
@@ -174,4 +175,34 @@ export function updateEffects(dt) {
     if (effect.life > 0) kept.push(effect);
   }
   game.effects = kept;
+}
+
+export function updateEnemyProjectiles(dt) {
+  const p = game.player;
+  if (!p) return;
+  const next = [];
+  for (const proj of game.enemyProjectiles) {
+    proj.life -= dt;
+    proj.x += proj.vx * dt;
+    proj.y += proj.vy * dt;
+    if (proj.life <= 0) continue;
+    const reach = (proj.radius || 8) + p.radius;
+    if (distSq(p.x, p.y, proj.x, proj.y) <= reach * reach) {
+      damagePlayer(proj.damage);
+      addEffect({
+        type: "burst",
+        x: proj.x,
+        y: proj.y,
+        radius: 16,
+        life: 0.18,
+        maxLife: 0.18,
+        glow: "glowAmber",
+        tint: [1, 0.7, 0.32],
+      });
+      addSparks(proj.x, proj.y, 4, 130);
+      continue;
+    }
+    next.push(proj);
+  }
+  game.enemyProjectiles = next;
 }
