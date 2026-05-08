@@ -400,6 +400,7 @@ export function detachAttachment(weaponId, attachmentIndex) {
     name: attachment.name,
     stars: attachment.stars,
     category: attachment.category || "stat",
+    level: attachment.level || 1,
   });
   recomputeAllAttachments();
   renderShop();
@@ -414,7 +415,11 @@ export function attachFromInventory(inventoryIndex, weaponId) {
   const definition = findAttachmentDefinition(att.key);
   if (!canAttachToWeapon(definition, weapon)) return;
   game.player.inventory.attachments.splice(inventoryIndex, 1);
-  addAttachmentToWeapon(weapon, { key: att.key, stars: att.stars });
+  addAttachmentToWeapon(weapon, {
+    key: att.key,
+    stars: att.stars,
+    level: att.level || 1,
+  });
   renderShop();
   updateHud();
 }
