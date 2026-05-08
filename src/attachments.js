@@ -49,6 +49,7 @@ const PLAYER_BASE_STAT_KEYS = [
   "armor",
   "regen",
   "weaponPowerBonus",
+  "lifesteal",
 ];
 
 export function snapshotPlayerBaseStats(player) {
@@ -119,9 +120,8 @@ export const ACTIVE_ATTACHMENTS = [
     name: "範囲レンズ",
     stars: 1,
     category: "stat",
-    text: "貫通 +1、爆発半径・線幅・コーン範囲 +8%、命中幅 +1（武器に応じて）。",
+    text: "爆発半径・線幅・コーン範囲 +8%、命中幅 +1（武器に応じて）。",
     attach: (weapon) => {
-      addWeaponPierce(weapon, 1);
       expandWeaponArea(weapon, 1);
     },
   },
@@ -253,6 +253,36 @@ export const ACTIVE_ATTACHMENTS = [
     attach: () => {
       game.player.weaponPowerBonus += 14;
       game.player.armor -= 3;
+    },
+  },
+  {
+    key: "piercer",
+    name: "貫通改造",
+    stars: 2,
+    category: "special",
+    text: "貫通 +1。武器に応じて爆発半径・線幅・コーン範囲・命中幅も追加で広がる。",
+    attach: (weapon) => {
+      addWeaponPierce(weapon, 1);
+    },
+  },
+  {
+    key: "knockbackBooster",
+    name: "衝撃増幅",
+    stars: 2,
+    category: "special",
+    text: "弾の与えるノックバック +8。",
+    attach: (weapon) => {
+      weapon.knockback = (weapon.knockback || 0) + 8;
+    },
+  },
+  {
+    key: "bloodleech",
+    name: "吸血コア",
+    stars: 2,
+    category: "support",
+    text: "敵に与えたダメージの 6% を体力として吸収。",
+    attach: () => {
+      game.player.lifesteal = (game.player.lifesteal || 0) + 0.06;
     },
   },
   {

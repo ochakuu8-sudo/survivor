@@ -41,6 +41,7 @@ export function resetRun() {
     armor: 0,
     regen: 0,
     weaponPowerBonus: 0,
+    lifesteal: 0,
     moveX: 0,
     moveY: 0,
     facingX: 1,
