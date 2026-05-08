@@ -217,10 +217,10 @@ function updateArcher(enemy, p, dt) {
       y1: enemy.y,
       x2: enemy.telegraphX,
       y2: enemy.telegraphY,
-      width: 18,
+      width: 22,
       life: enemy.telegraphDuration,
       maxLife: enemy.telegraphDuration,
-      tint: [1, 0.55, 0.18],
+      tint: [0.82, 0.18, 0.16],
     });
   }
 }

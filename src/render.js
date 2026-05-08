@@ -314,15 +314,45 @@ function drawEffects(view, camX, camY, zoom) {
       });
     } else if (effect.type === "telegraphLine") {
       const t = clamp(1 - alpha, 0, 1);
-      const beat = 1 + Math.sin(game.elapsed * (8 + t * 20)) * 0.06;
-      drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * 1.2 * beat, view, camX, camY, zoom, {
-        tint: effect.tint || [1, 0.55, 0.18],
-        alpha: 0.16 + t * 0.5,
+      const dx = effect.x2 - effect.x1;
+      const dy = effect.y2 - effect.y1;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const half = effect.width * 0.5;
+
+      drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width, view, camX, camY, zoom, {
+        tint: effect.tint || [0.86, 0.2, 0.18],
+        alpha: 0.08 + t * 0.18,
       });
-      drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * 0.55 * beat, view, camX, camY, zoom, {
-        tint: [1, 0.78, 0.36],
-        alpha: 0.1 + t * 0.5,
-      });
+
+      const beat = 1 + Math.sin(game.elapsed * (5 + t * 14)) * 0.08;
+      const edgeAlpha = clamp((0.3 + t * 0.5) * beat, 0, 0.92);
+      const edgeTint = [1, 0.32, 0.24];
+      drawWorldLine(
+        effect.x1 + nx * half,
+        effect.y1 + ny * half,
+        effect.x2 + nx * half,
+        effect.y2 + ny * half,
+        3,
+        view,
+        camX,
+        camY,
+        zoom,
+        { tint: edgeTint, alpha: edgeAlpha },
+      );
+      drawWorldLine(
+        effect.x1 - nx * half,
+        effect.y1 - ny * half,
+        effect.x2 - nx * half,
+        effect.y2 - ny * half,
+        3,
+        view,
+        camX,
+        camY,
+        zoom,
+        { tint: edgeTint, alpha: edgeAlpha },
+      );
     }
   }
 }
