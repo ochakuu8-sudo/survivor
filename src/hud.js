@@ -6,7 +6,6 @@ import { resetVirtualMove } from "./input.js";
 export function updateHud() {
   hud.wave.textContent = String(game.wave);
   hud.time.textContent = formatTime(game.timeLeft);
-  hud.cash.textContent = String(game.money);
   hud.kills.textContent = String(game.waveKills);
   hud.hp.style.width = `${clamp((game.player.hp / game.player.maxHp) * 100, 0, 100)}%`;
   if (hud.hpText) hud.hpText.textContent = `${Math.ceil(game.player.hp)}/${Math.ceil(game.player.maxHp)}`;
