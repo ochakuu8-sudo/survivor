@@ -83,41 +83,6 @@ function drawPixelWalkDust(ctx, w, h) {
   ctx.fillRect(14, 7, 8, 4);
 }
 
-function drawPixelCash(ctx) {
-  ctx.fillStyle = "rgba(35, 25, 76, 0.28)";
-  ctx.beginPath();
-  ctx.ellipse(22, 35, 12, 4, 0, 0, TAU);
-  ctx.fill();
-
-  ctx.fillStyle = "#7d4a18";
-  ctx.beginPath();
-  ctx.arc(22, 21, 15, 0, TAU);
-  ctx.fill();
-
-  ctx.fillStyle = "#ffe46b";
-  ctx.beginPath();
-  ctx.arc(22, 21, 12, 0, TAU);
-  ctx.fill();
-
-  ctx.strokeStyle = "#f4a83f";
-  ctx.lineWidth = 3;
-  ctx.lineJoin = "miter";
-  ctx.beginPath();
-  for (let i = 0; i < 6; i += 1) {
-    const angle = i * (TAU / 6);
-    const hx = 22 + Math.cos(angle) * 8;
-    const hy = 21 + Math.sin(angle) * 8;
-    if (i === 0) ctx.moveTo(hx, hy);
-    else ctx.lineTo(hx, hy);
-  }
-  ctx.closePath();
-  ctx.stroke();
-
-  ctx.fillStyle = "#fff3c4";
-  ctx.fillRect(15, 13, 9, 3);
-  ctx.fillRect(13, 16, 5, 3);
-}
-
 function drawPixelTrash(ctx, w, h) {
   const x = w / 2 - 14;
   const y = h / 2 - 16;
@@ -460,13 +425,6 @@ export function buildAtlas() {
   });
   add("stoneReadable", 32, 22, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelStone, 1, "rgba(17, 12, 43, 0.6)");
-  });
-
-  add("cash", 44, 44, (ctx, w, h) => {
-    drawPixelCash(ctx, w, h);
-  });
-  add("cashReadable", 44, 44, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, drawPixelCash, 1, "rgba(17, 12, 43, 0.5)");
   });
 
   add("walkDust", 34, 22, (ctx, w, h) => {

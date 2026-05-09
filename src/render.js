@@ -127,13 +127,6 @@ function drawProp(name, tx, ty, view, camX, camY, zoom, roll, yRoll) {
 }
 
 function drawWorld(view, camX, camY, zoom) {
-  for (const pickup of game.pickups) {
-    const screen = worldToScreen(pickup.x, pickup.y + Math.sin(pickup.bob) * 4, view, camX, camY, zoom);
-    state.renderer.draw("shadow", screen.x, screen.y + 13 * zoom, 36 * zoom, 14 * zoom, { alpha: 0.55 });
-    state.renderer.draw("glowAmber", screen.x, screen.y, 42 * zoom, 42 * zoom, { alpha: 0.2 });
-    state.renderer.draw("cashReadable", screen.x, screen.y, 25 * zoom, 25 * zoom, { rotation: Math.sin(pickup.bob) * 0.15 });
-  }
-
   for (const particle of game.particles) {
     const alpha = clamp(particle.life / particle.maxLife, 0, 1);
     const screen = worldToScreen(particle.x, particle.y, view, camX, camY, zoom);

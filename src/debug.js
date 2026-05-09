@@ -24,10 +24,6 @@ export function setupDebug() {
   hud.dbgWeaponEquip.addEventListener("click", debugEquipWeapon);
   hud.dbgAttApply.addEventListener("click", debugApplyAttachment);
   hud.dbgEnemySpawn.addEventListener("click", debugSpawnEnemy);
-  hud.dbgMoney.addEventListener("click", () => {
-    game.money += 100;
-    updateHud();
-  });
   hud.dbgHeal.addEventListener("click", () => {
     if (game.player) game.player.hp = game.player.maxHp;
     updateHud();
@@ -104,7 +100,7 @@ function refreshWeaponTargets() {
   weapons.forEach((weapon) => {
     const opt = document.createElement("option");
     opt.value = String(weapon.id);
-    opt.textContent = `${weapon.name} (${weapon.attachments.length}/5)`;
+    opt.textContent = `${weapon.name} (${weapon.attachments.length})`;
     hud.dbgAttWeapon.append(opt);
   });
 }

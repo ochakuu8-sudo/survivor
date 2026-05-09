@@ -6,13 +6,14 @@ import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 
 export function spawnEnemies(dt) {
-  if (game.enemies.length > 75 + game.wave * 9) return;
+  if (game.enemies.length >= 1000) return;
 
-  const interval = Math.max(0.16, 0.7 - game.wave * 0.045);
+  const interval = Math.max(0.012, 0.05 - game.wave * 0.003);
   game.spawnClock -= dt;
   while (game.spawnClock <= 0) {
     spawnEnemy();
-    game.spawnClock += interval * (0.75 + Math.random() * 0.65);
+    game.spawnClock += interval * (0.7 + Math.random() * 0.6);
+    if (game.enemies.length >= 1000) break;
   }
 }
 
@@ -49,20 +50,18 @@ export function spawnEnemy(forceType) {
     else if (wave >= 2 && roll < 0.48) type = "archer";
   }
 
-  const baseHp = 28 + wave * 8;
   const enemy = {
     id: nextEnemyId(),
     kind: "melee",
     x,
     y,
     radius: 18,
-    hp: baseHp,
-    maxHp: baseHp,
+    hp: 1,
+    maxHp: 1,
     speed: 78 + wave * 3,
     attackDamage: Math.round(9 + wave * 0.8),
     attackCooldown: Math.max(0.74, 1.08 - wave * 0.012),
     attackTimer: 0,
-    value: 2 + Math.floor(wave / 2),
     sprite: "zombieA",
     readableSprite: "zombieAReadable",
     hit: 0,
@@ -71,23 +70,17 @@ export function spawnEnemy(forceType) {
 
   if (type === "runner") {
     enemy.radius = 16;
-    enemy.hp = baseHp * 0.72;
-    enemy.maxHp = enemy.hp;
     enemy.speed = 122 + wave * 4;
     enemy.attackDamage = Math.round(7 + wave * 0.65);
     enemy.attackCooldown = Math.max(0.52, 0.76 - wave * 0.008);
-    enemy.value = 2 + Math.floor(wave / 3);
     enemy.sprite = "zombieB";
     enemy.readableSprite = "zombieBReadable";
   } else if (type === "orc") {
     enemy.kind = "orc";
     enemy.radius = 27;
-    enemy.hp = baseHp * 2.85;
-    enemy.maxHp = enemy.hp;
     enemy.speed = 58 + wave * 2.4;
     enemy.attackDamage = 0;
     enemy.attackCooldown = 9999;
-    enemy.value = 6 + wave;
     enemy.sprite = "orc";
     enemy.readableSprite = "orcReadable";
     enemy.orcState = "idle";
@@ -104,12 +97,9 @@ export function spawnEnemy(forceType) {
   } else if (type === "archer") {
     enemy.kind = "archer";
     enemy.radius = 17;
-    enemy.hp = baseHp * 0.85;
-    enemy.maxHp = enemy.hp;
     enemy.speed = 92 + wave * 2.4;
     enemy.attackDamage = 0;
     enemy.attackCooldown = 9999;
-    enemy.value = 3 + Math.floor(wave / 2);
     enemy.sprite = "skeletonArcher";
     enemy.readableSprite = "skeletonArcherReadable";
     enemy.shotCooldown = 0.6 + Math.random() * 0.6;

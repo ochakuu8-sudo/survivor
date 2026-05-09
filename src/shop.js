@@ -286,7 +286,6 @@ function buildOfferCard(offer, index) {
 }
 
 export function renderShop() {
-  hud.shopCash.textContent = String(game.money);
   hud.offers.replaceChildren();
 
   game.offers.forEach((offer, index) => {

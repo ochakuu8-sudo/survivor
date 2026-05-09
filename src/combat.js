@@ -1,4 +1,4 @@
-import { TAU, COLLISION_CELL_SIZE } from "./constants.js";
+import { COLLISION_CELL_SIZE } from "./constants.js";
 import { game, enemyCollisionGrid } from "./state.js";
 import { angleDelta, clamp, distSq, distanceToSegmentSq, gridKey } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -111,16 +111,10 @@ export function killEnemy(enemy) {
   enemy.dead = true;
   game.totalKills += 1;
   game.waveKills += 1;
-  game.pickups.push({
-    x: enemy.x,
-    y: enemy.y,
-    vx: (Math.random() - 0.5) * 60,
-    vy: (Math.random() - 0.5) * 60,
-    value: enemy.value,
-    bob: Math.random() * TAU,
-  });
-  addSparks(enemy.x, enemy.y, enemy.radius > 22 ? 8 : 5, 110);
-  game.shake = Math.max(game.shake, enemy.radius > 22 ? 5 : 2.4);
+  if (enemy.radius > 22) {
+    addSparks(enemy.x, enemy.y, 6, 110);
+    game.shake = Math.max(game.shake, 4);
+  }
 }
 
 export function removeDeadEnemies() {

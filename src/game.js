@@ -7,7 +7,6 @@ import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js"
 import { snapshotPlayerBaseStats } from "./attachments.js";
 import { spawnEnemies, updateEnemies } from "./enemies.js";
 import { updateBullets } from "./bullets.js";
-import { updatePickups } from "./pickups.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
 import { updateMovement } from "./player.js";
@@ -20,10 +19,8 @@ export function resetRun() {
   game.wave = 1;
   game.timeLeft = WAVE_SECONDS;
   game.elapsed = 0;
-  game.money = 0;
   game.totalKills = 0;
   game.waveKills = 0;
-  game.rerolls = 0;
   game.spawnClock = 0;
   game.shake = 0;
   game.damageFlash = 0;
@@ -56,7 +53,6 @@ export function resetRun() {
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
-  game.pickups = [];
   game.particles = [];
   game.effects = [];
   game.offers = [];
@@ -76,12 +72,10 @@ export function startNextWave() {
   game.wave += 1;
   game.timeLeft = WAVE_SECONDS;
   game.waveKills = 0;
-  game.rerolls = 0;
   game.spawnClock = 0;
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
-  game.pickups = [];
   game.particles = [];
   game.effects = [];
   game.player.hp = clamp(game.player.hp + game.player.maxHp * 0.28, 1, game.player.maxHp);
@@ -94,7 +88,6 @@ export function enterShop() {
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
-  game.pickups = [];
   game.particles = [];
   game.effects = [];
   game.player.hp = clamp(game.player.hp + game.player.maxHp * 0.2, 1, game.player.maxHp);
@@ -105,7 +98,7 @@ export function enterShop() {
 
 export function endRun() {
   game.mode = "over";
-  hud.result.textContent = `第${game.wave}夜、撃破数 ${game.totalKills}、残りコイン ${game.money}枚。`;
+  hud.result.textContent = `第${game.wave}夜、撃破数 ${game.totalKills}。`;
   hud.gameOver.classList.remove("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel.classList.add("hidden");
@@ -146,7 +139,6 @@ function update(dt) {
   updateEnemies(dt);
   updateBullets(dt);
   updateEnemyProjectiles(dt);
-  updatePickups(dt);
   updateParticles(dt);
   updateEffects(dt);
   autoShoot();
