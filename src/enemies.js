@@ -6,14 +6,14 @@ import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 
 export function spawnEnemies(dt) {
-  if (game.enemies.length >= 1000) return;
+  if (game.enemies.length >= 5000) return;
 
   const interval = Math.max(0.012, 0.05 - game.wave * 0.003);
   game.spawnClock -= dt;
   while (game.spawnClock <= 0) {
     spawnEnemy();
     game.spawnClock += interval * (0.7 + Math.random() * 0.6);
-    if (game.enemies.length >= 1000) break;
+    if (game.enemies.length >= 5000) break;
   }
 }
 
