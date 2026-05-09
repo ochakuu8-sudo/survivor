@@ -24,7 +24,6 @@ export const game = {
   elapsed: 0,
   totalKills: 0,
   waveKills: 0,
-  spawnClock: 0,
   shake: 0,
   damageFlash: 0,
   camera: { x: 0, y: 0 },
