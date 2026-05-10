@@ -43,6 +43,7 @@ export function resetRun() {
     armor: 0,
     barrier: 0,
     barrierMax: 0,
+    invulnerableTimer: 0,
     weaponPowerBonus: 0,
     moveX: 0,
     moveY: 0,
@@ -61,6 +62,7 @@ export function resetRun() {
   game.dungeon = generateDungeon(game.wave);
   game.player.x = game.dungeon.start.x;
   game.player.y = game.dungeon.start.y;
+  game.player.invulnerableTimer = 0;
   game.camera.x = game.player.x;
   game.camera.y = game.player.y;
   game.enemies = [];
@@ -169,6 +171,7 @@ function update(dt) {
 
   game.floorElapsed += dt;
   const p = game.player;
+  p.invulnerableTimer = Math.max(0, (p.invulnerableTimer || 0) - dt);
 
   updateMovement(dt);
   updateTreasureChests(dt);

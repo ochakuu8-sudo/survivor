@@ -1,4 +1,5 @@
 import { game, keys, pointer } from "./state.js";
+import { PLAYER_INVULNERABLE_SECONDS } from "./constants.js";
 import { clamp, normalize } from "./utils/math.js";
 import { addEffect, addSparks, addWalkDust } from "./effects.js";
 import { moveActorWithDungeonCollision } from "./dungeon.js";
@@ -39,27 +40,31 @@ export function updateMovement(dt) {
 }
 
 export function damagePlayer(amount) {
-  if (game.debugInvincible) return 0;
-  if ((game.player.barrier || 0) > 0) {
-    game.player.barrier = Math.max(0, game.player.barrier - 1);
+  const p = game.player;
+  if (game.debugInvincible || (p.invulnerableTimer || 0) > 0) return 0;
+  if ((p.barrier || 0) > 0) {
+    p.barrier = Math.max(0, p.barrier - 1);
+    p.invulnerableTimer = PLAYER_INVULNERABLE_SECONDS;
     addEffect({
       type: "burst",
-      x: game.player.x,
-      y: game.player.y,
+      x: p.x,
+      y: p.y,
       radius: 48,
       life: 0.28,
       maxLife: 0.28,
       glow: "glowCyan",
       tint: [0.46, 1, 0.95],
     });
-    addSparks(game.player.x, game.player.y, 8, 160, "spark");
+    addSparks(p.x, p.y, 8, 160, "spark");
+    game.damageFlash = Math.max(game.damageFlash, 0.16);
     game.shake = Math.max(game.shake, 3.5);
     return 0;
   }
-  const reduction = 100 / (100 + Math.max(-20, game.player.armor) * 8);
+  const reduction = 100 / (100 + Math.max(-20, p.armor) * 8);
   const damage = Math.max(1, Math.round((amount * reduction) / 18));
-  game.player.hp = clamp(game.player.hp - damage, 0, game.player.maxHp);
-  game.damageFlash = Math.max(game.damageFlash, clamp(damage / game.player.maxHp * 1.4, 0.24, 0.46));
+  p.hp = clamp(p.hp - damage, 0, p.maxHp);
+  p.invulnerableTimer = PLAYER_INVULNERABLE_SECONDS;
+  game.damageFlash = Math.max(game.damageFlash, clamp(damage / p.maxHp * 1.4, 0.24, 0.46));
   game.shake = Math.max(game.shake, 4 + damage * 0.6);
   return damage;
 }

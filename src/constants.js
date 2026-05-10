@@ -15,6 +15,7 @@ export const OFFER_TYPE_LABELS = {
 export const MAX_WEAPONS = 2;
 export const MAX_ATTACHMENTS = 5;
 export const FIXED_RELOAD_SECONDS = 2.5;
+export const PLAYER_INVULNERABLE_SECONDS = 2.5;
 export const WEAPON_STAT_KEYS = [
   "damage",
   "fireRate",

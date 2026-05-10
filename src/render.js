@@ -452,9 +452,17 @@ function drawPlayer(player, view, camX, camY, zoom) {
     ? (Math.floor(player.walkTime * 2) % 2 === 0 ? "playerWalkAReadable" : "playerWalkBReadable")
     : "playerReadable";
   const lean = clamp(player.moveX, -1, 1) * 0.08;
-  state.renderer.draw("glowCyan", screen.x, screen.y + 4 * zoom, 94 * zoom, 82 * zoom, { alpha: 0.2 });
+  const invulnerable = (player.invulnerableTimer || 0) > 0;
+  const blink = invulnerable && Math.sin(game.elapsed * 34) > 0;
+  state.renderer.draw("glowCyan", screen.x, screen.y + 4 * zoom, 94 * zoom, 82 * zoom, {
+    alpha: invulnerable ? 0.34 : 0.2,
+  });
   state.renderer.draw("shadow", screen.x, screen.y + 25 * zoom, 72 * (1 + Math.abs(walkPulse) * 0.08) * zoom, 32 * zoom, { alpha: 0.82 });
-  state.renderer.draw(sprite, screen.x, screen.y + (-3 + (moving ? walkPulse * 1.2 : 0)) * zoom, 62 * zoom, 62 * zoom, { rotation: lean });
+  state.renderer.draw(sprite, screen.x, screen.y + (-3 + (moving ? walkPulse * 1.2 : 0)) * zoom, 62 * zoom, 62 * zoom, {
+    alpha: blink ? 0.5 : 1,
+    rotation: lean,
+    tint: invulnerable ? [0.72, 1, 1] : [1, 1, 1],
+  });
 }
 
 function drawEnemy(enemy, view, camX, camY, zoom) {
