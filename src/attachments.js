@@ -8,7 +8,7 @@ import {
   restoreWeaponBaseStats,
 } from "./weapons.js";
 
-const STAR_LABELS = { 1: "★", 2: "★★", 3: "★★★" };
+const STAR_LABELS = { 1: "★", 2: "★★", 3: "★★★", 4: "★★★★", 5: "★★★★★" };
 
 export function starsLabel(stars) {
   return STAR_LABELS[stars] || STAR_LABELS[1];
@@ -184,9 +184,361 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
+    key: "powerCore2",
+    name: "ダメージ+12",
+    stars: 2,
+    category: "stat",
+    text: "ダメージ +12。爆発武器は爆風ダメージも +16。",
+    attach: (weapon) => {
+      boostWeaponImpact(weapon, 12);
+    },
+  },
+  {
+    key: "powerCore3",
+    name: "ダメージ+22",
+    stars: 3,
+    category: "stat",
+    text: "ダメージ +22。爆発武器は爆風ダメージも +30。",
+    attach: (weapon) => {
+      boostWeaponImpact(weapon, 22);
+    },
+  },
+  {
+    key: "powerCore4",
+    name: "ダメージ+36",
+    stars: 4,
+    category: "stat",
+    text: "ダメージ +36。爆発武器は爆風ダメージも +49。",
+    attach: (weapon) => {
+      boostWeaponImpact(weapon, 36);
+    },
+  },
+  {
+    key: "powerCore5",
+    name: "ダメージ+55",
+    stars: 5,
+    category: "stat",
+    text: "ダメージ +55。爆発武器は爆風ダメージも +74。",
+    attach: (weapon) => {
+      boostWeaponImpact(weapon, 55);
+    },
+  },
+  {
+    key: "rapidMechanism2",
+    name: "攻撃頻度+22%",
+    stars: 2,
+    category: "stat",
+    text: "攻撃頻度 +22%。",
+    attach: (weapon) => {
+      weapon.fireRate *= 1.22;
+    },
+  },
+  {
+    key: "rapidMechanism3",
+    name: "攻撃頻度+34%",
+    stars: 3,
+    category: "stat",
+    text: "攻撃頻度 +34%。",
+    attach: (weapon) => {
+      weapon.fireRate *= 1.34;
+    },
+  },
+  {
+    key: "rapidMechanism4",
+    name: "攻撃頻度+48%",
+    stars: 4,
+    category: "stat",
+    text: "攻撃頻度 +48%。",
+    attach: (weapon) => {
+      weapon.fireRate *= 1.48;
+    },
+  },
+  {
+    key: "rapidMechanism5",
+    name: "攻撃頻度+65%",
+    stars: 5,
+    category: "stat",
+    text: "攻撃頻度 +65%。",
+    attach: (weapon) => {
+      weapon.fireRate *= 1.65;
+    },
+  },
+  {
+    key: "rangeTube2",
+    name: "射程+22%",
+    stars: 2,
+    category: "stat",
+    text: "射程 +22%、弾速 +22%、滞空 +10%、軌道半径 +14%（武器に応じて）。",
+    attach: (weapon) => {
+      extendWeaponReach(weapon, 1.22);
+    },
+  },
+  {
+    key: "rangeTube3",
+    name: "射程+36%",
+    stars: 3,
+    category: "stat",
+    text: "射程 +36%、弾速 +36%、滞空 +16%、軌道半径 +23%（武器に応じて）。",
+    attach: (weapon) => {
+      extendWeaponReach(weapon, 1.36);
+    },
+  },
+  {
+    key: "rangeTube4",
+    name: "射程+52%",
+    stars: 4,
+    category: "stat",
+    text: "射程 +52%、弾速 +52%、滞空 +23%、軌道半径 +34%（武器に応じて）。",
+    attach: (weapon) => {
+      extendWeaponReach(weapon, 1.52);
+    },
+  },
+  {
+    key: "rangeTube5",
+    name: "射程+72%",
+    stars: 5,
+    category: "stat",
+    text: "射程 +72%、弾速 +72%、滞空 +32%、軌道半径 +47%（武器に応じて）。",
+    attach: (weapon) => {
+      extendWeaponReach(weapon, 1.72);
+    },
+  },
+  {
+    key: "areaLens2",
+    name: "範囲+16%",
+    stars: 2,
+    category: "stat",
+    text: "爆発半径・線幅・コーン範囲 +16%、命中幅 +2（武器に応じて）。",
+    attach: (weapon) => {
+      expandWeaponArea(weapon, 2);
+    },
+  },
+  {
+    key: "areaLens3",
+    name: "範囲+24%",
+    stars: 3,
+    category: "stat",
+    text: "爆発半径・線幅・コーン範囲 +24%、命中幅 +3（武器に応じて）。",
+    attach: (weapon) => {
+      expandWeaponArea(weapon, 3);
+    },
+  },
+  {
+    key: "areaLens4",
+    name: "範囲+36%",
+    stars: 4,
+    category: "stat",
+    text: "爆発半径・線幅・コーン範囲 +36%、命中幅 +4.5（武器に応じて）。",
+    attach: (weapon) => {
+      expandWeaponArea(weapon, 4.5);
+    },
+  },
+  {
+    key: "areaLens5",
+    name: "範囲+52%",
+    stars: 5,
+    category: "stat",
+    text: "爆発半径・線幅・コーン範囲 +52%、命中幅 +6.5（武器に応じて）。",
+    attach: (weapon) => {
+      expandWeaponArea(weapon, 6.5);
+    },
+  },
+  {
+    key: "stableGrip2",
+    name: "ばらつき-35%",
+    stars: 2,
+    category: "stat",
+    text: "ばらつき −35%、ぶれ −45%、弾速 +12%、ダメージ +4。",
+    attach: (weapon) => {
+      weapon.spread *= 0.65;
+      weapon.jitter *= 0.55;
+      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.12;
+      boostWeaponImpact(weapon, 4);
+    },
+  },
+  {
+    key: "stableGrip3",
+    name: "ばらつき-50%",
+    stars: 3,
+    category: "stat",
+    text: "ばらつき −50%、ぶれ −60%、弾速 +16%、ダメージ +7。",
+    attach: (weapon) => {
+      weapon.spread *= 0.5;
+      weapon.jitter *= 0.4;
+      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.16;
+      boostWeaponImpact(weapon, 7);
+    },
+  },
+  {
+    key: "stableGrip4",
+    name: "ばらつき-65%",
+    stars: 4,
+    category: "stat",
+    text: "ばらつき −65%、ぶれ −72%、弾速 +22%、ダメージ +10。",
+    attach: (weapon) => {
+      weapon.spread *= 0.35;
+      weapon.jitter *= 0.28;
+      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.22;
+      boostWeaponImpact(weapon, 10);
+    },
+  },
+  {
+    key: "stableGrip5",
+    name: "ばらつき-75%",
+    stars: 5,
+    category: "stat",
+    text: "ばらつき −75%、ぶれ −82%、弾速 +32%、ダメージ +16。",
+    attach: (weapon) => {
+      weapon.spread *= 0.25;
+      weapon.jitter *= 0.18;
+      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.32;
+      boostWeaponImpact(weapon, 16);
+    },
+  },
+  {
+    key: "vitalityCharm3",
+    name: "最大ハート+2",
+    stars: 3,
+    category: "support",
+    text: "最大ハート +2。",
+    attach: () => {
+      game.player.maxHp += 2;
+    },
+  },
+  {
+    key: "vitalityCharm5",
+    name: "最大ハート+3",
+    stars: 5,
+    category: "support",
+    text: "最大ハート +3。",
+    attach: () => {
+      game.player.maxHp += 3;
+    },
+  },
+  {
+    key: "guardBadge2",
+    name: "被ダメ軽減+7",
+    stars: 2,
+    category: "support",
+    text: "被ダメージ軽減 +7。",
+    attach: () => {
+      game.player.armor += 7;
+    },
+  },
+  {
+    key: "guardBadge3",
+    name: "被ダメ軽減+11",
+    stars: 3,
+    category: "support",
+    text: "被ダメージ軽減 +11。",
+    attach: () => {
+      game.player.armor += 11;
+    },
+  },
+  {
+    key: "guardBadge4",
+    name: "被ダメ軽減+16",
+    stars: 4,
+    category: "support",
+    text: "被ダメージ軽減 +16。",
+    attach: () => {
+      game.player.armor += 16;
+    },
+  },
+  {
+    key: "guardBadge5",
+    name: "被ダメ軽減+24",
+    stars: 5,
+    category: "support",
+    text: "被ダメージ軽減 +24。",
+    attach: () => {
+      game.player.armor += 24;
+    },
+  },
+  {
+    key: "scrapMagnet2",
+    name: "吸引範囲+64",
+    stars: 2,
+    category: "support",
+    text: "ゴールド吸引範囲 +64。",
+    attach: () => {
+      game.player.pickup += 64;
+    },
+  },
+  {
+    key: "scrapMagnet3",
+    name: "吸引範囲+96",
+    stars: 3,
+    category: "support",
+    text: "ゴールド吸引範囲 +96。",
+    attach: () => {
+      game.player.pickup += 96;
+    },
+  },
+  {
+    key: "scrapMagnet4",
+    name: "吸引範囲+140",
+    stars: 4,
+    category: "support",
+    text: "ゴールド吸引範囲 +140。",
+    attach: () => {
+      game.player.pickup += 140;
+    },
+  },
+  {
+    key: "scrapMagnet5",
+    name: "吸引範囲+200",
+    stars: 5,
+    category: "support",
+    text: "ゴールド吸引範囲 +200。",
+    attach: () => {
+      game.player.pickup += 200;
+    },
+  },
+  {
+    key: "lightSneaker2",
+    name: "移動速度+45",
+    stars: 2,
+    category: "support",
+    text: "移動速度 +45。",
+    attach: () => {
+      game.player.speed += 45;
+    },
+  },
+  {
+    key: "lightSneaker3",
+    name: "移動速度+70",
+    stars: 3,
+    category: "support",
+    text: "移動速度 +70。",
+    attach: () => {
+      game.player.speed += 70;
+    },
+  },
+  {
+    key: "lightSneaker4",
+    name: "移動速度+105",
+    stars: 4,
+    category: "support",
+    text: "移動速度 +105。",
+    attach: () => {
+      game.player.speed += 105;
+    },
+  },
+  {
+    key: "lightSneaker5",
+    name: "移動速度+150",
+    stars: 5,
+    category: "support",
+    text: "移動速度 +150。",
+    attach: () => {
+      game.player.speed += 150;
+    },
+  },
+  {
     key: "splitChamber",
     name: "弾数+1",
-    stars: 2,
+    stars: 3,
     category: "special",
     text: "通常射撃: 弾数 +1・spread +0.05 / 炎・剣: コーン +0.12 rad / 回転: 範囲 +14・速度 +10%。",
     attach: (weapon) => {
@@ -205,7 +557,7 @@ export const ACTIVE_ATTACHMENTS = [
     key: "sustainEmitter",
     name: "持続時間+25%",
     stars: 2,
-    category: "special",
+    category: "stat",
     text: "持続時間 +25%、ティック頻度 +20%、炎・設置レーザーの発射 +8%、回転半径 +10%。",
     attach: (weapon) => {
       weapon.duration *= 1.25;
@@ -228,7 +580,7 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "ricochetCore",
     name: "跳弾+1",
-    stars: 2,
+    stars: 3,
     category: "special",
     compatibleWeapons: ["石", "豆鉄砲"],
     text: "通常弾が命中後、近くの別の敵へ1回跳ねる。",
@@ -240,7 +592,7 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "criticalLens",
     name: "クリティカル+12%",
-    stars: 2,
+    stars: 3,
     category: "special",
     text: "命中時に12%でクリティカル。クリティカルダメージは1.8倍。",
     attach: (weapon) => {
@@ -251,7 +603,7 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "frostPowder",
     name: "氷結+22%",
-    stars: 2,
+    stars: 3,
     category: "special",
     text: "命中時に22%で敵の移動速度を1.6秒間38%低下させる。",
     attach: (weapon) => {
@@ -263,8 +615,9 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "barrierEmitter",
     name: "バリア+1",
-    stars: 2,
+    stars: 3,
     category: "support",
+    barrierGain: 1,
     text: "バリア +1。バリアは被ダメージを1回だけ無効化する。",
     attach: () => {
       game.player.barrierMax += 1;
@@ -273,7 +626,7 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "piercer",
     name: "貫通+1",
-    stars: 2,
+    stars: 3,
     category: "special",
     text: "貫通 +1。武器に応じて爆発半径・線幅・コーン範囲・命中幅も追加で広がる。",
     attach: (weapon) => {
@@ -283,7 +636,7 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "knockbackBooster",
     name: "ノックバック+8",
-    stars: 2,
+    stars: 3,
     category: "special",
     text: "弾の与えるノックバック +8。",
     attach: (weapon) => {
@@ -304,7 +657,7 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "multiForge",
     name: "弾数+2/個数+1",
-    stars: 3,
+    stars: 4,
     category: "special",
     text: "通常弾は弾数 +2。炎は角度 +0.18。回転武器は個数 +1、範囲 +8。",
     attach: (weapon) => {
@@ -322,7 +675,7 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "deepPiercer",
     name: "貫通+2",
-    stars: 3,
+    stars: 4,
     category: "special",
     text: "貫通 +2。武器に応じて爆発・線幅・コーン・命中幅も大きく広がる。",
     attach: (weapon) => {
@@ -332,7 +685,7 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "cryoEngine",
     name: "氷結+35%",
-    stars: 3,
+    stars: 4,
     category: "special",
     text: "命中時に35%で敵の移動速度を2.2秒間45%低下させる。",
     attach: (weapon) => {
@@ -344,21 +697,152 @@ export const ACTIVE_ATTACHMENTS = [
   {
     key: "safetyField",
     name: "バリア+2/吸引+24",
-    stars: 3,
+    stars: 4,
     category: "support",
+    barrierGain: 2,
     text: "バリア +2。ゴールド吸引範囲 +24。",
     attach: () => {
       game.player.barrierMax += 2;
       game.player.pickup += 24;
     },
   },
+  {
+    key: "ricochetCore2",
+    name: "跳弾+2",
+    stars: 4,
+    category: "special",
+    compatibleWeapons: ["石", "豆鉄砲"],
+    text: "通常弾が命中後、近くの敵へ2回跳ねる。跳弾距離も少し伸びる。",
+    attach: (weapon) => {
+      weapon.ricochetCount = (weapon.ricochetCount || 0) + 2;
+      weapon.ricochetRange = Math.max(weapon.ricochetRange || 0, 260);
+    },
+  },
+  {
+    key: "ricochetCore3",
+    name: "跳弾+3/分裂+1",
+    stars: 5,
+    category: "special",
+    compatibleWeapons: ["石", "豆鉄砲"],
+    text: "通常弾が命中後、近くの敵へ3回跳ねる。跳弾時に2方向へ分裂する。",
+    attach: (weapon) => {
+      weapon.ricochetCount = (weapon.ricochetCount || 0) + 3;
+      weapon.ricochetRange = Math.max(weapon.ricochetRange || 0, 300);
+      weapon.ricochetSplitCount = Math.max(weapon.ricochetSplitCount || 1, 2);
+    },
+  },
+  {
+    key: "criticalLens2",
+    name: "クリティカル+25%",
+    stars: 4,
+    category: "special",
+    text: "命中時に25%でクリティカル。クリティカルダメージは2倍。",
+    attach: (weapon) => {
+      weapon.critChance = (weapon.critChance || 0) + 0.25;
+      weapon.critMultiplier = Math.max(weapon.critMultiplier || 1.75, 2);
+    },
+  },
+  {
+    key: "criticalLens3",
+    name: "クリティカル+40%",
+    stars: 5,
+    category: "special",
+    text: "命中時に40%でクリティカル。クリティカルダメージは2.25倍。",
+    attach: (weapon) => {
+      weapon.critChance = (weapon.critChance || 0) + 0.4;
+      weapon.critMultiplier = Math.max(weapon.critMultiplier || 1.75, 2.25);
+    },
+  },
+  {
+    key: "frostPowder3",
+    name: "氷結+50%",
+    stars: 5,
+    category: "special",
+    text: "命中時に50%で敵の移動速度を2.8秒間55%低下させる。",
+    attach: (weapon) => {
+      weapon.freezeChance = (weapon.freezeChance || 0) + 0.5;
+      weapon.freezeSlow = Math.min(weapon.freezeSlow || 1, 0.45);
+      weapon.freezeDuration = Math.max(weapon.freezeDuration || 0, 2.8);
+    },
+  },
+  {
+    key: "barrierEmitter3",
+    name: "バリア+3",
+    stars: 5,
+    category: "support",
+    barrierGain: 3,
+    text: "バリア +3。バリアは被ダメージを1回だけ無効化する。",
+    attach: () => {
+      game.player.barrierMax += 3;
+    },
+  },
+  {
+    key: "piercer3",
+    name: "貫通+3",
+    stars: 5,
+    category: "special",
+    text: "貫通 +3。武器に応じて爆発・線幅・コーン・命中幅も大きく広がる。",
+    attach: (weapon) => {
+      addWeaponPierce(weapon, 3);
+    },
+  },
+  {
+    key: "knockbackBooster2",
+    name: "ノックバック+14",
+    stars: 4,
+    category: "special",
+    text: "弾の与えるノックバック +14。",
+    attach: (weapon) => {
+      weapon.knockback = (weapon.knockback || 0) + 14;
+    },
+  },
+  {
+    key: "knockbackBooster3",
+    name: "ノックバック+22",
+    stars: 5,
+    category: "special",
+    text: "弾の与えるノックバック +22。",
+    attach: (weapon) => {
+      weapon.knockback = (weapon.knockback || 0) + 22;
+    },
+  },
+  {
+    key: "multiForge3",
+    name: "弾数+3/個数+2",
+    stars: 5,
+    category: "special",
+    text: "通常弾は弾数 +3。炎は角度 +0.26。回転武器は個数 +2、範囲 +12。",
+    attach: (weapon) => {
+      if (weapon.kind === "flame" || weapon.kind === "sword") {
+        weapon.cone = Math.min(1.28, weapon.cone + 0.26);
+      } else if (weapon.kind === "orbit") {
+        weapon.orbitCount = (weapon.orbitCount || 1) + 2;
+        weapon.areaRadius += 12;
+      } else {
+        weapon.projectiles += 3;
+        weapon.spread += 0.12;
+      }
+    },
+  },
+  {
+    key: "safetyField3",
+    name: "バリア+3/吸引+80",
+    stars: 5,
+    category: "support",
+    barrierGain: 3,
+    text: "バリア +3。ゴールド吸引範囲 +80。",
+    attach: () => {
+      game.player.barrierMax += 3;
+      game.player.pickup += 80;
+    },
+  },
 ];
 
 const LEVEL_ATTACHMENT_RARITY_WEIGHTS = {
-  2: [[1, 80], [2, 20], [3, 0]],
-  3: [[1, 60], [2, 35], [3, 5]],
-  4: [[1, 40], [2, 45], [3, 15]],
-  5: [[1, 25], [2, 45], [3, 30]],
+  2: [[1, 75], [2, 25], [3, 0], [4, 0], [5, 0]],
+  3: [[1, 50], [2, 35], [3, 15], [4, 0], [5, 0]],
+  4: [[1, 30], [2, 35], [3, 25], [4, 10], [5, 0]],
+  5: [[1, 15], [2, 25], [3, 35], [4, 20], [5, 5]],
 };
 
 export function pickShopAttachment(wave) {
@@ -410,28 +894,26 @@ function pickStarsForWeaponLevel(level) {
 
 function pickStarsForWave(wave) {
   const w = Math.max(1, wave);
-  let s1 = 80;
-  let s2 = 20;
-  let s3 = 0;
+  let weights = [[1, 80], [2, 20], [3, 0], [4, 0], [5, 0]];
   if (w >= 3) {
-    s1 = 60;
-    s2 = 32;
-    s3 = 8;
+    weights = [[1, 58], [2, 32], [3, 10], [4, 0], [5, 0]];
   }
   if (w >= 5) {
-    s1 = 45;
-    s2 = 38;
-    s3 = 17;
+    weights = [[1, 42], [2, 34], [3, 20], [4, 4], [5, 0]];
   }
   if (w >= 7) {
-    s1 = 32;
-    s2 = 42;
-    s3 = 26;
+    weights = [[1, 28], [2, 34], [3, 26], [4, 10], [5, 2]];
+  }
+  if (w >= 10) {
+    weights = [[1, 18], [2, 28], [3, 32], [4, 17], [5, 5]];
   }
   const r = Math.random() * 100;
-  if (r < s1) return 1;
-  if (r < s1 + s2) return 2;
-  return 3;
+  let cursor = 0;
+  for (const [stars, weight] of weights) {
+    cursor += weight;
+    if (r < cursor) return stars;
+  }
+  return 1;
 }
 
 function pickAttachmentByStars(stars) {
@@ -493,8 +975,8 @@ export function addAttachmentToWeapon(weapon, attachment) {
     category: definition.category || "stat",
   });
   recomputeAllAttachments();
-  if (definition.key === "barrierEmitter" || definition.key === "safetyField") {
-    const barrierGain = definition.key === "safetyField" ? 2 : 1;
+  if (definition.barrierGain > 0) {
+    const barrierGain = definition.barrierGain;
     game.player.barrier = Math.min(game.player.barrierMax || 0, (game.player.barrier || 0) + barrierGain);
   }
   return true;

@@ -1200,6 +1200,26 @@ h1 {
   background: #ffe46b;
 }
 
+.attach-stars-4 {
+  border-color: rgba(255, 122, 168, 0.82);
+  background: rgba(255, 88, 146, 0.25);
+}
+
+.attach-stars-4 .attach-stars-label {
+  color: #fff9f2;
+  background: #ef4f96;
+}
+
+.attach-stars-5 {
+  border-color: rgba(255, 249, 180, 0.95);
+  background: linear-gradient(135deg, rgba(255, 228, 107, 0.32), rgba(92, 236, 255, 0.2));
+}
+
+.attach-stars-5 .attach-stars-label {
+  color: #1d1b31;
+  background: #fff3a6;
+}
+
 .attach-chip-empty {
   color: rgba(255, 249, 242, 0.62);
   border-color: rgba(255, 255, 255, 0.14);
@@ -2034,6 +2054,16 @@ h1 {
   #shop .attachment-pip.attach-stars-3 {
     border-color: rgba(255, 228, 107, 0.9);
     background: rgba(255, 228, 107, 0.82);
+  }
+
+  #shop .attachment-pip.attach-stars-4 {
+    border-color: rgba(255, 122, 168, 0.94);
+    background: rgba(255, 88, 146, 0.78);
+  }
+
+  #shop .attachment-pip.attach-stars-5 {
+    border-color: rgba(255, 249, 180, 0.98);
+    background: linear-gradient(135deg, #fff3a6, #5cecff);
   }
 }
 
