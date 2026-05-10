@@ -17,8 +17,6 @@ const FLOOR_SPEED_MAX = 1.85;
 const FLOOR_SPAWN_BASE_PRESSURE = 0.45;
 const FLOOR_SPAWN_STEP_SECONDS = 12;
 const FLOOR_SPAWN_STEP_GAIN = 0.2;
-const FLOOR_HEALTH_STEP_SECONDS = 60;
-const FLOOR_HEALTH_STEP_GAIN = 0.5;
 
 export function enemyFloorSpeedMultiplier(elapsed = game.floorElapsed || 0) {
   return Math.min(FLOOR_SPEED_MAX, FLOOR_SPEED_START * enemyFloorStepMultiplier(elapsed, FLOOR_SPEED_STEP_SECONDS, FLOOR_SPEED_STEP_GAIN));
@@ -26,10 +24,6 @@ export function enemyFloorSpeedMultiplier(elapsed = game.floorElapsed || 0) {
 
 export function enemyFloorSpawnPressure(elapsed = game.floorElapsed || 0) {
   return FLOOR_SPAWN_BASE_PRESSURE * enemyFloorStepMultiplier(elapsed, FLOOR_SPAWN_STEP_SECONDS, FLOOR_SPAWN_STEP_GAIN);
-}
-
-export function enemyFloorHealthMultiplier(elapsed = game.floorElapsed || 0) {
-  return 1 + floorStep(elapsed, FLOOR_HEALTH_STEP_SECONDS) * FLOOR_HEALTH_STEP_GAIN;
 }
 
 function floorStep(elapsed, seconds) {
@@ -184,7 +178,7 @@ export function spawnEnemy(forceType) {
     enemy.preferredDistance = 220;
   }
 
-  applyEnemyHealthMultiplier(enemy, enemyFloorHealthMultiplier());
+  enemy.baseMaxHp = enemy.maxHp;
   enemy.baseSpeed = enemy.speed;
   enemy.speed = enemy.baseSpeed * enemyFloorSpeedMultiplier();
   game.enemies.push(enemy);
@@ -193,7 +187,6 @@ export function spawnEnemy(forceType) {
 export function updateEnemies(dt) {
   const p = game.player;
   const floorSpeed = enemyFloorSpeedMultiplier();
-  const floorHealth = enemyFloorHealthMultiplier();
   for (const enemy of game.enemies) {
     if (enemy.baseSpeed == null) enemy.baseSpeed = enemy.speed;
     if ((enemy.slowTimer || 0) > 0) {
@@ -202,7 +195,6 @@ export function updateEnemies(dt) {
       enemy.slowMultiplier = 1;
     }
     enemy.speed = enemy.baseSpeed * floorSpeed * (enemy.slowMultiplier || 1);
-    applyEnemyHealthMultiplier(enemy, floorHealth);
     enemy.hit = Math.max(0, enemy.hit - dt * 5);
     if (enemy.kind === "archer") {
       updateArcher(enemy, p, dt);
@@ -212,17 +204,6 @@ export function updateEnemies(dt) {
       updateMeleeEnemy(enemy, p, dt);
     }
   }
-}
-
-function applyEnemyHealthMultiplier(enemy, multiplier) {
-  const previousMaxHp = Math.max(1, enemy.maxHp || enemy.hp || 1);
-  if (enemy.baseMaxHp == null) enemy.baseMaxHp = previousMaxHp;
-  if (enemy.healthMultiplier === multiplier) return;
-
-  const healthRatio = Math.max(0, enemy.hp || 0) / previousMaxHp;
-  enemy.maxHp = Math.max(1, Math.round(enemy.baseMaxHp * multiplier));
-  enemy.hp = Math.max(1, Math.ceil(enemy.maxHp * healthRatio));
-  enemy.healthMultiplier = multiplier;
 }
 
 function updateMeleeEnemy(enemy, p, dt) {
