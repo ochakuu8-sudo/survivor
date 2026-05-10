@@ -21,6 +21,7 @@ export function resetRun() {
   game.elapsed = 0;
   game.totalKills = 0;
   game.waveKills = 0;
+  game.spawnClock = 0;
   game.shake = 0;
   game.damageFlash = 0;
   game.camera.x = 0;
@@ -71,6 +72,7 @@ export function startNextWave() {
   game.wave += 1;
   game.timeLeft = WAVE_SECONDS;
   game.waveKills = 0;
+  game.spawnClock = 0;
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
@@ -133,7 +135,7 @@ function update(dt) {
   p.hp = clamp(p.hp + p.regen * dt, 0, p.maxHp);
   updateWeaponTimers(p, dt);
 
-  spawnEnemies();
+  spawnEnemies(dt);
   updateEnemies(dt);
   updateBullets(dt);
   updateEnemyProjectiles(dt);

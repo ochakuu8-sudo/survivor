@@ -5,9 +5,38 @@ import { damagePlayer } from "./player.js";
 import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 
-export function spawnEnemies() {
-  while (game.enemies.length < 5000) {
+const BASE_ENEMY_CAP = 65;
+const ENEMY_CAP_PER_WAVE = 10;
+const HARD_ENEMY_CAP = 220;
+const MAX_SPAWNS_PER_FRAME = 3;
+
+function enemyCapForWave() {
+  return Math.min(HARD_ENEMY_CAP, BASE_ENEMY_CAP + game.wave * ENEMY_CAP_PER_WAVE);
+}
+
+function spawnIntervalForWave() {
+  return Math.max(0.16, 0.72 - (game.wave - 1) * 0.045);
+}
+
+export function spawnEnemies(dt) {
+  const cap = enemyCapForWave();
+  const interval = spawnIntervalForWave();
+
+  if (game.enemies.length >= cap) {
+    game.spawnClock = Math.min(game.spawnClock, interval * 0.5);
+    return;
+  }
+
+  game.spawnClock -= dt;
+  let spawned = 0;
+  while (game.spawnClock <= 0 && game.enemies.length < cap && spawned < MAX_SPAWNS_PER_FRAME) {
     spawnEnemy();
+    game.spawnClock += interval * (0.75 + Math.random() * 0.65);
+    spawned += 1;
+  }
+
+  if (spawned >= MAX_SPAWNS_PER_FRAME && game.spawnClock <= 0) {
+    game.spawnClock = interval * 0.5;
   }
 }
 
