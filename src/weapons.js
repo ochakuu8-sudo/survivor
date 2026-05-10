@@ -1,4 +1,4 @@
-import { TAU, WEAPON_STAT_KEYS } from "./constants.js";
+import { FIXED_RELOAD_SECONDS, TAU, WEAPON_STAT_KEYS } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
 import { distanceToSegmentSq, distSq } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -308,7 +308,7 @@ export function createWeapon(template, options = {}) {
     ammo: usesAmmo
       ? Math.min(ammoCapacity, Math.max(0, fuelMode ? (template.ammo ?? ammoCapacity) : Math.round(template.ammo ?? ammoCapacity)))
       : 0,
-    reloadTime: usesAmmo ? Math.max(0.25, template.reloadTime || 1.2) : 0,
+    reloadTime: usesAmmo ? FIXED_RELOAD_SECONDS : 0,
     reloadTimer: 0,
     reloading: false,
     critChance: template.critChance || 0,
@@ -389,7 +389,8 @@ export function weaponUsesAmmo(weapon) {
 
 function startWeaponReload(weapon) {
   if (!weaponUsesAmmo(weapon) || weapon.reloading) return;
-  weapon.reloadTimer = Math.max(0.1, weapon.reloadTime || 1.2);
+  weapon.reloadTime = FIXED_RELOAD_SECONDS;
+  weapon.reloadTimer = FIXED_RELOAD_SECONDS;
   weapon.reloading = true;
 }
 
@@ -459,6 +460,7 @@ export function updateWeaponTimers(player, dt) {
     weapon.shootTimer = Math.max(0, weapon.shootTimer - dt);
     if (!weaponUsesAmmo(weapon)) continue;
 
+    weapon.reloadTime = FIXED_RELOAD_SECONDS;
     weapon.ammoCapacity = weapon.fuelMode
       ? Math.max(0.5, weapon.ammoCapacity || 1)
       : Math.max(1, Math.round(weapon.ammoCapacity || 1));
