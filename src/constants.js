@@ -11,7 +11,7 @@ export const OFFER_TYPE_LABELS = {
   relic: "レリック",
 };
 
-export const MAX_WEAPONS = 1;
+export const MAX_WEAPONS = 3;
 export const WEAPON_STAT_KEYS = [
   "damage",
   "fireRate",

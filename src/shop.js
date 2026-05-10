@@ -1,5 +1,6 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
+import { MAX_WEAPONS } from "./constants.js";
 import { createWeapon, weaponKindLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
@@ -211,7 +212,7 @@ export function generateOffers() {
 export function buyAttachment(index) {
   const offer = game.offers[index];
   if (!offer || offer.taken) return;
-  const weapon = game.player.gear.weapons[0];
+  const weapon = findAttachmentTargetWeapon();
   if (!weapon) return;
   if (game.gold < offer.price) return;
   const definition = offer.definition;
@@ -235,6 +236,15 @@ export function detachAttachment(weaponId, attachmentIndex) {
 
 function findWeapon(id) {
   return game.player.gear.weapons.find((weapon) => weapon.id === id) || null;
+}
+
+function findAttachmentTargetWeapon() {
+  const weapons = game.player.gear.weapons;
+  if (weapons.length === 0) return null;
+  return weapons.reduce((best, weapon) => {
+    if (!best) return weapon;
+    return weapon.attachments.length < best.attachments.length ? weapon : best;
+  }, null);
 }
 
 function aggregateAttachments(list) {
@@ -320,7 +330,13 @@ function renderGearInventory() {
   const board = document.createElement("div");
   board.className = "loadout-board";
 
-  const weapon = gear.weapons[0];
+  for (let i = 0; i < MAX_WEAPONS; i += 1) {
+    board.append(buildWeaponSlot(gear.weapons[i], i));
+  }
+  hud.gearInventory.append(board);
+}
+
+function buildWeaponSlot(weapon, index) {
   const slot = document.createElement("article");
   slot.className = `weapon-slot ${weapon ? "weapon-slot-filled" : "weapon-slot-empty"}`;
 
@@ -328,7 +344,7 @@ function renderGearInventory() {
   top.className = "weapon-slot-top";
   const label = document.createElement("span");
   label.className = "slot-index";
-  label.textContent = "装備武器";
+  label.textContent = `武器 ${index + 1}`;
   const status = document.createElement("span");
   status.className = `slot-status ${weapon ? "slot-status-equipped" : "slot-status-empty"}`;
   status.textContent = weapon ? "装備中" : "未装備";
@@ -386,8 +402,7 @@ function renderGearInventory() {
 
   attachmentTrack.append(attachmentTitle, attachmentList);
   slot.append(top, name, kind, attachmentTrack);
-  board.append(slot);
-  hud.gearInventory.append(board);
+  return slot;
 }
 
 export function prepareStarterPick() {

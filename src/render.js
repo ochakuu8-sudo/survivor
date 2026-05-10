@@ -219,6 +219,11 @@ function drawWorld(view, camX, camY, zoom) {
     y: obstacle.y + (obstacle.radius || 10) * 0.45,
     item: obstacle,
   }));
+  actors.push(...(game.dungeon?.chests || []).map((chest) => ({
+    kind: "chest",
+    y: chest.y + chest.radius * 0.55,
+    item: chest,
+  })));
   actors.push(...game.enemies.map((enemy) => ({ kind: "enemy", y: enemy.y, item: enemy })));
   actors.push({ kind: "player", y: game.player.y, item: game.player });
   actors.sort((a, b) => a.y - b.y);
@@ -226,6 +231,7 @@ function drawWorld(view, camX, camY, zoom) {
   for (const actor of actors) {
     if (actor.kind === "player") drawPlayer(actor.item, view, camX, camY, zoom);
     else if (actor.kind === "obstacle") drawSceneryObstacle(actor.item, view, camX, camY, zoom);
+    else if (actor.kind === "chest") drawTreasureChest(actor.item, view, camX, camY, zoom);
     else drawEnemy(actor.item, view, camX, camY, zoom);
   }
 
@@ -482,6 +488,19 @@ function drawGoldDrops(view, camX, camY, zoom) {
       rotation: Math.sin(game.elapsed * 4 + drop.spin) * 0.1,
     });
   }
+}
+
+function drawTreasureChest(chest, view, camX, camY, zoom) {
+  const screen = worldToScreen(chest.x, chest.y, view, camX, camY, zoom);
+  const spriteName = chest.opened ? "treasureChestOpen" : "treasureChest";
+  const bob = chest.opened ? 0 : Math.sin(game.elapsed * 3 + chest.bob) * 1.6 * zoom;
+  const width = 54 * zoom;
+  const height = 48 * zoom;
+  state.renderer.draw("shadow", screen.x, screen.y + 16 * zoom, 52 * zoom, 16 * zoom, { alpha: 0.58 });
+  if (!chest.opened) {
+    state.renderer.draw("glowAmber", screen.x, screen.y + bob, 88 * zoom, 70 * zoom, { alpha: 0.18 });
+  }
+  state.renderer.draw(spriteName, screen.x, screen.y + bob, width, height);
 }
 
 function drawSceneryObstacle(obstacle, view, camX, camY, zoom) {

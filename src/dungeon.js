@@ -77,10 +77,12 @@ export function generateDungeon(wave) {
     start: tileCenter(width, height, startRoom.cx, startRoom.cy),
     exit: tileCenter(width, height, exitRoom.cx, exitRoom.cy),
     obstacles: [],
+    chests: [],
   };
 
   setDungeonTile(dungeon, exitRoom.cx, exitRoom.cy, DUNGEON_EXIT);
   dungeon.obstacles = generateObstacles(dungeon, rng, startRoom, exitRoom);
+  dungeon.chests = generateChests(dungeon, rng, startRoom, exitRoom, wave);
   return dungeon;
 }
 
@@ -176,6 +178,11 @@ function canStandAt(dungeon, x, y, radius) {
     const range = radius + obstacle.radius;
     if (distanceSq(x, y, obstacle.x, obstacle.y) < range * range) return false;
   }
+  for (const chest of dungeon.chests || []) {
+    if (chest.opened) continue;
+    const range = radius + chest.radius;
+    if (distanceSq(x, y, chest.x, chest.y) < range * range) return false;
+  }
   return true;
 }
 
@@ -228,6 +235,44 @@ function pickObstacleType(rng) {
   if (roll < 0.78) return OBSTACLE_TYPES[3];
   if (roll < 0.93) return OBSTACLE_TYPES[4];
   return OBSTACLE_TYPES[5];
+}
+
+function generateChests(dungeon, rng, startRoom, exitRoom, wave) {
+  const chests = [];
+  dungeon.chests = chests;
+  const count = clamp(1 + Math.floor((wave - 1) / 3), 1, 3);
+  const candidateRooms = dungeon.rooms
+    .filter((room) => room !== startRoom && !(room.cx === exitRoom.cx && room.cy === exitRoom.cy))
+    .sort((a, b) => distanceSq(b.cx, b.cy, startRoom.cx, startRoom.cy) - distanceSq(a.cx, a.cy, startRoom.cx, startRoom.cy));
+
+  for (let i = 0; i < candidateRooms.length && chests.length < count; i += 1) {
+    const room = candidateRooms[(i + Math.floor(rng() * Math.max(1, candidateRooms.length))) % candidateRooms.length];
+    for (let attempt = 0; attempt < 24; attempt += 1) {
+      const tx = randInt(rng, room.x + 1, room.x + room.w - 2);
+      const ty = randInt(rng, room.y + 1, room.y + room.h - 2);
+      if (!isWalkableTile(dungeon, tx, ty) || getDungeonTile(dungeon, tx, ty) === DUNGEON_EXIT) continue;
+      const point = dungeonTileWorldCenter(dungeon, tx, ty);
+      const x = point.x + (rng() - 0.5) * TILE_SIZE * 0.28;
+      const y = point.y + (rng() - 0.5) * TILE_SIZE * 0.22;
+      const startSafe = TILE_SIZE * 2.5;
+      const exitSafe = TILE_SIZE * 1.7;
+      if (distanceSq(x, y, dungeon.start.x, dungeon.start.y) < startSafe * startSafe) continue;
+      if (distanceSq(x, y, dungeon.exit.x, dungeon.exit.y) < exitSafe * exitSafe) continue;
+      if (!canStandAt(dungeon, x, y, 42)) continue;
+
+      chests.push({
+        x,
+        y,
+        radius: 21,
+        opened: false,
+        rewardName: "",
+        bob: rng() * Math.PI * 2,
+      });
+      break;
+    }
+  }
+
+  return chests;
 }
 
 function circleOverlapsTile(dungeon, x, y, radius, tx, ty) {

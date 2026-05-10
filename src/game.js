@@ -10,6 +10,7 @@ import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
 import { updateGoldDrops } from "./gold.js";
+import { updateTreasureChests } from "./treasure.js";
 import { updateMovement } from "./player.js";
 import { generateOffers, renderShop, WEAPON_POOL } from "./shop.js";
 import { updateHud } from "./hud.js";
@@ -146,6 +147,7 @@ function update(dt) {
   const p = game.player;
 
   updateMovement(dt);
+  updateTreasureChests();
   updateWeaponTimers(p, dt);
 
   spawnEnemies(dt);

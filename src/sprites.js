@@ -248,6 +248,30 @@ function drawPixelFieldTree(ctx, w, h) {
   px(ctx, x + 29, y - 1, 5, 5, "#ff8aa0");
 }
 
+function drawPixelTreasureChest(ctx, w, h, open = false) {
+  const x = w / 2 - 27;
+  const y = h / 2 - 20;
+  px(ctx, x + 2, y + 40, 54, 8, "rgba(50, 83, 38, 0.3)");
+  px(ctx, x + 2, y + 16, 52, 28, "#5b3518");
+  px(ctx, x + 6, y + 12, 44, 12, "#9b5b24");
+  px(ctx, x + 8, y + 24, 40, 16, "#b8792a");
+  px(ctx, x + 3, y + 25, 50, 5, "#6a411c");
+  px(ctx, x + 10, y + 28, 8, 12, "#75451d");
+  px(ctx, x + 36, y + 28, 8, 12, "#75451d");
+  px(ctx, x + 24, y + 22, 8, 17, "#ffe46b");
+  px(ctx, x + 26, y + 26, 4, 6, "#8a5a1e");
+  px(ctx, x + 5, y + 13, 45, 3, "#d19545");
+  px(ctx, x + 8, y + 38, 40, 4, "#4a2b13");
+  if (open) {
+    px(ctx, x + 2, y + 5, 52, 12, "#6a411c");
+    px(ctx, x + 8, y + 0, 40, 8, "#b8792a");
+    px(ctx, x + 11, y + 19, 32, 6, "#ffe46b");
+    px(ctx, x + 15, y + 15, 6, 5, "#fff3a0");
+    px(ctx, x + 34, y + 16, 5, 5, "#fff3a0");
+    px(ctx, x + 25, y + 13, 5, 5, "#ff8aa0");
+  }
+}
+
 function drawPixelPlayer(ctx, w, h, step = 0) {
   const x = w / 2 - 20;
   const y = h / 2 - 30 + (step === 0 ? 0 : -1);
@@ -547,6 +571,14 @@ export function buildAtlas() {
 
   add("fieldTree", 96, 112, (ctx, w, h) => {
     drawPixelFieldTree(ctx, w, h);
+  });
+
+  add("treasureChest", 64, 58, (ctx, w, h) => {
+    drawPixelTreasureChest(ctx, w, h, false);
+  });
+
+  add("treasureChestOpen", 64, 58, (ctx, w, h) => {
+    drawPixelTreasureChest(ctx, w, h, true);
   });
 
   add("player", 72, 72, (ctx, w, h) => {
