@@ -155,17 +155,43 @@ button:disabled {
 
 .hud-meter {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 10px;
+  grid-template-columns: auto auto auto;
+  gap: 8px;
   align-items: center;
+  justify-content: start;
 }
 
 .hp-text {
-  min-width: 54px;
+  min-width: 34px;
   color: #fff9f2;
   font-size: 0.78rem;
   line-height: 1;
   text-align: right;
+}
+
+.heart-meter {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.heart {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: #ff5d96;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow:
+    0 1px 0 #fff3c4,
+    0 2px 0 rgba(19, 15, 50, 0.55);
+}
+
+.heart-empty {
+  color: rgba(255, 249, 242, 0.28);
+  text-shadow: none;
 }
 
 .meter-shell {
@@ -1156,7 +1182,7 @@ h1 {
   .hud-meter {
     grid-column: 1 / -1;
     order: 2;
-    gap: 8px;
+    gap: 7px;
   }
 
   .hud-block,
@@ -1175,8 +1201,14 @@ h1 {
   }
 
   .hp-text {
-    min-width: 48px;
+    min-width: 30px;
     font-size: 0.72rem;
+  }
+
+  .heart {
+    width: 18px;
+    height: 18px;
+    font-size: 0.94rem;
   }
 
   .meter-shell {
@@ -1544,8 +1576,14 @@ h1 {
   }
 
   .hp-text {
-    min-width: 44px;
+    min-width: 28px;
     font-size: 0.68rem;
+  }
+
+  .heart {
+    width: 17px;
+    height: 17px;
+    font-size: 0.88rem;
   }
 
   .meter-shell {
@@ -1624,8 +1662,14 @@ h1 {
   }
 
   .hp-text {
-    min-width: 42px;
+    min-width: 28px;
     font-size: 0.66rem;
+  }
+
+  .heart {
+    width: 16px;
+    height: 16px;
+    font-size: 0.84rem;
   }
 
   .meter-shell {

@@ -9,7 +9,8 @@ export function updateHud() {
   if (hud.gold) hud.gold.textContent = String(game.gold);
   if (hud.shopGold) hud.shopGold.textContent = String(game.gold);
   hud.kills.textContent = String(game.waveKills);
-  hud.hp.style.width = `${clamp((game.player.hp / game.player.maxHp) * 100, 0, 100)}%`;
+  if (hud.hp) hud.hp.style.width = `${clamp((game.player.hp / game.player.maxHp) * 100, 0, 100)}%`;
+  renderHearts();
   if (hud.hpText) hud.hpText.textContent = `${Math.ceil(game.player.hp)}/${Math.ceil(game.player.maxHp)}`;
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
   if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "fight");
@@ -23,6 +24,19 @@ function objectiveText() {
   if (game.mode === "pause") return "一時停止";
   if (game.mode === "over") return "探索終了";
   return "出口を探せ";
+}
+
+function renderHearts() {
+  if (!hud.hearts) return;
+  const hp = Math.ceil(game.player.hp);
+  const maxHp = Math.max(1, Math.ceil(game.player.maxHp));
+  hud.hearts.replaceChildren();
+  for (let i = 0; i < maxHp; i += 1) {
+    const heart = document.createElement("span");
+    heart.className = `heart ${i < hp ? "heart-full" : "heart-empty"}`;
+    heart.textContent = "♥";
+    hud.hearts.append(heart);
+  }
 }
 
 export function syncTouchControls() {

@@ -140,9 +140,9 @@ export const ACTIVE_ATTACHMENTS = [
     name: "守りのお守り",
     stars: 1,
     category: "support",
-    text: "最大体力 +25。",
+    text: "最大ハート +1。",
     attach: () => {
-      game.player.maxHp += 25;
+      game.player.maxHp += 1;
     },
   },
   {

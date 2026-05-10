@@ -41,9 +41,9 @@ export function updateMovement(dt) {
 export function damagePlayer(amount) {
   if (game.debugInvincible) return 0;
   const reduction = 100 / (100 + Math.max(-20, game.player.armor) * 8);
-  const damage = Math.max(1, Math.round(amount * reduction));
+  const damage = Math.max(1, Math.round((amount * reduction) / 18));
   game.player.hp = clamp(game.player.hp - damage, 0, game.player.maxHp);
-  game.damageFlash = Math.max(game.damageFlash, clamp(damage / game.player.maxHp * 3, 0.2, 0.42));
-  game.shake = Math.max(game.shake, 3.5 + damage * 0.03);
+  game.damageFlash = Math.max(game.damageFlash, clamp(damage / game.player.maxHp * 1.4, 0.24, 0.46));
+  game.shake = Math.max(game.shake, 4 + damage * 0.6);
   return damage;
 }
