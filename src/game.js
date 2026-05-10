@@ -72,6 +72,7 @@ export function resetRun() {
   game.goldDrops = [];
   game.effects = [];
   game.offers = [];
+  game.pendingAttachmentChoice = null;
   game.shopTab = "shop";
   game.shopRerollsUsed = 0;
   game.starterChoices = [];
@@ -107,6 +108,7 @@ export function startNextWave() {
   game.goldDrops = [];
   game.effects = [];
   game.shopRerollsUsed = 0;
+  game.pendingAttachmentChoice = null;
   game.treasureReward = null;
   game.dungeon = generateDungeon(game.wave);
   game.player.x = game.dungeon.start.x;
@@ -127,6 +129,7 @@ export function enterShop() {
   game.goldDrops = [];
   game.effects = [];
   game.shopRerollsUsed = 0;
+  game.pendingAttachmentChoice = null;
   game.shopTab = "shop";
   game.treasureReward = null;
   hud.treasureReward.classList.add("hidden");

@@ -1,4 +1,4 @@
-import { FIXED_RELOAD_SECONDS, TAU, WEAPON_STAT_KEYS } from "./constants.js";
+import { FIXED_RELOAD_SECONDS, MAX_WEAPON_LEVEL, TAU, WEAPON_STAT_KEYS } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
 import { distanceToSegmentSq, distSq } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -210,7 +210,7 @@ function roundWeaponStats(weapon) {
   WEAPON_STAT_KEYS.forEach((key) => {
     const value = weapon[key];
     if (typeof value !== "number") return;
-    const integers = new Set(["projectiles", "pierce", "chainCount", "ammoCapacity"]);
+    const integers = new Set(["projectiles", "pierce", "chainCount", "orbitCount", "ammoCapacity"]);
     weapon[key] = integers.has(key)
       ? Math.max(0, Math.round(value))
       : Math.round(value * 100) / 100;
@@ -277,6 +277,7 @@ export function createWeapon(template, options = {}) {
     id: nextWeaponId(),
     name: template.name,
     baseName,
+    level: Math.min(MAX_WEAPON_LEVEL, Math.max(1, template.level || 1)),
     kind,
     damage: template.damage,
     fireRate: template.fireRate,

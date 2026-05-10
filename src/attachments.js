@@ -285,11 +285,122 @@ export const ACTIVE_ATTACHMENTS = [
       weapon.knockback = (weapon.knockback || 0) + 8;
     },
   },
+  {
+    key: "overdriveCore",
+    name: "過負荷コア",
+    stars: 3,
+    category: "special",
+    text: "ダメージ +18。攻撃頻度 +8%。",
+    attach: (weapon) => {
+      boostWeaponImpact(weapon, 18);
+      weapon.fireRate *= 1.08;
+    },
+  },
+  {
+    key: "multiForge",
+    name: "多重化炉",
+    stars: 3,
+    category: "special",
+    text: "通常弾は弾数 +2。炎は角度 +0.18。回転武器は個数 +1、範囲 +8。",
+    attach: (weapon) => {
+      if (weapon.kind === "flame" || weapon.kind === "sword") {
+        weapon.cone = Math.min(1.2, weapon.cone + 0.18);
+      } else if (weapon.kind === "orbit") {
+        weapon.orbitCount = (weapon.orbitCount || 1) + 1;
+        weapon.areaRadius += 8;
+      } else {
+        weapon.projectiles += 2;
+        weapon.spread += 0.08;
+      }
+    },
+  },
+  {
+    key: "deepPiercer",
+    name: "深貫通コア",
+    stars: 3,
+    category: "special",
+    text: "貫通 +2。武器に応じて爆発・線幅・コーン・命中幅も大きく広がる。",
+    attach: (weapon) => {
+      addWeaponPierce(weapon, 2);
+    },
+  },
+  {
+    key: "cryoEngine",
+    name: "冷却エンジン",
+    stars: 3,
+    category: "special",
+    text: "命中時に35%で敵の移動速度を2.2秒間45%低下させる。",
+    attach: (weapon) => {
+      weapon.freezeChance = (weapon.freezeChance || 0) + 0.35;
+      weapon.freezeSlow = Math.min(weapon.freezeSlow || 1, 0.55);
+      weapon.freezeDuration = Math.max(weapon.freezeDuration || 0, 2.2);
+    },
+  },
+  {
+    key: "safetyField",
+    name: "セーフティフィールド",
+    stars: 3,
+    category: "support",
+    text: "バリア +2。ゴールド吸引範囲 +24。",
+    attach: () => {
+      game.player.barrierMax += 2;
+      game.player.pickup += 24;
+    },
+  },
 ];
+
+const LEVEL_ATTACHMENT_RARITY_WEIGHTS = {
+  2: [[1, 80], [2, 20], [3, 0]],
+  3: [[1, 60], [2, 35], [3, 5]],
+  4: [[1, 40], [2, 45], [3, 15]],
+  5: [[1, 25], [2, 45], [3, 30]],
+};
 
 export function pickShopAttachment(wave) {
   const stars = pickStarsForWave(wave);
   return pickAttachmentByStars(stars);
+}
+
+export function attachmentRarityChanceText(level) {
+  return (LEVEL_ATTACHMENT_RARITY_WEIGHTS[level] || LEVEL_ATTACHMENT_RARITY_WEIGHTS[2])
+    .filter(([, weight]) => weight > 0)
+    .map(([stars, weight]) => `${starsLabel(stars)}${weight}%`)
+    .join(" / ");
+}
+
+export function pickAttachmentChoicesForWeapon(weapon, targetLevel, count = 3) {
+  if (!weapon) return [];
+  const choices = [];
+  const seen = new Set();
+  let guard = 0;
+  while (choices.length < count && guard < 120) {
+    guard += 1;
+    const stars = pickStarsForWeaponLevel(targetLevel);
+    const choice = pickAttachmentForWeaponByStars(weapon, stars, seen);
+    if (!choice) continue;
+    seen.add(choice.definition.key);
+    choices.push(choice);
+  }
+  if (choices.length < count) {
+    ACTIVE_ATTACHMENTS.forEach((definition) => {
+      if (choices.length >= count) return;
+      if (seen.has(definition.key) || !canAttachToWeapon(definition, weapon)) return;
+      seen.add(definition.key);
+      choices.push({ definition, stars: definition.stars || 1 });
+    });
+  }
+  return choices;
+}
+
+function pickStarsForWeaponLevel(level) {
+  const weights = LEVEL_ATTACHMENT_RARITY_WEIGHTS[Math.min(5, Math.max(2, level))] || LEVEL_ATTACHMENT_RARITY_WEIGHTS[2];
+  const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = Math.random() * total;
+  for (const [stars, weight] of weights) {
+    roll -= weight;
+    if (roll <= 0) return stars;
+  }
+  return 1;
 }
 
 function pickStarsForWave(wave) {
@@ -348,6 +459,18 @@ export function canAttachToWeapon(definition, weapon) {
   return true;
 }
 
+function pickAttachmentForWeaponByStars(weapon, stars, seen = new Set()) {
+  const candidates = ACTIVE_ATTACHMENTS.filter((a) =>
+    a.stars === stars && !seen.has(a.key) && canAttachToWeapon(a, weapon),
+  );
+  if (candidates.length === 0) {
+    if (stars > 1) return pickAttachmentForWeaponByStars(weapon, stars - 1, seen);
+    return null;
+  }
+  const definition = candidates[Math.floor(Math.random() * candidates.length)];
+  return { definition, stars: definition.stars || stars };
+}
+
 export function addAttachmentToWeapon(weapon, attachment) {
   if (!weapon || !attachment) return false;
   if ((weapon.attachments?.length || 0) >= MAX_ATTACHMENTS) return false;
@@ -365,8 +488,9 @@ export function addAttachmentToWeapon(weapon, attachment) {
     category: definition.category || "stat",
   });
   recomputeAllAttachments();
-  if (definition.key === "barrierEmitter") {
-    game.player.barrier = Math.min(game.player.barrierMax || 0, (game.player.barrier || 0) + 1);
+  if (definition.key === "barrierEmitter" || definition.key === "safetyField") {
+    const barrierGain = definition.key === "safetyField" ? 2 : 1;
+    game.player.barrier = Math.min(game.player.barrierMax || 0, (game.player.barrier || 0) + barrierGain);
   }
   return true;
 }
