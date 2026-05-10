@@ -265,6 +265,7 @@ function generateChests(dungeon, rng, startRoom, exitRoom, wave) {
         y,
         radius: 21,
         opened: false,
+        holdTimer: 0,
         rewardName: "",
         bob: rng() * Math.PI * 2,
       });

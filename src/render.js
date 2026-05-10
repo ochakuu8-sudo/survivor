@@ -1,5 +1,6 @@
 import {
   BACKGROUND_CACHE_LIMIT,
+  INTERACTION_HOLD_SECONDS,
   MOBILE_CAMERA_ZOOM,
   TAU,
   TILE_SIZE,
@@ -311,6 +312,7 @@ function drawDungeonExit(view, camX, camY, zoom) {
     tint: [0.3, 0.18, 0.08],
     alpha: 0.85,
   });
+  drawHoldProgress(screen.x, screen.y + 50 * zoom, game.exitHoldTimer / INTERACTION_HOLD_SECONDS, 72 * zoom, zoom, [0.92, 1, 0.62]);
 }
 
 function drawOrbitWeapons(view, camX, camY, zoom) {
@@ -499,8 +501,20 @@ function drawTreasureChest(chest, view, camX, camY, zoom) {
   state.renderer.draw("shadow", screen.x, screen.y + 16 * zoom, 52 * zoom, 16 * zoom, { alpha: 0.58 });
   if (!chest.opened) {
     state.renderer.draw("glowAmber", screen.x, screen.y + bob, 88 * zoom, 70 * zoom, { alpha: 0.18 });
+    drawHoldProgress(screen.x, screen.y + 44 * zoom, chest.holdTimer / INTERACTION_HOLD_SECONDS, 56 * zoom, zoom, [1, 0.86, 0.28]);
   }
   state.renderer.draw(spriteName, screen.x, screen.y + bob, width, height);
+}
+
+function drawHoldProgress(x, y, progress, width, zoom, tint) {
+  const value = clamp(progress || 0, 0, 1);
+  if (value <= 0) return;
+  const height = Math.max(4, 5 * zoom);
+  state.renderer.draw("white", x, y, width, height + 3 * zoom, { tint: [0.1, 0.12, 0.14], alpha: 0.7 });
+  state.renderer.draw("white", x - width * (1 - value) * 0.5, y, width * value, height, {
+    tint,
+    alpha: 0.96,
+  });
 }
 
 function drawSceneryObstacle(obstacle, view, camX, camY, zoom) {

@@ -1,6 +1,7 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
+import { INTERACTION_HOLD_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, createWeapon, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
@@ -21,6 +22,7 @@ export function resetRun() {
   game.wave = 1;
   game.elapsed = 0;
   game.floorElapsed = 0;
+  game.exitHoldTimer = 0;
   game.totalKills = 0;
   game.waveKills = 0;
   game.gold = 0;
@@ -84,6 +86,7 @@ export function startNextWave() {
   game.mode = "fight";
   game.wave += 1;
   game.floorElapsed = 0;
+  game.exitHoldTimer = 0;
   game.waveKills = 0;
   game.spawnClock = 0;
   game.enemies = [];
@@ -150,7 +153,7 @@ function update(dt) {
   const p = game.player;
 
   updateMovement(dt);
-  updateTreasureChests();
+  updateTreasureChests(dt);
   updateWeaponTimers(p, dt);
 
   spawnEnemies(dt);
@@ -164,13 +167,23 @@ function update(dt) {
   updateOrbitWeapons(dt);
   updateCamera(dt);
 
+  const exitReady = updateExitHold(p, dt);
   if (p.hp <= 0) {
     endRun();
-  } else if (hasReachedDungeonExit(p)) {
+  } else if (exitReady) {
     enterShop();
   }
 
   updateHud();
+}
+
+function updateExitHold(player, dt) {
+  if (!hasReachedDungeonExit(player)) {
+    game.exitHoldTimer = 0;
+    return false;
+  }
+  game.exitHoldTimer = Math.min(INTERACTION_HOLD_SECONDS, (game.exitHoldTimer || 0) + dt);
+  return game.exitHoldTimer >= INTERACTION_HOLD_SECONDS;
 }
 
 function updateCamera(dt) {

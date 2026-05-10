@@ -1,10 +1,10 @@
-import { MAX_WEAPONS } from "./constants.js";
+import { INTERACTION_HOLD_SECONDS, MAX_WEAPONS } from "./constants.js";
 import { game } from "./state.js";
 import { addEffect, addSparks } from "./effects.js";
 import { createWeapon } from "./weapons.js";
 import { WEAPON_POOL } from "./shop.js";
 
-export function updateTreasureChests() {
+export function updateTreasureChests(dt = 0) {
   const player = game.player;
   const chests = game.dungeon?.chests || [];
   if (!player || chests.length === 0) return;
@@ -12,13 +12,19 @@ export function updateTreasureChests() {
   for (const chest of chests) {
     if (chest.opened) continue;
     const reach = player.radius + chest.radius + 18;
-    if (Math.hypot(player.x - chest.x, player.y - chest.y) > reach) continue;
+    if (Math.hypot(player.x - chest.x, player.y - chest.y) > reach) {
+      chest.holdTimer = 0;
+      continue;
+    }
+    chest.holdTimer = Math.min(INTERACTION_HOLD_SECONDS, (chest.holdTimer || 0) + dt);
+    if (chest.holdTimer < INTERACTION_HOLD_SECONDS) continue;
     openTreasureChest(chest);
   }
 }
 
 function openTreasureChest(chest) {
   chest.opened = true;
+  chest.holdTimer = INTERACTION_HOLD_SECONDS;
   const reward = chooseWeaponReward();
   if (reward && game.player.gear.weapons.length < MAX_WEAPONS) {
     game.player.gear.weapons.push(createWeapon({ name: reward.name, ...reward.weapon }));

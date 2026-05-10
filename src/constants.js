@@ -4,6 +4,7 @@ export const COLLISION_CELL_SIZE = 128;
 export const BACKGROUND_CACHE_LIMIT = 4096;
 export const MOBILE_CAMERA_ZOOM = 0.5;
 export const TOUCH_TABLET_CAMERA_ZOOM = 0.82;
+export const INTERACTION_HOLD_SECONDS = 3;
 
 export const OFFER_TYPE_LABELS = {
   weapon: "武器",

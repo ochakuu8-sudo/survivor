@@ -20,6 +20,7 @@ export const game = {
   wave: 1,
   elapsed: 0,
   floorElapsed: 0,
+  exitHoldTimer: 0,
   totalKills: 0,
   waveKills: 0,
   gold: 0,
