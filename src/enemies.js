@@ -13,21 +13,16 @@ const MAX_SPAWNS_PER_FRAME = 3;
 const FLOOR_SPEED_START = 0.48;
 const FLOOR_SPEED_PER_SECOND = 0.012;
 const FLOOR_SPEED_MAX = 1.85;
-const FLOOR_SPAWN_START = 0.45;
-const FLOOR_SPAWN_NORMAL_TIME = 75;
-const FLOOR_SPAWN_EXTRA_TIME = 150;
-const FLOOR_SPAWN_MAX = 1.55;
+const FLOOR_SPAWN_BASE_PRESSURE = 0.45;
+const FLOOR_SPAWN_STEP_SECONDS = 30;
 
 export function enemyFloorSpeedMultiplier(elapsed = game.floorElapsed || 0) {
   return Math.min(FLOOR_SPEED_MAX, FLOOR_SPEED_START + elapsed * FLOOR_SPEED_PER_SECOND);
 }
 
 export function enemyFloorSpawnPressure(elapsed = game.floorElapsed || 0) {
-  const normalRamp = Math.min(1, elapsed / FLOOR_SPAWN_NORMAL_TIME);
-  const extraRamp = Math.min(1, Math.max(0, elapsed - FLOOR_SPAWN_NORMAL_TIME) / FLOOR_SPAWN_EXTRA_TIME);
-  return FLOOR_SPAWN_START
-    + normalRamp * (1 - FLOOR_SPAWN_START)
-    + extraRamp * (FLOOR_SPAWN_MAX - 1);
+  const stepMultiplier = 1 + Math.floor(Math.max(0, elapsed) / FLOOR_SPAWN_STEP_SECONDS);
+  return FLOOR_SPAWN_BASE_PRESSURE * stepMultiplier;
 }
 
 function enemyCapForWave(elapsed = game.floorElapsed || 0) {
