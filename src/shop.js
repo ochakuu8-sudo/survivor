@@ -130,7 +130,7 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "豆鉄砲",
       rarity: "rare",
-      variantSummary: "弾薬60。120度にばらけやすいが弾薬が多い",
+      variantSummary: "弾薬60。90度にばらけやすいが弾薬が多い",
       damage: 3.8,
       fireRate: 10.8,
       ammoCapacity: 60,
@@ -139,7 +139,7 @@ export const WEAPON_POOL = [
       life: 0.34,
       range: 220,
       radius: 6,
-      jitter: 2.1,
+      jitter: 1.57,
       kick: 0.65,
       bulletTint: [1, 0.9, 0.48],
       bulletGlow: "glowAmber",
