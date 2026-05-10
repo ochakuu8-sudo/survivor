@@ -197,19 +197,6 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
-    key: "blastPrimer",
-    name: "爆裂プライマー",
-    stars: 2,
-    category: "special",
-    text: "着弾時に半径64の爆発を付与（爆風 = ダメージ×60%）。時限爆弾はフューズ −0.2秒。",
-    attach: (weapon) => {
-      const radius = 64;
-      weapon.explosionRadius = Math.max(weapon.explosionRadius, radius);
-      weapon.explosionDamage = Math.max(weapon.explosionDamage, weapon.damage * 0.6);
-      if (weapon.kind === "timedBomb") weapon.fuse = Math.max(0.75, weapon.fuse - 0.2);
-    },
-  },
-  {
     key: "sustainEmitter",
     name: "持続エミッター",
     stars: 2,
