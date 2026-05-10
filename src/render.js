@@ -212,12 +212,18 @@ function drawWorld(view, camX, camY, zoom) {
     });
   }
 
-  const actors = game.enemies.map((enemy) => ({ kind: "enemy", y: enemy.y, item: enemy }));
+  const actors = (game.dungeon?.obstacles || []).map((obstacle) => ({
+    kind: "obstacle",
+    y: obstacle.y + (obstacle.radius || 10) * 0.45,
+    item: obstacle,
+  }));
+  actors.push(...game.enemies.map((enemy) => ({ kind: "enemy", y: enemy.y, item: enemy })));
   actors.push({ kind: "player", y: game.player.y, item: game.player });
   actors.sort((a, b) => a.y - b.y);
 
   for (const actor of actors) {
     if (actor.kind === "player") drawPlayer(actor.item, view, camX, camY, zoom);
+    else if (actor.kind === "obstacle") drawSceneryObstacle(actor.item, view, camX, camY, zoom);
     else drawEnemy(actor.item, view, camX, camY, zoom);
   }
 
@@ -457,6 +463,24 @@ function drawEnemy(enemy, view, camX, camY, zoom) {
       alpha: 0.9,
     });
   }
+}
+
+function drawSceneryObstacle(obstacle, view, camX, camY, zoom) {
+  const sprite = state.atlas.sprites[obstacle.sprite];
+  if (!sprite) return;
+  const screen = worldToScreen(obstacle.x, obstacle.y, view, camX, camY, zoom);
+  const scale = obstacle.scale || 1;
+  const width = sprite.w * scale * zoom;
+  const height = sprite.h * scale * zoom;
+  if (screen.x < -width || screen.x > view.w + width || screen.y < -height || screen.y > view.h + height) return;
+
+  const solid = obstacle.radius > 0;
+  state.renderer.draw("shadow", screen.x, screen.y + height * 0.28, width * (solid ? 0.78 : 0.56), Math.max(10, height * 0.22), {
+    alpha: solid ? 0.58 : 0.24,
+  });
+  state.renderer.draw(obstacle.sprite, screen.x, screen.y, width, height, {
+    rotation: obstacle.rotation || 0,
+  });
 }
 
 export function worldToScreen(x, y, view, camX, camY, zoom = 1) {

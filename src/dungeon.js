@@ -7,6 +7,14 @@ export const DUNGEON_FLOOR = 1;
 export const DUNGEON_EXIT = 2;
 
 const ROOM_MARGIN = 1;
+const OBSTACLE_TYPES = [
+  { sprite: "fieldTree", radius: 24, clearance: 40, scale: 0.95 },
+  { sprite: "fieldBoulder", radius: 24, clearance: 30, scale: 1 },
+  { sprite: "fieldLog", radius: 22, clearance: 34, scale: 1 },
+  { sprite: "fieldBush", radius: 20, clearance: 30, scale: 1 },
+  { sprite: "fieldFence", radius: 18, clearance: 34, scale: 1 },
+  { sprite: "fieldFlowers", radius: 0, clearance: 24, scale: 1 },
+];
 
 export function generateDungeon(wave) {
   const seed = ((Date.now() & 0xfffffff) ^ Math.floor(Math.random() * 0x7fffffff) ^ (wave * 2654435761)) >>> 0;
@@ -68,9 +76,11 @@ export function generateDungeon(wave) {
     offsetY: -height * TILE_SIZE * 0.5,
     start: tileCenter(width, height, startRoom.cx, startRoom.cy),
     exit: tileCenter(width, height, exitRoom.cx, exitRoom.cy),
+    obstacles: [],
   };
 
   setDungeonTile(dungeon, exitRoom.cx, exitRoom.cy, DUNGEON_EXIT);
+  dungeon.obstacles = generateObstacles(dungeon, rng, startRoom, exitRoom);
   return dungeon;
 }
 
@@ -103,6 +113,7 @@ export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance
     const ty = randInt(Math.random, room.y + 1, room.y + room.h - 2);
     if (!isWalkableTile(dungeon, tx, ty)) continue;
     const point = tileCenter(dungeon.width, dungeon.height, tx, ty);
+    if (!canStandAt(dungeon, point.x, point.y, 22)) continue;
     const distance = Math.hypot(point.x - originX, point.y - originY);
     if (distance >= minDistance && distance <= maxDistance) return point;
     if (distance > bestDistance) {
@@ -160,7 +171,63 @@ function canStandAt(dungeon, x, y, radius) {
       if (circleOverlapsTile(dungeon, x, y, radius, tx, ty)) return false;
     }
   }
+  for (const obstacle of dungeon.obstacles || []) {
+    if (!obstacle.radius) continue;
+    const range = radius + obstacle.radius;
+    if (distanceSq(x, y, obstacle.x, obstacle.y) < range * range) return false;
+  }
   return true;
+}
+
+function generateObstacles(dungeon, rng, startRoom, exitRoom) {
+  const obstacles = [];
+  dungeon.obstacles = obstacles;
+  dungeon.rooms.forEach((room, roomIndex) => {
+    const isStart = roomIndex === 0;
+    const isExit = room.cx === exitRoom.cx && room.cy === exitRoom.cy;
+    const area = room.w * room.h;
+    let count = randInt(rng, 1, Math.min(4, Math.max(1, Math.floor(area / 18))));
+    if (isStart || isExit) count = rng() < 0.55 ? 1 : 0;
+    if (rng() < 0.16) count = 0;
+
+    for (let placed = 0, attempts = 0; placed < count && attempts < count * 16; attempts += 1) {
+      const type = pickObstacleType(rng);
+      const tx = randInt(rng, room.x + 1, room.x + room.w - 2);
+      const ty = randInt(rng, room.y + 1, room.y + room.h - 2);
+      if (!isWalkableTile(dungeon, tx, ty) || getDungeonTile(dungeon, tx, ty) === DUNGEON_EXIT) continue;
+
+      const point = dungeonTileWorldCenter(dungeon, tx, ty);
+      const x = point.x + (rng() - 0.5) * TILE_SIZE * 0.36;
+      const y = point.y + (rng() - 0.5) * TILE_SIZE * 0.32;
+      const startSafe = TILE_SIZE * (isStart ? 2.3 : 1.35);
+      const exitSafe = TILE_SIZE * (isExit ? 2.15 : 1.25);
+      if (distanceSq(x, y, dungeon.start.x, dungeon.start.y) < startSafe * startSafe) continue;
+      if (distanceSq(x, y, dungeon.exit.x, dungeon.exit.y) < exitSafe * exitSafe) continue;
+      if (!canStandAt(dungeon, x, y, type.clearance)) continue;
+
+      obstacles.push({
+        sprite: type.sprite,
+        x,
+        y,
+        radius: type.radius,
+        clearance: type.clearance,
+        scale: type.scale * (0.9 + rng() * 0.18),
+        rotation: (rng() - 0.5) * 0.28,
+      });
+      placed += 1;
+    }
+  });
+  return obstacles;
+}
+
+function pickObstacleType(rng) {
+  const roll = rng();
+  if (roll < 0.18) return OBSTACLE_TYPES[0];
+  if (roll < 0.39) return OBSTACLE_TYPES[1];
+  if (roll < 0.6) return OBSTACLE_TYPES[2];
+  if (roll < 0.78) return OBSTACLE_TYPES[3];
+  if (roll < 0.93) return OBSTACLE_TYPES[4];
+  return OBSTACLE_TYPES[5];
 }
 
 function circleOverlapsTile(dungeon, x, y, radius, tx, ty) {

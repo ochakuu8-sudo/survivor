@@ -125,6 +125,107 @@ function drawPixelCar(ctx, w, h) {
   px(ctx, x + 55, y + 20, 9, 5, "#d8ac62");
 }
 
+function drawPixelFieldBoulder(ctx, w, h) {
+  const x = w / 2 - 34;
+  const y = h / 2 - 22;
+  px(ctx, x + 3, y + 39, 66, 10, "rgba(50, 83, 38, 0.3)");
+  px(ctx, x + 2, y + 18, 22, 21, "#5f6b54");
+  px(ctx, x + 18, y + 10, 33, 30, "#7d866b");
+  px(ctx, x + 42, y + 19, 26, 21, "#647158");
+  px(ctx, x + 22, y + 14, 23, 7, "#a9ad8b");
+  px(ctx, x + 9, y + 22, 11, 5, "#889073");
+  px(ctx, x + 48, y + 24, 13, 5, "#8e9677");
+  px(ctx, x + 16, y + 36, 48, 5, "#48573e");
+  px(ctx, x - 2, y + 38, 14, 6, "#60b94e");
+  px(ctx, x + 57, y + 38, 12, 6, "#73cc5a");
+  px(ctx, x + 5, y + 34, 4, 4, "#fff270");
+  px(ctx, x + 62, y + 34, 4, 4, "#ff8aa0");
+}
+
+function drawPixelFieldLog(ctx, w, h) {
+  const x = w / 2 - 39;
+  const y = h / 2 - 18;
+  px(ctx, x + 4, y + 39, 76, 9, "rgba(50, 83, 38, 0.28)");
+  px(ctx, x + 8, y + 16, 62, 19, "#8a5a2a");
+  px(ctx, x + 13, y + 10, 56, 9, "#b27736");
+  px(ctx, x + 4, y + 19, 13, 16, "#6b451f");
+  px(ctx, x + 66, y + 17, 14, 19, "#6b451f");
+  px(ctx, x + 8, y + 22, 6, 6, "#d6ad65");
+  px(ctx, x + 70, y + 22, 6, 7, "#d6ad65");
+  px(ctx, x + 23, y + 21, 12, 4, "#c98d45");
+  px(ctx, x + 46, y + 22, 13, 4, "#65411e");
+  px(ctx, x + 16, y + 35, 45, 4, "#4f3519");
+  px(ctx, x + 1, y + 36, 14, 5, "#66bf53");
+  px(ctx, x + 63, y + 36, 18, 5, "#7ed968");
+}
+
+function drawPixelFieldBush(ctx, w, h) {
+  const x = w / 2;
+  const y = h / 2;
+  px(ctx, x - 35, y + 23, 70, 9, "rgba(50, 83, 38, 0.27)");
+  px(ctx, x - 31, y + 2, 62, 24, "#3f9135");
+  px(ctx, x - 22, y - 10, 46, 30, "#5bbb46");
+  px(ctx, x - 12, y - 19, 28, 24, "#79d65c");
+  px(ctx, x - 28, y + 13, 54, 8, "#32772d");
+  px(ctx, x - 20, y - 5, 9, 8, "#8be56b");
+  px(ctx, x + 11, y - 7, 9, 8, "#8be56b");
+  px(ctx, x - 4, y - 16, 8, 7, "#a5ee74");
+  px(ctx, x - 23, y + 4, 5, 5, "#fff270");
+  px(ctx, x + 20, y + 1, 5, 5, "#fff270");
+  px(ctx, x - 2, y - 7, 5, 5, "#ff8aa0");
+  px(ctx, x + 7, y + 9, 5, 5, "#b7ecff");
+}
+
+function drawPixelFieldFence(ctx, w, h) {
+  const x = w / 2 - 42;
+  const y = h / 2 - 20;
+  px(ctx, x + 3, y + 42, 82, 7, "rgba(50, 83, 38, 0.27)");
+  px(ctx, x + 10, y + 10, 9, 34, "#7a4f1b");
+  px(ctx, x + 38, y + 6, 9, 38, "#8a5a2a");
+  px(ctx, x + 66, y + 13, 9, 31, "#7a4f1b");
+  px(ctx, x + 4, y + 17, 76, 8, "#b27736");
+  px(ctx, x + 2, y + 30, 78, 8, "#9a672f");
+  px(ctx, x + 8, y + 17, 65, 3, "#d4a05b");
+  px(ctx, x + 8, y + 30, 68, 3, "#c88f4d");
+  px(ctx, x + 15, y + 39, 16, 5, "#67bd4f");
+  px(ctx, x + 57, y + 39, 20, 5, "#7ed968");
+  px(ctx, x + 30, y + 36, 4, 4, "#fff270");
+}
+
+function drawPixelFieldFlowers(ctx, w, h) {
+  const x = w / 2;
+  const y = h / 2;
+  px(ctx, x - 27, y + 15, 54, 8, "rgba(50, 83, 38, 0.18)");
+  px(ctx, x - 24, y + 4, 13, 13, "#5ebd4d");
+  px(ctx, x - 4, y - 3, 18, 17, "#74d85f");
+  px(ctx, x + 14, y + 4, 13, 13, "#56ad49");
+  px(ctx, x - 18, y + 0, 5, 5, "#fff270");
+  px(ctx, x + 2, y - 7, 5, 5, "#ff8aa0");
+  px(ctx, x + 19, y + 0, 5, 5, "#b7ecff");
+  px(ctx, x - 6, y + 8, 5, 5, "#fff270");
+}
+
+function drawPixelFieldTree(ctx, w, h) {
+  const x = w / 2;
+  const y = h / 2;
+  px(ctx, x - 32, y + 39, 64, 10, "rgba(50, 83, 38, 0.3)");
+  px(ctx, x - 8, y + 5, 16, 42, "#7a4f1b");
+  px(ctx, x - 5, y + 7, 8, 38, "#a56e35");
+  px(ctx, x - 14, y + 27, 28, 6, "#5f3a18");
+  px(ctx, x - 34, y - 18, 68, 36, "#2f8833");
+  px(ctx, x - 25, y - 38, 52, 42, "#48a63c");
+  px(ctx, x - 13, y - 50, 34, 34, "#68c653");
+  px(ctx, x - 37, y - 5, 18, 20, "#3f9a36");
+  px(ctx, x + 20, y - 8, 20, 23, "#3c8d35");
+  px(ctx, x - 23, y - 29, 12, 9, "#7bdc60");
+  px(ctx, x + 10, y - 39, 11, 8, "#8de66b");
+  px(ctx, x - 3, y - 16, 13, 8, "#5fbd4a");
+  px(ctx, x - 21, y + 43, 14, 5, "#6bc356");
+  px(ctx, x + 10, y + 43, 18, 5, "#7bdc60");
+  px(ctx, x - 29, y - 11, 5, 5, "#fff270");
+  px(ctx, x + 29, y - 1, 5, 5, "#ff8aa0");
+}
+
 function drawPixelPlayer(ctx, w, h, step = 0) {
   const x = w / 2 - 20;
   const y = h / 2 - 30 + (step === 0 ? 0 : -1);
@@ -400,6 +501,30 @@ export function buildAtlas() {
 
   add("car", 96, 72, (ctx, w, h) => {
     drawPixelCar(ctx, w, h);
+  });
+
+  add("fieldBoulder", 88, 68, (ctx, w, h) => {
+    drawPixelFieldBoulder(ctx, w, h);
+  });
+
+  add("fieldLog", 96, 64, (ctx, w, h) => {
+    drawPixelFieldLog(ctx, w, h);
+  });
+
+  add("fieldBush", 88, 72, (ctx, w, h) => {
+    drawPixelFieldBush(ctx, w, h);
+  });
+
+  add("fieldFence", 96, 58, (ctx, w, h) => {
+    drawPixelFieldFence(ctx, w, h);
+  });
+
+  add("fieldFlowers", 72, 50, (ctx, w, h) => {
+    drawPixelFieldFlowers(ctx, w, h);
+  });
+
+  add("fieldTree", 96, 112, (ctx, w, h) => {
+    drawPixelFieldTree(ctx, w, h);
   });
 
   add("player", 72, 72, (ctx, w, h) => {
