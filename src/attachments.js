@@ -145,12 +145,12 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "vitalityCharm",
-    name: "最大ハート+1",
+    name: "最大HP+10",
     stars: 1,
     category: "support",
-    text: "最大ハート +1。",
+    text: "最大HP +10。",
     attach: () => {
-      game.player.maxHp += 1;
+      game.player.maxHp += 10;
     },
   },
   {
@@ -397,22 +397,22 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "vitalityCharm3",
-    name: "最大ハート+2",
+    name: "最大HP+20",
     stars: 3,
     category: "support",
-    text: "最大ハート +2。",
+    text: "最大HP +20。",
     attach: () => {
-      game.player.maxHp += 2;
+      game.player.maxHp += 20;
     },
   },
   {
     key: "vitalityCharm5",
-    name: "最大ハート+3",
+    name: "最大HP+30",
     stars: 5,
     category: "support",
-    text: "最大ハート +3。",
+    text: "最大HP +30。",
     attach: () => {
-      game.player.maxHp += 3;
+      game.player.maxHp += 30;
     },
   },
   {

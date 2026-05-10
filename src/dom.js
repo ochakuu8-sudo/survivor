@@ -3,8 +3,6 @@ export const canvas = document.querySelector("#game");
 export const hud = {
   wave: document.querySelector("#waveText"),
   time: document.querySelector("#timeText"),
-  hp: document.querySelector("#hpFill"),
-  hearts: document.querySelector("#heartMeter"),
   hpText: document.querySelector("#hpText"),
   gold: document.querySelector("#goldText"),
   kills: document.querySelector("#killText"),

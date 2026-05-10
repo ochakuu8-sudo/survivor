@@ -61,7 +61,7 @@ export function damagePlayer(amount) {
     return 0;
   }
   const reduction = 100 / (100 + Math.max(-20, p.armor) * 8);
-  const damage = Math.max(1, Math.round((amount * reduction) / 18));
+  const damage = Math.max(1, Math.round(amount * reduction));
   p.hp = clamp(p.hp - damage, 0, p.maxHp);
   p.invulnerableTimer = PLAYER_INVULNERABLE_SECONDS;
   game.damageFlash = Math.max(game.damageFlash, clamp(damage / p.maxHp * 1.4, 0.24, 0.46));
