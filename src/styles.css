@@ -281,7 +281,7 @@ h1 {
 .offers {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .offer-section {
@@ -335,13 +335,45 @@ h1 {
 
 .offer {
   display: grid;
-  align-content: start;
-  min-height: 190px;
-  padding: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: stretch;
+  min-height: 132px;
+  padding: 12px;
   border: 2px solid rgba(255, 243, 196, 0.55);
   border-radius: 8px;
   background: #2d276d;
   box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.18);
+}
+
+.offer-icon,
+.weapon-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid rgba(255, 249, 242, 0.28);
+  border-radius: 8px;
+  color: #10273a;
+  background: #55f6c7;
+  font-size: 0.9rem;
+  font-weight: 1000;
+  line-height: 1;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.16);
+}
+
+.offer-body {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+}
+
+.offer-purchase {
+  display: grid;
+  gap: 8px;
+  align-content: space-between;
+  justify-items: end;
+  min-width: 96px;
 }
 
 .offer-weapon {
@@ -416,7 +448,7 @@ h1 {
 
 .offer-action {
   align-self: end;
-  margin-top: 12px;
+  width: 100%;
 }
 
 .offer-bought-tag {
@@ -467,7 +499,7 @@ h1 {
 }
 
 .offer h2 {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   font-size: 1rem;
   line-height: 1.16;
 }
@@ -476,6 +508,7 @@ h1 {
   color: #d9f7ff;
   font-size: 0.9rem;
   line-height: 1.42;
+  overflow-wrap: anywhere;
 }
 
 .offer-meta {
@@ -488,12 +521,11 @@ h1 {
 }
 
 .offer .price {
-  align-self: end;
-  display: flex;
+  display: grid;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 16px;
+  justify-items: end;
+  gap: 4px;
+  margin-top: 0;
 }
 
 .price-amount {
@@ -593,8 +625,9 @@ h1 {
 
 .weapon-slot {
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-content: start;
-  gap: 0;
+  gap: 10px;
   min-height: 142px;
   min-width: 0;
   padding: 10px;
@@ -602,6 +635,10 @@ h1 {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.15);
+}
+
+.weapon-slot-body {
+  min-width: 0;
 }
 
 .weapon-slot-filled {
@@ -669,6 +706,10 @@ h1 {
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px solid rgba(255, 249, 242, 0.16);
+}
+
+.attachment-pips {
+  display: none;
 }
 
 .attachment-list {
@@ -1086,9 +1127,77 @@ h1 {
     grid-template-columns: 1fr;
   }
 
-  .offer {
+  #shop.panel {
+    left: 0;
+    top: 0;
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    border: 0;
+    border-radius: 0;
+    transform: none;
+    overflow: hidden;
+  }
+
+  #shop.panel:not(.hidden) {
+    display: grid;
+    grid-template-rows: auto auto auto auto;
+    align-content: start;
+    gap: 6px;
+  }
+
+  #shop .panel-head {
+    order: 0;
+    align-items: center;
+    margin-bottom: 0;
+  }
+
+  #shop .panel-head h1 {
+    margin-top: 1px;
+    font-size: 1rem;
+    line-height: 1.05;
+  }
+
+  #shop .panel-kicker {
+    font-size: 0.56rem;
+  }
+
+  #gearInventory {
+    order: 1;
     min-height: 0;
-    padding: 0;
+  }
+
+  #offers {
+    order: 2;
+    display: grid;
+    grid-template-rows: repeat(3, auto);
+    gap: 6px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  #shop .shop-footer {
+    order: 3;
+  }
+
+  #shop .offer {
+    grid-template-columns: 28px minmax(0, 1fr) 62px;
+    gap: 6px;
+    align-items: center;
+    min-height: 74px;
+    padding: 6px;
+    border-width: 1px;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+  }
+
+  #shop .offer-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    font-size: 0.74rem;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.16);
   }
 
   .offer-summary {
@@ -1147,60 +1256,203 @@ h1 {
     transform: rotate(180deg);
   }
 
-  .offer-body {
-    display: none;
-    padding: 4px 12px 12px;
-  }
-
-  .offer[data-expanded="true"] .offer-body {
+  #shop .offer-body {
     display: grid;
-    align-content: start;
-    gap: 6px;
+    gap: 2px;
+    padding: 0;
+    min-width: 0;
   }
 
-  .offer-body .offer-head {
-    margin-bottom: 0;
-    flex-wrap: wrap;
+  #shop .offer-head {
+    display: none;
   }
 
-  .offer h2 {
+  #shop .offer h2 {
     margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.08;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #shop .offer p {
+    margin: 0;
+    color: #d9f7ff;
+    font-size: 0.64rem;
+    line-height: 1.18;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  #shop .offer-meta {
+    margin-top: 0;
+    font-size: 0.58rem;
+    line-height: 1;
+  }
+
+  #shop .offer-purchase {
+    min-width: 0;
+    gap: 4px;
+    align-content: center;
+  }
+
+  #shop .offer .price {
+    gap: 1px;
+  }
+
+  #shop .price-amount {
+    font-size: 0.82rem;
+  }
+
+  #shop .price-owned {
+    display: none;
+  }
+
+  #shop .offer-buy {
+    min-height: 30px;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-size: 0.72rem;
   }
 
   .panel-head {
     grid-template-columns: 1fr;
   }
 
-  .shop-actions {
+  #shop .shop-actions {
     justify-content: stretch;
-    position: sticky;
-    bottom: max(0px, env(safe-area-inset-bottom));
-    z-index: 2;
-    padding: 8px 0;
-    background: linear-gradient(180deg, transparent, rgba(45, 39, 109, 0.92) 30%);
   }
 
-  .shop-actions button {
+  #shop .shop-actions button {
     flex: 1;
-  }
-
-  .shop-footer {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .shop-wallet {
     min-height: 38px;
-    padding: 6px 10px;
+    padding: 0 10px;
+    font-size: 0.82rem;
+  }
+
+  #shop .shop-footer {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 6px;
+    align-items: center;
+    margin-top: 0;
+  }
+
+  #shop .shop-wallet {
+    min-height: 38px;
+    padding: 6px 8px;
+    min-width: 92px;
+  }
+
+  #shop .shop-wallet .hud-label {
+    display: none;
+  }
+
+  #shop .shop-wallet::before {
+    content: "G";
+    color: #241737;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: #ffe46b;
+    font-size: 0.68rem;
+    font-weight: 1000;
+  }
+
+  #shop .shop-wallet strong {
+    font-size: 0.98rem;
   }
 
   .loadout-board {
     grid-template-columns: 1fr;
+    gap: 5px;
   }
 
-  .weapon-slot {
+  #shop .weapon-slot {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 7px;
     min-height: 0;
-    padding: 10px 12px;
+    padding: 6px;
+    border-width: 1px;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+  }
+
+  #shop .weapon-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    font-size: 0.76rem;
+  }
+
+  #shop .weapon-slot-top {
+    gap: 5px;
+  }
+
+  #shop .slot-index {
+    font-size: 0.54rem;
+  }
+
+  #shop .slot-status {
+    padding: 2px 5px;
+    font-size: 0.54rem;
+  }
+
+  #shop .weapon-slot-name {
+    margin-top: 2px;
+    font-size: 0.78rem;
+    line-height: 1.05;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #shop .weapon-slot-kind {
+    display: none;
+  }
+
+  #shop .attachment-track {
+    gap: 3px;
+    margin-top: 4px;
+    padding-top: 4px;
+  }
+
+  #shop .attachment-title,
+  #shop .attachment-list {
+    display: none;
+  }
+
+  #shop .attachment-pips {
+    display: grid;
+    grid-template-columns: repeat(5, 14px);
+    gap: 4px;
+  }
+
+  #shop .attachment-pip {
+    display: block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid rgba(255, 249, 242, 0.2);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  #shop .attachment-pip.attach-stars-1 {
+    border-color: rgba(85, 246, 199, 0.62);
+    background: rgba(85, 246, 199, 0.5);
+  }
+
+  #shop .attachment-pip.attach-stars-2 {
+    border-color: rgba(180, 85, 255, 0.82);
+    background: rgba(180, 85, 255, 0.62);
+  }
+
+  #shop .attachment-pip.attach-stars-3 {
+    border-color: rgba(255, 228, 107, 0.9);
+    background: rgba(255, 228, 107, 0.82);
   }
 }
 

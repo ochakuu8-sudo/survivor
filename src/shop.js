@@ -265,10 +265,33 @@ function attachmentLabelText(agg) {
   return agg.count > 1 ? `${agg.name} ×${agg.count}` : agg.name;
 }
 
+function attachmentIcon(category, stars) {
+  if (stars >= 3) return "★";
+  if (category === "support") return "+";
+  if (category === "special" || category === "unique") return "◆";
+  return "▲";
+}
+
+function weaponIcon(weapon) {
+  if (!weapon) return "+";
+  if (weapon.kind === "flame") return "F";
+  if (weapon.kind === "timedBomb" || weapon.kind === "pulseBomb") return "B";
+  if (weapon.kind === "sustainedLaser") return "L";
+  if (weapon.kind === "orbit") return "O";
+  if (weapon.kind === "sword") return "S";
+  if (weapon.name === "石") return "R";
+  if (weapon.name === "豆鉄砲") return "M";
+  return "W";
+}
+
 function buildOfferCard(offer, index) {
   const canAfford = game.gold >= offer.price;
   const card = document.createElement("article");
   card.className = `offer offer-attachment attach-stars-${offer.stars || 1}${offer.taken ? " offer-taken" : ""}${!offer.taken && !canAfford ? " offer-unaffordable" : ""}`;
+
+  const icon = document.createElement("span");
+  icon.className = "offer-icon";
+  icon.textContent = attachmentIcon(offer.category, offer.stars || 1);
 
   const headRow = document.createElement("div");
   headRow.className = "offer-head";
@@ -298,19 +321,25 @@ function buildOfferCard(offer, index) {
   owned.textContent = `所持 ${game.gold}G`;
   price.append(priceAmount, owned);
 
-  card.append(headRow, title, description, meta, price);
-
   const action = document.createElement("div");
   action.className = "offer-action";
   const button = document.createElement("button");
   button.type = "button";
   button.className = "offer-buy";
-  button.textContent = offer.taken ? "購入済" : canAfford ? "購入" : "ゴールド不足";
+  button.textContent = offer.taken ? "済" : canAfford ? "買う" : "不足";
   button.disabled = offer.taken || !canAfford;
   button.addEventListener("click", () => buyAttachment(index));
   action.append(button);
 
-  card.append(action);
+  const body = document.createElement("div");
+  body.className = "offer-body";
+  body.append(headRow, title, description, meta);
+
+  const purchase = document.createElement("div");
+  purchase.className = "offer-purchase";
+  purchase.append(price, action);
+
+  card.append(icon, body, purchase);
   return card;
 }
 
@@ -340,6 +369,10 @@ function buildWeaponSlot(weapon, index) {
   const slot = document.createElement("article");
   slot.className = `weapon-slot ${weapon ? "weapon-slot-filled" : "weapon-slot-empty"}`;
 
+  const icon = document.createElement("span");
+  icon.className = "weapon-icon";
+  icon.textContent = weaponIcon(weapon);
+
   const top = document.createElement("div");
   top.className = "weapon-slot-top";
   const label = document.createElement("span");
@@ -366,8 +399,17 @@ function buildWeaponSlot(weapon, index) {
     : "アタッチメント";
   const attachmentList = document.createElement("div");
   attachmentList.className = "attachment-list";
-
   const attachments = weapon?.attachments || [];
+
+  const attachmentPips = document.createElement("div");
+  attachmentPips.className = "attachment-pips";
+  for (let i = 0; i < 5; i += 1) {
+    const pip = document.createElement("span");
+    pip.className = `attachment-pip${attachments[i] ? ` attach-stars-${attachments[i].stars || 1}` : ""}`;
+    pip.textContent = attachments[i] ? starsLabel(attachments[i].stars).slice(0, 1) : "";
+    attachmentPips.append(pip);
+  }
+
   if (attachments.length > 0) {
     const aggregated = aggregateAttachments(attachments);
     aggregated.forEach((agg) => {
@@ -400,8 +442,11 @@ function buildWeaponSlot(weapon, index) {
     attachmentList.append(empty);
   }
 
-  attachmentTrack.append(attachmentTitle, attachmentList);
-  slot.append(top, name, kind, attachmentTrack);
+  attachmentTrack.append(attachmentTitle, attachmentPips, attachmentList);
+  const body = document.createElement("div");
+  body.className = "weapon-slot-body";
+  body.append(top, name, kind, attachmentTrack);
+  slot.append(icon, body);
   return slot;
 }
 
