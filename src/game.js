@@ -20,6 +20,7 @@ export function resetRun() {
   game.mode = "fight";
   game.wave = 1;
   game.elapsed = 0;
+  game.floorElapsed = 0;
   game.totalKills = 0;
   game.waveKills = 0;
   game.gold = 0;
@@ -82,6 +83,7 @@ export function resetRun() {
 export function startNextWave() {
   game.mode = "fight";
   game.wave += 1;
+  game.floorElapsed = 0;
   game.waveKills = 0;
   game.spawnClock = 0;
   game.enemies = [];
@@ -144,6 +146,7 @@ function update(dt) {
     return;
   }
 
+  game.floorElapsed += dt;
   const p = game.player;
 
   updateMovement(dt);

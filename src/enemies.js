@@ -10,6 +10,13 @@ const BASE_ENEMY_CAP = 65;
 const ENEMY_CAP_PER_WAVE = 10;
 const HARD_ENEMY_CAP = 220;
 const MAX_SPAWNS_PER_FRAME = 3;
+const FLOOR_SPEED_START = 0.48;
+const FLOOR_SPEED_PER_SECOND = 0.012;
+const FLOOR_SPEED_MAX = 1.85;
+
+export function enemyFloorSpeedMultiplier(elapsed = game.floorElapsed || 0) {
+  return Math.min(FLOOR_SPEED_MAX, FLOOR_SPEED_START + elapsed * FLOOR_SPEED_PER_SECOND);
+}
 
 function enemyCapForWave() {
   return Math.min(HARD_ENEMY_CAP, BASE_ENEMY_CAP + game.wave * ENEMY_CAP_PER_WAVE);
@@ -151,12 +158,17 @@ export function spawnEnemy(forceType) {
     enemy.preferredDistance = 220;
   }
 
+  enemy.baseSpeed = enemy.speed;
+  enemy.speed = enemy.baseSpeed * enemyFloorSpeedMultiplier();
   game.enemies.push(enemy);
 }
 
 export function updateEnemies(dt) {
   const p = game.player;
+  const floorSpeed = enemyFloorSpeedMultiplier();
   for (const enemy of game.enemies) {
+    if (enemy.baseSpeed == null) enemy.baseSpeed = enemy.speed;
+    enemy.speed = enemy.baseSpeed * floorSpeed;
     enemy.hit = Math.max(0, enemy.hit - dt * 5);
     if (enemy.kind === "archer") {
       updateArcher(enemy, p, dt);

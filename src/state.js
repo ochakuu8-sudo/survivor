@@ -19,6 +19,7 @@ export const game = {
   mode: "fight",
   wave: 1,
   elapsed: 0,
+  floorElapsed: 0,
   totalKills: 0,
   waveKills: 0,
   gold: 0,
