@@ -287,8 +287,8 @@ function pickStarsForWave(wave) {
 function pickAttachmentByStars(stars) {
   const ownedNames = new Set();
   const gear = game.player.gear;
-  gear.weapons.forEach((w) => ownedNames.add(w.name));
-  (gear.storageWeapons || []).forEach((w) => ownedNames.add(w.name));
+  gear.weapons.forEach((w) => ownedNames.add(w.baseName || w.name));
+  (gear.storageWeapons || []).forEach((w) => ownedNames.add(w.baseName || w.name));
 
   const candidates = ACTIVE_ATTACHMENTS.filter((a) => {
     if (a.stars !== stars) return false;
@@ -307,7 +307,8 @@ function pickAttachmentByStars(stars) {
 
 export function canAttachToWeapon(definition, weapon) {
   if (!definition || !weapon) return false;
-  if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weapon.name)) {
+  const weaponName = weapon.baseName || weapon.name;
+  if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weaponName)) {
     return false;
   }
   return true;
@@ -318,7 +319,8 @@ export function addAttachmentToWeapon(weapon, attachment) {
   if ((weapon.attachments?.length || 0) >= MAX_ATTACHMENTS) return false;
   const definition = attachment.definition || findAttachmentDefinition(attachment.key) || attachment;
   if (!definition?.key) return false;
-  if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weapon.name)) {
+  const weaponName = weapon.baseName || weapon.name;
+  if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weaponName)) {
     return false;
   }
   const stars = attachment.stars || definition.stars || 1;

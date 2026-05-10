@@ -11,6 +11,234 @@ import {
   removeDeadEnemies,
 } from "./combat.js";
 
+const WEAPON_RARITIES = {
+  normal: { label: "ノーマル", affixCount: 0, power: 1 },
+  rare: { label: "レア", affixCount: 1, power: 1 },
+  epic: { label: "エピック", affixCount: 2, power: 1.08 },
+  legend: { label: "レジェンド", affixCount: 3, power: 1.18 },
+};
+
+const WEAPON_AFFIXES = {
+  石: [
+    {
+      key: "sharp",
+      prefix: "鋭い",
+      text: (power) => `威力 +${percent(0.18, power)}`,
+      apply: (weapon, power) => { weapon.damage *= 1 + 0.18 * power; },
+    },
+    {
+      key: "far",
+      prefix: "遠投の",
+      text: (power) => `射程 +${percent(0.16, power)}`,
+      apply: (weapon, power) => {
+        weapon.range *= 1 + 0.16 * power;
+        weapon.bulletSpeed *= 1 + 0.12 * power;
+      },
+    },
+    {
+      key: "quick",
+      prefix: "速投げ",
+      text: (power) => `攻撃頻度 +${percent(0.14, power)}`,
+      apply: (weapon, power) => { weapon.fireRate *= 1 + 0.14 * power; },
+    },
+    {
+      key: "heavy",
+      prefix: "重い",
+      text: (power) => `威力 +${percent(0.24, power)} / 攻撃頻度 -${percent(0.08, power)}`,
+      apply: (weapon, power) => {
+        weapon.damage *= 1 + 0.24 * power;
+        weapon.fireRate *= Math.max(0.55, 1 - 0.08 * power);
+        weapon.kick *= 1 + 0.16 * power;
+      },
+    },
+  ],
+  豆鉄砲: [
+    {
+      key: "rapid",
+      prefix: "連射式",
+      text: (power) => `攻撃頻度 +${percent(0.18, power)}`,
+      apply: (weapon, power) => { weapon.fireRate *= 1 + 0.18 * power; },
+    },
+    {
+      key: "long",
+      prefix: "長銃身",
+      text: (power) => `射程 +${percent(0.18, power)}`,
+      apply: (weapon, power) => {
+        weapon.range *= 1 + 0.18 * power;
+        weapon.life *= 1 + 0.1 * power;
+      },
+    },
+    {
+      key: "large",
+      prefix: "大粒",
+      text: (power) => `威力 +${percent(0.16, power)}`,
+      apply: (weapon, power) => {
+        weapon.damage *= 1 + 0.16 * power;
+        weapon.radius += 1 + power;
+      },
+    },
+    {
+      key: "stable",
+      prefix: "安定型",
+      text: (power) => `拡散 -${percent(0.22, power)}`,
+      apply: (weapon, power) => { weapon.spread *= Math.max(0.04, 1 - 0.22 * power); },
+    },
+  ],
+  火炎放射器: [
+    {
+      key: "hot",
+      prefix: "高火力",
+      text: (power) => `威力 +${percent(0.16, power)}`,
+      apply: (weapon, power) => { weapon.damage *= 1 + 0.16 * power; },
+    },
+    {
+      key: "wide",
+      prefix: "広角",
+      text: (power) => `炎の角度 +${Math.round((0.08 * power) * 100)}%`,
+      apply: (weapon, power) => { weapon.cone = Math.min(1.12, weapon.cone + 0.08 * power); },
+    },
+    {
+      key: "long",
+      prefix: "長炎",
+      text: (power) => `射程 +${percent(0.16, power)}`,
+      apply: (weapon, power) => { weapon.range *= 1 + 0.16 * power; },
+    },
+    {
+      key: "pressure",
+      prefix: "高圧",
+      text: (power) => `攻撃頻度 +${percent(0.14, power)}`,
+      apply: (weapon, power) => { weapon.fireRate *= 1 + 0.14 * power; },
+    },
+  ],
+  モーニングスター: [
+    {
+      key: "large",
+      prefix: "大玉",
+      text: (power) => `範囲 +${percent(0.16, power)}`,
+      apply: (weapon, power) => {
+        weapon.areaRadius *= 1 + 0.16 * power;
+        weapon.damage *= 1 + 0.08 * power;
+      },
+    },
+    {
+      key: "chain",
+      prefix: "長鎖",
+      text: (power) => `回転半径 +${percent(0.16, power)}`,
+      apply: (weapon, power) => {
+        weapon.orbitRadius *= 1 + 0.16 * power;
+        weapon.range *= 1 + 0.12 * power;
+      },
+    },
+    {
+      key: "fast",
+      prefix: "高速回転",
+      text: (power) => `回転速度 +${percent(0.18, power)}`,
+      apply: (weapon, power) => {
+        weapon.orbitSpeed *= 1 + 0.18 * power;
+        weapon.fireRate *= 1 + 0.1 * power;
+      },
+    },
+    {
+      key: "heavy",
+      prefix: "重撃",
+      text: (power) => `威力 +${percent(0.2, power)} / 回転速度 -${percent(0.06, power)}`,
+      apply: (weapon, power) => {
+        weapon.damage *= 1 + 0.2 * power;
+        weapon.orbitSpeed *= Math.max(0.65, 1 - 0.06 * power);
+      },
+    },
+  ],
+};
+
+function percent(value, power = 1) {
+  return `${Math.round(value * power * 100)}%`;
+}
+
+function pickWeaponRarity(floor = 1) {
+  const f = Math.max(1, floor || 1);
+  let weights = [
+    ["normal", 72],
+    ["rare", 25],
+    ["epic", 3],
+    ["legend", 0],
+  ];
+  if (f >= 3) {
+    weights = [
+      ["normal", 60],
+      ["rare", 32],
+      ["epic", 7],
+      ["legend", 1],
+    ];
+  }
+  if (f >= 6) {
+    weights = [
+      ["normal", 45],
+      ["rare", 36],
+      ["epic", 16],
+      ["legend", 3],
+    ];
+  }
+  if (f >= 9) {
+    weights = [
+      ["normal", 34],
+      ["rare", 38],
+      ["epic", 22],
+      ["legend", 6],
+    ];
+  }
+  const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
+  let roll = Math.random() * total;
+  for (const [key, weight] of weights) {
+    roll -= weight;
+    if (roll <= 0) return key;
+  }
+  return "normal";
+}
+
+function pickAffixes(baseName, count) {
+  const pool = WEAPON_AFFIXES[baseName] || [];
+  const available = [...pool];
+  const picked = [];
+  while (available.length > 0 && picked.length < count) {
+    const index = Math.floor(Math.random() * available.length);
+    picked.push(available.splice(index, 1)[0]);
+  }
+  return picked;
+}
+
+function roundWeaponStats(weapon) {
+  WEAPON_STAT_KEYS.forEach((key) => {
+    const value = weapon[key];
+    if (typeof value !== "number") return;
+    const integers = new Set(["projectiles", "pierce", "chainCount"]);
+    weapon[key] = integers.has(key)
+      ? Math.max(0, Math.round(value))
+      : Math.round(value * 100) / 100;
+  });
+  weapon.fireRate = Math.max(0.15, weapon.fireRate);
+  weapon.range = Math.max(32, weapon.range);
+  weapon.radius = Math.max(2, weapon.radius);
+}
+
+function applyWeaponVariant(weapon, { floor = 1, rarity = null } = {}) {
+  const baseName = weapon.baseName || weapon.name;
+  const rarityKey = rarity || pickWeaponRarity(floor);
+  const rarityConfig = WEAPON_RARITIES[rarityKey] || WEAPON_RARITIES.normal;
+  const affixes = pickAffixes(baseName, rarityConfig.affixCount);
+
+  affixes.forEach((affix) => affix.apply(weapon, rarityConfig.power));
+  roundWeaponStats(weapon);
+
+  weapon.rarity = rarityKey;
+  weapon.rarityLabel = rarityConfig.label;
+  weapon.affixes = affixes.map((affix) => ({
+    key: affix.key,
+    prefix: affix.prefix,
+    text: affix.text(rarityConfig.power),
+  }));
+  weapon.name = affixes[0] ? `${affixes[0].prefix}${baseName}` : baseName;
+}
+
 export function snapshotWeaponStats(weapon) {
   const stats = {};
   WEAPON_STAT_KEYS.forEach((key) => {
@@ -26,12 +254,14 @@ export function restoreWeaponBaseStats(weapon) {
   });
 }
 
-export function createWeapon(template) {
+export function createWeapon(template, options = {}) {
+  const baseName = template.baseName || template.name;
   const bulletSpeed = template.bulletSpeed ?? 690;
   const life = template.life || 0.72;
   const weapon = {
     id: nextWeaponId(),
     name: template.name,
+    baseName,
     kind: template.kind || "projectile",
     damage: template.damage,
     fireRate: template.fireRate,
@@ -64,7 +294,18 @@ export function createWeapon(template) {
     bulletSprite: template.bulletSprite || null,
     shootTimer: template.shootTimer ?? 0.45,
     attachments: [],
+    rarity: "normal",
+    rarityLabel: WEAPON_RARITIES.normal.label,
+    affixes: [],
   };
+  if (options.rollVariant || template.rollVariant) {
+    applyWeaponVariant(weapon, {
+      floor: options.floor ?? game.wave,
+      rarity: options.rarity,
+    });
+  } else {
+    weapon.name = template.name || baseName;
+  }
   weapon.baseStats = snapshotWeaponStats(weapon);
   return weapon;
 }
@@ -86,6 +327,31 @@ export function weaponKindLabel(weapon) {
     sword: "斬撃",
   };
   return labels[weapon.kind] || "武器";
+}
+
+export function weaponRarityLabel(weapon) {
+  return weapon?.rarityLabel || WEAPON_RARITIES.normal.label;
+}
+
+export function weaponVariantSummary(weapon) {
+  if (!weapon?.affixes?.length) return "個体差なし";
+  return weapon.affixes.map((affix) => affix.text).join(" / ");
+}
+
+export function weaponVariantText(weapon) {
+  const summary = weaponVariantSummary(weapon);
+  return summary === "個体差なし"
+    ? `${weaponRarityLabel(weapon)}個体。基礎性能のまま扱いやすい。`
+    : `${weaponRarityLabel(weapon)}個体。${summary}。`;
+}
+
+export function weaponMetaLabel(weapon) {
+  const rarity = weaponRarityLabel(weapon);
+  const kind = weaponKindLabel(weapon);
+  const summary = weaponVariantSummary(weapon);
+  return summary === "個体差なし"
+    ? `${rarity}・${kind}`
+    : `${rarity}・${kind}・${summary}`;
 }
 
 export function updateWeaponTimers(player, dt) {

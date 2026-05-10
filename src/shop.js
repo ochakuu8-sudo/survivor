@@ -1,7 +1,7 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { MAX_ATTACHMENTS, MAX_WEAPONS } from "./constants.js";
-import { createWeapon, weaponKindLabel } from "./weapons.js";
+import { createWeapon, weaponMetaLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
   attachmentCategoryLabel,
@@ -45,24 +45,6 @@ export const WEAPON_POOL = [
     },
   },
   {
-    name: "ショットガン",
-    text: "近距離で群れを薙ぎ払う。複数弾が扇状に広がる。",
-    weapon: {
-      damage: 10,
-      fireRate: 0.9,
-      bulletSpeed: 580,
-      life: 0.42,
-      range: 270,
-      projectiles: 5,
-      spread: 0.28,
-      radius: 8,
-      kick: 2.6,
-      knockback: 12,
-      bulletTint: [1, 0.86, 0.6],
-      bulletGlow: "glowAmber",
-    },
-  },
-  {
     name: "火炎放射器",
     text: "前方に炎を吹きつける。近くの群れをまとめて焼く。",
     weapon: {
@@ -75,67 +57,6 @@ export const WEAPON_POOL = [
       kick: 1.2,
       effectTint: [1, 0.42, 0.12],
       effectGlow: "glowRed",
-    },
-  },
-  {
-    name: "次元爆弾",
-    text: "その場に爆弾を設置し、消えるまで一定間隔で爆発する。",
-    weapon: {
-      kind: "pulseBomb",
-      damage: 0,
-      explosionDamage: 30,
-      fireRate: 0.32,
-      bulletSpeed: 0,
-      range: 240,
-      duration: 4.6,
-      fuse: 0.55,
-      tickRate: 1.4,
-      radius: 14,
-      explosionRadius: 110,
-      kick: 1.8,
-      bulletTint: [0.86, 0.78, 1],
-      bulletGlow: "glowCyan",
-      effectTint: [0.84, 0.58, 1],
-      effectGlow: "glowRed",
-    },
-  },
-  {
-    name: "時限爆弾",
-    text: "その場に爆弾を置く。約2秒後に広めの範囲を一発で爆破する。",
-    weapon: {
-      kind: "timedBomb",
-      damage: 0,
-      explosionDamage: 64,
-      fireRate: 0.42,
-      bulletSpeed: 0,
-      fuse: 2.2,
-      life: 2.2,
-      range: 260,
-      radius: 15,
-      explosionRadius: 185,
-      kick: 3.6,
-      bulletTint: [0.95, 0.72, 0.34],
-      bulletGlow: "glowRed",
-      effectTint: [1, 0.52, 0.16],
-      effectGlow: "glowRed",
-    },
-  },
-  {
-    name: "持続レーザー",
-    text: "設置した光線がしばらく残り、触れた敵を連続で焼く。",
-    weapon: {
-      kind: "sustainedLaser",
-      damage: 18,
-      fireRate: 0.48,
-      bulletSpeed: 1,
-      range: 560,
-      lineWidth: 18,
-      duration: 1.35,
-      tickRate: 8,
-      pierce: 8,
-      kick: 2.0,
-      effectTint: [0.48, 1, 1],
-      effectGlow: "glowCyan",
     },
   },
   {
@@ -152,21 +73,6 @@ export const WEAPON_POOL = [
       orbitSpeed: 3.0,
       kick: 1.5,
       effectTint: [0.84, 0.88, 1],
-      effectGlow: "glowCyan",
-    },
-  },
-  {
-    name: "ソード",
-    text: "長いクールダウン後に前方を大きく薙ぐ一撃武器。",
-    weapon: {
-      kind: "sword",
-      damage: 80,
-      fireRate: 0.4,
-      bulletSpeed: 1,
-      range: 165,
-      cone: 0.72,
-      kick: 3.6,
-      effectTint: [0.74, 0.96, 1],
       effectGlow: "glowCyan",
     },
   },
@@ -392,13 +298,14 @@ function bindPress(element, handler) {
 
 export function weaponIcon(weapon) {
   if (!weapon) return "+";
+  const baseName = weapon.baseName || weapon.name;
   if (weapon.kind === "flame") return "F";
   if (weapon.kind === "timedBomb" || weapon.kind === "pulseBomb") return "B";
   if (weapon.kind === "sustainedLaser") return "L";
   if (weapon.kind === "orbit") return "O";
   if (weapon.kind === "sword") return "S";
-  if (weapon.name === "石") return "R";
-  if (weapon.name === "豆鉄砲") return "M";
+  if (baseName === "石") return "R";
+  if (baseName === "豆鉄砲") return "M";
   return "W";
 }
 
@@ -562,7 +469,7 @@ function buildStoredWeaponCard(weapon, storageIndex) {
   const name = document.createElement("strong");
   name.textContent = weapon.name;
   const meta = document.createElement("small");
-  meta.textContent = `${weaponKindLabel(weapon)} / アタッチメント ${weapon.attachments.length}`;
+  meta.textContent = `${weaponMetaLabel(weapon)} / アタッチメント ${weapon.attachments.length}`;
   body.append(name, meta);
 
   const actions = document.createElement("div");
@@ -649,7 +556,7 @@ function buildWeaponSlot(weapon, index) {
   name.textContent = weapon ? weapon.name : "未装備";
   const kind = document.createElement("small");
   kind.className = "weapon-slot-kind";
-  kind.textContent = weapon ? weaponKindLabel(weapon) : "武器スロット";
+  kind.textContent = weapon ? weaponMetaLabel(weapon) : "武器スロット";
 
   const attachmentTrack = document.createElement("div");
   attachmentTrack.className = "attachment-track";

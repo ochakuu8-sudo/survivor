@@ -109,7 +109,7 @@ function debugEquipWeapon() {
   const index = Number(hud.dbgWeaponSel.value);
   const template = WEAPON_POOL[index];
   if (!template || !game.player) return;
-  const weapon = createWeapon({ name: template.name, ...template.weapon });
+  const weapon = createWeapon({ name: template.name, ...template.weapon }, { floor: game.wave, rollVariant: true });
   if (game.player.gear.weapons.length < MAX_WEAPONS) {
     game.player.gear.weapons.push(weapon);
   } else {
@@ -133,7 +133,8 @@ function debugApplyAttachment() {
   const weapon = findWeapon(weaponId);
   if (!definition || !weapon) return;
   const ok = addAttachmentToWeapon(weapon, { definition });
-  if (!ok && definition.compatibleWeapons && !definition.compatibleWeapons.includes(weapon.name)) {
+  const weaponName = weapon.baseName || weapon.name;
+  if (!ok && definition.compatibleWeapons && !definition.compatibleWeapons.includes(weaponName)) {
     hud.dbgAttApply.textContent = "互換なし";
     setTimeout(() => { hud.dbgAttApply.textContent = "装着"; }, 900);
     return;

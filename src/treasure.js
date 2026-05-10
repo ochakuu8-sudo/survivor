@@ -2,7 +2,7 @@ import { INTERACTION_HOLD_SECONDS, MAX_WEAPONS } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
-import { createWeapon, weaponKindLabel } from "./weapons.js";
+import { createWeapon, weaponMetaLabel, weaponVariantText } from "./weapons.js";
 import { weaponIcon, WEAPON_POOL } from "./shop.js";
 import { updateHud } from "./hud.js";
 
@@ -65,7 +65,7 @@ export function rerollTreasureReward() {
   if (game.gold < price) return;
   if (price > 0) game.gold -= price;
   treasure.rerollsUsed += 1;
-  treasure.reward = chooseTreasureReward(treasure.reward.name);
+  treasure.reward = chooseTreasureReward(treasure.reward.baseName);
   treasure.chest.rewardName = treasure.reward.name;
   renderTreasureReward();
   updateHud();
@@ -78,7 +78,7 @@ export function claimTreasureReward() {
   if (reward.type === "weapon") {
     const gear = game.player.gear;
     if (!Array.isArray(gear.storageWeapons)) gear.storageWeapons = [];
-    const weapon = createWeapon({ name: reward.name, ...reward.weapon });
+    const weapon = reward.weapon;
     if (gear.weapons.length < MAX_WEAPONS) {
       gear.weapons.push(weapon);
     } else {
@@ -109,28 +109,23 @@ function renderTreasureReward() {
 }
 
 function chooseTreasureReward(excludeName = "") {
-  const gear = game.player.gear;
-  if (!Array.isArray(gear.storageWeapons)) gear.storageWeapons = [];
-  const owned = new Set([
-    ...gear.weapons.map((weapon) => weapon.name),
-    ...gear.storageWeapons.map((weapon) => weapon.name),
-  ]);
-  const allCandidates = WEAPON_POOL.filter((template) => (
-    template.name !== "石"
-    && !owned.has(template.name)
-  ));
+  const allCandidates = WEAPON_POOL;
   const candidates = allCandidates.filter((template) => template.name !== excludeName);
   const pool = candidates.length > 0 ? candidates : allCandidates;
   if (pool.length === 0) return createGoldReward();
   const template = pool[Math.floor(Math.random() * pool.length)];
-  const previewWeapon = { name: template.name, ...template.weapon };
+  const weapon = createWeapon({ name: template.name, ...template.weapon }, {
+    floor: game.wave,
+    rollVariant: true,
+  });
   return {
     type: "weapon",
-    name: template.name,
-    text: template.text || "",
-    meta: weaponKindLabel(previewWeapon),
-    icon: weaponIcon(previewWeapon),
-    weapon: template.weapon,
+    name: weapon.name,
+    baseName: template.name,
+    text: `${template.text || ""} ${weaponVariantText(weapon)}`,
+    meta: weaponMetaLabel(weapon),
+    icon: weaponIcon(weapon),
+    weapon,
   };
 }
 
