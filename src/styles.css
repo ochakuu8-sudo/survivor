@@ -2005,7 +2005,7 @@ h1 {
 
   #shop .attachment-pips {
     display: grid;
-    grid-template-columns: repeat(5, 12px);
+    grid-template-columns: repeat(auto-fit, 12px);
     gap: 3px;
   }
 

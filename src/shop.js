@@ -1,6 +1,6 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { MAX_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS } from "./constants.js";
+import { MAX_WEAPONS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
 import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponAmmoLabel, weaponMetaLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
@@ -390,14 +390,14 @@ function shuffle(items) {
 function syncWeaponLevel(weapon) {
   if (!weapon) return 1;
   const levelFromAttachments = (weapon.attachments?.length || 0) + 1;
-  weapon.level = Math.min(MAX_WEAPON_LEVEL, Math.max(1, weapon.level || 1, levelFromAttachments));
+  weapon.level = Math.min(getWeaponMaxLevel(weapon), Math.max(1, weapon.level || 1, levelFromAttachments));
   return weapon.level;
 }
 
 function weaponLevelUpPrice(weapon) {
   const level = syncWeaponLevel(weapon);
   const nextLevel = level + 1;
-  const basePrices = { 2: 18, 3: 30, 4: 46, 5: 66 };
+  const basePrices = { 2: 18, 3: 30, 4: 46, 5: 66, 6: 92, 7: 124, 8: 162, 9: 210 };
   return (basePrices[nextLevel] || 999) + Math.max(1, game.wave) * (nextLevel + 2);
 }
 
@@ -450,7 +450,7 @@ export function beginWeaponLevelUp(weaponId) {
   const weapon = findWeapon(weaponId);
   if (!weapon || game.pendingAttachmentChoice) return;
   const level = syncWeaponLevel(weapon);
-  if (level >= MAX_WEAPON_LEVEL || weapon.attachments.length >= MAX_ATTACHMENTS) return;
+  if (level >= getWeaponMaxLevel(weapon) || weapon.attachments.length >= getWeaponMaxAttachments(weapon)) return;
   const price = weaponLevelUpPrice(weapon);
   if (game.gold < price) return;
   const nextLevel = level + 1;
@@ -487,7 +487,7 @@ export function chooseLevelAttachment(index) {
   const definition = findAttachmentDefinition(choice.key);
   if (!definition || !canAttachToWeapon(definition, weapon)) return;
   if (!addAttachmentToWeapon(weapon, { ...choice, definition })) return;
-  weapon.level = Math.min(MAX_WEAPON_LEVEL, pending.nextLevel);
+  weapon.level = Math.min(getWeaponMaxLevel(weapon), pending.nextLevel);
   game.pendingAttachmentChoice = null;
   renderShop();
   updateHud();
@@ -502,7 +502,7 @@ export function equipStoredAttachment(storageIndex, weaponId) {
   const weapon = findWeapon(weaponId);
   if (!gear || !weapon) return;
   const attachment = gear.storageAttachments[storageIndex];
-  if (!attachment || weapon.attachments.length >= MAX_ATTACHMENTS) return;
+  if (!attachment || weapon.attachments.length >= getWeaponMaxAttachments(weapon)) return;
   const definition = findAttachmentDefinition(attachment.key) || attachment;
   if (!canAttachToWeapon(definition, weapon)) return;
   if (!addAttachmentToWeapon(weapon, { ...attachment, definition })) return;
@@ -609,7 +609,9 @@ export function weaponIcon(weapon) {
 function buildLevelUpCard(weapon, index) {
   const level = syncWeaponLevel(weapon);
   const nextLevel = level + 1;
-  const maxed = level >= MAX_WEAPON_LEVEL || weapon.attachments.length >= MAX_ATTACHMENTS;
+  const maxLevel = getWeaponMaxLevel(weapon);
+  const maxAttachments = getWeaponMaxAttachments(weapon);
+  const maxed = level >= maxLevel || weapon.attachments.length >= maxAttachments;
   const cost = maxed ? 0 : weaponLevelUpPrice(weapon);
   const canAfford = game.gold >= cost;
   const card = document.createElement("article");
@@ -638,8 +640,8 @@ function buildLevelUpCard(weapon, index) {
   const meta = document.createElement("small");
   meta.className = "offer-meta";
   meta.textContent = maxed
-    ? `Lv ${level}/${MAX_WEAPON_LEVEL}・アタッチメント ${weapon.attachments.length}/${MAX_ATTACHMENTS}`
-    : `Lv ${level}/${MAX_WEAPON_LEVEL}・アタッチメント ${weapon.attachments.length}/${MAX_ATTACHMENTS}・抽選 ${attachmentRarityChanceText(nextLevel)}`;
+    ? `Lv ${level}/${maxLevel}・アタッチメント ${weapon.attachments.length}/${maxAttachments}`
+    : `Lv ${level}/${maxLevel}・アタッチメント ${weapon.attachments.length}/${maxAttachments}・抽選 ${attachmentRarityChanceText(nextLevel)}`;
 
   const price = document.createElement("div");
   price.className = "price";
@@ -853,7 +855,7 @@ function buildStoredWeaponCard(weapon, storageIndex) {
   const name = document.createElement("strong");
   name.textContent = weapon.name;
   const meta = document.createElement("small");
-  meta.textContent = `Lv ${syncWeaponLevel(weapon)}/${MAX_WEAPON_LEVEL} / ${weaponMetaLabel(weapon)} / ${weaponAmmoLabel(weapon)} / アタッチメント ${weapon.attachments.length}`;
+  meta.textContent = `Lv ${syncWeaponLevel(weapon)}/${getWeaponMaxLevel(weapon)} / ${weaponMetaLabel(weapon)} / ${weaponAmmoLabel(weapon)} / アタッチメント ${weapon.attachments.length}/${getWeaponMaxAttachments(weapon)}`;
   body.append(name, meta);
 
   const actions = document.createElement("div");
@@ -901,7 +903,7 @@ function buildStoredAttachmentCard(attachment, storageIndex) {
     button.type = "button";
     button.className = "storage-action";
     button.textContent = `${weaponIndex + 1}へ`;
-    button.disabled = weapon.attachments.length >= MAX_ATTACHMENTS || !canAttachToWeapon(definition, weapon);
+    button.disabled = weapon.attachments.length >= getWeaponMaxAttachments(weapon) || !canAttachToWeapon(definition, weapon);
     bindPress(button, () => equipStoredAttachment(storageIndex, weapon.id));
     actions.append(button);
   });
@@ -921,6 +923,8 @@ function buildWeaponSlot(weapon, index) {
   const activeIndex = clampActiveWeaponIndex(game.player.gear);
   const isActive = !!weapon && index === activeIndex;
   const level = weapon ? syncWeaponLevel(weapon) : 1;
+  const maxLevel = weapon ? getWeaponMaxLevel(weapon) : 1;
+  const maxAttachments = weapon ? getWeaponMaxAttachments(weapon) : 0;
   const slot = document.createElement("article");
   slot.className = `weapon-slot ${weapon ? "weapon-slot-filled" : "weapon-slot-empty"}${isActive ? " weapon-slot-active" : ""}`;
 
@@ -950,7 +954,7 @@ function buildWeaponSlot(weapon, index) {
   const attachmentTitle = document.createElement("span");
   attachmentTitle.className = "attachment-title";
   attachmentTitle.textContent = weapon
-    ? `Lv ${level}/${MAX_WEAPON_LEVEL}・アタッチメント ${weapon.attachments.length}/${MAX_ATTACHMENTS}`
+    ? `Lv ${level}/${maxLevel}・アタッチメント ${weapon.attachments.length}/${maxAttachments}`
     : "アタッチメント";
   const attachmentList = document.createElement("div");
   attachmentList.className = "attachment-list";
@@ -958,7 +962,7 @@ function buildWeaponSlot(weapon, index) {
 
   const attachmentPips = document.createElement("div");
   attachmentPips.className = "attachment-pips";
-  for (let i = 0; i < MAX_ATTACHMENTS; i += 1) {
+  for (let i = 0; i < maxAttachments; i += 1) {
     const pip = document.createElement("span");
     pip.className = `attachment-pip${attachments[i] ? ` attach-stars-${attachments[i].stars || 1}` : ""}`;
     pip.textContent = attachments[i] ? starsLabel(attachments[i].stars).slice(0, 1) : "";
@@ -995,7 +999,7 @@ function buildWeaponSlot(weapon, index) {
   const slotActions = document.createElement("div");
   slotActions.className = "weapon-slot-actions";
   if (weapon) {
-    const maxed = level >= MAX_WEAPON_LEVEL || weapon.attachments.length >= MAX_ATTACHMENTS;
+    const maxed = level >= maxLevel || weapon.attachments.length >= maxAttachments;
     const levelUp = document.createElement("button");
     levelUp.type = "button";
     levelUp.className = "weapon-use";

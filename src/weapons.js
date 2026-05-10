@@ -1,4 +1,4 @@
-import { FIXED_RELOAD_SECONDS, MAX_WEAPON_LEVEL, TAU, WEAPON_STAT_KEYS } from "./constants.js";
+import { FIXED_RELOAD_SECONDS, TAU, WEAPON_STAT_KEYS, getWeaponMaxLevel } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
 import { distanceToSegmentSq, distSq } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -279,7 +279,7 @@ export function createWeapon(template, options = {}) {
     id: nextWeaponId(),
     name: template.name,
     baseName,
-    level: Math.min(MAX_WEAPON_LEVEL, Math.max(1, template.level || 1)),
+    level: Math.max(1, template.level || 1),
     kind,
     damage: template.damage,
     fireRate: template.fireRate,
@@ -346,6 +346,7 @@ export function createWeapon(template, options = {}) {
   } else {
     weapon.name = template.name || baseName;
   }
+  weapon.level = Math.min(getWeaponMaxLevel(weapon), Math.max(1, weapon.level || 1));
   weapon.baseStats = snapshotWeaponStats(weapon);
   return weapon;
 }

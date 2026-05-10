@@ -1,5 +1,5 @@
 import { game } from "./state.js";
-import { MAX_ATTACHMENTS } from "./constants.js";
+import { getWeaponMaxAttachments } from "./constants.js";
 import {
   addWeaponPierce,
   boostWeaponImpact,
@@ -930,6 +930,10 @@ const LEVEL_ATTACHMENT_RARITY_WEIGHTS = {
   3: [[1, 50], [2, 35], [3, 15], [4, 0], [5, 0]],
   4: [[1, 30], [2, 35], [3, 25], [4, 10], [5, 0]],
   5: [[1, 15], [2, 25], [3, 35], [4, 20], [5, 5]],
+  6: [[1, 5], [2, 15], [3, 35], [4, 32], [5, 13]],
+  7: [[1, 0], [2, 10], [3, 30], [4, 40], [5, 20]],
+  8: [[1, 0], [2, 5], [3, 25], [4, 42], [5, 28]],
+  9: [[1, 0], [2, 0], [3, 20], [4, 45], [5, 35]],
 };
 
 export function pickShopAttachment(wave) {
@@ -969,7 +973,7 @@ export function pickAttachmentChoicesForWeapon(weapon, targetLevel, count = 3) {
 }
 
 function pickStarsForWeaponLevel(level) {
-  const weights = LEVEL_ATTACHMENT_RARITY_WEIGHTS[Math.min(5, Math.max(2, level))] || LEVEL_ATTACHMENT_RARITY_WEIGHTS[2];
+  const weights = LEVEL_ATTACHMENT_RARITY_WEIGHTS[Math.min(9, Math.max(2, level))] || LEVEL_ATTACHMENT_RARITY_WEIGHTS[2];
   const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
   let roll = Math.random() * total;
   for (const [stars, weight] of weights) {
@@ -1050,7 +1054,7 @@ function pickAttachmentForWeaponByStars(weapon, stars, seen = new Set()) {
 
 export function addAttachmentToWeapon(weapon, attachment) {
   if (!weapon || !attachment) return false;
-  if ((weapon.attachments?.length || 0) >= MAX_ATTACHMENTS) return false;
+  if ((weapon.attachments?.length || 0) >= getWeaponMaxAttachments(weapon)) return false;
   const definition = attachment.definition || findAttachmentDefinition(attachment.key) || attachment;
   if (!definition?.key) return false;
   const weaponName = weapon.baseName || weapon.name;
