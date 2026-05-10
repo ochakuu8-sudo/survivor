@@ -13,22 +13,38 @@ const MAX_SPAWNS_PER_FRAME = 3;
 const FLOOR_SPEED_START = 0.48;
 const FLOOR_SPEED_PER_SECOND = 0.012;
 const FLOOR_SPEED_MAX = 1.85;
+const FLOOR_SPAWN_START = 0.24;
+const FLOOR_SPAWN_NORMAL_TIME = 75;
+const FLOOR_SPAWN_EXTRA_TIME = 150;
+const FLOOR_SPAWN_MAX = 1.55;
 
 export function enemyFloorSpeedMultiplier(elapsed = game.floorElapsed || 0) {
   return Math.min(FLOOR_SPEED_MAX, FLOOR_SPEED_START + elapsed * FLOOR_SPEED_PER_SECOND);
 }
 
-function enemyCapForWave() {
-  return Math.min(HARD_ENEMY_CAP, BASE_ENEMY_CAP + game.wave * ENEMY_CAP_PER_WAVE);
+export function enemyFloorSpawnPressure(elapsed = game.floorElapsed || 0) {
+  const normalRamp = Math.min(1, elapsed / FLOOR_SPAWN_NORMAL_TIME);
+  const extraRamp = Math.min(1, Math.max(0, elapsed - FLOOR_SPAWN_NORMAL_TIME) / FLOOR_SPAWN_EXTRA_TIME);
+  return FLOOR_SPAWN_START
+    + normalRamp * (1 - FLOOR_SPAWN_START)
+    + extraRamp * (FLOOR_SPAWN_MAX - 1);
 }
 
-function spawnIntervalForWave() {
-  return Math.max(0.16, 0.72 - (game.wave - 1) * 0.045);
+function enemyCapForWave(elapsed = game.floorElapsed || 0) {
+  const baseCap = BASE_ENEMY_CAP + game.wave * ENEMY_CAP_PER_WAVE;
+  const pressure = enemyFloorSpawnPressure(elapsed);
+  return Math.min(HARD_ENEMY_CAP, Math.max(8 + game.wave * 2, Math.ceil(baseCap * pressure)));
+}
+
+function spawnIntervalForWave(elapsed = game.floorElapsed || 0) {
+  const baseInterval = Math.max(0.16, 0.72 - (game.wave - 1) * 0.045);
+  return Math.max(0.11, baseInterval / enemyFloorSpawnPressure(elapsed));
 }
 
 export function spawnEnemies(dt) {
-  const cap = enemyCapForWave();
-  const interval = spawnIntervalForWave();
+  const elapsed = game.floorElapsed || 0;
+  const cap = enemyCapForWave(elapsed);
+  const interval = spawnIntervalForWave(elapsed);
 
   if (game.enemies.length >= cap) {
     game.spawnClock = Math.min(game.spawnClock, interval * 0.5);
