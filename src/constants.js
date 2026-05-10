@@ -1,6 +1,5 @@
 export const TAU = Math.PI * 2;
 export const TILE_SIZE = 96;
-export const WAVE_SECONDS = 45;
 export const COLLISION_CELL_SIZE = 128;
 export const BACKGROUND_CACHE_LIMIT = 4096;
 export const MOBILE_CAMERA_ZOOM = 0.5;

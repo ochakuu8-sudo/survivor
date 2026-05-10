@@ -1,4 +1,3 @@
-import { WAVE_SECONDS } from "./constants.js";
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
@@ -18,7 +17,6 @@ import { render } from "./render.js";
 export function resetRun() {
   game.mode = "starterPick";
   game.wave = 1;
-  game.timeLeft = WAVE_SECONDS;
   game.elapsed = 0;
   game.totalKills = 0;
   game.waveKills = 0;
@@ -74,7 +72,6 @@ export function resetRun() {
 export function startNextWave() {
   game.mode = "fight";
   game.wave += 1;
-  game.timeLeft = WAVE_SECONDS;
   game.waveKills = 0;
   game.spawnClock = 0;
   game.enemies = [];
@@ -136,7 +133,6 @@ function update(dt) {
   }
 
   const p = game.player;
-  game.timeLeft -= dt;
 
   updateMovement(dt);
   updateWeaponTimers(p, dt);
@@ -154,8 +150,6 @@ function update(dt) {
   if (p.hp <= 0) {
     endRun();
   } else if (hasReachedDungeonExit(p)) {
-    enterShop();
-  } else if (game.timeLeft <= 0) {
     enterShop();
   }
 

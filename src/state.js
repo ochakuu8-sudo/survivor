@@ -1,5 +1,3 @@
-import { WAVE_SECONDS } from "./constants.js";
-
 export const keys = new Set();
 
 export const pointer = {
@@ -20,7 +18,6 @@ export const backgroundTileCache = new Map();
 export const game = {
   mode: "fight",
   wave: 1,
-  timeLeft: WAVE_SECONDS,
   elapsed: 0,
   totalKills: 0,
   waveKills: 0,

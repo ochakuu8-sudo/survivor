@@ -5,7 +5,7 @@ import { resetVirtualMove } from "./input.js";
 
 export function updateHud() {
   hud.wave.textContent = String(game.wave);
-  hud.time.textContent = formatTime(game.timeLeft);
+  hud.time.textContent = objectiveText();
   hud.kills.textContent = String(game.waveKills);
   hud.hp.style.width = `${clamp((game.player.hp / game.player.maxHp) * 100, 0, 100)}%`;
   if (hud.hpText) hud.hpText.textContent = `${Math.ceil(game.player.hp)}/${Math.ceil(game.player.maxHp)}`;
@@ -14,11 +14,12 @@ export function updateHud() {
   syncTouchControls();
 }
 
-export function formatTime(value) {
-  const safe = Math.max(0, Math.ceil(value));
-  const minutes = Math.floor(safe / 60);
-  const seconds = safe % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+function objectiveText() {
+  if (game.mode === "starterPick") return "武器選択";
+  if (game.mode === "shop") return "装備整理";
+  if (game.mode === "pause") return "一時停止";
+  if (game.mode === "over") return "探索終了";
+  return "出口を探せ";
 }
 
 export function syncTouchControls() {
