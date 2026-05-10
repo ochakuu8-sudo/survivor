@@ -1,7 +1,7 @@
 import { COLLISION_CELL_SIZE } from "./constants.js";
 import { game } from "./state.js";
 import { distSq, gridKey } from "./utils/math.js";
-import { buildEnemyGrid, damageEnemy, explodeBullet, findNearestEnemyFrom, removeDeadEnemies } from "./combat.js";
+import { buildEnemyGrid, damageEnemy, explodeBullet, removeDeadEnemies } from "./combat.js";
 import { addEffect } from "./effects.js";
 
 export function updateBullets(dt) {
@@ -57,41 +57,20 @@ export function updateBullets(dt) {
             break nearbyCells;
           }
           if ((bullet.ricochetCount || 0) > 0) {
-            const nextTarget = findNearestEnemyFrom(enemy.x, enemy.y, bullet.ricochetRange || 220, bullet.hitIds);
-            if (nextTarget) {
-              const dx = nextTarget.x - bullet.x;
-              const dy = nextTarget.y - bullet.y;
-              const len = Math.hypot(dx, dy) || 1;
+            const splitCount = Math.max(1, Math.round(bullet.ricochetSplitCount || 1));
+            const targets = findRicochetTargets(enemy.x, enemy.y, bullet.ricochetRange || 220, splitCount, enemy.id);
+            if (targets.length > 0) {
               const speed = Math.hypot(bullet.vx, bullet.vy) || 360;
-              bullet.vx = (dx / len) * speed;
-              bullet.vy = (dy / len) * speed;
-              bullet.angle = Math.atan2(dy, dx);
-              bullet.life = Math.max(bullet.life, 0.18);
               bullet.ricochetCount -= 1;
-              const splitCount = Math.max(1, Math.round(bullet.ricochetSplitCount || 1));
-              for (let i = 1; i < splitCount; i += 1) {
-                const offset = (i - (splitCount - 1) / 2) * 0.28;
-                const angle = bullet.angle + offset;
+              retargetRicochetBullet(bullet, targets[0], speed, enemy.id);
+              for (let i = 1; i < targets.length; i += 1) {
+                const splitBullet = { ...bullet, hitIds: new Set([enemy.id]) };
+                retargetRicochetBullet(splitBullet, targets[i], speed, enemy.id);
                 next.push({
-                  ...bullet,
-                  vx: Math.cos(angle) * speed,
-                  vy: Math.sin(angle) * speed,
-                  angle,
-                  hitIds: new Set(bullet.hitIds),
+                  ...splitBullet,
                 });
               }
-              addEffect({
-                type: "line",
-                x1: enemy.x,
-                y1: enemy.y,
-                x2: nextTarget.x,
-                y2: nextTarget.y,
-                width: Math.max(4, bullet.radius * 0.45),
-                life: 0.16,
-                maxLife: 0.16,
-                glow: bullet.bulletGlow || "glowAmber",
-                tint: bullet.bulletTint || [1, 1, 1],
-              });
+              targets.forEach((target) => addRicochetLine(enemy, target, bullet));
               keep = true;
               break nearbyCells;
             }
@@ -108,4 +87,56 @@ export function updateBullets(dt) {
   }
   removeDeadEnemies();
   game.bullets = next;
+}
+
+function findRicochetTargets(x, y, range, count, justHitId) {
+  const rangeSq = range * range;
+  const candidates = [];
+  for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
+    const distance = distSq(x, y, enemy.x, enemy.y);
+    if (distance > rangeSq) continue;
+    candidates.push({
+      enemy,
+      distance,
+      justHit: enemy.id === justHitId,
+    });
+  }
+
+  candidates.sort((a, b) => {
+    if (a.justHit !== b.justHit) return a.justHit ? 1 : -1;
+    return a.distance - b.distance;
+  });
+
+  const targets = candidates.slice(0, count).map((candidate) => candidate.enemy);
+  while (targets.length < count && candidates.length > 0) {
+    targets.push(candidates[targets.length % candidates.length].enemy);
+  }
+  return targets;
+}
+
+function retargetRicochetBullet(bullet, target, speed, justHitId) {
+  const dx = target.x - bullet.x;
+  const dy = target.y - bullet.y;
+  const len = Math.hypot(dx, dy) || 1;
+  bullet.vx = (dx / len) * speed;
+  bullet.vy = (dy / len) * speed;
+  bullet.angle = Math.atan2(dy, dx);
+  bullet.life = Math.max(bullet.life, 0.18);
+  bullet.hitIds = new Set([justHitId]);
+}
+
+function addRicochetLine(from, target, bullet) {
+  addEffect({
+    type: "line",
+    x1: from.x,
+    y1: from.y,
+    x2: target.x,
+    y2: target.y,
+    width: Math.max(4, bullet.radius * 0.45),
+    life: 0.16,
+    maxLife: 0.16,
+    glow: bullet.bulletGlow || "glowAmber",
+    tint: bullet.bulletTint || [1, 1, 1],
+  });
 }
