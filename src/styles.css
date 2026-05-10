@@ -1559,22 +1559,22 @@ h1 {
   }
 
   #shop.panel {
-    left: 0;
-    top: 0;
-    width: 100vw;
+    left: 50%;
+    top: 50%;
+    width: min(390px, calc(100vw - 12px));
     max-width: none;
-    height: 100dvh;
-    max-height: none;
-    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-    border: 0;
-    border-radius: 0;
-    transform: none;
+    height: auto;
+    max-height: calc(100dvh - 12px);
+    padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+    border: 2px solid rgba(255, 243, 196, 0.82);
+    border-radius: 8px;
+    transform: translate(-50%, -50%);
     overflow: hidden;
   }
 
   #shop.panel:not(.hidden) {
     display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, auto) auto;
     align-content: start;
     gap: 5px;
   }
@@ -1587,12 +1587,12 @@ h1 {
 
   #shop .panel-head h1 {
     margin-top: 1px;
-    font-size: 1rem;
+    font-size: 0.94rem;
     line-height: 1.05;
   }
 
   #shop .panel-kicker {
-    font-size: 0.56rem;
+    font-size: 0.52rem;
   }
 
   #shop .shop-tabs {
@@ -1602,13 +1602,14 @@ h1 {
   }
 
   #shop .shop-tab {
-    min-height: 32px;
-    font-size: 0.76rem;
+    min-height: 30px;
+    font-size: 0.74rem;
   }
 
   #shop .shop-pane {
     order: 2;
     min-height: 0;
+    max-height: calc(100dvh - 134px);
     overflow: auto;
     overscroll-behavior: contain;
   }
@@ -1779,9 +1780,9 @@ h1 {
 
   #shop .shop-actions button {
     flex: 1;
-    min-height: 34px;
+    min-height: 32px;
     padding: 0 8px;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
   }
 
   #shop .shop-footer {
@@ -1792,9 +1793,9 @@ h1 {
   }
 
   #shop .shop-wallet {
-    min-height: 34px;
-    padding: 5px 7px;
-    min-width: 82px;
+    min-height: 32px;
+    padding: 4px 7px;
+    min-width: 76px;
   }
 
   #shop .shop-wallet .hud-label {
@@ -1806,8 +1807,8 @@ h1 {
     color: #241737;
     display: grid;
     place-items: center;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 999px;
     background: #ffe46b;
     font-size: 0.64rem;
@@ -1815,7 +1816,7 @@ h1 {
   }
 
   #shop .shop-wallet strong {
-    font-size: 0.9rem;
+    font-size: 0.86rem;
   }
 
   .loadout-board {
@@ -1862,19 +1863,19 @@ h1 {
   }
 
   #shop .weapon-slot {
-    grid-template-columns: 30px minmax(0, 1fr);
-    gap: 7px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 6px;
     min-height: 0;
-    padding: 6px;
+    padding: 5px;
     border-width: 1px;
     box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.15);
   }
 
   #shop .weapon-icon {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border-radius: 7px;
-    font-size: 0.76rem;
+    font-size: 0.72rem;
   }
 
   #shop .weapon-slot-top {
@@ -1922,16 +1923,39 @@ h1 {
     display: grid;
   }
 
+  #storagePane .weapon-slot .attach-chip-empty {
+    display: none;
+  }
+
+  #storagePane .weapon-slot-empty .attachment-track {
+    margin-top: 4px;
+    padding-top: 4px;
+  }
+
+  #storagePane .weapon-slot-empty .attachment-title {
+    display: none;
+  }
+
+  #storagePane .weapon-slot-empty .weapon-slot-actions {
+    margin-top: 3px;
+  }
+
+  #storagePane .slot-empty-note {
+    min-height: 0;
+    font-size: 0.62rem;
+    line-height: 1.15;
+  }
+
   #shop .attachment-pips {
     display: grid;
-    grid-template-columns: repeat(5, 14px);
-    gap: 4px;
+    grid-template-columns: repeat(5, 12px);
+    gap: 3px;
   }
 
   #shop .attachment-pip {
     display: block;
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border: 1px solid rgba(255, 249, 242, 0.2);
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.08);
