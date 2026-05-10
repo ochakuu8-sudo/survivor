@@ -67,6 +67,11 @@ function restorePlayerBaseStats() {
   });
 }
 
+function boostWeaponAmmoCapacity(weapon, multiplier) {
+  if (!weapon?.usesAmmo) return;
+  weapon.ammoCapacity *= multiplier;
+}
+
 export function recomputeAllAttachments() {
   if (!game.player?.gear) return;
   restorePlayerBaseStats();
@@ -181,6 +186,17 @@ export const ACTIVE_ATTACHMENTS = [
     text: "移動速度 +26。",
     attach: () => {
       game.player.speed += 26;
+    },
+  },
+  {
+    key: "ammoPack",
+    name: "弾薬容量+15%",
+    stars: 1,
+    category: "stat",
+    requiresAmmo: true,
+    text: "弾薬容量 +15%。燃料武器は燃料秒数が伸びる。",
+    attach: (weapon) => {
+      boostWeaponAmmoCapacity(weapon, 1.15);
     },
   },
   {
@@ -506,6 +522,17 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
+    key: "ammoPack2",
+    name: "弾薬容量+25%",
+    stars: 2,
+    category: "stat",
+    requiresAmmo: true,
+    text: "弾薬容量 +25%。燃料武器は燃料秒数が伸びる。",
+    attach: (weapon) => {
+      boostWeaponAmmoCapacity(weapon, 1.25);
+    },
+  },
+  {
     key: "lightSneaker3",
     name: "移動速度+70",
     stars: 3,
@@ -513,6 +540,17 @@ export const ACTIVE_ATTACHMENTS = [
     text: "移動速度 +70。",
     attach: () => {
       game.player.speed += 70;
+    },
+  },
+  {
+    key: "ammoPack3",
+    name: "弾薬容量+40%",
+    stars: 3,
+    category: "stat",
+    requiresAmmo: true,
+    text: "弾薬容量 +40%。燃料武器は燃料秒数が伸びる。",
+    attach: (weapon) => {
+      boostWeaponAmmoCapacity(weapon, 1.4);
     },
   },
   {
@@ -526,6 +564,17 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
+    key: "ammoPack4",
+    name: "弾薬容量+60%",
+    stars: 4,
+    category: "stat",
+    requiresAmmo: true,
+    text: "弾薬容量 +60%。燃料武器は燃料秒数が伸びる。",
+    attach: (weapon) => {
+      boostWeaponAmmoCapacity(weapon, 1.6);
+    },
+  },
+  {
     key: "lightSneaker5",
     name: "移動速度+150",
     stars: 5,
@@ -533,6 +582,17 @@ export const ACTIVE_ATTACHMENTS = [
     text: "移動速度 +150。",
     attach: () => {
       game.player.speed += 150;
+    },
+  },
+  {
+    key: "ammoPack5",
+    name: "弾薬容量+85%",
+    stars: 5,
+    category: "stat",
+    requiresAmmo: true,
+    text: "弾薬容量 +85%。燃料武器は燃料秒数が伸びる。",
+    attach: (weapon) => {
+      boostWeaponAmmoCapacity(weapon, 1.85);
     },
   },
   {
@@ -970,6 +1030,9 @@ export function canAttachToWeapon(definition, weapon) {
   if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weaponName)) {
     return false;
   }
+  if (definition.requiresAmmo && !weapon.usesAmmo) {
+    return false;
+  }
   return true;
 }
 
@@ -992,6 +1055,9 @@ export function addAttachmentToWeapon(weapon, attachment) {
   if (!definition?.key) return false;
   const weaponName = weapon.baseName || weapon.name;
   if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weaponName)) {
+    return false;
+  }
+  if (definition.requiresAmmo && !weapon.usesAmmo) {
     return false;
   }
   const stars = attachment.stars || definition.stars || 1;
