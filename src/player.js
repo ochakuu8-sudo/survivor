@@ -1,6 +1,7 @@
 import { game, keys, pointer } from "./state.js";
 import { clamp, normalize } from "./utils/math.js";
 import { addWalkDust } from "./effects.js";
+import { moveActorWithDungeonCollision } from "./dungeon.js";
 
 export function updateMovement(dt) {
   const p = game.player;
@@ -21,8 +22,7 @@ export function updateMovement(dt) {
   const speedScale = hasKeyboardInput ? 1 : clamp(pointer.strength, 0, 1);
   p.moveX = move.x;
   p.moveY = move.y;
-  p.x += move.x * p.speed * speedScale * dt;
-  p.y += move.y * p.speed * speedScale * dt;
+  moveActorWithDungeonCollision(p, move.x * p.speed * speedScale * dt, move.y * p.speed * speedScale * dt);
   if (move.len > 0 && speedScale > 0.05) {
     p.facingX = move.x;
     p.facingY = move.y;

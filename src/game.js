@@ -6,6 +6,7 @@ import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
 import { spawnEnemies, updateEnemies } from "./enemies.js";
+import { generateDungeon, hasReachedDungeonExit } from "./dungeon.js";
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
@@ -48,6 +49,11 @@ export function resetRun() {
       attachments: [],
     },
   };
+  game.dungeon = generateDungeon(game.wave);
+  game.player.x = game.dungeon.start.x;
+  game.player.y = game.dungeon.start.y;
+  game.camera.x = game.player.x;
+  game.camera.y = game.player.y;
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
@@ -76,6 +82,11 @@ export function startNextWave() {
   game.enemyProjectiles = [];
   game.particles = [];
   game.effects = [];
+  game.dungeon = generateDungeon(game.wave);
+  game.player.x = game.dungeon.start.x;
+  game.player.y = game.dungeon.start.y;
+  game.camera.x = game.player.x;
+  game.camera.y = game.player.y;
   hud.shop.classList.add("hidden");
   updateHud();
 }
@@ -142,6 +153,8 @@ function update(dt) {
 
   if (p.hp <= 0) {
     endRun();
+  } else if (hasReachedDungeonExit(p)) {
+    enterShop();
   } else if (game.timeLeft <= 0) {
     enterShop();
   }

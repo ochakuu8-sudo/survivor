@@ -9,6 +9,13 @@ import * as state from "./state.js";
 import { game, backgroundTileCache } from "./state.js";
 import { canvas } from "./dom.js";
 import { clamp, gridKey, hash2, mod } from "./utils/math.js";
+import {
+  DUNGEON_EXIT,
+  DUNGEON_WALL,
+  dungeonFloorSprite,
+  getDungeonTile,
+  isWalkableTile,
+} from "./dungeon.js";
 
 export function render() {
   const view = viewSize();
@@ -34,6 +41,11 @@ function drawBackgroundDepth(view) {
 }
 
 function drawBackground(view, camX, camY, zoom) {
+  if (game.dungeon) {
+    drawDungeonBackground(game.dungeon, view, camX, camY, zoom);
+    return;
+  }
+
   const visibleW = view.w / zoom;
   const visibleH = view.h / zoom;
   const startX = Math.floor((camX - visibleW / 2) / TILE_SIZE) - 1;
@@ -54,6 +66,67 @@ function drawBackground(view, camX, camY, zoom) {
         drawProp(tile.prop, tx, ty, view, camX, camY, zoom, tile.propOffset, tile.propY);
       }
     }
+  }
+}
+
+function drawDungeonBackground(dungeon, view, camX, camY, zoom) {
+  const visibleW = view.w / zoom;
+  const visibleH = view.h / zoom;
+  const startX = Math.floor((camX - visibleW / 2 - dungeon.offsetX) / TILE_SIZE) - 1;
+  const endX = Math.floor((camX + visibleW / 2 - dungeon.offsetX) / TILE_SIZE) + 1;
+  const startY = Math.floor((camY - visibleH / 2 - dungeon.offsetY) / TILE_SIZE) - 1;
+  const endY = Math.floor((camY + visibleH / 2 - dungeon.offsetY) / TILE_SIZE) + 1;
+
+  for (let ty = startY; ty <= endY; ty += 1) {
+    for (let tx = startX; tx <= endX; tx += 1) {
+      const tile = getDungeonTile(dungeon, tx, ty);
+      const worldX = dungeon.offsetX + tx * TILE_SIZE + TILE_SIZE / 2;
+      const worldY = dungeon.offsetY + ty * TILE_SIZE + TILE_SIZE / 2;
+      const screen = worldToScreen(worldX, worldY, view, camX, camY, zoom);
+      const size = (TILE_SIZE + 2) * zoom;
+
+      if (tile === DUNGEON_WALL) {
+        state.renderer.draw("white", screen.x, screen.y, size, size, {
+          tint: [0.035, 0.045, 0.13],
+          alpha: 1,
+        });
+        drawDungeonWallEdges(dungeon, tx, ty, screen, zoom);
+        continue;
+      }
+
+      state.renderer.draw(dungeonFloorSprite(tx, ty), screen.x, screen.y, size, size, {
+        tint: tile === DUNGEON_EXIT ? [0.9, 1, 0.96] : [0.92, 0.94, 1],
+      });
+      state.renderer.draw("white", screen.x, screen.y, size, size, {
+        tint: tile === DUNGEON_EXIT ? [0.08, 0.16, 0.18] : [0.04, 0.05, 0.12],
+        alpha: tile === DUNGEON_EXIT ? 0.18 : 0.1,
+      });
+
+      if (tile !== DUNGEON_EXIT) {
+        const propRoll = hash2(tx, ty, dungeon.seed);
+        if (propRoll < 0.035) drawProp("trash", tx, ty, view, camX, camY, zoom, hash2(tx, ty, 7), hash2(tx, ty, 17));
+        else if (propRoll < 0.055) drawProp("sign", tx, ty, view, camX, camY, zoom, hash2(tx, ty, 11), hash2(tx, ty, 19));
+      }
+    }
+  }
+}
+
+function drawDungeonWallEdges(dungeon, tx, ty, screen, zoom) {
+  const edgeTint = [0.2, 0.3, 0.72];
+  const edgeAlpha = 0.72;
+  const edge = Math.max(2, 5 * zoom);
+  const size = TILE_SIZE * zoom;
+  if (isWalkableTile(dungeon, tx, ty - 1)) {
+    state.renderer.draw("white", screen.x, screen.y - size / 2 + edge / 2, size, edge, { tint: edgeTint, alpha: edgeAlpha });
+  }
+  if (isWalkableTile(dungeon, tx, ty + 1)) {
+    state.renderer.draw("white", screen.x, screen.y + size / 2 - edge / 2, size, edge, { tint: edgeTint, alpha: edgeAlpha });
+  }
+  if (isWalkableTile(dungeon, tx - 1, ty)) {
+    state.renderer.draw("white", screen.x - size / 2 + edge / 2, screen.y, edge, size, { tint: edgeTint, alpha: edgeAlpha });
+  }
+  if (isWalkableTile(dungeon, tx + 1, ty)) {
+    state.renderer.draw("white", screen.x + size / 2 - edge / 2, screen.y, edge, size, { tint: edgeTint, alpha: edgeAlpha });
   }
 }
 
@@ -127,6 +200,8 @@ function drawProp(name, tx, ty, view, camX, camY, zoom, roll, yRoll) {
 }
 
 function drawWorld(view, camX, camY, zoom) {
+  drawDungeonExit(view, camX, camY, zoom);
+
   for (const particle of game.particles) {
     const alpha = clamp(particle.life / particle.maxLife, 0, 1);
     const screen = worldToScreen(particle.x, particle.y, view, camX, camY, zoom);
@@ -201,6 +276,27 @@ function drawWorld(view, camX, camY, zoom) {
       tint: [1, 1, 1],
     });
   }
+}
+
+function drawDungeonExit(view, camX, camY, zoom) {
+  const exit = game.dungeon?.exit;
+  if (!exit) return;
+  const screen = worldToScreen(exit.x, exit.y, view, camX, camY, zoom);
+  const pulse = 1 + Math.sin(game.elapsed * 4) * 0.08;
+  state.renderer.draw("glowCyan", screen.x, screen.y, 190 * pulse * zoom, 190 * pulse * zoom, { alpha: 0.42 });
+  state.renderer.draw("white", screen.x, screen.y, 70 * zoom, 70 * zoom, {
+    tint: [0.14, 0.82, 0.72],
+    alpha: 0.88,
+    rotation: Math.PI / 4,
+  });
+  state.renderer.draw("white", screen.x, screen.y, 42 * zoom, 42 * zoom, {
+    tint: [0.84, 1, 0.82],
+    alpha: 0.88,
+  });
+  state.renderer.draw("white", screen.x, screen.y - 4 * zoom, 18 * zoom, 54 * zoom, {
+    tint: [0.04, 0.08, 0.11],
+    alpha: 0.85,
+  });
 }
 
 function drawOrbitWeapons(view, camX, camY, zoom) {

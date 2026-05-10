@@ -4,6 +4,7 @@ import { distanceToSegmentSq, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
 import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
+import { moveActorWithDungeonCollision, pickDungeonSpawnPoint } from "./dungeon.js";
 
 const BASE_ENEMY_CAP = 65;
 const ENEMY_CAP_PER_WAVE = 10;
@@ -46,22 +47,33 @@ export function spawnEnemy(forceType) {
   const visibleW = view.w / zoom;
   const visibleH = view.h / zoom;
   const margin = 95;
-  const side = Math.floor(Math.random() * 4);
   let x = game.player.x;
   let y = game.player.y;
-
-  if (side === 0) {
-    x += (Math.random() - 0.5) * (visibleW + margin * 2);
-    y -= visibleH / 2 + margin;
-  } else if (side === 1) {
-    x += visibleW / 2 + margin;
-    y += (Math.random() - 0.5) * (visibleH + margin * 2);
-  } else if (side === 2) {
-    x += (Math.random() - 0.5) * (visibleW + margin * 2);
-    y += visibleH / 2 + margin;
+  const dungeonSpawn = pickDungeonSpawnPoint(
+    game.player.x,
+    game.player.y,
+    Math.min(visibleW, visibleH) * 0.48,
+    Math.max(visibleW, visibleH) * 1.15 + margin,
+  );
+  if (dungeonSpawn) {
+    x = dungeonSpawn.x;
+    y = dungeonSpawn.y;
   } else {
-    x -= visibleW / 2 + margin;
-    y += (Math.random() - 0.5) * (visibleH + margin * 2);
+    const side = Math.floor(Math.random() * 4);
+
+    if (side === 0) {
+      x += (Math.random() - 0.5) * (visibleW + margin * 2);
+      y -= visibleH / 2 + margin;
+    } else if (side === 1) {
+      x += visibleW / 2 + margin;
+      y += (Math.random() - 0.5) * (visibleH + margin * 2);
+    } else if (side === 2) {
+      x += (Math.random() - 0.5) * (visibleW + margin * 2);
+      y += visibleH / 2 + margin;
+    } else {
+      x -= visibleW / 2 + margin;
+      y += (Math.random() - 0.5) * (visibleH + margin * 2);
+    }
   }
 
   const roll = Math.random();
@@ -160,17 +172,14 @@ function updateMeleeEnemy(enemy, p, dt) {
   enemy.attackTimer = Math.max(0, (enemy.attackTimer ?? 0) - dt);
   if (enemy.attackTimer < 0.0001) enemy.attackTimer = 0;
   const dir = normalize(p.x - enemy.x, p.y - enemy.y);
-  enemy.x += dir.x * enemy.speed * dt;
-  enemy.y += dir.y * enemy.speed * dt;
+  moveActorWithDungeonCollision(enemy, dir.x * enemy.speed * dt, dir.y * enemy.speed * dt);
 
   const minDist = p.radius + enemy.radius;
   if (dir.len < minDist) {
     if (dir.len > 0.01) {
       const push = (minDist - dir.len) * 0.5;
-      enemy.x -= dir.x * push;
-      enemy.y -= dir.y * push;
-      p.x += dir.x * push * 0.18;
-      p.y += dir.y * push * 0.18;
+      moveActorWithDungeonCollision(enemy, -dir.x * push, -dir.y * push);
+      moveActorWithDungeonCollision(p, dir.x * push * 0.18, dir.y * push * 0.18);
     }
     if (enemy.attackTimer <= 0) {
       damagePlayer(enemy.attackDamage ?? enemy.damage ?? 1);
@@ -188,12 +197,10 @@ function updateArcher(enemy, p, dt) {
 
   if (distance > enemy.shootRange) {
     const speed = enemy.speed;
-    enemy.x += (dx / distance) * speed * dt;
-    enemy.y += (dy / distance) * speed * dt;
+    moveActorWithDungeonCollision(enemy, (dx / distance) * speed * dt, (dy / distance) * speed * dt);
   } else if (distance < enemy.preferredDistance - 30) {
     const speed = enemy.speed * 0.65;
-    enemy.x -= (dx / distance) * speed * dt;
-    enemy.y -= (dy / distance) * speed * dt;
+    moveActorWithDungeonCollision(enemy, -(dx / distance) * speed * dt, -(dy / distance) * speed * dt);
   }
 
   if (enemy.shotCooldown <= 0 && distance <= enemy.shootRange) {
@@ -274,8 +281,7 @@ function updateOrc(enemy, p, dt) {
   const dy = p.y - enemy.y;
   const distance = Math.hypot(dx, dy) || 0.0001;
   if (distance > enemy.attackRange) {
-    enemy.x += (dx / distance) * enemy.speed * dt;
-    enemy.y += (dy / distance) * enemy.speed * dt;
+    moveActorWithDungeonCollision(enemy, (dx / distance) * enemy.speed * dt, (dy / distance) * enemy.speed * dt);
   }
 
   if (enemy.chargeCooldownLeft <= 0 && distance <= enemy.attackRange) {

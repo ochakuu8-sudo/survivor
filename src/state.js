@@ -36,6 +36,7 @@ export const game = {
   effects: [],
   offers: [],
   starterChoices: [],
+  dungeon: null,
 };
 
 let enemyId = 1;
