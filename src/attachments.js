@@ -46,9 +46,7 @@ const PLAYER_BASE_STAT_KEYS = [
   "speed",
   "pickup",
   "armor",
-  "regen",
   "weaponPowerBonus",
-  "lifesteal",
 ];
 
 export function snapshotPlayerBaseStats(player) {
@@ -158,16 +156,6 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
-    key: "fieldTape",
-    name: "応急テープ",
-    stars: 1,
-    category: "support",
-    text: "戦闘中の自然回復 +0.85/秒。",
-    attach: () => {
-      game.player.regen += 0.85;
-    },
-  },
-  {
     key: "scrapMagnet",
     name: "スクラップ磁石",
     stars: 1,
@@ -272,16 +260,6 @@ export const ACTIVE_ATTACHMENTS = [
     text: "弾の与えるノックバック +8。",
     attach: (weapon) => {
       weapon.knockback = (weapon.knockback || 0) + 8;
-    },
-  },
-  {
-    key: "bloodleech",
-    name: "吸血コア",
-    stars: 2,
-    category: "support",
-    text: "敵に与えたダメージの 6% を体力として吸収。",
-    attach: () => {
-      game.player.lifesteal = (game.player.lifesteal || 0) + 0.06;
     },
   },
   {

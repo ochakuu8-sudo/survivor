@@ -1,6 +1,5 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { clamp } from "./utils/math.js";
 import { createWeapon, weaponKindLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
@@ -211,7 +210,7 @@ export function pickReward(index) {
   const definition = offer.definition;
   if (!addAttachmentToWeapon(weapon, { key: definition.key, stars: offer.stars })) return;
   offer.taken = true;
-  game.player.hp = clamp(game.player.hp, 1, game.player.maxHp);
+  if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
   startNextWave();
 }
 

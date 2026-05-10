@@ -9,10 +9,6 @@ export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y,
   enemy.hp -= amount;
   enemy.hit = 1;
   if (sparkCount > 0) addSparks(impactX, impactY, sparkCount, sparkSpeed);
-  const lifesteal = game.player?.lifesteal || 0;
-  if (lifesteal > 0 && amount > 0) {
-    game.player.hp = Math.min(game.player.maxHp, game.player.hp + amount * lifesteal);
-  }
   if (enemy.hp <= 0) {
     killEnemy(enemy);
     return true;

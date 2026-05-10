@@ -36,9 +36,7 @@ export function resetRun() {
     speed: 215,
     pickup: 150,
     armor: 0,
-    regen: 0,
     weaponPowerBonus: 0,
-    lifesteal: 0,
     moveX: 0,
     moveY: 0,
     facingX: 1,
@@ -78,7 +76,6 @@ export function startNextWave() {
   game.enemyProjectiles = [];
   game.particles = [];
   game.effects = [];
-  game.player.hp = clamp(game.player.hp + game.player.maxHp * 0.28, 1, game.player.maxHp);
   hud.shop.classList.add("hidden");
   updateHud();
 }
@@ -90,7 +87,6 @@ export function enterShop() {
   game.enemyProjectiles = [];
   game.particles = [];
   game.effects = [];
-  game.player.hp = clamp(game.player.hp + game.player.maxHp * 0.2, 1, game.player.maxHp);
   generateOffers();
   renderShop();
   hud.shop.classList.remove("hidden");
@@ -132,7 +128,6 @@ function update(dt) {
   game.timeLeft -= dt;
 
   updateMovement(dt);
-  p.hp = clamp(p.hp + p.regen * dt, 0, p.maxHp);
   updateWeaponTimers(p, dt);
 
   spawnEnemies(dt);
