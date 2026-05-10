@@ -38,7 +38,7 @@ export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y,
   }
   if (sparkCount > 0) addSparks(impactX, impactY, sparkCount + (crit ? 2 : 0), sparkSpeed + (crit ? 60 : 0));
   if (enemy.hp <= 0) {
-    killEnemy(enemy);
+    killEnemy(enemy, source);
     return true;
   }
   return false;
@@ -136,16 +136,36 @@ export function buildEnemyGrid() {
   return enemyCollisionGrid;
 }
 
-export function killEnemy(enemy) {
+export function killEnemy(enemy, source = null) {
   if (!enemy || enemy.dead) return;
   enemy.dead = true;
   game.totalKills += 1;
   game.waveKills += 1;
   dropGold(enemy);
+  healPlayerFromKill(source);
   if (enemy.radius > 22) {
     addSparks(enemy.x, enemy.y, 6, 110);
     game.shake = Math.max(game.shake, 4);
   }
+}
+
+function healPlayerFromKill(source) {
+  const heal = Math.max(0, Math.round(source?.lifeStealPerKill || 0));
+  const player = game.player;
+  if (!player || heal <= 0 || player.hp >= player.maxHp) return;
+  const before = player.hp;
+  player.hp = clamp(player.hp + heal, 0, player.maxHp);
+  if (player.hp <= before) return;
+  addEffect({
+    type: "burst",
+    x: player.x,
+    y: player.y,
+    radius: 24,
+    life: 0.2,
+    maxLife: 0.2,
+    glow: "glowCyan",
+    tint: [0.55, 1, 0.62],
+  });
 }
 
 export function removeDeadEnemies() {

@@ -613,6 +613,16 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
+    key: "lifeDrain",
+    name: "吸血+1",
+    stars: 3,
+    category: "special",
+    text: "この武器で敵を倒すたび、倒した数 × 1 HP回復する。",
+    attach: (weapon) => {
+      weapon.lifeStealPerKill = (weapon.lifeStealPerKill || 0) + 1;
+    },
+  },
+  {
     key: "barrierEmitter",
     name: "バリア+1",
     stars: 3,
@@ -695,6 +705,16 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
+    key: "lifeDrain2",
+    name: "吸血+2",
+    stars: 4,
+    category: "special",
+    text: "この武器で敵を倒すたび、倒した数 × 2 HP回復する。",
+    attach: (weapon) => {
+      weapon.lifeStealPerKill = (weapon.lifeStealPerKill || 0) + 2;
+    },
+  },
+  {
     key: "safetyField",
     name: "バリア+2/吸引+24",
     stars: 4,
@@ -763,6 +783,16 @@ export const ACTIVE_ATTACHMENTS = [
       weapon.freezeChance = (weapon.freezeChance || 0) + 0.5;
       weapon.freezeSlow = Math.min(weapon.freezeSlow || 1, 0.45);
       weapon.freezeDuration = Math.max(weapon.freezeDuration || 0, 2.8);
+    },
+  },
+  {
+    key: "lifeDrain3",
+    name: "吸血+5",
+    stars: 5,
+    category: "special",
+    text: "この武器で敵を倒すたび、倒した数 × 5 HP回復する。",
+    attach: (weapon) => {
+      weapon.lifeStealPerKill = (weapon.lifeStealPerKill || 0) + 5;
     },
   },
   {

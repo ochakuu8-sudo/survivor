@@ -50,6 +50,7 @@ export const WEAPON_STAT_KEYS = [
   "freezeChance",
   "freezeSlow",
   "freezeDuration",
+  "lifeStealPerKill",
   "ricochetCount",
   "ricochetRange",
   "bulletTint",
