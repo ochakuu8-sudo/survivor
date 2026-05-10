@@ -6,13 +6,9 @@ import { addEffect } from "./effects.js";
 const MAX_GOLD_DROPS = 260;
 
 export function dropGold(enemy) {
-  const value = goldValueForEnemy(enemy);
-  const pieces = Math.min(4, Math.max(1, Math.ceil(value / 4)));
-  let remaining = value;
+  const pieces = goldCoinCountForEnemy(enemy);
 
   for (let i = 0; i < pieces; i += 1) {
-    const pieceValue = i === pieces - 1 ? remaining : Math.max(1, Math.floor(value / pieces));
-    remaining -= pieceValue;
     const angle = Math.random() * TAU;
     const speed = 58 + Math.random() * 82;
     game.goldDrops.push({
@@ -20,7 +16,7 @@ export function dropGold(enemy) {
       y: enemy.y + Math.sin(angle) * (enemy.radius * 0.24),
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      value: pieceValue,
+      value: 1,
       radius: 10,
       age: 0,
       magnetDelay: 0.12 + Math.random() * 0.16,
@@ -85,10 +81,9 @@ function collectGold(drop) {
   });
 }
 
-function goldValueForEnemy(enemy) {
-  if (enemy.goldValue) return enemy.goldValue;
-  if (enemy.kind === "orc") return 12 + Math.floor(game.wave * 0.8);
-  if (enemy.kind === "archer") return 4 + Math.floor(game.wave * 0.35);
-  if (enemy.readableSprite === "zombieBReadable") return 3 + Math.floor(game.wave * 0.25);
-  return 3 + Math.floor(game.wave * 0.28);
+function goldCoinCountForEnemy(enemy) {
+  if (Number.isFinite(enemy.goldCoins)) return Math.max(0, Math.round(enemy.goldCoins));
+  if (enemy.kind === "archer" || enemy.readableSprite === "skeletonArcherReadable") return 2;
+  if (enemy.kind === "orc") return 4;
+  return 1;
 }
