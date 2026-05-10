@@ -18,6 +18,8 @@ const WEAPON_RARITIES = {
   legend: { label: "レジェンド", affixCount: 3, power: 1.18 },
 };
 
+const MULTI_PROJECTILE_STEP = Math.PI / 36;
+
 const WEAPON_AFFIXES = {
   石: [
     {
@@ -677,10 +679,11 @@ function fireWeapon(weapon, target) {
 }
 
 function fireProjectileWeapon(weapon, angle) {
-  const spread = weapon.projectiles === 1 ? 0 : weapon.spread;
-  for (let i = 0; i < weapon.projectiles; i += 1) {
-    const offset = (i - (weapon.projectiles - 1) / 2) * spread;
-    const jitter = weapon.jitter > 0 ? (Math.random() - 0.5) * weapon.jitter : 0;
+  const count = Math.max(1, Math.round(weapon.projectiles || 1));
+  const spread = count === 1 ? 0 : MULTI_PROJECTILE_STEP;
+  for (let i = 0; i < count; i += 1) {
+    const offset = (i - (count - 1) / 2) * spread;
+    const jitter = count === 1 && weapon.jitter > 0 ? (Math.random() - 0.5) * weapon.jitter : 0;
     fireBullet(angle + offset + jitter, weapon);
   }
 }

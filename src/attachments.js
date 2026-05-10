@@ -537,19 +537,19 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "splitChamber",
-    name: "弾数+1",
+    name: "同時攻撃数+1",
     stars: 3,
     category: "special",
-    text: "通常射撃: 弾数 +1・spread +0.05 / 炎・剣: コーン +0.12 rad / 回転: 範囲 +14・速度 +10%。",
+    text: "同時攻撃数 +1。通常射撃は弾が増え、回転武器は回る攻撃が増える。炎・剣は攻撃範囲が広がる。",
     attach: (weapon) => {
       if (weapon.kind === "flame" || weapon.kind === "sword") {
         weapon.cone = Math.min(1.12, weapon.cone + 0.12);
       } else if (weapon.kind === "orbit") {
-        weapon.areaRadius += 14;
+        weapon.orbitCount = (weapon.orbitCount || 1) + 1;
+        weapon.areaRadius += 6;
         weapon.orbitSpeed *= 1.1;
       } else {
         weapon.projectiles += 1;
-        weapon.spread += 0.05;
       }
     },
   },
@@ -666,19 +666,18 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "multiForge",
-    name: "弾数+2/個数+1",
+    name: "同時攻撃数+2",
     stars: 4,
     category: "special",
-    text: "通常弾は弾数 +2。炎は角度 +0.18。回転武器は個数 +1、範囲 +8。",
+    text: "同時攻撃数 +2。通常射撃は弾が増え、回転武器は回る攻撃が増える。炎・剣は攻撃範囲が広がる。",
     attach: (weapon) => {
       if (weapon.kind === "flame" || weapon.kind === "sword") {
         weapon.cone = Math.min(1.2, weapon.cone + 0.18);
       } else if (weapon.kind === "orbit") {
-        weapon.orbitCount = (weapon.orbitCount || 1) + 1;
+        weapon.orbitCount = (weapon.orbitCount || 1) + 2;
         weapon.areaRadius += 8;
       } else {
         weapon.projectiles += 2;
-        weapon.spread += 0.08;
       }
     },
   },
@@ -838,19 +837,18 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "multiForge3",
-    name: "弾数+3/個数+2",
+    name: "同時攻撃数+3",
     stars: 5,
     category: "special",
-    text: "通常弾は弾数 +3。炎は角度 +0.26。回転武器は個数 +2、範囲 +12。",
+    text: "同時攻撃数 +3。通常射撃は弾が増え、回転武器は回る攻撃が増える。炎・剣は攻撃範囲が広がる。",
     attach: (weapon) => {
       if (weapon.kind === "flame" || weapon.kind === "sword") {
         weapon.cone = Math.min(1.28, weapon.cone + 0.26);
       } else if (weapon.kind === "orbit") {
-        weapon.orbitCount = (weapon.orbitCount || 1) + 2;
+        weapon.orbitCount = (weapon.orbitCount || 1) + 3;
         weapon.areaRadius += 12;
       } else {
         weapon.projectiles += 3;
-        weapon.spread += 0.12;
       }
     },
   },
