@@ -73,6 +73,28 @@ function drawPixelStone(ctx, w, h) {
   px(ctx, cx + 10, cy - 1, 1, 4, "#241b13");
 }
 
+function drawPixelGoldCoin(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 11, cy + 12, 22, 4, "rgba(50, 83, 38, 0.25)");
+  px(ctx, cx - 10, cy - 8, 20, 20, "#8a5a1e");
+  px(ctx, cx - 12, cy - 6, 24, 16, "#8a5a1e");
+  px(ctx, cx - 8, cy - 10, 16, 24, "#8a5a1e");
+  px(ctx, cx - 9, cy - 7, 18, 18, "#d99524");
+  px(ctx, cx - 11, cy - 5, 22, 14, "#d99524");
+  px(ctx, cx - 7, cy - 9, 14, 22, "#d99524");
+  px(ctx, cx - 6, cy - 6, 12, 14, "#ffe46b");
+  px(ctx, cx - 8, cy - 4, 16, 10, "#ffe46b");
+  px(ctx, cx - 4, cy - 8, 8, 18, "#ffe46b");
+  px(ctx, cx - 4, cy - 4, 8, 8, "#b9791d");
+  px(ctx, cx - 5, cy - 2, 10, 4, "#b9791d");
+  px(ctx, cx - 2, cy - 5, 4, 10, "#b9791d");
+  px(ctx, cx - 3, cy - 3, 6, 6, "#ffd451");
+  px(ctx, cx - 6, cy - 9, 8, 3, "#fff3a0");
+  px(ctx, cx - 9, cy - 4, 4, 6, "#fff3a0");
+  px(ctx, cx + 6, cy + 7, 4, 3, "#a96718");
+}
+
 function drawPixelWalkDust(ctx, w, h) {
   ctx.fillStyle = "rgba(35, 25, 76, 0.22)";
   ctx.fillRect(6, 13, 22, 5);
@@ -573,6 +595,10 @@ export function buildAtlas() {
   });
   add("stoneReadable", 32, 22, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelStone, 1, "rgba(17, 12, 43, 0.6)");
+  });
+
+  add("goldCoin", 34, 34, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelGoldCoin, 1, "rgba(93, 58, 16, 0.5)");
   });
 
   add("walkDust", 34, 22, (ctx, w, h) => {

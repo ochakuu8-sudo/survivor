@@ -3,6 +3,7 @@ import { game, enemyCollisionGrid } from "./state.js";
 import { angleDelta, clamp, distSq, distanceToSegmentSq, gridKey } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
 import { damagePlayer } from "./player.js";
+import { dropGold } from "./gold.js";
 
 export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y, sparkCount = 3, sparkSpeed = 90) {
   if (!enemy || enemy.dead) return false;
@@ -107,6 +108,7 @@ export function killEnemy(enemy) {
   enemy.dead = true;
   game.totalKills += 1;
   game.waveKills += 1;
+  dropGold(enemy);
   if (enemy.radius > 22) {
     addSparks(enemy.x, enemy.y, 6, 110);
     game.shake = Math.max(game.shake, 4);

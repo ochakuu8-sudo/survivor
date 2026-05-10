@@ -5,6 +5,7 @@ export const hud = {
   time: document.querySelector("#timeText"),
   hp: document.querySelector("#hpFill"),
   hpText: document.querySelector("#hpText"),
+  gold: document.querySelector("#goldText"),
   kills: document.querySelector("#killText"),
   hitFlash: document.querySelector("#hitFlash"),
   shop: document.querySelector("#shop"),

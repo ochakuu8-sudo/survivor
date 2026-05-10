@@ -212,6 +212,8 @@ function drawWorld(view, camX, camY, zoom) {
     });
   }
 
+  drawGoldDrops(view, camX, camY, zoom);
+
   const actors = (game.dungeon?.obstacles || []).map((obstacle) => ({
     kind: "obstacle",
     y: obstacle.y + (obstacle.radius || 10) * 0.45,
@@ -461,6 +463,23 @@ function drawEnemy(enemy, view, camX, camY, zoom) {
     state.renderer.draw("white", screen.x - barW * (1 - enemy.hp / enemy.maxHp) * 0.5, y, barW * enemy.hp / enemy.maxHp, 5 * zoom, {
       tint: [0.44, 0.96, 0.78],
       alpha: 0.9,
+    });
+  }
+}
+
+function drawGoldDrops(view, camX, camY, zoom) {
+  for (const drop of game.goldDrops) {
+    const screen = worldToScreen(drop.x, drop.y, view, camX, camY, zoom);
+    const bob = Math.sin(game.elapsed * 8 + drop.bob) * 1.5 * zoom;
+    const size = 23 * zoom;
+    if (screen.x < -size || screen.x > view.w + size || screen.y < -size || screen.y > view.h + size) continue;
+    const magnetized = drop.age >= drop.magnetDelay;
+    state.renderer.draw("shadow", screen.x, screen.y + 9 * zoom, 24 * zoom, 9 * zoom, { alpha: 0.42 });
+    if (magnetized) {
+      state.renderer.draw("glowAmber", screen.x, screen.y + bob, 42 * zoom, 42 * zoom, { alpha: 0.14 });
+    }
+    state.renderer.draw("goldCoin", screen.x, screen.y + bob, size, size, {
+      rotation: Math.sin(game.elapsed * 4 + drop.spin) * 0.1,
     });
   }
 }

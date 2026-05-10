@@ -9,6 +9,7 @@ import { generateDungeon, hasReachedDungeonExit } from "./dungeon.js";
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
+import { updateGoldDrops } from "./gold.js";
 import { updateMovement } from "./player.js";
 import { generateOffers, renderShop, WEAPON_POOL } from "./shop.js";
 import { updateHud } from "./hud.js";
@@ -20,6 +21,7 @@ export function resetRun() {
   game.elapsed = 0;
   game.totalKills = 0;
   game.waveKills = 0;
+  game.gold = 0;
   game.spawnClock = 0;
   game.shake = 0;
   game.damageFlash = 0;
@@ -56,6 +58,7 @@ export function resetRun() {
   game.bullets = [];
   game.enemyProjectiles = [];
   game.particles = [];
+  game.goldDrops = [];
   game.effects = [];
   game.offers = [];
   game.starterChoices = [];
@@ -84,6 +87,7 @@ export function startNextWave() {
   game.bullets = [];
   game.enemyProjectiles = [];
   game.particles = [];
+  game.goldDrops = [];
   game.effects = [];
   game.dungeon = generateDungeon(game.wave);
   game.player.x = game.dungeon.start.x;
@@ -100,6 +104,7 @@ export function enterShop() {
   game.bullets = [];
   game.enemyProjectiles = [];
   game.particles = [];
+  game.goldDrops = [];
   game.effects = [];
   generateOffers();
   renderShop();
@@ -108,7 +113,7 @@ export function enterShop() {
 
 export function endRun() {
   game.mode = "over";
-  hud.result.textContent = `第${game.wave}夜、撃破数 ${game.totalKills}。`;
+  hud.result.textContent = `第${game.wave}階層、撃破数 ${game.totalKills}、ゴールド ${game.gold}。`;
   hud.gameOver.classList.remove("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel.classList.add("hidden");
@@ -148,6 +153,7 @@ function update(dt) {
   updateBullets(dt);
   updateEnemyProjectiles(dt);
   updateParticles(dt);
+  updateGoldDrops(dt);
   updateEffects(dt);
   autoShoot();
   updateOrbitWeapons(dt);
