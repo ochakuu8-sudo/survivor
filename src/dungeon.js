@@ -15,6 +15,7 @@ const OBSTACLE_TYPES = [
   { sprite: "fieldFence", radius: 18, clearance: 34, scale: 1 },
   { sprite: "fieldFlowers", radius: 0, clearance: 24, scale: 1 },
 ];
+const EXIT_INTERACTION_RADIUS_SCALE = 2;
 
 export function generateDungeon(wave) {
   const seed = ((Date.now() & 0xfffffff) ^ Math.floor(Math.random() * 0x7fffffff) ^ (wave * 2654435761)) >>> 0;
@@ -129,7 +130,7 @@ export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance
 export function hasReachedDungeonExit(actor) {
   const exit = game.dungeon?.exit;
   if (!exit || !actor) return false;
-  return Math.hypot(actor.x - exit.x, actor.y - exit.y) <= actor.radius + TILE_SIZE * 0.34;
+  return Math.hypot(actor.x - exit.x, actor.y - exit.y) <= (actor.radius + TILE_SIZE * 0.34) * EXIT_INTERACTION_RADIUS_SCALE;
 }
 
 export function getDungeonTile(dungeon, tx, ty) {
