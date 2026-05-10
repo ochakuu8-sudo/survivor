@@ -921,7 +921,8 @@ h1 {
 }
 
 .storage-action,
-.weapon-unequip {
+.weapon-unequip,
+.weapon-use {
   min-height: 32px;
   padding: 0 9px;
   border-radius: 6px;
@@ -931,8 +932,14 @@ h1 {
   font-weight: 900;
 }
 
+.weapon-use {
+  background: #ffe46b;
+  color: #241737;
+}
+
 .storage-action:disabled,
-.weapon-unequip:disabled {
+.weapon-unequip:disabled,
+.weapon-use:disabled {
   opacity: 0.38;
 }
 
@@ -980,7 +987,7 @@ h1 {
 
 .loadout-board {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   min-width: 0;
 }
@@ -1010,6 +1017,13 @@ h1 {
     rgba(255, 255, 255, 0.1);
 }
 
+.weapon-slot-active {
+  border-color: rgba(85, 246, 199, 0.72);
+  box-shadow:
+    0 0 0 2px rgba(85, 246, 199, 0.14),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.15);
+}
+
 .weapon-slot-empty {
   border-style: dashed;
   border-color: rgba(255, 249, 242, 0.28);
@@ -1036,6 +1050,11 @@ h1 {
 .slot-status-equipped {
   color: #241737;
   background: #ffe46b;
+}
+
+.slot-status-active {
+  color: #10273a;
+  background: #55f6c7;
 }
 
 .slot-status-empty {
@@ -1503,13 +1522,58 @@ h1 {
   transform: translate(-50%, -50%);
 }
 
+.weapon-switch {
+  display: none;
+  position: absolute;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  max-width: min(52vw, 180px);
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid rgba(36, 23, 55, 0.72);
+  border-radius: 10px;
+  pointer-events: auto;
+  color: #241737;
+  background:
+    linear-gradient(180deg, #fff08d, #ffe46b),
+    #ffe46b;
+  box-shadow:
+    0 5px 0 rgba(36, 23, 55, 0.42),
+    0 10px 20px rgba(36, 23, 55, 0.22);
+  font-size: clamp(0.68rem, 2.6vw, 0.82rem);
+  line-height: 1.12;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.weapon-switch:disabled {
+  opacity: 0.78;
+}
+
 @media (hover: none), (pointer: coarse) {
   #touchControls {
     display: block;
   }
+
+  #touchControls:not(.disabled) .weapon-switch:not(.hidden) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 760px) {
+  #touchControls {
+    display: block;
+  }
+
+  #touchControls:not(.disabled) .weapon-switch:not(.hidden) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   #hud {
     right: auto;
     display: flex;
@@ -1867,7 +1931,8 @@ h1 {
   }
 
   #shop .storage-action,
-  #shop .weapon-unequip {
+  #shop .weapon-unequip,
+  #shop .weapon-use {
     min-height: 30px;
     padding: 0 8px;
     font-size: 0.68rem;

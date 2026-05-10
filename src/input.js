@@ -3,6 +3,7 @@ import { canvas, hud } from "./dom.js";
 import { clamp, normalize } from "./utils/math.js";
 import { startNextWave } from "./game.js";
 import { isShopTabStorage, setShopTab } from "./shop.js";
+import { cycleActiveWeapon } from "./weapons.js";
 
 export function bindInput() {
   window.addEventListener("keydown", (event) => {
@@ -10,6 +11,10 @@ export function bindInput() {
     if (event.code === "Space" && game.mode === "shop") {
       if (isShopTabStorage()) startNextWave();
       else setShopTab("storage");
+    }
+    if ((event.code === "KeyQ" || event.code === "Tab") && game.mode === "fight") {
+      event.preventDefault();
+      cycleActiveWeapon();
     }
   });
   window.addEventListener("keyup", (event) => keys.delete(event.code));

@@ -2,6 +2,7 @@ import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
 import { clamp } from "./utils/math.js";
 import { resetVirtualMove } from "./input.js";
+import { clampActiveWeaponIndex, weaponAmmoLabel } from "./weapons.js";
 
 export function updateHud() {
   hud.wave.textContent = String(game.wave);
@@ -11,6 +12,7 @@ export function updateHud() {
   hud.kills.textContent = String(game.waveKills);
   if (hud.hp) hud.hp.style.width = `${clamp((game.player.hp / game.player.maxHp) * 100, 0, 100)}%`;
   renderHearts();
+  renderWeaponSwitch();
   if (hud.hpText) hud.hpText.textContent = `${Math.ceil(game.player.hp)}/${Math.ceil(game.player.maxHp)}`;
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
   if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "fight");
@@ -44,6 +46,21 @@ function renderHearts() {
     shield.textContent = "◆";
     hud.hearts.append(shield);
   }
+}
+
+function renderWeaponSwitch() {
+  if (!hud.weaponSwitch || !game.player?.gear) return;
+  const gear = game.player.gear;
+  const weapon = gear.weapons?.[clampActiveWeaponIndex(gear)];
+  const isFighting = game.mode === "fight";
+  hud.weaponSwitch.classList.toggle("hidden", !isFighting || !weapon);
+  hud.weaponSwitch.disabled = !isFighting || !weapon || gear.weapons.length <= 1;
+  if (!weapon) {
+    hud.weaponSwitch.textContent = "武器";
+    return;
+  }
+  const prefix = gear.weapons.length > 1 ? "切替" : "武器";
+  hud.weaponSwitch.textContent = `${prefix}: ${weapon.name} / ${weaponAmmoLabel(weapon)}`;
 }
 
 export function syncTouchControls() {

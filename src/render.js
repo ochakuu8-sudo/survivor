@@ -318,8 +318,13 @@ function drawDungeonExit(view, camX, camY, zoom) {
 function drawOrbitWeapons(view, camX, camY, zoom) {
   const player = game.player;
   if (!player?.gear) return;
-  for (const weapon of player.gear.weapons) {
-    if (weapon.kind !== "orbit") continue;
+  const activeIndex = Math.min(
+    Math.max(player.gear.activeWeaponIndex || 0, 0),
+    Math.max(0, player.gear.weapons.length - 1),
+  );
+  const weapon = player.gear.weapons[activeIndex];
+  if (!weapon || weapon.kind !== "orbit") return;
+
     const spin = game.elapsed * (weapon.orbitSpeed || 4.2) + weapon.id * 1.73;
     const orbitRadius = weapon.orbitRadius || 78;
     const x = player.x + Math.cos(spin) * orbitRadius;
@@ -376,7 +381,6 @@ function drawOrbitWeapons(view, camX, camY, zoom) {
       tint: [1, 1, 1],
       alpha: 0.72,
     });
-  }
 }
 
 function drawEffects(view, camX, camY, zoom) {

@@ -7,6 +7,8 @@ import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame, startNex
 import { openDebugPanel, setupDebug } from "./debug.js";
 import { isShopTabStorage, rerollShopOffers, setShopTab } from "./shop.js";
 import { claimTreasureReward, rerollTreasureReward } from "./treasure.js";
+import { updateHud } from "./hud.js";
+import { cycleActiveWeapon } from "./weapons.js";
 
 hud.restart.addEventListener("click", resetRun);
 
@@ -31,6 +33,13 @@ if (hud.shopContinue) {
 }
 if (hud.treasureReroll) hud.treasureReroll.addEventListener("click", rerollTreasureReward);
 if (hud.treasureTake) hud.treasureTake.addEventListener("click", claimTreasureReward);
+if (hud.weaponSwitch) {
+  hud.weaponSwitch.addEventListener("click", (event) => {
+    event.preventDefault();
+    cycleActiveWeapon();
+    updateHud();
+  });
+}
 
 const atlas = buildAtlas();
 setAtlas(atlas);

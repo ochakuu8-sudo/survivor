@@ -210,7 +210,7 @@ function roundWeaponStats(weapon) {
   WEAPON_STAT_KEYS.forEach((key) => {
     const value = weapon[key];
     if (typeof value !== "number") return;
-    const integers = new Set(["projectiles", "pierce", "chainCount"]);
+    const integers = new Set(["projectiles", "pierce", "chainCount", "ammoCapacity"]);
     weapon[key] = integers.has(key)
       ? Math.max(0, Math.round(value))
       : Math.round(value * 100) / 100;
@@ -256,13 +256,16 @@ export function restoreWeaponBaseStats(weapon) {
 
 export function createWeapon(template, options = {}) {
   const baseName = template.baseName || template.name;
+  const kind = template.kind || "projectile";
   const bulletSpeed = template.bulletSpeed ?? 690;
   const life = template.life || 0.72;
+  const usesAmmo = template.usesAmmo ?? kind !== "orbit";
+  const ammoCapacity = usesAmmo ? Math.max(1, Math.round(template.ammoCapacity || 8)) : 0;
   const weapon = {
     id: nextWeaponId(),
     name: template.name,
     baseName,
-    kind: template.kind || "projectile",
+    kind,
     damage: template.damage,
     fireRate: template.fireRate,
     bulletSpeed,
@@ -287,6 +290,12 @@ export function createWeapon(template, options = {}) {
     radius: template.radius || 9,
     jitter: template.jitter || 0,
     kick: template.kick || 1.8,
+    usesAmmo,
+    ammoCapacity,
+    ammo: usesAmmo ? Math.min(ammoCapacity, Math.max(0, Math.round(template.ammo ?? ammoCapacity))) : 0,
+    reloadTime: usesAmmo ? Math.max(0.25, template.reloadTime || 1.2) : 0,
+    reloadTimer: 0,
+    reloading: false,
     critChance: template.critChance || 0,
     critMultiplier: template.critMultiplier || 1.75,
     freezeChance: template.freezeChance || 0,
@@ -319,6 +328,62 @@ export function createWeapon(template, options = {}) {
 
 export function findWeapon(id) {
   return game.player.gear.weapons.find((weapon) => weapon.id === id) || null;
+}
+
+export function clampActiveWeaponIndex(gear = game.player?.gear) {
+  if (!gear) return 0;
+  const count = gear.weapons?.length || 0;
+  if (count <= 0) {
+    gear.activeWeaponIndex = 0;
+    return 0;
+  }
+  const index = Math.min(Math.max(gear.activeWeaponIndex || 0, 0), count - 1);
+  gear.activeWeaponIndex = index;
+  return index;
+}
+
+export function getActiveWeapon(player = game.player) {
+  const gear = player?.gear;
+  if (!gear?.weapons?.length) return null;
+  return gear.weapons[clampActiveWeaponIndex(gear)] || null;
+}
+
+export function setActiveWeaponIndex(index) {
+  const gear = game.player?.gear;
+  if (!gear?.weapons?.length) return null;
+  gear.activeWeaponIndex = Number.isFinite(index) ? index : 0;
+  return getActiveWeapon(game.player);
+}
+
+export function cycleActiveWeapon() {
+  const gear = game.player?.gear;
+  if (!gear?.weapons?.length) return null;
+  gear.activeWeaponIndex = (clampActiveWeaponIndex(gear) + 1) % gear.weapons.length;
+  game.shake = Math.max(game.shake, 1.2);
+  return getActiveWeapon(game.player);
+}
+
+export function weaponUsesAmmo(weapon) {
+  return !!weapon && weapon.usesAmmo !== false && weapon.kind !== "orbit";
+}
+
+function startWeaponReload(weapon) {
+  if (!weaponUsesAmmo(weapon) || weapon.reloading) return;
+  weapon.reloadTimer = Math.max(0.1, weapon.reloadTime || 1.2);
+  weapon.reloading = true;
+}
+
+function completeWeaponReload(weapon) {
+  weapon.ammo = Math.max(1, Math.round(weapon.ammoCapacity || 1));
+  weapon.reloadTimer = 0;
+  weapon.reloading = false;
+}
+
+export function weaponAmmoLabel(weapon) {
+  if (!weapon) return "武器なし";
+  if (!weaponUsesAmmo(weapon)) return "弾薬なし";
+  if (weapon.reloading) return `リロード ${Math.max(0, weapon.reloadTimer || 0).toFixed(1)}秒`;
+  return `弾薬 ${Math.max(0, Math.ceil(weapon.ammo || 0))}/${Math.max(1, Math.round(weapon.ammoCapacity || 1))}`;
 }
 
 export function weaponKindLabel(weapon) {
@@ -362,8 +427,23 @@ export function weaponMetaLabel(weapon) {
 }
 
 export function updateWeaponTimers(player, dt) {
+  clampActiveWeaponIndex(player.gear);
   for (const weapon of player.gear.weapons) {
     weapon.shootTimer = Math.max(0, weapon.shootTimer - dt);
+    if (!weaponUsesAmmo(weapon)) continue;
+
+    weapon.ammoCapacity = Math.max(1, Math.round(weapon.ammoCapacity || 1));
+    weapon.ammo = Math.min(
+      weapon.ammoCapacity,
+      Math.max(0, Math.round(weapon.ammo ?? weapon.ammoCapacity)),
+    );
+
+    if (weapon.reloading) {
+      weapon.reloadTimer = Math.max(0, (weapon.reloadTimer || 0) - dt);
+      if (weapon.reloadTimer <= 0) completeWeaponReload(weapon);
+    } else if (weapon.ammo <= 0) {
+      startWeaponReload(weapon);
+    }
   }
 }
 
@@ -409,77 +489,85 @@ const TARGETLESS_KINDS = new Set(["flame", "sword"]);
 
 export function autoShoot() {
   const p = game.player;
+  const weapon = getActiveWeapon(p);
 
-  for (const weapon of p.gear.weapons) {
-    if (weapon.kind === "orbit") continue;
-    if (weapon.shootTimer > 0) continue;
-
-    let target = null;
-    if (TARGETLESS_KINDS.has(weapon.kind)) {
-      // Always fire on cooldown; direction comes from facing or self-position.
-    } else {
-      if (game.enemies.length === 0) continue;
-      target = findTargetForWeapon(p, weapon);
-      if (!target) continue;
+  if (!weapon || weapon.kind === "orbit") return;
+  if (weapon.shootTimer > 0) return;
+  if (weaponUsesAmmo(weapon)) {
+    if (weapon.reloading || (weapon.ammo || 0) <= 0) {
+      startWeaponReload(weapon);
+      return;
     }
-
-    fireWeapon(weapon, target);
-    weapon.shootTimer = 1 / weapon.fireRate;
-    game.shake = Math.max(game.shake, weapon.kick);
   }
+
+  let target = null;
+  if (TARGETLESS_KINDS.has(weapon.kind)) {
+    // Always fire on cooldown; direction comes from facing or self-position.
+  } else {
+    if (game.enemies.length === 0) return;
+    target = findTargetForWeapon(p, weapon);
+    if (!target) return;
+  }
+
+  fireWeapon(weapon, target);
+  if (weaponUsesAmmo(weapon)) {
+    weapon.ammo = Math.max(0, (weapon.ammo || 0) - 1);
+    if (weapon.ammo <= 0) startWeaponReload(weapon);
+  }
+  weapon.shootTimer = 1 / weapon.fireRate;
+  game.shake = Math.max(game.shake, weapon.kick);
 }
 
 export function updateOrbitWeapons(dt) {
   const p = game.player;
   if (!p?.gear) return;
-  for (const weapon of p.gear.weapons) {
-    if (weapon.kind !== "orbit") continue;
+  const weapon = getActiveWeapon(p);
+  if (!weapon || weapon.kind !== "orbit") return;
 
-    const orbitSpeed = weapon.orbitSpeed || 4.2;
-    const orbitRadius = weapon.orbitRadius || 78;
-    const areaRadius = weapon.areaRadius || 34;
+  const orbitSpeed = weapon.orbitSpeed || 4.2;
+  const orbitRadius = weapon.orbitRadius || 78;
+  const areaRadius = weapon.areaRadius || 34;
 
-    const currSpin = game.elapsed * orbitSpeed + weapon.id * 1.73;
-    const prevSpin = (game.elapsed - dt) * orbitSpeed + weapon.id * 1.73;
-    const cx = p.x + Math.cos(currSpin) * orbitRadius;
-    const cy = p.y + Math.sin(currSpin) * orbitRadius;
-    const px = p.x + Math.cos(prevSpin) * orbitRadius;
-    const py = p.y + Math.sin(prevSpin) * orbitRadius;
+  const currSpin = game.elapsed * orbitSpeed + weapon.id * 1.73;
+  const prevSpin = (game.elapsed - dt) * orbitSpeed + weapon.id * 1.73;
+  const cx = p.x + Math.cos(currSpin) * orbitRadius;
+  const cy = p.y + Math.sin(currSpin) * orbitRadius;
+  const px = p.x + Math.cos(prevSpin) * orbitRadius;
+  const py = p.y + Math.sin(prevSpin) * orbitRadius;
 
-    if (!weapon.hitCooldowns) weapon.hitCooldowns = new Map();
-    for (const [id, cd] of weapon.hitCooldowns) {
-      const next = cd - dt;
-      if (next <= 0) weapon.hitCooldowns.delete(id);
-      else weapon.hitCooldowns.set(id, next);
-    }
+  if (!weapon.hitCooldowns) weapon.hitCooldowns = new Map();
+  for (const [id, cd] of weapon.hitCooldowns) {
+    const next = cd - dt;
+    if (next <= 0) weapon.hitCooldowns.delete(id);
+    else weapon.hitCooldowns.set(id, next);
+  }
 
-    const cooldownPerEnemy = 1 / Math.max(0.5, weapon.fireRate);
-    const damage = weapon.damage + p.weaponPowerBonus;
-    let hits = 0;
+  const cooldownPerEnemy = 1 / Math.max(0.5, weapon.fireRate);
+  const damage = weapon.damage + p.weaponPowerBonus;
+  let hits = 0;
 
-    for (const enemy of game.enemies) {
-      if (enemy.dead) continue;
-      if (weapon.hitCooldowns.has(enemy.id)) continue;
-      const range = enemy.radius + areaRadius;
-      if (distanceToSegmentSq(enemy.x, enemy.y, px, py, cx, cy) > range * range) continue;
-      damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 90, weapon);
-      weapon.hitCooldowns.set(enemy.id, cooldownPerEnemy);
-      hits += 1;
-    }
+  for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
+    if (weapon.hitCooldowns.has(enemy.id)) continue;
+    const range = enemy.radius + areaRadius;
+    if (distanceToSegmentSq(enemy.x, enemy.y, px, py, cx, cy) > range * range) continue;
+    damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 90, weapon);
+    weapon.hitCooldowns.set(enemy.id, cooldownPerEnemy);
+    hits += 1;
+  }
 
-    if (hits > 0) {
-      addEffect({
-        type: "burst",
-        x: cx,
-        y: cy,
-        radius: areaRadius * 0.95,
-        life: 0.2,
-        maxLife: 0.2,
-        glow: weapon.effectGlow,
-        tint: weapon.effectTint,
-      });
-      game.shake = Math.max(game.shake, (weapon.kick || 1.5) * 0.5);
-    }
+  if (hits > 0) {
+    addEffect({
+      type: "burst",
+      x: cx,
+      y: cy,
+      radius: areaRadius * 0.95,
+      life: 0.2,
+      maxLife: 0.2,
+      glow: weapon.effectGlow,
+      tint: weapon.effectTint,
+    });
+    game.shake = Math.max(game.shake, (weapon.kick || 1.5) * 0.5);
   }
 }
 

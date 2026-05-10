@@ -2,7 +2,7 @@ import { INTERACTION_HOLD_SECONDS, MAX_WEAPONS } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
-import { createWeapon, weaponMetaLabel, weaponVariantText } from "./weapons.js";
+import { createWeapon, setActiveWeaponIndex, weaponAmmoLabel, weaponMetaLabel, weaponVariantText } from "./weapons.js";
 import { weaponIcon, WEAPON_POOL } from "./shop.js";
 import { updateHud } from "./hud.js";
 
@@ -81,6 +81,7 @@ export function claimTreasureReward() {
     const weapon = reward.weapon;
     if (gear.weapons.length < MAX_WEAPONS) {
       gear.weapons.push(weapon);
+      setActiveWeaponIndex(gear.weapons.length - 1);
     } else {
       gear.storageWeapons.push(weapon);
     }
@@ -123,7 +124,7 @@ function chooseTreasureReward(excludeName = "") {
     name: weapon.name,
     baseName: template.name,
     text: `${template.text || ""} ${weaponVariantText(weapon)}`,
-    meta: weaponMetaLabel(weapon),
+    meta: `${weaponMetaLabel(weapon)} / ${weaponAmmoLabel(weapon)}`,
     icon: weaponIcon(weapon),
     weapon,
   };

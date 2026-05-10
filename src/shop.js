@@ -1,7 +1,7 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { MAX_ATTACHMENTS, MAX_WEAPONS } from "./constants.js";
-import { createWeapon, weaponMetaLabel } from "./weapons.js";
+import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponAmmoLabel, weaponMetaLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
   attachmentCategoryLabel,
@@ -20,6 +20,8 @@ export const WEAPON_POOL = [
     weapon: {
       damage: 40,
       fireRate: 0.72,
+      ammoCapacity: 1,
+      reloadTime: 1.15,
       bulletSpeed: 320,
       life: 1.45,
       radius: 12,
@@ -34,6 +36,8 @@ export const WEAPON_POOL = [
     weapon: {
       damage: 5,
       fireRate: 8.2,
+      ammoCapacity: 24,
+      reloadTime: 1.35,
       bulletSpeed: 620,
       life: 0.34,
       range: 220,
@@ -51,6 +55,8 @@ export const WEAPON_POOL = [
       kind: "flame",
       damage: 6,
       fireRate: 5.5,
+      ammoCapacity: 18,
+      reloadTime: 1.55,
       bulletSpeed: 1,
       range: 195,
       cone: 0.62,
@@ -64,6 +70,7 @@ export const WEAPON_POOL = [
     text: "自分の周囲を回る鉄球で、近くの敵を巻き込む。",
     weapon: {
       kind: "orbit",
+      usesAmmo: false,
       damage: 20,
       fireRate: 2.6,
       bulletSpeed: 1,
@@ -164,6 +171,8 @@ function ensureGearStorage() {
   if (!gear) return null;
   if (!Array.isArray(gear.storageWeapons)) gear.storageWeapons = [];
   if (!Array.isArray(gear.storageAttachments)) gear.storageAttachments = [];
+  if (!Number.isInteger(gear.activeWeaponIndex)) gear.activeWeaponIndex = 0;
+  clampActiveWeaponIndex(gear);
   return gear;
 }
 
@@ -224,6 +233,7 @@ export function unequipWeapon(weaponIdOrSlotIndex) {
   const [weapon] = gear.weapons.splice(slotIndex, 1);
   if (!weapon) return;
   gear.storageWeapons.push(weapon);
+  clampActiveWeaponIndex(gear);
   recomputeAllAttachments();
   renderShop();
   updateHud();
@@ -248,6 +258,7 @@ export function equipStoredWeapon(storageIndex, slotIndex = null) {
     gear.storageWeapons.splice(storageIndex, 0, storedWeapon);
     return;
   }
+  setActiveWeaponIndex(targetIndex);
   recomputeAllAttachments();
   renderShop();
   updateHud();
@@ -469,7 +480,7 @@ function buildStoredWeaponCard(weapon, storageIndex) {
   const name = document.createElement("strong");
   name.textContent = weapon.name;
   const meta = document.createElement("small");
-  meta.textContent = `${weaponMetaLabel(weapon)} / アタッチメント ${weapon.attachments.length}`;
+  meta.textContent = `${weaponMetaLabel(weapon)} / ${weaponAmmoLabel(weapon)} / アタッチメント ${weapon.attachments.length}`;
   body.append(name, meta);
 
   const actions = document.createElement("div");
@@ -534,8 +545,10 @@ function buildStoredAttachmentCard(attachment, storageIndex) {
 }
 
 function buildWeaponSlot(weapon, index) {
+  const activeIndex = clampActiveWeaponIndex(game.player.gear);
+  const isActive = !!weapon && index === activeIndex;
   const slot = document.createElement("article");
-  slot.className = `weapon-slot ${weapon ? "weapon-slot-filled" : "weapon-slot-empty"}`;
+  slot.className = `weapon-slot ${weapon ? "weapon-slot-filled" : "weapon-slot-empty"}${isActive ? " weapon-slot-active" : ""}`;
 
   const icon = document.createElement("span");
   icon.className = "weapon-icon";
@@ -547,8 +560,8 @@ function buildWeaponSlot(weapon, index) {
   label.className = "slot-index";
   label.textContent = `武器 ${index + 1}`;
   const status = document.createElement("span");
-  status.className = `slot-status ${weapon ? "slot-status-equipped" : "slot-status-empty"}`;
-  status.textContent = weapon ? "装備中" : "空き";
+  status.className = `slot-status ${weapon ? (isActive ? "slot-status-active" : "slot-status-equipped") : "slot-status-empty"}`;
+  status.textContent = weapon ? (isActive ? "使用中" : "控え") : "空き";
   top.append(label, status);
 
   const name = document.createElement("strong");
@@ -556,7 +569,7 @@ function buildWeaponSlot(weapon, index) {
   name.textContent = weapon ? weapon.name : "未装備";
   const kind = document.createElement("small");
   kind.className = "weapon-slot-kind";
-  kind.textContent = weapon ? weaponMetaLabel(weapon) : "武器スロット";
+  kind.textContent = weapon ? `${weaponMetaLabel(weapon)} / ${weaponAmmoLabel(weapon)}` : "武器スロット";
 
   const attachmentTrack = document.createElement("div");
   attachmentTrack.className = "attachment-track";
@@ -614,6 +627,18 @@ function buildWeaponSlot(weapon, index) {
   const slotActions = document.createElement("div");
   slotActions.className = "weapon-slot-actions";
   if (weapon) {
+    if (!isActive) {
+      const use = document.createElement("button");
+      use.type = "button";
+      use.className = "weapon-use";
+      use.textContent = "使用する";
+      bindPress(use, () => {
+        setActiveWeaponIndex(index);
+        renderShop();
+        updateHud();
+      });
+      slotActions.append(use);
+    }
     const unequip = document.createElement("button");
     unequip.type = "button";
     unequip.className = "weapon-unequip";
@@ -644,6 +669,7 @@ export function pickStarterWeapon(index) {
   if (!template) return;
   const weapon = createWeapon({ name: template.name, ...template.weapon });
   game.player.gear.weapons = [weapon];
+  game.player.gear.activeWeaponIndex = 0;
   game.starterChoices = [];
   game.mode = "fight";
   hud.starterPick.classList.add("hidden");

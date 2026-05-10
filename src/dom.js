@@ -35,6 +35,7 @@ export const hud = {
   touchControls: document.querySelector("#touchControls"),
   moveStick: document.querySelector("#moveStick"),
   moveThumb: document.querySelector("#moveThumb"),
+  weaponSwitch: document.querySelector("#weaponSwitchBtn"),
   pauseBtn: document.querySelector("#pauseBtn"),
   pauseMenu: document.querySelector("#pauseMenu"),
   resumeBtn: document.querySelector("#resumeBtn"),

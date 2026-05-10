@@ -2,7 +2,7 @@ import { MAX_WEAPONS } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { ACTIVE_ATTACHMENTS, addAttachmentToWeapon, recomputeAllAttachments, starsLabel } from "./attachments.js";
-import { createWeapon, findWeapon } from "./weapons.js";
+import { createWeapon, findWeapon, setActiveWeaponIndex } from "./weapons.js";
 import { spawnEnemy } from "./enemies.js";
 import { killEnemy } from "./combat.js";
 import { WEAPON_POOL } from "./shop.js";
@@ -110,11 +110,14 @@ function debugEquipWeapon() {
   const template = WEAPON_POOL[index];
   if (!template || !game.player) return;
   const weapon = createWeapon({ name: template.name, ...template.weapon }, { floor: game.wave, rollVariant: true });
+  let activeIndex = game.player.gear.weapons.length;
   if (game.player.gear.weapons.length < MAX_WEAPONS) {
     game.player.gear.weapons.push(weapon);
   } else {
-    game.player.gear.weapons[game.player.gear.weapons.length - 1] = weapon;
+    activeIndex = game.player.gear.weapons.length - 1;
+    game.player.gear.weapons[activeIndex] = weapon;
   }
+  setActiveWeaponIndex(activeIndex);
   if (game.mode === "starterPick") {
     game.mode = "fight";
     game.starterChoices = [];

@@ -12,7 +12,7 @@ export const OFFER_TYPE_LABELS = {
   relic: "レリック",
 };
 
-export const MAX_WEAPONS = 3;
+export const MAX_WEAPONS = 2;
 export const MAX_ATTACHMENTS = 5;
 export const WEAPON_STAT_KEYS = [
   "damage",
@@ -39,6 +39,8 @@ export const WEAPON_STAT_KEYS = [
   "radius",
   "jitter",
   "kick",
+  "ammoCapacity",
+  "reloadTime",
   "critChance",
   "critMultiplier",
   "freezeChance",

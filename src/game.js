@@ -52,6 +52,7 @@ export function resetRun() {
     walkDustTimer: 0,
     gear: {
       weapons: [],
+      activeWeaponIndex: 0,
       attachments: [],
       storageWeapons: [],
       storageAttachments: [],
