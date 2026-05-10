@@ -186,17 +186,20 @@ function attachmentPrice(stars, wave) {
   return (basePrices[rarity] || 12) + (floor - 1) * (3 + rarity * 2);
 }
 
-export function generateOffers() {
-  const picks = [];
-  const seen = new Set();
+export function shopRerollPrice() {
+  if ((game.shopRerollsUsed || 0) === 0) return 0;
+  return 8 + game.wave * 4 + (game.shopRerollsUsed - 1) * 4;
+}
+
+function createShopOffer(seen = new Set()) {
   let guard = 0;
-  while (picks.length < 3 && guard < 80) {
+  while (guard < 80) {
     const choice = pickShopAttachment(game.wave);
     guard += 1;
     if (!choice) continue;
     if (seen.has(choice.definition.key)) continue;
     seen.add(choice.definition.key);
-    picks.push({
+    return {
       definition: choice.definition,
       stars: choice.stars,
       name: choice.definition.name,
@@ -204,9 +207,39 @@ export function generateOffers() {
       category: choice.definition.category,
       price: attachmentPrice(choice.stars, game.wave),
       taken: false,
-    });
+    };
+  }
+  return null;
+}
+
+export function generateOffers() {
+  const picks = [];
+  const seen = new Set();
+  while (picks.length < 3) {
+    const offer = createShopOffer(seen);
+    if (!offer) break;
+    picks.push(offer);
   }
   game.offers = picks;
+}
+
+function replaceOffer(index, previousOffer) {
+  const seen = new Set(game.offers
+    .filter((offer, i) => i !== index && offer?.definition)
+    .map((offer) => offer.definition.key));
+  if (previousOffer?.definition?.key) seen.add(previousOffer.definition.key);
+  const nextOffer = createShopOffer(seen);
+  game.offers[index] = nextOffer || { ...previousOffer, taken: true };
+}
+
+export function rerollShopOffers() {
+  const price = shopRerollPrice();
+  if (game.gold < price) return;
+  if (price > 0) game.gold -= price;
+  game.shopRerollsUsed = (game.shopRerollsUsed || 0) + 1;
+  generateOffers();
+  renderShop();
+  updateHud();
 }
 
 export function buyAttachment(index) {
@@ -218,7 +251,7 @@ export function buyAttachment(index) {
   const definition = offer.definition;
   if (!addAttachmentToWeapon(weapon, { key: definition.key, stars: offer.stars })) return;
   game.gold -= offer.price;
-  offer.taken = true;
+  replaceOffer(index, offer);
   if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
   renderShop();
   updateHud();
@@ -272,7 +305,7 @@ function attachmentIcon(category, stars) {
   return "▲";
 }
 
-function weaponIcon(weapon) {
+export function weaponIcon(weapon) {
   if (!weapon) return "+";
   if (weapon.kind === "flame") return "F";
   if (weapon.kind === "timedBomb" || weapon.kind === "pulseBomb") return "B";
@@ -351,6 +384,15 @@ export function renderShop() {
   });
 
   renderGearInventory();
+  updateShopControls();
+}
+
+function updateShopControls() {
+  if (!hud.shopReroll) return;
+  const price = shopRerollPrice();
+  const free = price === 0;
+  hud.shopReroll.textContent = free ? "更新 無料" : `更新 ${price}G`;
+  hud.shopReroll.disabled = !free && game.gold < price;
 }
 
 function renderGearInventory() {

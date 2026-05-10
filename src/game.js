@@ -65,7 +65,9 @@ export function resetRun() {
   game.goldDrops = [];
   game.effects = [];
   game.offers = [];
+  game.shopRerollsUsed = 0;
   game.starterChoices = [];
+  game.treasureReward = null;
   game.player.baseStats = snapshotPlayerBaseStats(game.player);
   const stoneTemplate = WEAPON_POOL.find((template) => template.name === "石") || WEAPON_POOL[0];
   if (stoneTemplate) {
@@ -76,6 +78,7 @@ export function resetRun() {
   game.starterChoices = [];
   hud.shop.classList.add("hidden");
   hud.starterPick.classList.add("hidden");
+  hud.treasureReward.classList.add("hidden");
   hud.gameOver.classList.add("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel.classList.add("hidden");
@@ -95,12 +98,15 @@ export function startNextWave() {
   game.particles = [];
   game.goldDrops = [];
   game.effects = [];
+  game.shopRerollsUsed = 0;
+  game.treasureReward = null;
   game.dungeon = generateDungeon(game.wave);
   game.player.x = game.dungeon.start.x;
   game.player.y = game.dungeon.start.y;
   game.camera.x = game.player.x;
   game.camera.y = game.player.y;
   hud.shop.classList.add("hidden");
+  hud.treasureReward.classList.add("hidden");
   updateHud();
 }
 
@@ -112,6 +118,9 @@ export function enterShop() {
   game.particles = [];
   game.goldDrops = [];
   game.effects = [];
+  game.shopRerollsUsed = 0;
+  game.treasureReward = null;
+  hud.treasureReward.classList.add("hidden");
   generateOffers();
   renderShop();
   hud.shop.classList.remove("hidden");

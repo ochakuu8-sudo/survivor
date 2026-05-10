@@ -19,6 +19,7 @@ export function updateHud() {
 function objectiveText() {
   if (game.mode === "starterPick") return "武器選択";
   if (game.mode === "shop") return "装備整理";
+  if (game.mode === "treasure") return "宝箱報酬";
   if (game.mode === "pause") return "一時停止";
   if (game.mode === "over") return "探索終了";
   return "出口を探せ";

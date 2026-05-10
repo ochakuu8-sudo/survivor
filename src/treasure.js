@@ -1,8 +1,16 @@
 import { INTERACTION_HOLD_SECONDS, MAX_WEAPONS } from "./constants.js";
 import { game } from "./state.js";
+import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
-import { createWeapon } from "./weapons.js";
-import { WEAPON_POOL } from "./shop.js";
+import { createWeapon, weaponKindLabel } from "./weapons.js";
+import { weaponIcon, WEAPON_POOL } from "./shop.js";
+import { updateHud } from "./hud.js";
+
+export function treasureRerollPrice() {
+  const used = game.treasureReward?.rerollsUsed || 0;
+  if (used === 0) return 0;
+  return 10 + game.wave * 5 + (used - 1) * 5;
+}
 
 export function updateTreasureChests(dt = 0) {
   const player = game.player;
@@ -25,15 +33,14 @@ export function updateTreasureChests(dt = 0) {
 function openTreasureChest(chest) {
   chest.opened = true;
   chest.holdTimer = INTERACTION_HOLD_SECONDS;
-  const reward = chooseWeaponReward();
-  if (reward && game.player.gear.weapons.length < MAX_WEAPONS) {
-    game.player.gear.weapons.push(createWeapon({ name: reward.name, ...reward.weapon }));
-    chest.rewardName = reward.name;
-  } else {
-    const gold = 18 + game.wave * 5;
-    game.gold += gold;
-    chest.rewardName = `${gold}G`;
-  }
+  const reward = chooseTreasureReward();
+  chest.rewardName = reward.name;
+  game.mode = "treasure";
+  game.treasureReward = {
+    chest,
+    reward,
+    rerollsUsed: 0,
+  };
 
   addEffect({
     type: "burst",
@@ -47,11 +54,87 @@ function openTreasureChest(chest) {
   });
   addSparks(chest.x, chest.y - 8, 12, 150, "goldCoin");
   game.shake = Math.max(game.shake, 2.5);
+  renderTreasureReward();
+  updateHud();
 }
 
-function chooseWeaponReward() {
+export function rerollTreasureReward() {
+  const treasure = game.treasureReward;
+  if (!treasure) return;
+  const price = treasureRerollPrice();
+  if (game.gold < price) return;
+  if (price > 0) game.gold -= price;
+  treasure.rerollsUsed += 1;
+  treasure.reward = chooseTreasureReward(treasure.reward.name);
+  treasure.chest.rewardName = treasure.reward.name;
+  renderTreasureReward();
+  updateHud();
+}
+
+export function claimTreasureReward() {
+  const treasure = game.treasureReward;
+  if (!treasure) return;
+  const reward = treasure.reward;
+  if (reward.type === "weapon" && game.player.gear.weapons.length < MAX_WEAPONS) {
+    game.player.gear.weapons.push(createWeapon({ name: reward.name, ...reward.weapon }));
+  } else {
+    game.gold += reward.amount || treasureGoldAmount();
+  }
+  game.treasureReward = null;
+  game.mode = "fight";
+  hud.treasureReward.classList.add("hidden");
+  updateHud();
+}
+
+function renderTreasureReward() {
+  const treasure = game.treasureReward;
+  if (!treasure) return;
+  const reward = treasure.reward;
+  hud.treasureRewardIcon.textContent = reward.icon;
+  hud.treasureRewardName.textContent = reward.name;
+  hud.treasureRewardText.textContent = reward.text;
+  hud.treasureRewardMeta.textContent = reward.meta;
+  const price = treasureRerollPrice();
+  const free = price === 0;
+  hud.treasureReroll.textContent = free ? "リロール 無料" : `リロール ${price}G`;
+  hud.treasureReroll.disabled = !free && game.gold < price;
+  hud.treasureReward.classList.remove("hidden");
+}
+
+function chooseTreasureReward(excludeName = "") {
   const owned = new Set(game.player.gear.weapons.map((weapon) => weapon.name));
-  const candidates = WEAPON_POOL.filter((template) => template.name !== "石" && !owned.has(template.name));
-  if (candidates.length === 0) return null;
-  return candidates[Math.floor(Math.random() * candidates.length)];
+  const allCandidates = WEAPON_POOL.filter((template) => (
+    template.name !== "石"
+    && !owned.has(template.name)
+    && game.player.gear.weapons.length < MAX_WEAPONS
+  ));
+  const candidates = allCandidates.filter((template) => template.name !== excludeName);
+  const pool = candidates.length > 0 ? candidates : allCandidates;
+  if (pool.length === 0) return createGoldReward();
+  const template = pool[Math.floor(Math.random() * pool.length)];
+  const previewWeapon = { name: template.name, ...template.weapon };
+  return {
+    type: "weapon",
+    name: template.name,
+    text: template.text || "",
+    meta: weaponKindLabel(previewWeapon),
+    icon: weaponIcon(previewWeapon),
+    weapon: template.weapon,
+  };
+}
+
+function createGoldReward() {
+  const amount = treasureGoldAmount();
+  return {
+    type: "gold",
+    name: `${amount}G`,
+    text: "武器枠が埋まっているため、宝箱の中身をゴールドとして回収する。",
+    meta: "ゴールド",
+    icon: "G",
+    amount,
+  };
+}
+
+function treasureGoldAmount() {
+  return 18 + game.wave * 5;
 }
