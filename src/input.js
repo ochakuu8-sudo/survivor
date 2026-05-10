@@ -2,11 +2,15 @@ import { game, keys, pointer } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, normalize } from "./utils/math.js";
 import { startNextWave } from "./game.js";
+import { isShopTabStorage, setShopTab } from "./shop.js";
 
 export function bindInput() {
   window.addEventListener("keydown", (event) => {
     keys.add(event.code);
-    if (event.code === "Space" && game.mode === "shop") startNextWave();
+    if (event.code === "Space" && game.mode === "shop") {
+      if (isShopTabStorage()) startNextWave();
+      else setShopTab("storage");
+    }
   });
   window.addEventListener("keyup", (event) => keys.delete(event.code));
 

@@ -75,8 +75,15 @@ export function claimTreasureReward() {
   const treasure = game.treasureReward;
   if (!treasure) return;
   const reward = treasure.reward;
-  if (reward.type === "weapon" && game.player.gear.weapons.length < MAX_WEAPONS) {
-    game.player.gear.weapons.push(createWeapon({ name: reward.name, ...reward.weapon }));
+  if (reward.type === "weapon") {
+    const gear = game.player.gear;
+    if (!Array.isArray(gear.storageWeapons)) gear.storageWeapons = [];
+    const weapon = createWeapon({ name: reward.name, ...reward.weapon });
+    if (gear.weapons.length < MAX_WEAPONS) {
+      gear.weapons.push(weapon);
+    } else {
+      gear.storageWeapons.push(weapon);
+    }
   } else {
     game.gold += reward.amount || treasureGoldAmount();
   }
@@ -102,11 +109,15 @@ function renderTreasureReward() {
 }
 
 function chooseTreasureReward(excludeName = "") {
-  const owned = new Set(game.player.gear.weapons.map((weapon) => weapon.name));
+  const gear = game.player.gear;
+  if (!Array.isArray(gear.storageWeapons)) gear.storageWeapons = [];
+  const owned = new Set([
+    ...gear.weapons.map((weapon) => weapon.name),
+    ...gear.storageWeapons.map((weapon) => weapon.name),
+  ]);
   const allCandidates = WEAPON_POOL.filter((template) => (
     template.name !== "石"
     && !owned.has(template.name)
-    && game.player.gear.weapons.length < MAX_WEAPONS
   ));
   const candidates = allCandidates.filter((template) => template.name !== excludeName);
   const pool = candidates.length > 0 ? candidates : allCandidates;

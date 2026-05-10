@@ -51,6 +51,8 @@ export function resetRun() {
     gear: {
       weapons: [],
       attachments: [],
+      storageWeapons: [],
+      storageAttachments: [],
     },
   };
   game.dungeon = generateDungeon(game.wave);
@@ -65,6 +67,7 @@ export function resetRun() {
   game.goldDrops = [];
   game.effects = [];
   game.offers = [];
+  game.shopTab = "shop";
   game.shopRerollsUsed = 0;
   game.starterChoices = [];
   game.treasureReward = null;
@@ -119,8 +122,11 @@ export function enterShop() {
   game.goldDrops = [];
   game.effects = [];
   game.shopRerollsUsed = 0;
+  game.shopTab = "shop";
   game.treasureReward = null;
   hud.treasureReward.classList.add("hidden");
+  hud.pauseMenu.classList.add("hidden");
+  hud.debugPanel.classList.add("hidden");
   generateOffers();
   renderShop();
   hud.shop.classList.remove("hidden");

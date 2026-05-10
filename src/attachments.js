@@ -1,4 +1,5 @@
 import { game } from "./state.js";
+import { MAX_ATTACHMENTS } from "./constants.js";
 import {
   addWeaponPierce,
   boostWeaponImpact,
@@ -285,7 +286,9 @@ function pickStarsForWave(wave) {
 
 function pickAttachmentByStars(stars) {
   const ownedNames = new Set();
-  game.player.gear.weapons.forEach((w) => ownedNames.add(w.name));
+  const gear = game.player.gear;
+  gear.weapons.forEach((w) => ownedNames.add(w.name));
+  (gear.storageWeapons || []).forEach((w) => ownedNames.add(w.name));
 
   const candidates = ACTIVE_ATTACHMENTS.filter((a) => {
     if (a.stars !== stars) return false;
@@ -312,6 +315,7 @@ export function canAttachToWeapon(definition, weapon) {
 
 export function addAttachmentToWeapon(weapon, attachment) {
   if (!weapon || !attachment) return false;
+  if ((weapon.attachments?.length || 0) >= MAX_ATTACHMENTS) return false;
   const definition = attachment.definition || findAttachmentDefinition(attachment.key) || attachment;
   if (!definition?.key) return false;
   if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weapon.name)) {

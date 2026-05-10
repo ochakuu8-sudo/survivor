@@ -36,6 +36,7 @@ export const game = {
   goldDrops: [],
   effects: [],
   offers: [],
+  shopTab: "shop",
   shopRerollsUsed: 0,
   starterChoices: [],
   treasureReward: null,

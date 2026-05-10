@@ -69,8 +69,18 @@
           </div>
         </div>
 
-        <div id="offers" class="offers"></div>
-        <div id="gearInventory" class="gear-inventory"></div>
+        <div class="shop-tabs" role="tablist" aria-label="SHOPメニュー">
+          <button id="shopTabShop" type="button" class="shop-tab active" role="tab" aria-selected="true" aria-controls="shopPane">ショップ</button>
+          <button id="shopTabStorage" type="button" class="shop-tab" role="tab" aria-selected="false" aria-controls="storagePane">倉庫</button>
+        </div>
+
+        <div id="shopPane" class="shop-pane shop-pane-market" role="tabpanel" aria-labelledby="shopTabShop">
+          <div id="offers" class="offers"></div>
+        </div>
+        <div id="storagePane" class="shop-pane shop-pane-storage hidden" role="tabpanel" aria-labelledby="shopTabStorage">
+          <div id="gearInventory" class="gear-inventory"></div>
+          <div id="storageInventory" class="storage-inventory"></div>
+        </div>
         <div class="shop-footer">
           <div class="shop-wallet">
             <span class="hud-label">所持ゴールド</span>
@@ -78,7 +88,7 @@
           </div>
           <div class="shop-actions">
             <button id="shopRerollBtn" type="button">更新 無料</button>
-            <button id="shopContinueBtn" type="button" class="primary">次の階層へ</button>
+            <button id="shopContinueBtn" type="button" class="primary">倉庫へ</button>
           </div>
         </div>
       </section>
