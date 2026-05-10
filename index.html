@@ -19,10 +19,6 @@
           <span class="hud-label">階層</span>
           <strong id="waveText">1</strong>
         </div>
-        <div class="hud-block wide hud-objective">
-          <span class="hud-label">目的</span>
-          <strong id="timeText">出口を探せ</strong>
-        </div>
         <div class="hud-meter">
           <span class="hud-label">体力</span>
           <div id="heartMeter" class="heart-meter" aria-label="ハート"></div>
@@ -37,6 +33,11 @@
           <strong id="killText">0</strong>
         </div>
       </section>
+
+      <div class="hud-block wide hud-objective" aria-live="polite">
+        <span class="hud-label">目的</span>
+        <strong id="timeText">出口を探せ</strong>
+      </div>
 
       <button id="pauseBtn" type="button" class="pause-button hidden" aria-label="一時停止">II</button>
 
