@@ -220,18 +220,6 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
-    key: "ricochetCoil",
-    name: "跳弾コイル",
-    stars: 2,
-    category: "special",
-    text: "通常射撃武器の跳弾回数 +1。",
-    attach: (weapon) => {
-      if (weapon.kind === "projectile") {
-        weapon.ricochet = (weapon.ricochet || 0) + 1;
-      }
-    },
-  },
-  {
     key: "looseBattery",
     name: "ジャンク電池",
     stars: 2,
@@ -260,17 +248,6 @@ export const ACTIVE_ATTACHMENTS = [
     text: "弾の与えるノックバック +8。",
     attach: (weapon) => {
       weapon.knockback = (weapon.knockback || 0) + 8;
-    },
-  },
-  {
-    key: "stoneSplitter",
-    name: "分裂の核",
-    stars: 3,
-    category: "unique",
-    compatibleWeapons: ["石"],
-    text: "石専用。跳弾するたびに石の数が倍になり、別々の敵を狙って飛ぶ。",
-    attach: (weapon) => {
-      weapon.splitOnRicochet = true;
     },
   },
 ];

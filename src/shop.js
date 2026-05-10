@@ -14,7 +14,7 @@ import { startNextWave } from "./game.js";
 export const WEAPON_POOL = [
   {
     name: "石",
-    text: "重い石を山なりに投げる。一回跳弾して別の敵を狙う。",
+    text: "重い石を山なりに投げる。威力は高いが攻撃速度は遅い。",
     weapon: {
       damage: 40,
       fireRate: 0.72,
@@ -22,7 +22,6 @@ export const WEAPON_POOL = [
       life: 1.45,
       radius: 12,
       kick: 2.2,
-      ricochet: 1,
       bulletGlow: "glowAmber",
       bulletSprite: "stoneReadable",
     },

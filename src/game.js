@@ -2,7 +2,7 @@ import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, lerp } from "./utils/math.js";
-import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
+import { autoShoot, createWeapon, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
 import { spawnEnemies, updateEnemies } from "./enemies.js";
 import { generateDungeon, hasReachedDungeonExit } from "./dungeon.js";
@@ -10,12 +10,12 @@ import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
 import { updateMovement } from "./player.js";
-import { generateOffers, prepareStarterPick, renderShop, renderStarterPick } from "./shop.js";
+import { generateOffers, renderShop, WEAPON_POOL } from "./shop.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
 
 export function resetRun() {
-  game.mode = "starterPick";
+  game.mode = "fight";
   game.wave = 1;
   game.elapsed = 0;
   game.totalKills = 0;
@@ -60,12 +60,18 @@ export function resetRun() {
   game.offers = [];
   game.starterChoices = [];
   game.player.baseStats = snapshotPlayerBaseStats(game.player);
+  const stoneTemplate = WEAPON_POOL.find((template) => template.name === "石") || WEAPON_POOL[0];
+  if (stoneTemplate) {
+    game.player.gear.weapons = [
+      createWeapon({ name: stoneTemplate.name, ...stoneTemplate.weapon }),
+    ];
+  }
+  game.starterChoices = [];
   hud.shop.classList.add("hidden");
+  hud.starterPick.classList.add("hidden");
   hud.gameOver.classList.add("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel.classList.add("hidden");
-  prepareStarterPick();
-  renderStarterPick();
   updateHud();
 }
 

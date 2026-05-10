@@ -18,8 +18,6 @@ export const WEAPON_STAT_KEYS = [
   "bulletSpeed",
   "projectiles",
   "pierce",
-  "ricochet",
-  "splitOnRicochet",
   "knockback",
   "spread",
   "life",
