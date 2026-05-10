@@ -11,12 +11,12 @@ const ENEMY_CAP_PER_WAVE = 10;
 const HARD_ENEMY_CAP = 220;
 const MAX_SPAWNS_PER_FRAME = 3;
 const FLOOR_SPEED_START = 0.48;
-const FLOOR_SPEED_STEP_SECONDS = 12;
-const FLOOR_SPEED_STEP_GAIN = 0.2;
+const FLOOR_SPEED_STEP_SECONDS = 15;
+const FLOOR_SPEED_STEP_GAIN = 0.25;
 const FLOOR_SPEED_MAX = 1.85;
 const FLOOR_SPAWN_BASE_PRESSURE = 0.45;
-const FLOOR_SPAWN_STEP_SECONDS = 12;
-const FLOOR_SPAWN_STEP_GAIN = 0.2;
+const FLOOR_SPAWN_STEP_SECONDS = 15;
+const FLOOR_SPAWN_STEP_GAIN = 0.25;
 
 export function enemyFloorSpeedMultiplier(elapsed = game.floorElapsed || 0) {
   return Math.min(FLOOR_SPEED_MAX, FLOOR_SPEED_START * enemyFloorStepMultiplier(elapsed, FLOOR_SPEED_STEP_SECONDS, FLOOR_SPEED_STEP_GAIN));
