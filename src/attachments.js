@@ -76,7 +76,12 @@ export function recomputeAllAttachments() {
   game.player.gear.weapons.forEach((weapon) => {
     weapon.attachments.forEach((attachment) => {
       const definition = findAttachmentDefinition(attachment.key);
-      if (definition) definition.attach(weapon, attachment);
+      if (definition) {
+        attachment.name = definition.name;
+        attachment.category = definition.category || attachment.category;
+        attachment.stars = attachment.stars || definition.stars || 1;
+        definition.attach(weapon, attachment);
+      }
     });
   });
   syncGearAttachments();
@@ -87,7 +92,7 @@ export function recomputeAllAttachments() {
 export const ACTIVE_ATTACHMENTS = [
   {
     key: "powerCore",
-    name: "威力コア",
+    name: "ダメージ+6",
     stars: 1,
     category: "stat",
     text: "ダメージ +6。爆発武器は爆風ダメージも +8（×1.35）。",
@@ -97,7 +102,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "rapidMechanism",
-    name: "高速機構",
+    name: "攻撃頻度+13%",
     stars: 1,
     category: "stat",
     text: "攻撃頻度 +13%。",
@@ -107,7 +112,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "rangeTube",
-    name: "射程チューブ",
+    name: "射程+13%",
     stars: 1,
     category: "stat",
     text: "射程 +13%、弾速 +13%、滞空 +6%、軌道半径 +8%（武器に応じて）。",
@@ -117,7 +122,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "areaLens",
-    name: "範囲レンズ",
+    name: "範囲+8%",
     stars: 1,
     category: "stat",
     text: "爆発半径・線幅・コーン範囲 +8%、命中幅 +1（武器に応じて）。",
@@ -127,7 +132,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "stableGrip",
-    name: "安定グリップ",
+    name: "ばらつき-22%",
     stars: 1,
     category: "stat",
     text: "ばらつき −22%、ぶれ −30%、弾速 +8%、ダメージ +2。",
@@ -140,7 +145,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "vitalityCharm",
-    name: "守りのお守り",
+    name: "最大ハート+1",
     stars: 1,
     category: "support",
     text: "最大ハート +1。",
@@ -150,7 +155,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "guardBadge",
-    name: "古い防犯バッジ",
+    name: "被ダメ軽減+4",
     stars: 1,
     category: "support",
     text: "被ダメージ軽減 +4。",
@@ -160,7 +165,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "scrapMagnet",
-    name: "金貨磁石",
+    name: "吸引範囲+36",
     stars: 1,
     category: "support",
     text: "ゴールド吸引範囲 +36。",
@@ -170,7 +175,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "lightSneaker",
-    name: "軽量スニーカー",
+    name: "移動速度+26",
     stars: 1,
     category: "support",
     text: "移動速度 +26。",
@@ -180,7 +185,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "splitChamber",
-    name: "分裂チャンバー",
+    name: "弾数+1",
     stars: 2,
     category: "special",
     text: "通常射撃: 弾数 +1・spread +0.05 / 炎・剣: コーン +0.12 rad / 回転: 範囲 +14・速度 +10%。",
@@ -198,7 +203,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "sustainEmitter",
-    name: "持続エミッター",
+    name: "持続時間+25%",
     stars: 2,
     category: "special",
     text: "持続時間 +25%、ティック頻度 +20%、炎・設置レーザーの発射 +8%、回転半径 +10%。",
@@ -211,7 +216,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "looseBattery",
-    name: "ジャンク電池",
+    name: "威力+14/防御-3",
     stars: 2,
     category: "support",
     text: "武器威力ボーナス +14、被ダメージ軽減 −3。",
@@ -222,7 +227,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "ricochetCore",
-    name: "跳弾コア",
+    name: "跳弾+1",
     stars: 2,
     category: "special",
     compatibleWeapons: ["石", "豆鉄砲"],
@@ -234,7 +239,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "criticalLens",
-    name: "会心レンズ",
+    name: "クリティカル+12%",
     stars: 2,
     category: "special",
     text: "命中時に12%でクリティカル。クリティカルダメージは1.8倍。",
@@ -245,7 +250,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "frostPowder",
-    name: "氷結粉",
+    name: "氷結+22%",
     stars: 2,
     category: "special",
     text: "命中時に22%で敵の移動速度を1.6秒間38%低下させる。",
@@ -257,7 +262,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "barrierEmitter",
-    name: "バリア発生器",
+    name: "バリア+1",
     stars: 2,
     category: "support",
     text: "バリア +1。バリアは被ダメージを1回だけ無効化する。",
@@ -267,7 +272,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "piercer",
-    name: "貫通改造",
+    name: "貫通+1",
     stars: 2,
     category: "special",
     text: "貫通 +1。武器に応じて爆発半径・線幅・コーン範囲・命中幅も追加で広がる。",
@@ -277,7 +282,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "knockbackBooster",
-    name: "衝撃増幅",
+    name: "ノックバック+8",
     stars: 2,
     category: "special",
     text: "弾の与えるノックバック +8。",
@@ -287,7 +292,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "overdriveCore",
-    name: "過負荷コア",
+    name: "ダメージ+18/頻度+8%",
     stars: 3,
     category: "special",
     text: "ダメージ +18。攻撃頻度 +8%。",
@@ -298,7 +303,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "multiForge",
-    name: "多重化炉",
+    name: "弾数+2/個数+1",
     stars: 3,
     category: "special",
     text: "通常弾は弾数 +2。炎は角度 +0.18。回転武器は個数 +1、範囲 +8。",
@@ -316,7 +321,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "deepPiercer",
-    name: "深貫通コア",
+    name: "貫通+2",
     stars: 3,
     category: "special",
     text: "貫通 +2。武器に応じて爆発・線幅・コーン・命中幅も大きく広がる。",
@@ -326,7 +331,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "cryoEngine",
-    name: "冷却エンジン",
+    name: "氷結+35%",
     stars: 3,
     category: "special",
     text: "命中時に35%で敵の移動速度を2.2秒間45%低下させる。",
@@ -338,7 +343,7 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "safetyField",
-    name: "セーフティフィールド",
+    name: "バリア+2/吸引+24",
     stars: 3,
     category: "support",
     text: "バリア +2。ゴールド吸引範囲 +24。",
