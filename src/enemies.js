@@ -73,14 +73,15 @@ export function spawnEnemy(forceType) {
     else if (wave >= 2 && roll < 0.48) type = "archer";
   }
 
+  const baseHp = 28 + wave * 8;
   const enemy = {
     id: nextEnemyId(),
     kind: "melee",
     x,
     y,
     radius: 18,
-    hp: 1,
-    maxHp: 1,
+    hp: baseHp,
+    maxHp: baseHp,
     speed: 78 + wave * 3,
     attackDamage: Math.round(9 + wave * 0.8),
     attackCooldown: Math.max(0.74, 1.08 - wave * 0.012),
@@ -93,6 +94,8 @@ export function spawnEnemy(forceType) {
 
   if (type === "runner") {
     enemy.radius = 16;
+    enemy.hp = Math.round(baseHp * 0.72);
+    enemy.maxHp = enemy.hp;
     enemy.speed = 122 + wave * 4;
     enemy.attackDamage = Math.round(7 + wave * 0.65);
     enemy.attackCooldown = Math.max(0.52, 0.76 - wave * 0.008);
@@ -101,6 +104,8 @@ export function spawnEnemy(forceType) {
   } else if (type === "orc") {
     enemy.kind = "orc";
     enemy.radius = 27;
+    enemy.hp = Math.round(baseHp * 2.85);
+    enemy.maxHp = enemy.hp;
     enemy.speed = 58 + wave * 2.4;
     enemy.attackDamage = 0;
     enemy.attackCooldown = 9999;
@@ -120,6 +125,8 @@ export function spawnEnemy(forceType) {
   } else if (type === "archer") {
     enemy.kind = "archer";
     enemy.radius = 17;
+    enemy.hp = Math.round(baseHp * 0.85);
+    enemy.maxHp = enemy.hp;
     enemy.speed = 92 + wave * 2.4;
     enemy.attackDamage = 0;
     enemy.attackCooldown = 9999;
