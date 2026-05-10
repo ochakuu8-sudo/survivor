@@ -739,15 +739,14 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "ricochetCore3",
-    name: "跳弾+3/分裂+1",
+    name: "跳弾+3",
     stars: 5,
     category: "special",
     compatibleWeapons: ["石", "豆鉄砲"],
-    text: "通常弾が命中後、近くの敵へ3回跳ねる。跳弾時に2方向へ分裂する。",
+    text: "通常弾が命中後、近くの敵へ3回跳ねる。跳弾距離も大きく伸びる。",
     attach: (weapon) => {
       weapon.ricochetCount = (weapon.ricochetCount || 0) + 3;
       weapon.ricochetRange = Math.max(weapon.ricochetRange || 0, 300);
-      weapon.ricochetSplitCount = Math.max(weapon.ricochetSplitCount || 1, 2);
     },
   },
   {
