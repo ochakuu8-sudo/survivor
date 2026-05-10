@@ -930,15 +930,20 @@ export const ACTIVE_ATTACHMENTS = [
 ];
 
 const LEVEL_ATTACHMENT_RARITY_WEIGHTS = {
-  2: [[1, 75], [2, 25], [3, 0], [4, 0], [5, 0]],
-  3: [[1, 50], [2, 35], [3, 15], [4, 0], [5, 0]],
-  4: [[1, 30], [2, 35], [3, 25], [4, 10], [5, 0]],
-  5: [[1, 15], [2, 25], [3, 35], [4, 20], [5, 5]],
-  6: [[1, 5], [2, 15], [3, 35], [4, 32], [5, 13]],
-  7: [[1, 0], [2, 10], [3, 30], [4, 40], [5, 20]],
-  8: [[1, 0], [2, 5], [3, 25], [4, 42], [5, 28]],
-  9: [[1, 0], [2, 0], [3, 20], [4, 45], [5, 35]],
+  2: [[1, 80], [2, 20], [3, 0], [4, 0], [5, 0]],
+  3: [[1, 60], [2, 30], [3, 10], [4, 0], [5, 0]],
+  4: [[1, 40], [2, 40], [3, 20], [4, 0], [5, 0]],
+  5: [[1, 25], [2, 40], [3, 35], [4, 0], [5, 0]],
+  6: [[1, 15], [2, 30], [3, 40], [4, 15], [5, 0]],
+  7: [[1, 5], [2, 20], [3, 40], [4, 28], [5, 7]],
+  8: [[1, 0], [2, 10], [3, 35], [4, 40], [5, 15]],
+  9: [[1, 0], [2, 5], [3, 25], [4, 45], [5, 25]],
 };
+
+function attachmentRarityWeightsForLevel(level) {
+  const clampedLevel = Math.min(9, Math.max(2, level || 2));
+  return LEVEL_ATTACHMENT_RARITY_WEIGHTS[clampedLevel] || LEVEL_ATTACHMENT_RARITY_WEIGHTS[2];
+}
 
 export function pickShopAttachment(wave) {
   const stars = pickStarsForWave(wave);
@@ -946,7 +951,7 @@ export function pickShopAttachment(wave) {
 }
 
 export function attachmentRarityChanceText(level) {
-  return (LEVEL_ATTACHMENT_RARITY_WEIGHTS[level] || LEVEL_ATTACHMENT_RARITY_WEIGHTS[2])
+  return attachmentRarityWeightsForLevel(level)
     .filter(([, weight]) => weight > 0)
     .map(([stars, weight]) => `${starsLabel(stars)}${weight}%`)
     .join(" / ");
@@ -977,7 +982,7 @@ export function pickAttachmentChoicesForWeapon(weapon, targetLevel, count = 3) {
 }
 
 function pickStarsForWeaponLevel(level) {
-  const weights = LEVEL_ATTACHMENT_RARITY_WEIGHTS[Math.min(9, Math.max(2, level))] || LEVEL_ATTACHMENT_RARITY_WEIGHTS[2];
+  const weights = attachmentRarityWeightsForLevel(level);
   const total = weights.reduce((sum, [, weight]) => sum + weight, 0);
   let roll = Math.random() * total;
   for (const [stars, weight] of weights) {
