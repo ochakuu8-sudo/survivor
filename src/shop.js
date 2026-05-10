@@ -391,7 +391,7 @@ export function renderStarterPick() {
   const kicker = hud.starterPick.querySelector(".panel-kicker");
   const heading = hud.starterPick.querySelector("h1");
   if (kicker) kicker.textContent = "最初の武器";
-  if (heading) heading.textContent = "3つから1つ選んで夜街へ";
+  if (heading) heading.textContent = "3つから1つ選んで平原へ";
   game.starterChoices.forEach((template, index) => {
     const card = document.createElement("article");
     card.className = "starter-card offer-weapon";

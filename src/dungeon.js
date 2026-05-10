@@ -145,9 +145,9 @@ export function dungeonTileWorldCenter(dungeon, tx, ty) {
 
 export function dungeonFloorSprite(tx, ty) {
   const roll = hash2(tx, ty, 23);
-  if (roll < 0.16) return "sidewalk";
-  if (roll < 0.32) return "lane";
-  if (roll < 0.44) return "crosswalk";
+  if (roll < 0.14) return "lane";
+  if (roll < 0.3) return "sidewalk";
+  if (roll < 0.42) return "crosswalk";
   return "road";
 }
 

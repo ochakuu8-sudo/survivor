@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>夜街サバイバー</title>
+    <title>平原サバイバー</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="src/styles.css" />
   </head>
   <body>
-    <main id="app" aria-label="夜街サバイバー">
+    <main id="app" aria-label="平原サバイバー">
       <canvas id="game" aria-label="ゲーム画面"></canvas>
 
       <div id="vignette"></div>
@@ -16,7 +16,7 @@
 
       <section id="hud" aria-live="polite">
         <div class="hud-block">
-          <span class="hud-label">夜</span>
+          <span class="hud-label">階層</span>
           <strong id="waveText">1</strong>
         </div>
         <div class="hud-block wide">
@@ -50,16 +50,16 @@
         <div class="panel-head">
           <div>
             <span class="panel-kicker">最初の武器</span>
-            <h1>3つから1つ選んで夜街へ</h1>
+            <h1>3つから1つ選んで平原へ</h1>
           </div>
         </div>
         <div id="starterOffers" class="starter-offers"></div>
       </section>
 
-      <section id="shop" class="panel hidden" aria-label="夜の報酬">
+      <section id="shop" class="panel hidden" aria-label="装備整理">
         <div class="panel-head">
           <div>
-            <span class="panel-kicker">夜が明けた</span>
+            <span class="panel-kicker">安全地帯</span>
             <h1>アタッチメントを1つ選ぶ</h1>
           </div>
         </div>
@@ -70,7 +70,7 @@
 
       <section id="gameOver" class="panel narrow hidden" aria-label="ゲームオーバー">
         <span class="panel-kicker">ラン終了</span>
-        <h1>通りが静まり返った</h1>
+        <h1>探索はここまで</h1>
         <p id="resultText"></p>
         <button id="restartBtn" type="button" class="primary">やり直す</button>
       </section>

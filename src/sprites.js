@@ -84,38 +84,45 @@ function drawPixelWalkDust(ctx, w, h) {
 }
 
 function drawPixelTrash(ctx, w, h) {
-  const x = w / 2 - 14;
-  const y = h / 2 - 16;
-  px(ctx, x + 2, y + 28, 28, 6, "rgba(35, 25, 76, 0.28)");
-  px(ctx, x, y + 4, 28, 28, "#162b59");
-  px(ctx, x + 4, y, 20, 6, "#55f6c7");
-  px(ctx, x + 4, y + 10, 20, 4, "#2844a0");
-  px(ctx, x + 7, y + 18, 14, 3, "#8fd4ff");
-  px(ctx, x + 22, y + 6, 4, 24, "#0e1c42");
+  const x = w / 2 - 16;
+  const y = h / 2 - 13;
+  px(ctx, x + 2, y + 25, 30, 7, "rgba(50, 83, 38, 0.26)");
+  px(ctx, x + 2, y + 10, 25, 16, "#6d7e5a");
+  px(ctx, x + 8, y + 4, 20, 22, "#8b9270");
+  px(ctx, x + 13, y + 8, 12, 5, "#b5b38a");
+  px(ctx, x + 5, y + 20, 7, 4, "#4f623e");
+  px(ctx, x + 23, y + 18, 9, 5, "#516e3a");
+  px(ctx, x - 1, y + 25, 9, 4, "#5fb74d");
+  px(ctx, x + 24, y + 25, 10, 4, "#68c55a");
 }
 
 function drawPixelSign(ctx, w, h) {
   const x = w / 2;
   const y = h / 2;
-  px(ctx, x - 21, y + 22, 42, 8, "rgba(35, 25, 76, 0.32)");
-  px(ctx, x - 4, y - 6, 8, 30, "#201653");
-  px(ctx, x - 28, y - 30, 56, 24, "#201653");
-  px(ctx, x - 24, y - 26, 48, 16, "#ff5d96");
-  px(ctx, x - 19, y - 21, 38, 4, "#ffe46b");
-  px(ctx, x - 24, y - 10, 48, 4, "#b82f78");
+  px(ctx, x - 24, y + 22, 48, 8, "rgba(50, 83, 38, 0.28)");
+  px(ctx, x - 25, y + 2, 50, 23, "#4f9f3d");
+  px(ctx, x - 19, y - 5, 38, 24, "#62bd4f");
+  px(ctx, x - 12, y - 12, 24, 20, "#78d35c");
+  px(ctx, x - 19, y + 10, 38, 6, "#3e8233");
+  px(ctx, x - 16, y - 4, 6, 6, "#fff270");
+  px(ctx, x + 11, y - 2, 6, 6, "#fff270");
+  px(ctx, x - 3, y - 9, 6, 6, "#ff8aa0");
+  px(ctx, x + 3, y + 5, 6, 6, "#b7ecff");
 }
 
 function drawPixelCar(ctx, w, h) {
-  const x = w / 2 - 38;
+  const x = w / 2 - 36;
   const y = h / 2 - 18;
-  px(ctx, x + 4, y + 39, 72, 8, "rgba(35, 25, 76, 0.32)");
-  px(ctx, x, y + 10, 76, 24, "#5a2fc8");
-  px(ctx, x + 8, y + 2, 52, 18, "#ff5d96");
-  px(ctx, x + 15, y + 6, 36, 10, "#9df7ff");
-  px(ctx, x + 8, y + 30, 14, 8, "#201653");
-  px(ctx, x + 54, y + 30, 14, 8, "#201653");
-  px(ctx, x + 63, y + 16, 8, 8, "#ffe46b");
-  px(ctx, x + 2, y + 18, 8, 8, "#ff7a5c");
+  px(ctx, x + 3, y + 40, 72, 8, "rgba(50, 83, 38, 0.28)");
+  px(ctx, x + 5, y + 14, 66, 22, "#8a5a2a");
+  px(ctx, x + 10, y + 10, 58, 8, "#a56e35");
+  px(ctx, x + 13, y + 7, 52, 6, "#c88f4d");
+  px(ctx, x + 8, y + 33, 62, 5, "#61401d");
+  px(ctx, x + 2, y + 15, 7, 19, "#6b451f");
+  px(ctx, x + 69, y + 15, 7, 19, "#6b451f");
+  px(ctx, x + 17, y + 19, 10, 5, "#d8ac62");
+  px(ctx, x + 36, y + 18, 12, 5, "#d8ac62");
+  px(ctx, x + 55, y + 20, 9, 5, "#d8ac62");
 }
 
 function drawPixelPlayer(ctx, w, h, step = 0) {
@@ -307,64 +314,80 @@ export function buildAtlas() {
 
   add("road", 96, 96, (ctx, w, h) => {
     const rng = makeRng(31);
-    ctx.fillStyle = "#394aa6";
+    ctx.fillStyle = "#76c85c";
     ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#2f3e91";
-    for (let y = 0; y < h; y += 24) ctx.fillRect(0, y + 20, w, 4);
-    ctx.fillStyle = "#4e60c7";
+    ctx.fillStyle = "#6fbd52";
+    for (let y = 0; y < h; y += 24) ctx.fillRect(0, y + 20, w, 3);
+    ctx.fillStyle = "#8bdd68";
     for (let i = 0; i < 34; i += 1) {
-      ctx.fillRect(Math.floor(rng() * 12) * 8, Math.floor(rng() * 12) * 8, 4, 4);
+      const x = Math.floor(rng() * 12) * 8;
+      const y = Math.floor(rng() * 12) * 8;
+      ctx.fillRect(x, y + 2, 3, 8);
+      ctx.fillRect(x + 3, y, 3, 6);
     }
-    ctx.fillStyle = "#263376";
-    ctx.fillRect(0, 0, w, 4);
-    ctx.fillRect(0, h - 4, w, 4);
+    ctx.fillStyle = "#5da548";
+    for (let i = 0; i < 12; i += 1) ctx.fillRect(Math.floor(rng() * 12) * 8, Math.floor(rng() * 12) * 8, 8, 3);
   });
 
   add("lane", 96, 96, (ctx, w, h) => {
     const rng = makeRng(44);
-    ctx.fillStyle = "#394aa6";
+    ctx.fillStyle = "#78c95b";
     ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#4e60c7";
-    for (let i = 0; i < 24; i += 1) ctx.fillRect(Math.floor(rng() * 12) * 8, Math.floor(rng() * 12) * 8, 4, 4);
-    ctx.fillStyle = "#e8ce56";
-    ctx.fillRect(w / 2 - 4, 8, 8, 24);
-    ctx.fillRect(w / 2 - 4, 56, 8, 24);
-    ctx.fillStyle = "#f6e9a6";
-    ctx.fillRect(w / 2 - 4, 8, 8, 4);
-    ctx.fillRect(w / 2 - 4, 56, 8, 4);
+    ctx.fillStyle = "#b98348";
+    ctx.fillRect(0, 34, w, 25);
+    ctx.fillStyle = "#d3a05e";
+    ctx.fillRect(0, 38, w, 6);
+    ctx.fillRect(0, 52, w, 4);
+    ctx.fillStyle = "#8bd568";
+    for (let i = 0; i < 22; i += 1) ctx.fillRect(Math.floor(rng() * 12) * 8, Math.floor(rng() * 12) * 8, 5, 7);
+    ctx.fillStyle = "#8a6237";
+    for (let i = 0; i < 9; i += 1) ctx.fillRect(Math.floor(rng() * 12) * 8, 40 + Math.floor(rng() * 2) * 8, 7, 3);
   });
 
   add("sidewalk", 96, 96, (ctx, w, h) => {
-    ctx.fillStyle = "#6768cf";
+    const rng = makeRng(59);
+    ctx.fillStyle = "#8bd767";
     ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#7d7ee2";
-    for (let x = 0; x < w; x += 32) ctx.fillRect(x + 2, 0, 4, h);
-    for (let y = 0; y < h; y += 32) ctx.fillRect(0, y + 2, w, 4);
-    ctx.fillStyle = "#5657b8";
-    ctx.fillRect(0, 0, w, 5);
-    ctx.fillRect(0, h - 5, w, 5);
+    ctx.fillStyle = "#6fbd54";
+    for (let x = 0; x < w; x += 24) ctx.fillRect(x + 2, 0, 3, h);
+    for (let y = 0; y < h; y += 24) ctx.fillRect(0, y + 2, w, 3);
+    ctx.fillStyle = "#a6e678";
+    for (let i = 0; i < 18; i += 1) {
+      const x = Math.floor(rng() * 12) * 8;
+      const y = Math.floor(rng() * 12) * 8;
+      ctx.fillRect(x, y + 2, 4, 4);
+      ctx.fillRect(x + 4, y, 4, 4);
+    }
   });
 
   add("pavement", 96, 96, (ctx, w, h) => {
     const rng = makeRng(73);
-    ctx.fillStyle = "#202d78";
+    ctx.fillStyle = "#67b94e";
     ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#1a2564";
+    ctx.fillStyle = "#5aa742";
     for (let x = 0; x < w; x += 16) ctx.fillRect(x, 0, 2, h);
     for (let y = 0; y < h; y += 16) ctx.fillRect(0, y, w, 2);
-    ctx.fillStyle = "#2d3f95";
-    for (let i = 0; i < 12; i += 1) {
+    ctx.fillStyle = "#7dd35d";
+    for (let i = 0; i < 18; i += 1) {
       ctx.fillRect(Math.floor(rng() * 11) * 8, Math.floor(rng() * 11) * 8, 8, 4);
     }
+    ctx.fillStyle = "#f9de58";
+    for (let i = 0; i < 5; i += 1) ctx.fillRect(Math.floor(rng() * 11) * 8 + 2, Math.floor(rng() * 11) * 8 + 2, 4, 4);
   });
 
   add("crosswalk", 96, 96, (ctx, w, h) => {
-    ctx.fillStyle = "#394aa6";
+    ctx.fillStyle = "#83d763";
     ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = "#efe4aa";
-    for (let y = 8; y < h; y += 20) ctx.fillRect(8, y, w - 16, 10);
-    ctx.fillStyle = "#c3e7ed";
-    for (let y = 8; y < h; y += 20) ctx.fillRect(8, y, w - 16, 3);
+    ctx.fillStyle = "#c69a58";
+    for (let y = 12; y < h; y += 18) ctx.fillRect(7, y, w - 14, 8);
+    ctx.fillStyle = "#e6c17a";
+    for (let y = 12; y < h; y += 18) ctx.fillRect(7, y, w - 14, 3);
+    ctx.fillStyle = "#fff270";
+    ctx.fillRect(18, 26, 5, 5);
+    ctx.fillRect(70, 45, 5, 5);
+    ctx.fillStyle = "#ff8aa0";
+    ctx.fillRect(36, 67, 5, 5);
+    ctx.fillRect(57, 16, 5, 5);
   });
 
   add("trash", 48, 48, (ctx, w, h) => {

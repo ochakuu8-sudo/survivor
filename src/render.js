@@ -35,8 +35,8 @@ export function render() {
 
 function drawBackgroundDepth(view) {
   state.renderer.draw("white", view.w / 2, view.h / 2, view.w + 4, view.h + 4, {
-    tint: [0.06, 0.07, 0.19],
-    alpha: 0.14,
+    tint: [0.94, 1, 0.72],
+    alpha: 0.09,
   });
 }
 
@@ -87,7 +87,7 @@ function drawDungeonBackground(dungeon, view, camX, camY, zoom) {
 
       if (tile === DUNGEON_WALL) {
         state.renderer.draw("white", screen.x, screen.y, size, size, {
-          tint: [0.035, 0.045, 0.13],
+          tint: [0.14, 0.31, 0.12],
           alpha: 1,
         });
         drawDungeonWallEdges(dungeon, tx, ty, screen, zoom);
@@ -95,25 +95,25 @@ function drawDungeonBackground(dungeon, view, camX, camY, zoom) {
       }
 
       state.renderer.draw(dungeonFloorSprite(tx, ty), screen.x, screen.y, size, size, {
-        tint: tile === DUNGEON_EXIT ? [0.9, 1, 0.96] : [0.92, 0.94, 1],
+        tint: tile === DUNGEON_EXIT ? [1, 0.96, 0.68] : [1, 1, 0.94],
       });
       state.renderer.draw("white", screen.x, screen.y, size, size, {
-        tint: tile === DUNGEON_EXIT ? [0.08, 0.16, 0.18] : [0.04, 0.05, 0.12],
-        alpha: tile === DUNGEON_EXIT ? 0.18 : 0.1,
+        tint: tile === DUNGEON_EXIT ? [0.48, 0.36, 0.06] : [0.32, 0.27, 0.08],
+        alpha: tile === DUNGEON_EXIT ? 0.08 : 0.04,
       });
 
       if (tile !== DUNGEON_EXIT) {
         const propRoll = hash2(tx, ty, dungeon.seed);
-        if (propRoll < 0.035) drawProp("trash", tx, ty, view, camX, camY, zoom, hash2(tx, ty, 7), hash2(tx, ty, 17));
-        else if (propRoll < 0.055) drawProp("sign", tx, ty, view, camX, camY, zoom, hash2(tx, ty, 11), hash2(tx, ty, 19));
+        if (propRoll < 0.035) drawProp("trash", tx, ty, view, camX, camY, zoom, hash2(tx, ty, 7), hash2(tx, ty, 17), dungeon.offsetX, dungeon.offsetY);
+        else if (propRoll < 0.055) drawProp("sign", tx, ty, view, camX, camY, zoom, hash2(tx, ty, 11), hash2(tx, ty, 19), dungeon.offsetX, dungeon.offsetY);
       }
     }
   }
 }
 
 function drawDungeonWallEdges(dungeon, tx, ty, screen, zoom) {
-  const edgeTint = [0.2, 0.3, 0.72];
-  const edgeAlpha = 0.72;
+  const edgeTint = [0.47, 0.73, 0.25];
+  const edgeAlpha = 0.78;
   const edge = Math.max(2, 5 * zoom);
   const size = TILE_SIZE * zoom;
   if (isWalkableTile(dungeon, tx, ty - 1)) {
@@ -188,12 +188,12 @@ function tileSprite(tx, ty) {
   return "pavement";
 }
 
-function drawProp(name, tx, ty, view, camX, camY, zoom, roll, yRoll) {
-  const worldX = tx * TILE_SIZE + 24 + roll * 48;
-  const worldY = ty * TILE_SIZE + 18 + yRoll * 54;
+function drawProp(name, tx, ty, view, camX, camY, zoom, roll, yRoll, offsetX = 0, offsetY = 0) {
+  const worldX = offsetX + tx * TILE_SIZE + 24 + roll * 48;
+  const worldY = offsetY + ty * TILE_SIZE + 18 + yRoll * 54;
   const screen = worldToScreen(worldX, worldY, view, camX, camY, zoom);
-  if (name === "sign") state.renderer.draw("glowRed", screen.x, screen.y - 18 * zoom, 110 * zoom, 90 * zoom, { alpha: 0.55 });
-  if (name === "car") state.renderer.draw("glowAmber", screen.x + 12 * zoom, screen.y, 120 * zoom, 70 * zoom, { alpha: 0.24 });
+  if (name === "sign") state.renderer.draw("glowAmber", screen.x, screen.y - 8 * zoom, 110 * zoom, 82 * zoom, { alpha: 0.16 });
+  if (name === "car") state.renderer.draw("glowAmber", screen.x + 12 * zoom, screen.y, 120 * zoom, 70 * zoom, { alpha: 0.1 });
   state.renderer.draw(name, screen.x, screen.y, state.atlas.sprites[name].w * zoom, state.atlas.sprites[name].h * zoom, {
     rotation: (roll - 0.5) * 0.6,
   });
@@ -283,18 +283,18 @@ function drawDungeonExit(view, camX, camY, zoom) {
   if (!exit) return;
   const screen = worldToScreen(exit.x, exit.y, view, camX, camY, zoom);
   const pulse = 1 + Math.sin(game.elapsed * 4) * 0.08;
-  state.renderer.draw("glowCyan", screen.x, screen.y, 190 * pulse * zoom, 190 * pulse * zoom, { alpha: 0.42 });
+  state.renderer.draw("glowAmber", screen.x, screen.y, 190 * pulse * zoom, 190 * pulse * zoom, { alpha: 0.34 });
   state.renderer.draw("white", screen.x, screen.y, 70 * zoom, 70 * zoom, {
-    tint: [0.14, 0.82, 0.72],
+    tint: [0.96, 0.76, 0.26],
     alpha: 0.88,
     rotation: Math.PI / 4,
   });
   state.renderer.draw("white", screen.x, screen.y, 42 * zoom, 42 * zoom, {
-    tint: [0.84, 1, 0.82],
+    tint: [0.92, 1, 0.62],
     alpha: 0.88,
   });
   state.renderer.draw("white", screen.x, screen.y - 4 * zoom, 18 * zoom, 54 * zoom, {
-    tint: [0.04, 0.08, 0.11],
+    tint: [0.3, 0.18, 0.08],
     alpha: 0.85,
   });
 }

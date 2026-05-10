@@ -121,7 +121,7 @@ export class SpriteRenderer {
 
   clear() {
     const gl = this.gl;
-    gl.clearColor(0.12, 0.18, 0.44, 1);
+    gl.clearColor(0.58, 0.78, 0.42, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
   }
 
