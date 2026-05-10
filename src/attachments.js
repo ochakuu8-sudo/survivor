@@ -1,10 +1,12 @@
 import { game } from "./state.js";
 import { getWeaponMaxAttachments } from "./constants.js";
 import {
+  addWeaponBasePercent,
   addWeaponPierce,
-  boostWeaponImpact,
+  boostWeaponImpactPercent,
   expandWeaponArea,
   extendWeaponReach,
+  reduceWeaponBasePercent,
   restoreWeaponBaseStats,
 } from "./weapons.js";
 
@@ -67,9 +69,9 @@ function restorePlayerBaseStats() {
   });
 }
 
-function boostWeaponAmmoCapacity(weapon, multiplier) {
+function boostWeaponAmmoCapacity(weapon, percent) {
   if (!weapon?.usesAmmo) return;
-  weapon.ammoCapacity *= multiplier;
+  addWeaponBasePercent(weapon, "ammoCapacity", percent, { min: weapon.fuelMode ? 0.5 : 1 });
 }
 
 export function recomputeAllAttachments() {
@@ -97,12 +99,12 @@ export function recomputeAllAttachments() {
 export const ACTIVE_ATTACHMENTS = [
   {
     key: "powerCore",
-    name: "ダメージ+6",
+    name: "ダメージ+15%",
     stars: 1,
     category: "stat",
-    text: "ダメージ +6。爆発武器は爆風ダメージも +8（×1.35）。",
+    text: "基礎ダメージ +15%。爆発武器は基礎爆風ダメージも +15%。",
     attach: (weapon) => {
-      boostWeaponImpact(weapon, 6);
+      boostWeaponImpactPercent(weapon, 0.15);
     },
   },
   {
@@ -112,7 +114,7 @@ export const ACTIVE_ATTACHMENTS = [
     category: "stat",
     text: "攻撃頻度 +13%。",
     attach: (weapon) => {
-      weapon.fireRate *= 1.13;
+      addWeaponBasePercent(weapon, "fireRate", 0.13, { min: 0.15 });
     },
   },
   {
@@ -130,7 +132,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "範囲+8%",
     stars: 1,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲 +8%、命中幅 +1（武器に応じて）。",
+    text: "爆発半径・線幅・コーン範囲・命中幅 +8%（武器に応じて）。",
     attach: (weapon) => {
       expandWeaponArea(weapon, 1);
     },
@@ -140,12 +142,12 @@ export const ACTIVE_ATTACHMENTS = [
     name: "ばらつき-22%",
     stars: 1,
     category: "stat",
-    text: "ばらつき −22%、ぶれ −30%、弾速 +8%、ダメージ +2。",
+    text: "ばらつき −22%、ぶれ −30%、弾速 +8%、ダメージ +5%。",
     attach: (weapon) => {
-      weapon.spread *= 0.78;
-      weapon.jitter *= 0.7;
-      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.08;
-      boostWeaponImpact(weapon, 2);
+      reduceWeaponBasePercent(weapon, "spread", 0.22, { min: 0.02 });
+      reduceWeaponBasePercent(weapon, "jitter", 0.3, { min: 0 });
+      if (weapon.bulletSpeed > 1) addWeaponBasePercent(weapon, "bulletSpeed", 0.08, { min: 1 });
+      boostWeaponImpactPercent(weapon, 0.05);
     },
   },
   {
@@ -196,47 +198,47 @@ export const ACTIVE_ATTACHMENTS = [
     requiresAmmo: true,
     text: "弾薬容量 +15%。燃料武器は燃料秒数が伸びる。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 1.15);
+      boostWeaponAmmoCapacity(weapon, 0.15);
     },
   },
   {
     key: "powerCore2",
-    name: "ダメージ+12",
+    name: "ダメージ+30%",
     stars: 2,
     category: "stat",
-    text: "ダメージ +12。爆発武器は爆風ダメージも +16。",
+    text: "基礎ダメージ +30%。爆発武器は基礎爆風ダメージも +30%。",
     attach: (weapon) => {
-      boostWeaponImpact(weapon, 12);
+      boostWeaponImpactPercent(weapon, 0.3);
     },
   },
   {
     key: "powerCore3",
-    name: "ダメージ+22",
+    name: "ダメージ+50%",
     stars: 3,
     category: "stat",
-    text: "ダメージ +22。爆発武器は爆風ダメージも +30。",
+    text: "基礎ダメージ +50%。爆発武器は基礎爆風ダメージも +50%。",
     attach: (weapon) => {
-      boostWeaponImpact(weapon, 22);
+      boostWeaponImpactPercent(weapon, 0.5);
     },
   },
   {
     key: "powerCore4",
-    name: "ダメージ+36",
+    name: "ダメージ+75%",
     stars: 4,
     category: "stat",
-    text: "ダメージ +36。爆発武器は爆風ダメージも +49。",
+    text: "基礎ダメージ +75%。爆発武器は基礎爆風ダメージも +75%。",
     attach: (weapon) => {
-      boostWeaponImpact(weapon, 36);
+      boostWeaponImpactPercent(weapon, 0.75);
     },
   },
   {
     key: "powerCore5",
-    name: "ダメージ+55",
+    name: "ダメージ+110%",
     stars: 5,
     category: "stat",
-    text: "ダメージ +55。爆発武器は爆風ダメージも +74。",
+    text: "基礎ダメージ +110%。爆発武器は基礎爆風ダメージも +110%。",
     attach: (weapon) => {
-      boostWeaponImpact(weapon, 55);
+      boostWeaponImpactPercent(weapon, 1.1);
     },
   },
   {
@@ -246,7 +248,7 @@ export const ACTIVE_ATTACHMENTS = [
     category: "stat",
     text: "攻撃頻度 +22%。",
     attach: (weapon) => {
-      weapon.fireRate *= 1.22;
+      addWeaponBasePercent(weapon, "fireRate", 0.22, { min: 0.15 });
     },
   },
   {
@@ -256,7 +258,7 @@ export const ACTIVE_ATTACHMENTS = [
     category: "stat",
     text: "攻撃頻度 +34%。",
     attach: (weapon) => {
-      weapon.fireRate *= 1.34;
+      addWeaponBasePercent(weapon, "fireRate", 0.34, { min: 0.15 });
     },
   },
   {
@@ -266,7 +268,7 @@ export const ACTIVE_ATTACHMENTS = [
     category: "stat",
     text: "攻撃頻度 +48%。",
     attach: (weapon) => {
-      weapon.fireRate *= 1.48;
+      addWeaponBasePercent(weapon, "fireRate", 0.48, { min: 0.15 });
     },
   },
   {
@@ -276,7 +278,7 @@ export const ACTIVE_ATTACHMENTS = [
     category: "stat",
     text: "攻撃頻度 +65%。",
     attach: (weapon) => {
-      weapon.fireRate *= 1.65;
+      addWeaponBasePercent(weapon, "fireRate", 0.65, { min: 0.15 });
     },
   },
   {
@@ -324,7 +326,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "範囲+16%",
     stars: 2,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲 +16%、命中幅 +2（武器に応じて）。",
+    text: "爆発半径・線幅・コーン範囲・命中幅 +16%（武器に応じて）。",
     attach: (weapon) => {
       expandWeaponArea(weapon, 2);
     },
@@ -334,7 +336,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "範囲+24%",
     stars: 3,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲 +24%、命中幅 +3（武器に応じて）。",
+    text: "爆発半径・線幅・コーン範囲・命中幅 +24%（武器に応じて）。",
     attach: (weapon) => {
       expandWeaponArea(weapon, 3);
     },
@@ -344,7 +346,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "範囲+36%",
     stars: 4,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲 +36%、命中幅 +4.5（武器に応じて）。",
+    text: "爆発半径・線幅・コーン範囲・命中幅 +36%（武器に応じて）。",
     attach: (weapon) => {
       expandWeaponArea(weapon, 4.5);
     },
@@ -354,7 +356,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "範囲+52%",
     stars: 5,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲 +52%、命中幅 +6.5（武器に応じて）。",
+    text: "爆発半径・線幅・コーン範囲・命中幅 +52%（武器に応じて）。",
     attach: (weapon) => {
       expandWeaponArea(weapon, 6.5);
     },
@@ -364,12 +366,12 @@ export const ACTIVE_ATTACHMENTS = [
     name: "ばらつき-35%",
     stars: 2,
     category: "stat",
-    text: "ばらつき −35%、ぶれ −45%、弾速 +12%、ダメージ +4。",
+    text: "ばらつき −35%、ぶれ −45%、弾速 +12%、ダメージ +10%。",
     attach: (weapon) => {
-      weapon.spread *= 0.65;
-      weapon.jitter *= 0.55;
-      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.12;
-      boostWeaponImpact(weapon, 4);
+      reduceWeaponBasePercent(weapon, "spread", 0.35, { min: 0.02 });
+      reduceWeaponBasePercent(weapon, "jitter", 0.45, { min: 0 });
+      if (weapon.bulletSpeed > 1) addWeaponBasePercent(weapon, "bulletSpeed", 0.12, { min: 1 });
+      boostWeaponImpactPercent(weapon, 0.1);
     },
   },
   {
@@ -377,12 +379,12 @@ export const ACTIVE_ATTACHMENTS = [
     name: "ばらつき-50%",
     stars: 3,
     category: "stat",
-    text: "ばらつき −50%、ぶれ −60%、弾速 +16%、ダメージ +7。",
+    text: "ばらつき −50%、ぶれ −60%、弾速 +16%、ダメージ +16%。",
     attach: (weapon) => {
-      weapon.spread *= 0.5;
-      weapon.jitter *= 0.4;
-      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.16;
-      boostWeaponImpact(weapon, 7);
+      reduceWeaponBasePercent(weapon, "spread", 0.5, { min: 0.02 });
+      reduceWeaponBasePercent(weapon, "jitter", 0.6, { min: 0 });
+      if (weapon.bulletSpeed > 1) addWeaponBasePercent(weapon, "bulletSpeed", 0.16, { min: 1 });
+      boostWeaponImpactPercent(weapon, 0.16);
     },
   },
   {
@@ -390,12 +392,12 @@ export const ACTIVE_ATTACHMENTS = [
     name: "ばらつき-65%",
     stars: 4,
     category: "stat",
-    text: "ばらつき −65%、ぶれ −72%、弾速 +22%、ダメージ +10。",
+    text: "ばらつき −65%、ぶれ −72%、弾速 +22%、ダメージ +24%。",
     attach: (weapon) => {
-      weapon.spread *= 0.35;
-      weapon.jitter *= 0.28;
-      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.22;
-      boostWeaponImpact(weapon, 10);
+      reduceWeaponBasePercent(weapon, "spread", 0.65, { min: 0.02 });
+      reduceWeaponBasePercent(weapon, "jitter", 0.72, { min: 0 });
+      if (weapon.bulletSpeed > 1) addWeaponBasePercent(weapon, "bulletSpeed", 0.22, { min: 1 });
+      boostWeaponImpactPercent(weapon, 0.24);
     },
   },
   {
@@ -403,12 +405,12 @@ export const ACTIVE_ATTACHMENTS = [
     name: "ばらつき-75%",
     stars: 5,
     category: "stat",
-    text: "ばらつき −75%、ぶれ −82%、弾速 +32%、ダメージ +16。",
+    text: "ばらつき −75%、ぶれ −82%、弾速 +32%、ダメージ +35%。",
     attach: (weapon) => {
-      weapon.spread *= 0.25;
-      weapon.jitter *= 0.18;
-      if (weapon.bulletSpeed > 1) weapon.bulletSpeed *= 1.32;
-      boostWeaponImpact(weapon, 16);
+      reduceWeaponBasePercent(weapon, "spread", 0.75, { min: 0.02 });
+      reduceWeaponBasePercent(weapon, "jitter", 0.82, { min: 0 });
+      if (weapon.bulletSpeed > 1) addWeaponBasePercent(weapon, "bulletSpeed", 0.32, { min: 1 });
+      boostWeaponImpactPercent(weapon, 0.35);
     },
   },
   {
@@ -529,7 +531,7 @@ export const ACTIVE_ATTACHMENTS = [
     requiresAmmo: true,
     text: "弾薬容量 +25%。燃料武器は燃料秒数が伸びる。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 1.25);
+      boostWeaponAmmoCapacity(weapon, 0.25);
     },
   },
   {
@@ -550,7 +552,7 @@ export const ACTIVE_ATTACHMENTS = [
     requiresAmmo: true,
     text: "弾薬容量 +40%。燃料武器は燃料秒数が伸びる。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 1.4);
+      boostWeaponAmmoCapacity(weapon, 0.4);
     },
   },
   {
@@ -571,7 +573,7 @@ export const ACTIVE_ATTACHMENTS = [
     requiresAmmo: true,
     text: "弾薬容量 +60%。燃料武器は燃料秒数が伸びる。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 1.6);
+      boostWeaponAmmoCapacity(weapon, 0.6);
     },
   },
   {
@@ -592,7 +594,7 @@ export const ACTIVE_ATTACHMENTS = [
     requiresAmmo: true,
     text: "弾薬容量 +85%。燃料武器は燃料秒数が伸びる。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 1.85);
+      boostWeaponAmmoCapacity(weapon, 0.85);
     },
   },
   {
@@ -620,10 +622,12 @@ export const ACTIVE_ATTACHMENTS = [
     category: "stat",
     text: "持続時間 +25%、ティック頻度 +20%、炎・設置レーザーの発射 +8%、回転半径 +10%。",
     attach: (weapon) => {
-      weapon.duration *= 1.25;
-      if (weapon.tickRate > 0) weapon.tickRate *= 1.2;
-      if (weapon.kind === "flame" || weapon.kind === "sustainedLaser") weapon.fireRate *= 1.08;
-      if (weapon.kind === "orbit") weapon.orbitRadius *= 1.1;
+      addWeaponBasePercent(weapon, "duration", 0.25, { min: 0 });
+      if (weapon.tickRate > 0) addWeaponBasePercent(weapon, "tickRate", 0.2, { min: 0 });
+      if (weapon.kind === "flame" || weapon.kind === "sustainedLaser") {
+        addWeaponBasePercent(weapon, "fireRate", 0.08, { min: 0.15 });
+      }
+      if (weapon.kind === "orbit") addWeaponBasePercent(weapon, "orbitRadius", 0.1, { min: 0 });
     },
   },
   {
@@ -715,13 +719,13 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "overdriveCore",
-    name: "ダメージ+18/頻度+8%",
+    name: "ダメージ+45%/頻度+8%",
     stars: 3,
     category: "special",
-    text: "ダメージ +18。攻撃頻度 +8%。",
+    text: "基礎ダメージ +45%。攻撃頻度 +8%。",
     attach: (weapon) => {
-      boostWeaponImpact(weapon, 18);
-      weapon.fireRate *= 1.08;
+      boostWeaponImpactPercent(weapon, 0.45);
+      addWeaponBasePercent(weapon, "fireRate", 0.08, { min: 0.15 });
     },
   },
   {

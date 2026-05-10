@@ -483,20 +483,46 @@ export function updateWeaponTimers(player, dt) {
   }
 }
 
-export function boostWeaponImpact(weapon, amount) {
-  weapon.damage += amount;
-  if (weapon.explosionRadius > 0) weapon.explosionDamage += amount * 1.35;
+function baseWeaponStat(weapon, key, fallback = 0) {
+  const baseValue = weapon?.baseStats?.[key];
+  if (typeof baseValue === "number") return baseValue;
+  const currentValue = weapon?.[key];
+  return typeof currentValue === "number" ? currentValue : fallback;
+}
+
+export function addWeaponBasePercent(weapon, key, percent, { min = -Infinity, max = Infinity } = {}) {
+  const baseValue = baseWeaponStat(weapon, key);
+  if (!Number.isFinite(baseValue) || baseValue === 0) return;
+  const currentValue = typeof weapon[key] === "number" ? weapon[key] : baseValue;
+  weapon[key] = Math.min(max, Math.max(min, currentValue + baseValue * percent));
+}
+
+export function reduceWeaponBasePercent(weapon, key, percent, { min = 0, max = Infinity } = {}) {
+  const baseValue = baseWeaponStat(weapon, key);
+  if (!Number.isFinite(baseValue) || baseValue === 0) return;
+  const currentValue = typeof weapon[key] === "number" ? weapon[key] : baseValue;
+  weapon[key] = Math.min(max, Math.max(min, currentValue - baseValue * percent));
+}
+
+export function boostWeaponImpactPercent(weapon, percent) {
+  addWeaponBasePercent(weapon, "damage", percent);
+  if (baseWeaponStat(weapon, "explosionRadius") > 0 || weapon.explosionRadius > 0) {
+    addWeaponBasePercent(weapon, "explosionDamage", percent);
+  }
 }
 
 export function extendWeaponReach(weapon, multiplier) {
-  weapon.range *= multiplier;
-  if (weapon.bulletSpeed > 1) {
-    weapon.bulletSpeed *= multiplier;
-    weapon.life *= 1 + (multiplier - 1) * 0.45;
+  const percent = multiplier - 1;
+  addWeaponBasePercent(weapon, "range", percent, { min: 32 });
+  if (baseWeaponStat(weapon, "bulletSpeed") > 1 || weapon.bulletSpeed > 1) {
+    addWeaponBasePercent(weapon, "bulletSpeed", percent, { min: 1 });
+    addWeaponBasePercent(weapon, "life", percent * 0.45, { min: 0.05 });
   }
-  if (weapon.kind === "sustainedLaser") weapon.duration *= 1 + (multiplier - 1) * 0.75;
-  if (weapon.orbitRadius > 0) weapon.orbitRadius *= 1 + (multiplier - 1) * 0.65;
-  if (weapon.kind === "chain") weapon.chainRange *= 1 + (multiplier - 1) * 0.7;
+  if (weapon.kind === "sustainedLaser") addWeaponBasePercent(weapon, "duration", percent * 0.75, { min: 0.05 });
+  if (baseWeaponStat(weapon, "orbitRadius") > 0 || weapon.orbitRadius > 0) {
+    addWeaponBasePercent(weapon, "orbitRadius", percent * 0.65, { min: 0 });
+  }
+  if (weapon.kind === "chain") addWeaponBasePercent(weapon, "chainRange", percent * 0.7, { min: 0 });
 }
 
 export function addWeaponPierce(weapon, amount = 1) {
@@ -513,12 +539,22 @@ export function addWeaponPierce(weapon, amount = 1) {
 }
 
 export function expandWeaponArea(weapon, power) {
-  const areaBoost = 1 + 0.08 * power;
-  if (weapon.explosionRadius > 0) weapon.explosionRadius *= areaBoost;
-  if (weapon.areaRadius > 0) weapon.areaRadius *= areaBoost;
-  if (weapon.kind === "laser" || weapon.kind === "sustainedLaser") weapon.lineWidth *= areaBoost;
-  if (weapon.kind === "flame" || weapon.kind === "sword") weapon.cone = Math.min(1.08, weapon.cone + 0.05 * power);
-  if (weapon.radius > 0) weapon.radius += power;
+  const percent = 0.08 * power;
+  if (baseWeaponStat(weapon, "explosionRadius") > 0 || weapon.explosionRadius > 0) {
+    addWeaponBasePercent(weapon, "explosionRadius", percent, { min: 0 });
+  }
+  if (baseWeaponStat(weapon, "areaRadius") > 0 || weapon.areaRadius > 0) {
+    addWeaponBasePercent(weapon, "areaRadius", percent, { min: 0 });
+  }
+  if (weapon.kind === "laser" || weapon.kind === "sustainedLaser") {
+    addWeaponBasePercent(weapon, "lineWidth", percent, { min: 1 });
+  }
+  if (weapon.kind === "flame" || weapon.kind === "sword") {
+    addWeaponBasePercent(weapon, "cone", percent, { min: 0.1, max: 1.35 });
+  }
+  if (baseWeaponStat(weapon, "radius") > 0 || weapon.radius > 0) {
+    addWeaponBasePercent(weapon, "radius", percent, { min: 2 });
+  }
 }
 
 const TARGETLESS_KINDS = new Set(["flame", "sword"]);
