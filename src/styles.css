@@ -1441,7 +1441,7 @@ h1 {
 }
 
 #touchControls {
-  display: none;
+  display: block;
   position: absolute;
   z-index: 6;
   inset: 0;
@@ -1540,7 +1540,7 @@ h1 {
   box-shadow:
     0 5px 0 rgba(36, 23, 55, 0.42),
     0 10px 20px rgba(36, 23, 55, 0.22);
-  font-size: clamp(0.68rem, 2.6vw, 0.82rem);
+  font-size: 0.76rem;
   line-height: 1.12;
   text-align: left;
   white-space: normal;
@@ -1551,29 +1551,13 @@ h1 {
   opacity: 0.78;
 }
 
-@media (hover: none), (pointer: coarse) {
-  #touchControls {
-    display: block;
-  }
-
-  #touchControls:not(.disabled) .weapon-switch:not(.hidden) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
+#touchControls:not(.disabled) .weapon-switch:not(.hidden) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 760px) {
-  #touchControls {
-    display: block;
-  }
-
-  #touchControls:not(.disabled) .weapon-switch:not(.hidden) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
   #hud {
     right: auto;
     display: flex;

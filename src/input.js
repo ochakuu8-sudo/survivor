@@ -31,7 +31,7 @@ export function bindInput() {
 
 function beginVirtualMove(event) {
   if (game.mode !== "fight") return;
-  if (event.pointerType === "mouse" && event.button !== 0) return;
+  if (event.pointerType === "mouse") return;
   event.preventDefault();
 
   pointer.down = true;

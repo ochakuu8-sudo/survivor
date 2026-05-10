@@ -55,6 +55,8 @@ function renderWeaponSwitch() {
   const isFighting = game.mode === "fight";
   hud.weaponSwitch.classList.toggle("hidden", !isFighting || !weapon);
   hud.weaponSwitch.disabled = !isFighting || !weapon || gear.weapons.length <= 1;
+  hud.weaponSwitch.title = "クリック / Q / Tab で武器切替";
+  hud.weaponSwitch.setAttribute("aria-label", "武器切替");
   if (!weapon) {
     hud.weaponSwitch.textContent = "武器";
     return;
