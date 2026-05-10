@@ -260,7 +260,19 @@ export function createWeapon(template, options = {}) {
   const bulletSpeed = template.bulletSpeed ?? 690;
   const life = template.life || 0.72;
   const usesAmmo = template.usesAmmo ?? kind !== "orbit";
-  const ammoCapacity = usesAmmo ? Math.max(1, Math.round(template.ammoCapacity || 8)) : 0;
+  const fuelMode = !!template.fuelMode;
+  const ammoCapacity = usesAmmo
+    ? fuelMode
+      ? Math.max(0.5, template.ammoCapacity || 8)
+      : Math.max(1, Math.round(template.ammoCapacity || 8))
+    : 0;
+  const rarityKey = template.rarity || "normal";
+  const rarityLabel = template.rarityLabel || {
+    normal: "ノーマル",
+    rare: "レア",
+    epic: "エピック",
+    legend: "レジェンド",
+  }[rarityKey] || rarityKey;
   const weapon = {
     id: nextWeaponId(),
     name: template.name,
@@ -291,8 +303,11 @@ export function createWeapon(template, options = {}) {
     jitter: template.jitter || 0,
     kick: template.kick || 1.8,
     usesAmmo,
+    fuelMode,
     ammoCapacity,
-    ammo: usesAmmo ? Math.min(ammoCapacity, Math.max(0, Math.round(template.ammo ?? ammoCapacity))) : 0,
+    ammo: usesAmmo
+      ? Math.min(ammoCapacity, Math.max(0, fuelMode ? (template.ammo ?? ammoCapacity) : Math.round(template.ammo ?? ammoCapacity)))
+      : 0,
     reloadTime: usesAmmo ? Math.max(0.25, template.reloadTime || 1.2) : 0,
     reloadTimer: 0,
     reloading: false,
@@ -303,6 +318,10 @@ export function createWeapon(template, options = {}) {
     freezeDuration: template.freezeDuration || 1.6,
     ricochetCount: template.ricochetCount || 0,
     ricochetRange: template.ricochetRange || 220,
+    ricochetSplitCount: template.ricochetSplitCount || 1,
+    radialFlame: !!template.radialFlame,
+    orbitCount: template.orbitCount || 1,
+    orbitPushOut: template.orbitPushOut || 0,
     bulletTint: template.bulletTint ? [...template.bulletTint] : [1, 1, 1],
     bulletGlow: template.bulletGlow || "glowAmber",
     effectTint: template.effectTint ? [...template.effectTint] : [1, 1, 1],
@@ -310,8 +329,9 @@ export function createWeapon(template, options = {}) {
     bulletSprite: template.bulletSprite || null,
     shootTimer: template.shootTimer ?? 0.45,
     attachments: [],
-    rarity: "normal",
-    rarityLabel: WEAPON_RARITIES.normal.label,
+    rarity: rarityKey,
+    rarityLabel,
+    variantSummary: template.variantSummary || "",
     affixes: [],
   };
   if (options.rollVariant || template.rollVariant) {
@@ -374,7 +394,9 @@ function startWeaponReload(weapon) {
 }
 
 function completeWeaponReload(weapon) {
-  weapon.ammo = Math.max(1, Math.round(weapon.ammoCapacity || 1));
+  weapon.ammo = weapon.fuelMode
+    ? Math.max(0.5, weapon.ammoCapacity || 1)
+    : Math.max(1, Math.round(weapon.ammoCapacity || 1));
   weapon.reloadTimer = 0;
   weapon.reloading = false;
 }
@@ -382,7 +404,10 @@ function completeWeaponReload(weapon) {
 export function weaponAmmoLabel(weapon) {
   if (!weapon) return "武器なし";
   if (!weaponUsesAmmo(weapon)) return "弾薬なし";
-  if (weapon.reloading) return `リロード ${Math.max(0, weapon.reloadTimer || 0).toFixed(1)}秒`;
+  if (weapon.reloading) return `${weapon.fuelMode ? "補給" : "リロード"} ${Math.max(0, weapon.reloadTimer || 0).toFixed(1)}秒`;
+  if (weapon.fuelMode) {
+    return `燃料 ${Math.max(0, weapon.ammo || 0).toFixed(1)}秒/${Math.max(0.5, weapon.ammoCapacity || 1).toFixed(0)}秒`;
+  }
   return `弾薬 ${Math.max(0, Math.ceil(weapon.ammo || 0))}/${Math.max(1, Math.round(weapon.ammoCapacity || 1))}`;
 }
 
@@ -406,12 +431,14 @@ export function weaponRarityLabel(weapon) {
 }
 
 export function weaponVariantSummary(weapon) {
+  if (weapon?.variantSummary) return weapon.variantSummary;
   if (!weapon?.affixes?.length) return "個体差なし";
   return weapon.affixes.map((affix) => affix.text).join(" / ");
 }
 
 export function weaponVariantText(weapon) {
   const summary = weaponVariantSummary(weapon);
+  if (weapon?.variantSummary) return `${weaponRarityLabel(weapon)}個体・${summary}。`;
   return summary === "個体差なし"
     ? `${weaponRarityLabel(weapon)}個体。基礎性能のまま扱いやすい。`
     : `${weaponRarityLabel(weapon)}個体。${summary}。`;
@@ -432,10 +459,12 @@ export function updateWeaponTimers(player, dt) {
     weapon.shootTimer = Math.max(0, weapon.shootTimer - dt);
     if (!weaponUsesAmmo(weapon)) continue;
 
-    weapon.ammoCapacity = Math.max(1, Math.round(weapon.ammoCapacity || 1));
+    weapon.ammoCapacity = weapon.fuelMode
+      ? Math.max(0.5, weapon.ammoCapacity || 1)
+      : Math.max(1, Math.round(weapon.ammoCapacity || 1));
     weapon.ammo = Math.min(
       weapon.ammoCapacity,
-      Math.max(0, Math.round(weapon.ammo ?? weapon.ammoCapacity)),
+      Math.max(0, weapon.fuelMode ? (weapon.ammo ?? weapon.ammoCapacity) : Math.round(weapon.ammo ?? weapon.ammoCapacity)),
     );
 
     if (weapon.reloading) {
@@ -511,7 +540,8 @@ export function autoShoot() {
 
   fireWeapon(weapon, target);
   if (weaponUsesAmmo(weapon)) {
-    weapon.ammo = Math.max(0, (weapon.ammo || 0) - 1);
+    const ammoCost = weapon.fuelMode ? 1 / Math.max(0.1, weapon.fireRate || 1) : 1;
+    weapon.ammo = Math.max(0, (weapon.ammo || 0) - ammoCost);
     if (weapon.ammo <= 0) startWeaponReload(weapon);
   }
   weapon.shootTimer = 1 / weapon.fireRate;
@@ -527,13 +557,7 @@ export function updateOrbitWeapons(dt) {
   const orbitSpeed = weapon.orbitSpeed || 4.2;
   const orbitRadius = weapon.orbitRadius || 78;
   const areaRadius = weapon.areaRadius || 34;
-
-  const currSpin = game.elapsed * orbitSpeed + weapon.id * 1.73;
-  const prevSpin = (game.elapsed - dt) * orbitSpeed + weapon.id * 1.73;
-  const cx = p.x + Math.cos(currSpin) * orbitRadius;
-  const cy = p.y + Math.sin(currSpin) * orbitRadius;
-  const px = p.x + Math.cos(prevSpin) * orbitRadius;
-  const py = p.y + Math.sin(prevSpin) * orbitRadius;
+  const orbitCount = Math.max(1, Math.round(weapon.orbitCount || 1));
 
   if (!weapon.hitCooldowns) weapon.hitCooldowns = new Map();
   for (const [id, cd] of weapon.hitCooldowns) {
@@ -546,29 +570,49 @@ export function updateOrbitWeapons(dt) {
   const damage = weapon.damage + p.weaponPowerBonus;
   let hits = 0;
 
-  for (const enemy of game.enemies) {
-    if (enemy.dead) continue;
-    if (weapon.hitCooldowns.has(enemy.id)) continue;
-    const range = enemy.radius + areaRadius;
-    if (distanceToSegmentSq(enemy.x, enemy.y, px, py, cx, cy) > range * range) continue;
-    damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 90, weapon);
-    weapon.hitCooldowns.set(enemy.id, cooldownPerEnemy);
-    hits += 1;
+  for (let i = 0; i < orbitCount; i += 1) {
+    const phase = (i / orbitCount) * TAU;
+    const currSpin = game.elapsed * orbitSpeed + weapon.id * 1.73 + phase;
+    const prevSpin = (game.elapsed - dt) * orbitSpeed + weapon.id * 1.73 + phase;
+    const cx = p.x + Math.cos(currSpin) * orbitRadius;
+    const cy = p.y + Math.sin(currSpin) * orbitRadius;
+    const px = p.x + Math.cos(prevSpin) * orbitRadius;
+    const py = p.y + Math.sin(prevSpin) * orbitRadius;
+    let localHits = 0;
+
+    for (const enemy of game.enemies) {
+      if (enemy.dead) continue;
+      if (weapon.hitCooldowns.has(enemy.id)) continue;
+      const range = enemy.radius + areaRadius;
+      if (distanceToSegmentSq(enemy.x, enemy.y, px, py, cx, cy) > range * range) continue;
+      damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 90, weapon);
+      if (weapon.orbitPushOut > 0) {
+        const dx = enemy.x - p.x;
+        const dy = enemy.y - p.y;
+        const len = Math.hypot(dx, dy) || 1;
+        enemy.x += (dx / len) * weapon.orbitPushOut;
+        enemy.y += (dy / len) * weapon.orbitPushOut;
+      }
+      weapon.hitCooldowns.set(enemy.id, cooldownPerEnemy);
+      hits += 1;
+      localHits += 1;
+    }
+
+    if (localHits > 0) {
+      addEffect({
+        type: "burst",
+        x: cx,
+        y: cy,
+        radius: areaRadius * 0.95,
+        life: 0.2,
+        maxLife: 0.2,
+        glow: weapon.effectGlow,
+        tint: weapon.effectTint,
+      });
+    }
   }
 
-  if (hits > 0) {
-    addEffect({
-      type: "burst",
-      x: cx,
-      y: cy,
-      radius: areaRadius * 0.95,
-      life: 0.2,
-      maxLife: 0.2,
-      glow: weapon.effectGlow,
-      tint: weapon.effectTint,
-    });
-    game.shake = Math.max(game.shake, (weapon.kick || 1.5) * 0.5);
-  }
+  if (hits > 0) game.shake = Math.max(game.shake, (weapon.kick || 1.5) * 0.5);
 }
 
 function findTargetForWeapon(player, weapon) {
@@ -664,6 +708,7 @@ function fireBullet(angle, weapon) {
     freezeDuration: weapon.freezeDuration || 1.6,
     ricochetCount: weapon.ricochetCount || 0,
     ricochetRange: weapon.ricochetRange || 220,
+    ricochetSplitCount: weapon.ricochetSplitCount || 1,
     bulletTint: weapon.bulletTint,
     bulletGlow: weapon.bulletGlow,
     bulletSprite: weapon.bulletSprite || null,
@@ -680,6 +725,10 @@ function fireFlame(weapon, angle) {
   const p = game.player;
   const originX = p.x + Math.cos(angle) * 20;
   const originY = p.y + Math.sin(angle) * 20;
+  if (weapon.radialFlame) {
+    fireRadialFlame(weapon, originX, originY);
+    return;
+  }
   damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus, weapon);
 
   const baseTint = weapon.effectTint || [1, 0.42, 0.12];
@@ -757,6 +806,53 @@ function fireFlame(weapon, angle) {
       tint: heatColor > 0.7 ? [1, 0.92, 0.5] : heatColor > 0.35 ? [1, 0.55, 0.18] : [0.85, 0.3, 0.1],
     });
   }
+}
+
+function fireRadialFlame(weapon, originX, originY) {
+  const p = game.player;
+  const radius = weapon.range || 170;
+  damageEnemiesInRadius(originX, originY, radius, weapon.damage + p.weaponPowerBonus, 0.7, weapon);
+
+  const glow = weapon.effectGlow || "glowRed";
+  const tint = weapon.effectTint || [1, 0.55, 0.16];
+  const streams = 12;
+  for (let i = 0; i < streams; i += 1) {
+    const dir = (i / streams) * TAU + game.elapsed * 0.18;
+    const distance = radius * (0.35 + Math.random() * 0.55);
+    const x = originX + Math.cos(dir) * distance;
+    const y = originY + Math.sin(dir) * distance;
+    addEffect({
+      type: "burst",
+      x,
+      y,
+      radius: 26 + Math.random() * 24,
+      life: 0.18 + Math.random() * 0.12,
+      maxLife: 0.3,
+      glow,
+      tint,
+    });
+    game.particles.push({
+      x: originX + Math.cos(dir) * 12,
+      y: originY + Math.sin(dir) * 12,
+      vx: Math.cos(dir) * (210 + Math.random() * 170),
+      vy: Math.sin(dir) * (210 + Math.random() * 170),
+      life: 0.28 + Math.random() * 0.25,
+      maxLife: 0.58,
+      size: 10 + Math.random() * 10,
+      sprite: "spark",
+      tint: Math.random() > 0.45 ? [1, 0.88, 0.32] : tint,
+    });
+  }
+  addEffect({
+    type: "burst",
+    x: originX,
+    y: originY,
+    radius: radius * 0.78,
+    life: 0.18,
+    maxLife: 0.18,
+    glow,
+    tint,
+  });
 }
 
 function fireLaser(weapon, angle) {

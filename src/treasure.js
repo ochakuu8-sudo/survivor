@@ -114,10 +114,10 @@ function chooseTreasureReward(excludeName = "") {
   const candidates = allCandidates.filter((template) => template.name !== excludeName);
   const pool = candidates.length > 0 ? candidates : allCandidates;
   if (pool.length === 0) return createGoldReward();
-  const template = pool[Math.floor(Math.random() * pool.length)];
+  const template = pickTreasureWeaponTemplate(pool);
   const weapon = createWeapon({ name: template.name, ...template.weapon }, {
     floor: game.wave,
-    rollVariant: true,
+    rollVariant: template.weapon?.rollVariant === true,
   });
   return {
     type: "weapon",
@@ -128,6 +128,26 @@ function chooseTreasureReward(excludeName = "") {
     icon: weaponIcon(weapon),
     weapon,
   };
+}
+
+function pickTreasureWeaponTemplate(pool) {
+  const floor = Math.max(1, game.wave || 1);
+  const rarityWeights = floor >= 6
+    ? { normal: 42, rare: 38, legend: 20 }
+    : floor >= 3
+      ? { normal: 56, rare: 34, legend: 10 }
+      : { normal: 70, rare: 27, legend: 3 };
+  const entries = pool.map((template) => ({
+    template,
+    weight: rarityWeights[template.rarity || template.weapon?.rarity || "normal"] || 1,
+  }));
+  const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = Math.random() * total;
+  for (const entry of entries) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.template;
+  }
+  return entries[0]?.template || pool[0];
 }
 
 function createGoldReward() {

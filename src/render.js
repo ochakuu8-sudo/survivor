@@ -325,7 +325,10 @@ function drawOrbitWeapons(view, camX, camY, zoom) {
   const weapon = player.gear.weapons[activeIndex];
   if (!weapon || weapon.kind !== "orbit") return;
 
-    const spin = game.elapsed * (weapon.orbitSpeed || 4.2) + weapon.id * 1.73;
+  const orbitCount = Math.max(1, Math.round(weapon.orbitCount || 1));
+  for (let orbitIndex = 0; orbitIndex < orbitCount; orbitIndex += 1) {
+    const phase = (orbitIndex / orbitCount) * TAU;
+    const spin = game.elapsed * (weapon.orbitSpeed || 4.2) + weapon.id * 1.73 + phase;
     const orbitRadius = weapon.orbitRadius || 78;
     const x = player.x + Math.cos(spin) * orbitRadius;
     const y = player.y + Math.sin(spin) * orbitRadius;
@@ -381,6 +384,7 @@ function drawOrbitWeapons(view, camX, camY, zoom) {
       tint: [1, 1, 1],
       alpha: 0.72,
     });
+  }
 }
 
 function drawEffects(view, camX, camY, zoom) {

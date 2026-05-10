@@ -75,7 +75,7 @@ export function resetRun() {
   game.starterChoices = [];
   game.treasureReward = null;
   game.player.baseStats = snapshotPlayerBaseStats(game.player);
-  const stoneTemplate = WEAPON_POOL.find((template) => template.name === "石") || WEAPON_POOL[0];
+  const stoneTemplate = WEAPON_POOL.find((template) => template.name === "石ころ") || WEAPON_POOL[0];
   if (stoneTemplate) {
     game.player.gear.weapons = [
       createWeapon({ name: stoneTemplate.name, ...stoneTemplate.weapon }),

@@ -68,6 +68,18 @@ export function updateBullets(dt) {
               bullet.angle = Math.atan2(dy, dx);
               bullet.life = Math.max(bullet.life, 0.18);
               bullet.ricochetCount -= 1;
+              const splitCount = Math.max(1, Math.round(bullet.ricochetSplitCount || 1));
+              for (let i = 1; i < splitCount; i += 1) {
+                const offset = (i - (splitCount - 1) / 2) * 0.28;
+                const angle = bullet.angle + offset;
+                next.push({
+                  ...bullet,
+                  vx: Math.cos(angle) * speed,
+                  vy: Math.sin(angle) * speed,
+                  angle,
+                  hitIds: new Set(bullet.hitIds),
+                });
+              }
               addEffect({
                 type: "line",
                 x1: enemy.x,

@@ -109,7 +109,10 @@ function debugEquipWeapon() {
   const index = Number(hud.dbgWeaponSel.value);
   const template = WEAPON_POOL[index];
   if (!template || !game.player) return;
-  const weapon = createWeapon({ name: template.name, ...template.weapon }, { floor: game.wave, rollVariant: true });
+  const weapon = createWeapon(
+    { name: template.name, ...template.weapon },
+    { floor: game.wave, rollVariant: template.weapon?.rollVariant === true },
+  );
   let activeIndex = game.player.gear.weapons.length;
   if (game.player.gear.weapons.length < MAX_WEAPONS) {
     game.player.gear.weapons.push(weapon);
