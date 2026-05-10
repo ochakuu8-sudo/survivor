@@ -41,6 +41,8 @@ export function resetRun() {
     speed: 215,
     pickup: 150,
     armor: 0,
+    barrier: 0,
+    barrierMax: 0,
     weaponPowerBonus: 0,
     moveX: 0,
     moveY: 0,

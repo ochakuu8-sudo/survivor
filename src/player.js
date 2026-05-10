@@ -1,6 +1,6 @@
 import { game, keys, pointer } from "./state.js";
 import { clamp, normalize } from "./utils/math.js";
-import { addWalkDust } from "./effects.js";
+import { addEffect, addSparks, addWalkDust } from "./effects.js";
 import { moveActorWithDungeonCollision } from "./dungeon.js";
 
 export function updateMovement(dt) {
@@ -40,6 +40,22 @@ export function updateMovement(dt) {
 
 export function damagePlayer(amount) {
   if (game.debugInvincible) return 0;
+  if ((game.player.barrier || 0) > 0) {
+    game.player.barrier = Math.max(0, game.player.barrier - 1);
+    addEffect({
+      type: "burst",
+      x: game.player.x,
+      y: game.player.y,
+      radius: 48,
+      life: 0.28,
+      maxLife: 0.28,
+      glow: "glowCyan",
+      tint: [0.46, 1, 0.95],
+    });
+    addSparks(game.player.x, game.player.y, 8, 160, "spark");
+    game.shake = Math.max(game.shake, 3.5);
+    return 0;
+  }
   const reduction = 100 / (100 + Math.max(-20, game.player.armor) * 8);
   const damage = Math.max(1, Math.round((amount * reduction) / 18));
   game.player.hp = clamp(game.player.hp - damage, 0, game.player.maxHp);

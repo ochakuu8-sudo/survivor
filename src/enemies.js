@@ -196,7 +196,12 @@ export function updateEnemies(dt) {
   const floorHealth = enemyFloorHealthMultiplier();
   for (const enemy of game.enemies) {
     if (enemy.baseSpeed == null) enemy.baseSpeed = enemy.speed;
-    enemy.speed = enemy.baseSpeed * floorSpeed;
+    if ((enemy.slowTimer || 0) > 0) {
+      enemy.slowTimer = Math.max(0, enemy.slowTimer - dt);
+    } else {
+      enemy.slowMultiplier = 1;
+    }
+    enemy.speed = enemy.baseSpeed * floorSpeed * (enemy.slowMultiplier || 1);
     applyEnemyHealthMultiplier(enemy, floorHealth);
     enemy.hit = Math.max(0, enemy.hit - dt * 5);
     if (enemy.kind === "archer") {

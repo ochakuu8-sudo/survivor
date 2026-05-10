@@ -5,11 +5,38 @@ import { addEffect, addSparks } from "./effects.js";
 import { damagePlayer } from "./player.js";
 import { dropGold } from "./gold.js";
 
-export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y, sparkCount = 3, sparkSpeed = 90) {
+export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y, sparkCount = 3, sparkSpeed = 90, source = null) {
   if (!enemy || enemy.dead) return false;
-  enemy.hp -= amount;
+  const crit = source?.critChance > 0 && Math.random() < source.critChance;
+  const damage = crit ? amount * (source.critMultiplier || 1.75) : amount;
+  enemy.hp -= damage;
   enemy.hit = 1;
-  if (sparkCount > 0) addSparks(impactX, impactY, sparkCount, sparkSpeed);
+  if (source?.freezeChance > 0 && Math.random() < source.freezeChance) {
+    applyEnemySlow(enemy, source.freezeSlow || 0.62, source.freezeDuration || 1.6);
+    addEffect({
+      type: "burst",
+      x: enemy.x,
+      y: enemy.y,
+      radius: enemy.radius * 1.5,
+      life: 0.2,
+      maxLife: 0.2,
+      glow: "glowCyan",
+      tint: [0.52, 0.9, 1],
+    });
+  }
+  if (crit) {
+    addEffect({
+      type: "burst",
+      x: impactX,
+      y: impactY,
+      radius: enemy.radius * 1.8,
+      life: 0.18,
+      maxLife: 0.18,
+      glow: "glowAmber",
+      tint: [1, 0.92, 0.35],
+    });
+  }
+  if (sparkCount > 0) addSparks(impactX, impactY, sparkCount + (crit ? 2 : 0), sparkSpeed + (crit ? 60 : 0));
   if (enemy.hp <= 0) {
     killEnemy(enemy);
     return true;
@@ -17,7 +44,13 @@ export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y,
   return false;
 }
 
-export function damageEnemiesInRadius(x, y, radius, amount, edgeScale = 0.65) {
+export function applyEnemySlow(enemy, multiplier = 0.62, duration = 1.6) {
+  if (!enemy || enemy.dead) return;
+  enemy.slowTimer = Math.max(enemy.slowTimer || 0, duration);
+  enemy.slowMultiplier = Math.min(enemy.slowMultiplier || 1, multiplier);
+}
+
+export function damageEnemiesInRadius(x, y, radius, amount, edgeScale = 0.65, source = null) {
   let hits = 0;
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
@@ -25,14 +58,14 @@ export function damageEnemiesInRadius(x, y, radius, amount, edgeScale = 0.65) {
     if (distance > radius + enemy.radius) continue;
     const centerFactor = 1 - clamp((distance - enemy.radius) / Math.max(1, radius), 0, 1);
     const damage = amount * (edgeScale + (1 - edgeScale) * centerFactor);
-    damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 80);
+    damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 80, source);
     hits += 1;
   }
   if (hits > 0) removeDeadEnemies();
   return hits;
 }
 
-export function damageEnemiesInLine(x1, y1, x2, y2, halfWidth, amount, maxHits = Infinity, sparkCount = 2, sparkSpeed = 110) {
+export function damageEnemiesInLine(x1, y1, x2, y2, halfWidth, amount, maxHits = Infinity, sparkCount = 2, sparkSpeed = 110, source = null) {
   const hits = [];
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
@@ -49,13 +82,13 @@ export function damageEnemiesInLine(x1, y1, x2, y2, halfWidth, amount, maxHits =
   for (let i = 0; i < limit; i += 1) {
     const hit = hits[i];
     const falloff = Math.max(0.72, 1 - i * 0.04);
-    damageEnemy(hit.enemy, amount * falloff, hit.enemy.x, hit.enemy.y, sparkCount, sparkSpeed);
+    damageEnemy(hit.enemy, amount * falloff, hit.enemy.x, hit.enemy.y, sparkCount, sparkSpeed, source);
   }
   if (limit > 0) removeDeadEnemies();
   return limit;
 }
 
-export function damageEnemiesInCone(x, y, angle, range, halfAngle, amount) {
+export function damageEnemiesInCone(x, y, angle, range, halfAngle, amount, source = null) {
   let hits = 0;
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
@@ -65,7 +98,7 @@ export function damageEnemiesInCone(x, y, angle, range, halfAngle, amount) {
     if (distance > range + enemy.radius) continue;
     if (Math.abs(angleDelta(Math.atan2(dy, dx), angle)) > halfAngle) continue;
     const nearFactor = 1 - clamp(distance / Math.max(1, range), 0, 1);
-    damageEnemy(enemy, amount * (0.78 + nearFactor * 0.32), enemy.x, enemy.y, 2, 85);
+    damageEnemy(enemy, amount * (0.78 + nearFactor * 0.32), enemy.x, enemy.y, 2, 85, source);
     hits += 1;
   }
   if (hits > 0) removeDeadEnemies();
@@ -141,7 +174,7 @@ export function explodeBullet(bullet) {
     tint: bullet.effectTint || [1, 0.56, 0.18],
   });
   addSparks(bullet.x, bullet.y, 9, 150);
-  damageEnemiesInRadius(bullet.x, bullet.y, radius, bullet.explosionDamage || bullet.damage, 0.58);
+  damageEnemiesInRadius(bullet.x, bullet.y, radius, bullet.explosionDamage || bullet.damage, 0.58, bullet);
   game.shake = Math.max(game.shake, 5);
 }
 
@@ -164,6 +197,7 @@ export function updateEffects(dt) {
           effect.maxHits || Infinity,
           0,
           0,
+          effect,
         );
         effect.tickTimer += tickInterval;
       }

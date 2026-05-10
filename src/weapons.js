@@ -287,6 +287,13 @@ export function createWeapon(template, options = {}) {
     radius: template.radius || 9,
     jitter: template.jitter || 0,
     kick: template.kick || 1.8,
+    critChance: template.critChance || 0,
+    critMultiplier: template.critMultiplier || 1.75,
+    freezeChance: template.freezeChance || 0,
+    freezeSlow: template.freezeSlow || 0.62,
+    freezeDuration: template.freezeDuration || 1.6,
+    ricochetCount: template.ricochetCount || 0,
+    ricochetRange: template.ricochetRange || 220,
     bulletTint: template.bulletTint ? [...template.bulletTint] : [1, 1, 1],
     bulletGlow: template.bulletGlow || "glowAmber",
     effectTint: template.effectTint ? [...template.effectTint] : [1, 1, 1],
@@ -455,7 +462,7 @@ export function updateOrbitWeapons(dt) {
       if (weapon.hitCooldowns.has(enemy.id)) continue;
       const range = enemy.radius + areaRadius;
       if (distanceToSegmentSq(enemy.x, enemy.y, px, py, cx, cy) > range * range) continue;
-      damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 90);
+      damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 90, weapon);
       weapon.hitCooldowns.set(enemy.id, cooldownPerEnemy);
       hits += 1;
     }
@@ -562,6 +569,13 @@ function fireBullet(angle, weapon) {
     knockback: weapon.knockback || 0,
     explosionRadius: weapon.explosionRadius,
     explosionDamage: weapon.explosionDamage + bonus,
+    critChance: weapon.critChance || 0,
+    critMultiplier: weapon.critMultiplier || 1.75,
+    freezeChance: weapon.freezeChance || 0,
+    freezeSlow: weapon.freezeSlow || 0.62,
+    freezeDuration: weapon.freezeDuration || 1.6,
+    ricochetCount: weapon.ricochetCount || 0,
+    ricochetRange: weapon.ricochetRange || 220,
     bulletTint: weapon.bulletTint,
     bulletGlow: weapon.bulletGlow,
     bulletSprite: weapon.bulletSprite || null,
@@ -578,7 +592,7 @@ function fireFlame(weapon, angle) {
   const p = game.player;
   const originX = p.x + Math.cos(angle) * 20;
   const originY = p.y + Math.sin(angle) * 20;
-  damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus);
+  damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus, weapon);
 
   const baseTint = weapon.effectTint || [1, 0.42, 0.12];
   const glow = weapon.effectGlow || "glowRed";
@@ -663,7 +677,7 @@ function fireLaser(weapon, angle) {
   const startY = p.y + Math.sin(angle) * 26;
   const endX = p.x + Math.cos(angle) * weapon.range;
   const endY = p.y + Math.sin(angle) * weapon.range;
-  damageEnemiesInLine(startX, startY, endX, endY, weapon.lineWidth * 0.5, weapon.damage + p.weaponPowerBonus, weapon.pierce + 1);
+  damageEnemiesInLine(startX, startY, endX, endY, weapon.lineWidth * 0.5, weapon.damage + p.weaponPowerBonus, weapon.pierce + 1, 2, 110, weapon);
   addEffect({
     type: "line",
     x1: startX,
@@ -708,6 +722,11 @@ function fireSustainedLaser(weapon, angle) {
     tickRate: weapon.tickRate || 8,
     tickTimer: 0,
     maxHits: weapon.pierce + 1,
+    critChance: weapon.critChance || 0,
+    critMultiplier: weapon.critMultiplier || 1.75,
+    freezeChance: weapon.freezeChance || 0,
+    freezeSlow: weapon.freezeSlow || 0.62,
+    freezeDuration: weapon.freezeDuration || 1.6,
     life: duration,
     maxLife: duration,
     glow: weapon.effectGlow,
@@ -744,6 +763,11 @@ function fireTimedBomb(weapon, angle) {
     pierce: 0,
     explosionRadius: weapon.explosionRadius,
     explosionDamage: weapon.explosionDamage + p.weaponPowerBonus,
+    critChance: weapon.critChance || 0,
+    critMultiplier: weapon.critMultiplier || 1.75,
+    freezeChance: weapon.freezeChance || 0,
+    freezeSlow: weapon.freezeSlow || 0.62,
+    freezeDuration: weapon.freezeDuration || 1.6,
     bulletTint: weapon.bulletTint,
     bulletGlow: weapon.bulletGlow,
     effectTint: weapon.effectTint,
@@ -785,6 +809,11 @@ function firePulseBomb(weapon) {
     pierce: 0,
     explosionRadius: weapon.explosionRadius,
     explosionDamage: (weapon.explosionDamage || 0) + bonus,
+    critChance: weapon.critChance || 0,
+    critMultiplier: weapon.critMultiplier || 1.75,
+    freezeChance: weapon.freezeChance || 0,
+    freezeSlow: weapon.freezeSlow || 0.62,
+    freezeDuration: weapon.freezeDuration || 1.6,
     bulletTint: weapon.bulletTint,
     bulletGlow: weapon.bulletGlow,
     effectTint: weapon.effectTint,
@@ -811,7 +840,7 @@ function fireOrbit(weapon) {
   const areaRadius = weapon.areaRadius || 34;
   const x = p.x + Math.cos(spin) * orbitRadius;
   const y = p.y + Math.sin(spin) * orbitRadius;
-  const hits = damageEnemiesInRadius(x, y, areaRadius, weapon.damage + p.weaponPowerBonus, 0.72);
+  const hits = damageEnemiesInRadius(x, y, areaRadius, weapon.damage + p.weaponPowerBonus, 0.72, weapon);
   if (hits > 0) {
     addEffect({
       type: "burst",
@@ -831,7 +860,7 @@ function fireSword(weapon, angle) {
   const p = game.player;
   const originX = p.x + Math.cos(angle) * 14;
   const originY = p.y + Math.sin(angle) * 14;
-  damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus);
+  damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus, weapon);
 
   const cone = weapon.cone;
   const baseTint = weapon.effectTint || [0.74, 0.96, 1];
@@ -929,7 +958,7 @@ function fireChain(weapon, target) {
       glow: weapon.effectGlow,
       tint: weapon.effectTint,
     });
-    damageEnemy(enemy, (weapon.damage + p.weaponPowerBonus) * falloff, enemy.x, enemy.y, 3, 120);
+    damageEnemy(enemy, (weapon.damage + p.weaponPowerBonus) * falloff, enemy.x, enemy.y, 3, 120, weapon);
     blocked.add(enemy.id);
     fromX = enemy.x;
     fromY = enemy.y;

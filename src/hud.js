@@ -37,6 +37,13 @@ function renderHearts() {
     heart.textContent = "♥";
     hud.hearts.append(heart);
   }
+  const barrier = Math.max(0, Math.ceil(game.player.barrier || 0));
+  for (let i = 0; i < barrier; i += 1) {
+    const shield = document.createElement("span");
+    shield.className = "heart barrier-heart";
+    shield.textContent = "◆";
+    hud.hearts.append(shield);
+  }
 }
 
 export function syncTouchControls() {

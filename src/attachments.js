@@ -47,6 +47,7 @@ const PLAYER_BASE_STAT_KEYS = [
   "speed",
   "pickup",
   "armor",
+  "barrierMax",
   "weaponPowerBonus",
 ];
 
@@ -80,6 +81,7 @@ export function recomputeAllAttachments() {
   });
   syncGearAttachments();
   if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
+  game.player.barrier = Math.min(game.player.barrier || 0, game.player.barrierMax || 0);
 }
 
 export const ACTIVE_ATTACHMENTS = [
@@ -232,6 +234,51 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
+    key: "ricochetCore",
+    name: "跳弾コア",
+    stars: 2,
+    category: "special",
+    compatibleWeapons: ["石", "豆鉄砲"],
+    text: "通常弾が命中後、近くの別の敵へ1回跳ねる。",
+    attach: (weapon) => {
+      weapon.ricochetCount = (weapon.ricochetCount || 0) + 1;
+      weapon.ricochetRange = Math.max(weapon.ricochetRange || 0, 230);
+    },
+  },
+  {
+    key: "criticalLens",
+    name: "会心レンズ",
+    stars: 2,
+    category: "special",
+    text: "命中時に12%でクリティカル。クリティカルダメージは1.8倍。",
+    attach: (weapon) => {
+      weapon.critChance = (weapon.critChance || 0) + 0.12;
+      weapon.critMultiplier = Math.max(weapon.critMultiplier || 1.75, 1.8);
+    },
+  },
+  {
+    key: "frostPowder",
+    name: "氷結粉",
+    stars: 2,
+    category: "special",
+    text: "命中時に22%で敵の移動速度を1.6秒間38%低下させる。",
+    attach: (weapon) => {
+      weapon.freezeChance = (weapon.freezeChance || 0) + 0.22;
+      weapon.freezeSlow = Math.min(weapon.freezeSlow || 1, 0.62);
+      weapon.freezeDuration = Math.max(weapon.freezeDuration || 0, 1.6);
+    },
+  },
+  {
+    key: "barrierEmitter",
+    name: "バリア発生器",
+    stars: 2,
+    category: "support",
+    text: "バリア +1。バリアは被ダメージを1回だけ無効化する。",
+    attach: () => {
+      game.player.barrierMax += 1;
+    },
+  },
+  {
     key: "piercer",
     name: "貫通改造",
     stars: 2,
@@ -331,5 +378,8 @@ export function addAttachmentToWeapon(weapon, attachment) {
     category: definition.category || "stat",
   });
   recomputeAllAttachments();
+  if (definition.key === "barrierEmitter") {
+    game.player.barrier = Math.min(game.player.barrierMax || 0, (game.player.barrier || 0) + 1);
+  }
   return true;
 }
