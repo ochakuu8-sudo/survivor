@@ -1,13 +1,46 @@
-import { TAU } from "./constants.js";
+import { TAU, WAVE_SECONDS } from "./constants.js";
 import { game, nextEnemyId } from "./state.js";
-import { distanceToSegmentSq, normalize } from "./utils/math.js";
+import { clamp, distanceToSegmentSq, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
 import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 
-export function spawnEnemies() {
-  while (game.enemies.length < 5000) {
+const MAX_ACTIVE_ENEMIES = 160;
+const INITIAL_PACK_BASE = 4;
+
+function spawnTuning() {
+  const wave = game.wave;
+  const waveProgress = clamp((WAVE_SECONDS - game.timeLeft) / WAVE_SECONDS, 0, 1);
+  const maxAlive = Math.min(MAX_ACTIVE_ENEMIES, Math.round(16 + wave * 5 + waveProgress * 24));
+  const interval = Math.max(0.14, 1.05 - wave * 0.07 - waveProgress * 0.42);
+  const burstLimit = Math.min(4, Math.max(1, Math.floor(1 + wave / 4)));
+  const initialPack = Math.min(maxAlive, INITIAL_PACK_BASE + Math.min(4, wave));
+  return { maxAlive, interval, burstLimit, initialPack };
+}
+
+export function spawnEnemies(dt) {
+  if (typeof game.spawnClock !== "number") game.spawnClock = 0;
+
+  const { maxAlive, interval, burstLimit, initialPack } = spawnTuning();
+  if (game.enemies.length >= maxAlive) {
+    game.spawnClock = Math.max(game.spawnClock, interval * 0.5);
+    return;
+  }
+
+  if (game.enemies.length === 0 && game.spawnClock <= 0) {
+    for (let i = 0; i < initialPack; i += 1) {
+      spawnEnemy();
+    }
+    game.spawnClock = interval;
+    return;
+  }
+
+  game.spawnClock -= dt;
+  let spawned = 0;
+  while (game.spawnClock <= 0 && game.enemies.length < maxAlive && spawned < burstLimit) {
     spawnEnemy();
+    spawned += 1;
+    game.spawnClock += interval * (0.82 + Math.random() * 0.36);
   }
 }
 
