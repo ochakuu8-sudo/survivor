@@ -3,7 +3,7 @@ import { canvas, hud } from "./dom.js";
 import { buildAtlas } from "./sprites.js";
 import { SpriteRenderer } from "./renderer.js";
 import { bindInput } from "./input.js";
-import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame } from "./game.js";
+import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame, startNextWave } from "./game.js";
 import { openDebugPanel, setupDebug } from "./debug.js";
 
 hud.restart.addEventListener("click", resetRun);
@@ -15,6 +15,7 @@ hud.pauseDebugBtn.addEventListener("click", () => {
   openDebugPanel();
 });
 hud.pauseRestartBtn.addEventListener("click", resetRun);
+if (hud.shopContinue) hud.shopContinue.addEventListener("click", startNextWave);
 
 const atlas = buildAtlas();
 setAtlas(atlas);

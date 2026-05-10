@@ -354,6 +354,14 @@ h1 {
   background: linear-gradient(180deg, rgba(85, 246, 199, 0.14), transparent 38%), #2d276d;
 }
 
+.offer-taken {
+  opacity: 0.72;
+}
+
+.offer-unaffordable {
+  border-color: rgba(255, 228, 107, 0.34);
+}
+
 .offer-pinned {
   border-color: #ffe46b;
   box-shadow: 0 0 0 2px rgba(255, 228, 107, 0.45), inset 0 -5px 0 rgba(0, 0, 0, 0.18);
@@ -488,6 +496,18 @@ h1 {
   margin-top: 16px;
 }
 
+.price-amount {
+  color: #ffe46b;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.price-owned {
+  color: #d9f7ff;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
 .attachment-targets {
   display: grid;
   gap: 8px;
@@ -538,6 +558,24 @@ h1 {
   gap: 16px;
   align-items: stretch;
   margin-top: 18px;
+}
+
+.shop-wallet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid rgba(255, 228, 107, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 228, 107, 0.12);
+}
+
+.shop-wallet strong {
+  color: #ffe46b;
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
 .gear-inventory {
@@ -1144,6 +1182,16 @@ h1 {
 
   .shop-actions button {
     flex: 1;
+  }
+
+  .shop-footer {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .shop-wallet {
+    min-height: 38px;
+    padding: 6px 10px;
   }
 
   .loadout-board {

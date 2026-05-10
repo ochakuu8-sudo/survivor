@@ -7,6 +7,8 @@ export const hud = {
   hpText: document.querySelector("#hpText"),
   gold: document.querySelector("#goldText"),
   kills: document.querySelector("#killText"),
+  shopGold: document.querySelector("#shopGoldText"),
+  shopContinue: document.querySelector("#shopContinueBtn"),
   hitFlash: document.querySelector("#hitFlash"),
   shop: document.querySelector("#shop"),
   offers: document.querySelector("#offers"),

@@ -9,7 +9,6 @@ import {
   starsLabel,
 } from "./attachments.js";
 import { updateHud } from "./hud.js";
-import { startNextWave } from "./game.js";
 
 export const WEAPON_POOL = [
   {
@@ -179,6 +178,13 @@ function shuffle(items) {
   return shuffled;
 }
 
+function attachmentPrice(stars, wave) {
+  const basePrices = { 1: 12, 2: 22, 3: 36 };
+  const floor = Math.max(1, wave);
+  const rarity = Math.max(1, stars || 1);
+  return (basePrices[rarity] || 12) + (floor - 1) * (3 + rarity * 2);
+}
+
 export function generateOffers() {
   const picks = [];
   const seen = new Set();
@@ -195,22 +201,26 @@ export function generateOffers() {
       name: choice.definition.name,
       text: choice.definition.text,
       category: choice.definition.category,
+      price: attachmentPrice(choice.stars, game.wave),
       taken: false,
     });
   }
   game.offers = picks;
 }
 
-export function pickReward(index) {
+export function buyAttachment(index) {
   const offer = game.offers[index];
   if (!offer || offer.taken) return;
   const weapon = game.player.gear.weapons[0];
   if (!weapon) return;
+  if (game.gold < offer.price) return;
   const definition = offer.definition;
   if (!addAttachmentToWeapon(weapon, { key: definition.key, stars: offer.stars })) return;
+  game.gold -= offer.price;
   offer.taken = true;
   if (game.player.hp > game.player.maxHp) game.player.hp = game.player.maxHp;
-  startNextWave();
+  renderShop();
+  updateHud();
 }
 
 export function detachAttachment(weaponId, attachmentIndex) {
@@ -246,8 +256,9 @@ function attachmentLabelText(agg) {
 }
 
 function buildOfferCard(offer, index) {
+  const canAfford = game.gold >= offer.price;
   const card = document.createElement("article");
-  card.className = `offer offer-attachment attach-stars-${offer.stars || 1}${offer.taken ? " offer-taken" : ""}`;
+  card.className = `offer offer-attachment attach-stars-${offer.stars || 1}${offer.taken ? " offer-taken" : ""}${!offer.taken && !canAfford ? " offer-unaffordable" : ""}`;
 
   const headRow = document.createElement("div");
   headRow.className = "offer-head";
@@ -267,16 +278,26 @@ function buildOfferCard(offer, index) {
   meta.className = "offer-meta";
   meta.textContent = `${starsLabel(offer.stars)}・${attachmentCategoryLabel(offer.category)}`;
 
-  card.append(headRow, title, description, meta);
+  const price = document.createElement("div");
+  price.className = "price";
+  const priceAmount = document.createElement("strong");
+  priceAmount.className = "price-amount";
+  priceAmount.textContent = `${offer.price}G`;
+  const owned = document.createElement("span");
+  owned.className = "price-owned";
+  owned.textContent = `所持 ${game.gold}G`;
+  price.append(priceAmount, owned);
+
+  card.append(headRow, title, description, meta, price);
 
   const action = document.createElement("div");
   action.className = "offer-action";
   const button = document.createElement("button");
   button.type = "button";
   button.className = "offer-buy";
-  button.textContent = offer.taken ? "選択済" : "選ぶ";
-  button.disabled = offer.taken;
-  button.addEventListener("click", () => pickReward(index));
+  button.textContent = offer.taken ? "購入済" : canAfford ? "購入" : "ゴールド不足";
+  button.disabled = offer.taken || !canAfford;
+  button.addEventListener("click", () => buyAttachment(index));
   action.append(button);
 
   card.append(action);

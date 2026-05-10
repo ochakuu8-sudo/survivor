@@ -157,10 +157,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "scrapMagnet",
-    name: "スクラップ磁石",
+    name: "金貨磁石",
     stars: 1,
     category: "support",
-    text: "コイン磁力範囲 +36。",
+    text: "ゴールド吸引範囲 +36。",
     attach: () => {
       game.player.pickup += 36;
     },
