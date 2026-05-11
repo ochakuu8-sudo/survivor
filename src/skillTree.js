@@ -184,6 +184,7 @@ function renderNodeMap(nodes, weapon) {
 
   const hubPosition = layout.gridMeta?.hub || { x: 50, y: 50 };
   const scope = nodes[0]?.scope || "weapon";
+  const hadSelection = !!selectedSkillNodes[scope];
   const selectedNode = selectedNodeForScope(nodes, scope);
   for (const node of nodes) {
     const requirements = node.requires?.length ? node.requires : [null];
@@ -206,7 +207,7 @@ function renderNodeMap(nodes, weapon) {
     map.appendChild(renderNodeButton(node, weapon, position, selectedNode?.id === node.id));
   }
   scroller.appendChild(map);
-  requestAnimationFrame(() => centerSkillMapOnNode(scroller, layout.get(selectedNode?.id)));
+  requestAnimationFrame(() => centerSkillMapOnNode(scroller, hadSelection ? layout.get(selectedNode?.id) : hubPosition));
   wrapper.append(scroller, renderNodeDetail(selectedNode, scope));
   return wrapper;
 }
@@ -289,15 +290,15 @@ function setMobileSkillTreeFullscreen(enabled) {
 
 function layoutMobileSkillNodes(nodes) {
   const viewportWidth = typeof window === "undefined" ? 400 : window.innerWidth || 400;
-  const nodeWidth = viewportWidth <= 370 ? 116 : 124;
-  const nodeHeight = viewportWidth <= 370 ? 58 : 62;
+  const nodeWidth = viewportWidth <= 370 ? 106 : 114;
+  const nodeHeight = viewportWidth <= 370 ? 54 : 56;
   return buildGridSkillLayout(nodes, {
-    cellSize: viewportWidth <= 370 ? 128 : 140,
-    padding: viewportWidth <= 370 ? 104 : 116,
-    minMapSize: Math.max(760, viewportWidth + 260),
+    cellSize: viewportWidth <= 370 ? 112 : 122,
+    padding: viewportWidth <= 370 ? 86 : 96,
+    minMapSize: Math.max(680, viewportWidth + 210),
     nodeWidth,
     nodeHeight,
-    hubSize: 72,
+    hubSize: 68,
   });
 }
 
@@ -326,7 +327,7 @@ function setupMobileSkillViewport(viewport, map, selectedPosition, focusSelected
   map.dataset.scale = "1";
   map.style.width = `${baseWidth}px`;
   map.style.height = `${baseHeight}px`;
-  centerSkillMapOnNode(viewport, focusSelected ? selectedPosition : { x: baseWidth / 2, y: 112, unit: "px" });
+  centerSkillMapOnNode(viewport, focusSelected ? selectedPosition : { x: baseWidth / 2, y: baseHeight / 2, unit: "px" });
   enableMobileMapGestures(viewport, map, baseWidth, baseHeight, 1);
 }
 
