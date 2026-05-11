@@ -157,25 +157,27 @@ function renderNodeMap(nodes, weapon) {
   map.className = "skill-node-map";
 
   const layout = layoutSkillNodes(nodes);
-  const gridMeta = layout.gridMeta || { tiers: 1, rows: 1 };
+  const gridMeta = layout.gridMeta || { tiers: 1, rows: 1, lanes: 1, ringStep: 14, mapSize: 1080 };
   map.style.setProperty("--skill-tier-count", gridMeta.tiers);
-  map.style.setProperty("--skill-row-count", gridMeta.rows);
-  map.style.width = `${Math.max(1080, (gridMeta.tiers - 1) * 170 + 240)}px`;
-  map.style.height = `${Math.max(680, (gridMeta.rows - 1) * 138 + 240)}px`;
+  map.style.setProperty("--skill-row-count", gridMeta.lanes);
+  map.style.width = `${gridMeta.mapSize}px`;
+  map.style.height = `${gridMeta.mapSize}px`;
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.classList.add("skill-node-links");
   svg.setAttribute("viewBox", "0 0 100 100");
   svg.setAttribute("preserveAspectRatio", "none");
   svg.setAttribute("aria-hidden", "true");
 
+  const hubPosition = layout.gridMeta?.hub || { x: 50, y: 50 };
   for (const node of nodes) {
-    for (const requiredId of node.requires || []) {
-      const from = layout.get(requiredId);
+    const requirements = node.requires?.length ? node.requires : [null];
+    for (const requiredId of requirements) {
+      const from = requiredId ? layout.get(requiredId) : hubPosition;
       const to = layout.get(node.id);
       if (!from || !to) continue;
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", orthogonalLinkPath(from, to));
-      path.classList.add("skill-link", linkStatus(requiredId, node.scope));
+      path.classList.add("skill-link", requiredId ? linkStatus(requiredId, node.scope) : "skill-link-root");
       svg.appendChild(path);
     }
   }
@@ -184,6 +186,7 @@ function renderNodeMap(nodes, weapon) {
   const selectedNode = selectedNodeForScope(nodes, scope);
   map.appendChild(renderSkillGridLabels(gridMeta));
   map.appendChild(svg);
+  map.appendChild(renderSkillHub(weapon, hubPosition));
   for (const node of nodes) {
     const position = layout.get(node.id);
     map.appendChild(renderNodeButton(node, weapon, position, selectedNode?.id === node.id));
@@ -199,6 +202,8 @@ function layoutSkillNodes(nodes) {
   const maxTier = Math.max(...tierById.values(), 1);
   const layout = new Map();
   const tierGroups = new Map();
+  const branchById = new Map();
+  const branchNames = ["north", "east", "south", "west"];
 
   for (const node of nodes) {
     const tier = tierById.get(node.id) || 1;
@@ -206,67 +211,131 @@ function layoutSkillNodes(nodes) {
     tierGroups.get(tier).push(node);
   }
 
-  const maxRows = Math.max(1, ...Array.from(tierGroups.values(), (group) => group.length));
-  const gridRows = Math.max(4, maxRows);
-  const xForTier = (tier) => maxTier === 1 ? 50 : 8 + ((tier - 1) / (maxTier - 1)) * 84;
-  const yForRow = (row) => gridRows === 1 ? 50 : 12 + (row / (gridRows - 1)) * 76;
-  const rowById = new Map();
+  const roots = nodes.filter((node) => !(node.requires || []).length);
+  roots.forEach((node, index) => branchById.set(node.id, index % branchNames.length));
+
+  const maxGroupSize = Math.max(1, ...Array.from(tierGroups.values(), (group) => group.length));
+  const maxBranchLaneCount = Math.max(1, Math.ceil(maxGroupSize / branchNames.length));
+  const mapSize = Math.max(1080, 760 + maxTier * 88 + maxBranchLaneCount * 44);
+  const ringStep = Math.min(14, 42 / Math.max(maxTier, 1));
+  const laneStep = 7.2;
+  const hub = { x: 50, y: 50, tier: 0, row: 0, branch: "center" };
 
   for (let tier = 1; tier <= maxTier; tier += 1) {
     const group = [...(tierGroups.get(tier) || [])];
     group.sort((a, b) => {
-      const parentDelta = averageParentRow(a, rowById) - averageParentRow(b, rowById);
+      const parentDelta = averageParentRow(a, layout) - averageParentRow(b, layout);
       return parentDelta || nodes.indexOf(a) - nodes.indexOf(b);
     });
 
-    const firstRow = Math.max(0, (gridRows - group.length) / 2);
-    group.forEach((node, index) => {
-      const row = firstRow + index;
-      rowById.set(node.id, row);
-      const x = xForTier(tier);
-      const y = yForRow(row);
-      layout.set(node.id, { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)), tier, row: Number((row + 1).toFixed(2)) });
-    });
+    for (const node of group) {
+      if (!branchById.has(node.id)) {
+        branchById.set(node.id, inheritedBranchIndex(node, branchById, nodes));
+      }
+    }
+
+    const branchGroups = new Map(branchNames.map((_, index) => [index, []]));
+    for (const node of group) branchGroups.get(branchById.get(node.id) || 0).push(node);
+
+    for (const [branchIndex, branchNodes] of branchGroups.entries()) {
+      branchNodes.forEach((node, index) => {
+        const lane = index - (branchNodes.length - 1) / 2;
+        const distance = tier * ringStep;
+        const offset = lane * laneStep;
+        const position = positionForBranch(branchIndex, distance, offset);
+        layout.set(node.id, {
+          x: Number(position.x.toFixed(2)),
+          y: Number(position.y.toFixed(2)),
+          tier,
+          row: Number((lane + 1).toFixed(2)),
+          branch: branchNames[branchIndex],
+        });
+      });
+    }
   }
-  layout.gridMeta = { tiers: maxTier, rows: gridRows };
+
+  layout.gridMeta = {
+    tiers: maxTier,
+    rows: maxGroupSize,
+    lanes: maxBranchLaneCount,
+    ringStep,
+    mapSize,
+    hub,
+  };
   return layout;
 }
 
-function averageParentRow(node, rowById) {
+function inheritedBranchIndex(node, branchById, nodes) {
+  const parentBranches = (node.requires || [])
+    .map((id) => branchById.get(id))
+    .filter((branch) => Number.isFinite(branch));
+  if (parentBranches.length) return parentBranches[0];
+  return nodes.indexOf(node) % 4;
+}
+
+function positionForBranch(branchIndex, distance, offset) {
+  switch (branchIndex % 4) {
+    case 0:
+      return { x: 50 + offset, y: 50 - distance };
+    case 1:
+      return { x: 50 + distance, y: 50 + offset };
+    case 2:
+      return { x: 50 + offset, y: 50 + distance };
+    default:
+      return { x: 50 - distance, y: 50 + offset };
+  }
+}
+
+function averageParentRow(node, layout) {
   const rows = (node.requires || [])
-    .map((id) => rowById.get(id))
+    .map((id) => layout.get(id)?.y)
     .filter((row) => Number.isFinite(row));
   if (!rows.length) return Number.MAX_SAFE_INTEGER;
   return rows.reduce((sum, row) => sum + row, 0) / rows.length;
 }
 
-function renderSkillGridLabels({ tiers, rows }) {
+function renderSkillGridLabels({ tiers, ringStep }) {
   const layer = document.createElement("div");
   layer.className = "skill-grid-labels";
   layer.setAttribute("aria-hidden", "true");
 
+  const horizontal = document.createElement("span");
+  horizontal.className = "skill-grid-axis skill-grid-axis-horizontal";
+  layer.appendChild(horizontal);
+
+  const vertical = document.createElement("span");
+  vertical.className = "skill-grid-axis skill-grid-axis-vertical";
+  layer.appendChild(vertical);
+
   for (let tier = 1; tier <= tiers; tier += 1) {
-    const x = tiers === 1 ? 50 : 8 + ((tier - 1) / (tiers - 1)) * 84;
-    const column = document.createElement("span");
-    column.className = "skill-grid-column-line";
-    column.style.setProperty("--grid-x", `${x}%`);
-    layer.appendChild(column);
+    const radius = tier * ringStep;
+    const ring = document.createElement("span");
+    ring.className = "skill-grid-ring";
+    ring.style.setProperty("--ring-radius", `${radius}%`);
+    layer.appendChild(ring);
 
     const label = document.createElement("span");
     label.className = "skill-grid-tier-label";
-    label.style.setProperty("--grid-x", `${x}%`);
+    label.style.setProperty("--grid-x", `${50 + radius}%`);
+    label.style.setProperty("--grid-y", "50%");
     label.textContent = `T${tier}`;
     layer.appendChild(label);
   }
 
-  for (let row = 0; row < rows; row += 1) {
-    const line = document.createElement("span");
-    line.className = "skill-grid-row-line";
-    line.style.setProperty("--grid-y", `${rows === 1 ? 50 : 12 + (row / (rows - 1)) * 76}%`);
-    layer.appendChild(line);
-  }
-
   return layer;
+}
+
+function renderSkillHub(weapon, position = { x: 50, y: 50 }) {
+  const hub = document.createElement("div");
+  hub.className = "skill-node-hub";
+  hub.style.setProperty("--node-x", `${position.x}%`);
+  hub.style.setProperty("--node-y", `${position.y}%`);
+  hub.innerHTML = `
+    <span class="skill-node-hub-icon" aria-hidden="true">${weapon ? nodeIcon({ id: weapon.name, title: weapon.name, text: "" }, weapon) : "✦"}</span>
+    <span class="skill-node-hub-label">中心</span>
+  `;
+  hub.setAttribute("aria-label", `${weapon?.name || "武器"}の中心ノード`);
+  return hub;
 }
 
 function orthogonalLinkPath(from, to) {
