@@ -212,7 +212,7 @@ button:disabled {
 .slot-index,
 .attachment-title {
   color: #9df7ff;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -361,7 +361,7 @@ button:disabled {
 }
 
 #shop .panel-kicker {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
 }
 
 h1,
@@ -573,7 +573,7 @@ h1 {
   border-radius: 6px;
   background: rgba(255, 228, 107, 0.12);
   color: #ffe46b;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 800;
   cursor: pointer;
 }
@@ -701,7 +701,7 @@ h1 {
 
 #shop .offer-meta {
   margin-top: 6px;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
 }
 
 .price-amount {
@@ -728,7 +728,7 @@ h1 {
 
 .target-prompt {
   color: #9df7ff;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 900;
   line-height: 1;
 }
@@ -883,7 +883,7 @@ h1 {
   display: block;
   margin-top: 4px;
   color: #ffe46b;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 900;
   line-height: 1.18;
 }
@@ -932,7 +932,7 @@ h1 {
   align-items: center;
   min-height: 30px;
   color: rgba(255, 249, 242, 0.62);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 800;
 }
 
@@ -1124,7 +1124,7 @@ h1 {
   border-radius: 6px;
   color: #eaffff;
   background: rgba(85, 246, 199, 0.15);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 800;
   line-height: 1.16;
   overflow-wrap: anywhere;
@@ -1405,7 +1405,7 @@ h1 {
 .debug-row label {
   flex: 0 0 56px;
   color: #9df7ff;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 800;
 }
 
@@ -1823,7 +1823,7 @@ h1 {
     min-height: 28px;
     padding: 0 5px;
     border-radius: 6px;
-    font-size: 0.68rem;
+    font-size: 0.64rem;
   }
 
   .panel-head {
@@ -1916,7 +1916,7 @@ h1 {
   #shop .weapon-use {
     min-height: 30px;
     padding: 0 8px;
-    font-size: 0.68rem;
+    font-size: 0.64rem;
   }
 
   #shop .weapon-slot {
@@ -2573,12 +2573,13 @@ h1 {
 
 .compact-skill-tree {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .compact-skill-tree-list {
   display: grid;
-  gap: 12px;
+  gap: 10px;
+  padding-bottom: 2px;
 }
 
 .compact-skill-tier {
@@ -2605,20 +2606,18 @@ h1 {
 }
 
 .compact-skill-tier-heading {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 34px;
-  padding: 7px 10px;
+  min-height: 30px;
+  padding: 6px 9px;
   border: 1px solid rgba(96, 165, 250, 0.34);
   border-radius: 999px;
   color: #dbeafe;
-  background: rgba(15, 23, 42, 0.94);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  background: rgba(15, 23, 42, 0.78);
   font-weight: 1000;
 }
 
@@ -2638,17 +2637,17 @@ h1 {
 .compact-skill-card {
   position: relative;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 8px;
   align-items: center;
-  min-height: 72px;
+  min-height: 60px;
   width: 100%;
-  padding: 10px;
+  padding: 8px;
   border: 2px solid rgba(148, 163, 184, 0.24);
-  border-radius: 16px;
+  border-radius: 14px;
   color: #e2e8f0;
-  background: rgba(30, 41, 59, 0.86);
-  box-shadow: 0 6px 0 rgba(2, 6, 23, 0.28);
+  background: rgba(30, 41, 59, 0.8);
+  box-shadow: 0 4px 0 rgba(2, 6, 23, 0.24);
   text-align: left;
 }
 
@@ -2669,26 +2668,31 @@ h1 {
 }
 
 .compact-skill-card-selected {
-  border-color: #bfdbfe;
-  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.18), 0 6px 0 rgba(2, 6, 23, 0.28);
+  border-color: #f8fafc;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.26), 0 4px 0 rgba(2, 6, 23, 0.24);
 }
 
 .compact-skill-card-available {
-  border-color: rgba(147, 197, 253, 0.72);
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.94), rgba(30, 41, 59, 0.9));
+  border-color: rgba(191, 219, 254, 0.98);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.98), rgba(14, 165, 233, 0.78));
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16), 0 5px 0 rgba(2, 6, 23, 0.3);
 }
 
 .compact-skill-card-owned {
-  border-color: rgba(134, 239, 172, 0.74);
-  background: linear-gradient(135deg, rgba(22, 163, 74, 0.94), rgba(30, 41, 59, 0.86));
+  border-color: rgba(134, 239, 172, 0.42);
+  background: rgba(22, 101, 52, 0.34);
+  opacity: 0.82;
 }
 
 .compact-skill-card-costly {
-  border-color: rgba(251, 191, 36, 0.58);
+  border-color: rgba(251, 191, 36, 0.52);
+  background: rgba(120, 83, 16, 0.32);
 }
 
 .compact-skill-card-locked {
-  opacity: 0.78;
+  border-color: rgba(100, 116, 139, 0.22);
+  background: rgba(15, 23, 42, 0.48);
+  opacity: 0.48;
 }
 
 .compact-skill-card-evolution {
@@ -2699,24 +2703,25 @@ h1 {
 .compact-skill-card-icon {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
   background: rgba(15, 23, 42, 0.5);
   color: #f8fafc;
-  font-size: 1.24rem;
+  font-size: 1rem;
   font-weight: 1000;
 }
 
 .compact-skill-card-copy,
 .compact-skill-card-title-row,
+.compact-skill-card-main-row,
 .compact-skill-card-meta {
   min-width: 0;
 }
 
 .compact-skill-card-copy {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .compact-skill-card-title-row {
@@ -2728,17 +2733,20 @@ h1 {
 
 .compact-skill-card-title-row strong {
   color: #f8fafc;
-  font-size: 0.98rem;
-  line-height: 1.2;
+  overflow: hidden;
+  font-size: 0.92rem;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .compact-skill-status {
   flex: 0 0 auto;
-  padding: 3px 7px;
+  padding: 3px 6px;
   border-radius: 999px;
   color: #0f172a;
   background: #e2e8f0;
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 1000;
   line-height: 1;
 }
@@ -2760,11 +2768,35 @@ h1 {
   background: #475569;
 }
 
+.compact-skill-card-main-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
 .compact-skill-card-text,
 .compact-skill-card-meta {
-  color: rgba(226, 232, 240, 0.82);
-  font-size: 0.82rem;
-  line-height: 1.35;
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.compact-skill-card-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.compact-skill-cost {
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #dbeafe;
+  background: rgba(15, 23, 42, 0.46);
+  font-size: 0.74rem;
+  font-weight: 1000;
+  line-height: 1.2;
 }
 
 .compact-skill-card-meta {
@@ -2776,13 +2808,21 @@ h1 {
   font-weight: 800;
 }
 
-.compact-skill-sticky-detail {
-  position: sticky;
-  bottom: 0;
-  z-index: 4;
+.compact-skill-detail-hint {
+  margin-top: 2px;
+  padding: 8px 10px;
+  border: 1px dashed rgba(148, 163, 184, 0.32);
+  border-radius: 14px;
+  color: rgba(226, 232, 240, 0.68);
+  background: rgba(15, 23, 42, 0.42);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.compact-skill-selected-detail {
   margin-top: 2px;
   border-color: rgba(96, 165, 250, 0.42);
-  box-shadow: 0 -10px 24px rgba(15, 23, 42, 0.42), inset 0 0 24px rgba(148, 163, 184, 0.08);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28), inset 0 0 24px rgba(148, 163, 184, 0.08);
 }
 
 .skill-tree-footer {
@@ -2813,26 +2853,19 @@ h1 {
   }
 
   #skillTree .panel-head {
-    position: sticky;
-    top: -12px;
-    z-index: 6;
-    margin: -12px -12px 10px;
-    padding: 12px 12px 10px;
-    background: rgba(37, 28, 86, 0.97);
+    margin: -2px 0 8px;
+    padding: 0;
   }
 
   #skillTree .panel-head h1 {
-    font-size: clamp(1.14rem, 6vw, 1.45rem);
+    font-size: clamp(1.05rem, 5vw, 1.26rem);
   }
 
   #skillTree .skill-tree-summary {
-    position: sticky;
-    top: 52px;
-    z-index: 5;
-    margin: 0 -4px 10px;
+    margin: 0 0 8px;
     padding: 4px;
-    border-radius: 18px;
-    background: rgba(37, 28, 86, 0.94);
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.26);
   }
 
   .skill-tree-summary,
@@ -2870,8 +2903,7 @@ h1 {
   }
 
   .compact-skill-tier-heading {
-    top: 112px;
-    min-height: 38px;
+    min-height: 30px;
     border-radius: 14px;
   }
 
@@ -2880,9 +2912,9 @@ h1 {
   }
 
   .compact-skill-card {
-    grid-template-columns: 44px minmax(0, 1fr);
-    min-height: 78px;
-    padding: 10px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    min-height: 58px;
+    padding: 8px;
   }
 
   .compact-skill-card-title-row {
@@ -2890,36 +2922,36 @@ h1 {
   }
 
   .compact-skill-card-title-row strong {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .compact-skill-card-text {
-    font-size: 0.86rem;
+    font-size: 0.78rem;
   }
 
   .compact-skill-card-meta {
-    font-size: 0.76rem;
+    font-size: 0.72rem;
   }
 
-  .compact-skill-sticky-detail {
-    margin-right: -4px;
-    margin-left: -4px;
+  .compact-skill-selected-detail {
+    margin-right: -2px;
+    margin-left: -2px;
     padding: 10px;
-    border-radius: 16px 16px 10px 10px;
+    border-radius: 16px;
   }
 
-  .compact-skill-sticky-detail .skill-node-detail-head {
-    grid-template-columns: 38px 1fr;
+  .compact-skill-selected-detail .skill-node-detail-head {
+    grid-template-columns: 36px 1fr;
     gap: 8px;
   }
 
-  .compact-skill-sticky-detail .skill-node-detail-icon {
-    width: 38px;
-    height: 38px;
+  .compact-skill-selected-detail .skill-node-detail-icon {
+    width: 36px;
+    height: 36px;
   }
 
-  .compact-skill-sticky-detail p {
-    font-size: 0.86rem;
+  .compact-skill-selected-detail p {
+    font-size: 0.84rem;
   }
 
   .skill-tree-footer {
