@@ -640,7 +640,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "跳弾+1",
     stars: 3,
     category: "special",
-    compatibleWeapons: ["石", "豆鉄砲"],
+    compatibleWeapons: ["石"],
     text: "通常弾が命中後、近くの別の敵へ1回跳ねる。",
     attach: (weapon) => {
       weapon.ricochetCount = (weapon.ricochetCount || 0) + 1;
@@ -788,7 +788,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "跳弾+2",
     stars: 4,
     category: "special",
-    compatibleWeapons: ["石", "豆鉄砲"],
+    compatibleWeapons: ["石"],
     text: "通常弾が命中後、近くの敵へ2回跳ねる。跳弾距離も少し伸びる。",
     attach: (weapon) => {
       weapon.ricochetCount = (weapon.ricochetCount || 0) + 2;
@@ -800,7 +800,7 @@ export const ACTIVE_ATTACHMENTS = [
     name: "跳弾+3",
     stars: 5,
     category: "special",
-    compatibleWeapons: ["石", "豆鉄砲"],
+    compatibleWeapons: ["石"],
     text: "通常弾が命中後、近くの敵へ3回跳ねる。跳弾距離も大きく伸びる。",
     attach: (weapon) => {
       weapon.ricochetCount = (weapon.ricochetCount || 0) + 3;
