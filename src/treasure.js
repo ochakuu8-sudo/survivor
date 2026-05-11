@@ -88,8 +88,6 @@ function applyTreasureReward(reward) {
     game.gold += reward.amount;
   } else if (reward.type === "freeWeapon") {
     grantFreeNode("weapon", 1);
-  } else if (reward.type === "freeCommon") {
-    grantFreeNode("common", 1);
   } else if (reward.type === "instantWeapon") {
     grantRandomAffordableNode("weapon");
   } else if (reward.type === "evolution") {
@@ -133,14 +131,6 @@ function chooseTreasureReward(excludeType = "") {
       meta: "武器ツリー",
       icon: "W",
       weight: 26,
-    },
-    {
-      type: "freeCommon",
-      name: "共通強化無料権",
-      text: "共通ツリーの購入可能ノードを1つ無料で取得できる。",
-      meta: "共通ツリー",
-      icon: "+",
-      weight: 16,
     },
     {
       type: "evolution",
