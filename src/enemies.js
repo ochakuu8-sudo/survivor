@@ -68,7 +68,7 @@ export function spawnEnemies(dt) {
   }
 }
 
-export function spawnEnemy(forceType) {
+export function spawnEnemy(forceType, options = {}) {
   const view = viewSize();
   const zoom = cameraZoom(view);
   const visibleW = view.w / zoom;
@@ -112,7 +112,7 @@ export function spawnEnemy(forceType) {
     else if (wave >= 2 && roll < 0.48) type = "archer";
   }
 
-  const baseHp = 28 + wave * 8;
+  const baseHp = Math.round((28 + wave * 8) * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
   const enemy = {
     id: nextEnemyId(),
     kind: "melee",
@@ -178,8 +178,18 @@ export function spawnEnemy(forceType) {
     enemy.preferredDistance = 220;
   }
 
+  if (options.elite || options.boss) {
+    enemy.elite = true;
+    enemy.boss = !!options.boss;
+    enemy.goldCoins = options.boss ? 28 : 14;
+    enemy.radius *= options.boss ? 1.35 : 1.18;
+    enemy.maxHp = Math.round(enemy.maxHp * (options.boss ? 2.1 : 1.45));
+    enemy.hp = enemy.maxHp;
+    enemy.baseSpeed = enemy.speed * (options.boss ? 0.78 : 0.9);
+  }
+
   enemy.baseMaxHp = enemy.maxHp;
-  enemy.baseSpeed = enemy.speed;
+  enemy.baseSpeed = enemy.baseSpeed || enemy.speed;
   enemy.speed = enemy.baseSpeed * enemyFloorSpeedMultiplier();
   game.enemies.push(enemy);
 }

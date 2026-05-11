@@ -16,7 +16,7 @@
 
       <section id="hud" aria-live="polite">
         <div class="hud-block hud-wave">
-          <span class="hud-label">階層</span>
+          <span class="hud-label">Wave</span>
           <strong id="waveText">1</strong>
         </div>
         <div class="hud-meter">
@@ -35,7 +35,7 @@
 
       <div class="hud-block wide hud-objective" aria-live="polite">
         <span class="hud-label">目的</span>
-        <strong id="timeText">出口を探せ</strong>
+        <strong id="timeText">武器選択</strong>
       </div>
 
       <button id="pauseBtn" type="button" class="pause-button hidden" aria-label="一時停止">II</button>
@@ -45,7 +45,7 @@
         <h1>休憩中</h1>
         <div class="pause-actions">
           <button id="resumeBtn" type="button" class="primary">再開</button>
-          <button id="pauseDebugBtn" type="button">デバッグメニュー</button>
+          <button id="pauseDebugBtn" type="button" class="hidden">デバッグメニュー</button>
           <button id="pauseRestartBtn" type="button">やり直す</button>
         </div>
       </section>
@@ -60,35 +60,38 @@
         <div id="starterOffers" class="starter-offers"></div>
       </section>
 
-      <section id="shop" class="panel hidden" aria-label="装備整理">
+      <section id="skillTree" class="panel hidden" aria-label="スキルツリー強化">
         <div class="panel-head">
           <div>
-            <span class="panel-kicker">安全地帯</span>
-            <h1>武器をレベルアップ</h1>
+            <span id="skillTreeWave" class="panel-kicker">Wave Clear</span>
+            <h1>武器を改造して次のWaveへ</h1>
           </div>
         </div>
-
-        <div class="shop-tabs" role="tablist" aria-label="SHOPメニュー">
-          <button id="shopTabShop" type="button" class="shop-tab active" role="tab" aria-selected="true" aria-controls="shopPane">強化</button>
-          <button id="shopTabStorage" type="button" class="shop-tab" role="tab" aria-selected="false" aria-controls="storagePane">武器倉庫</button>
-        </div>
-
-        <div id="shopPane" class="shop-pane shop-pane-market" role="tabpanel" aria-labelledby="shopTabShop">
-          <div id="offers" class="offers"></div>
-        </div>
-        <div id="storagePane" class="shop-pane shop-pane-storage hidden" role="tabpanel" aria-labelledby="shopTabStorage">
-          <div id="gearInventory" class="gear-inventory"></div>
-          <div id="storageInventory" class="storage-inventory"></div>
-        </div>
-        <div class="shop-footer">
-          <div class="shop-wallet">
-            <span class="hud-label">所持ゴールド</span>
-            <strong id="shopGoldText">0</strong>
+        <div class="skill-tree-summary">
+          <div>
+            <span class="hud-label">現在武器</span>
+            <strong id="skillTreeWeaponName">武器</strong>
+            <small id="skillTreeWeaponMeta"></small>
           </div>
-          <div class="shop-actions">
-            <button id="shopRerollBtn" type="button">更新 無料</button>
-            <button id="shopContinueBtn" type="button" class="primary">倉庫へ</button>
+          <div>
+            <span class="hud-label">ゴールド</span>
+            <strong id="skillTreeGold">0</strong>
+            <small id="skillTreeFree">無料解放なし</small>
           </div>
+        </div>
+        <div class="skill-tree-layout">
+          <section class="skill-tree-pane" aria-label="武器専用ツリー">
+            <h2>武器専用ツリー</h2>
+            <div id="skillTreeWeaponNodes" class="skill-node-grid"></div>
+          </section>
+          <section class="skill-tree-pane skill-tree-common" aria-label="共通ツリー">
+            <h2>共通ツリー</h2>
+            <div id="skillTreeCommonNodes" class="skill-node-grid compact"></div>
+          </section>
+        </div>
+        <div class="skill-tree-footer">
+          <p>購入済み・ロック中・購入可能ノードが色分けされます。1Waveで1〜2ノード購入できるバランスです。</p>
+          <button id="skillTreeContinueBtn" type="button" class="primary">次のWaveへ</button>
         </div>
       </section>
 

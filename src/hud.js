@@ -1,7 +1,7 @@
 import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
 import { resetVirtualMove } from "./input.js";
-import { clampActiveWeaponIndex, weaponAmmoLabel } from "./weapons.js";
+import { getActiveWeapon, weaponAmmoLabel } from "./weapons.js";
 
 export function updateHud() {
   hud.wave.textContent = String(game.wave);
@@ -12,17 +12,18 @@ export function updateHud() {
   renderHpText();
   renderWeaponSwitch();
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
-  if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "fight");
+  if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "arena");
   syncTouchControls();
 }
 
 function objectiveText() {
-  if (game.mode === "starterPick") return "武器選択";
-  if (game.mode === "shop") return "装備整理";
+  if (game.mode === "weaponSelect") return "武器選択";
+  if (game.mode === "upgradeTree") return "Wave Clear / 改造";
   if (game.mode === "treasure") return "宝箱報酬";
   if (game.mode === "pause") return "一時停止";
-  if (game.mode === "over") return "探索終了";
-  return "出口を探せ";
+  if (game.mode === "over") return "ラン終了";
+  if (game.mode === "arena") return `${Math.ceil(game.waveTimeLeft || 0)}秒 / ${getActiveWeapon()?.name || "武器"}`;
+  return "準備中";
 }
 
 function renderHpText() {
@@ -34,25 +35,20 @@ function renderHpText() {
 }
 
 function renderWeaponSwitch() {
-  if (!hud.weaponSwitch || !game.player?.gear) return;
-  const gear = game.player.gear;
-  const weapon = gear.weapons?.[clampActiveWeaponIndex(gear)];
-  const isFighting = game.mode === "fight";
-  hud.weaponSwitch.classList.toggle("hidden", !isFighting || !weapon);
-  hud.weaponSwitch.disabled = !isFighting || !weapon || gear.weapons.length <= 1;
-  hud.weaponSwitch.title = "クリック / Q / Tab で武器切替";
-  hud.weaponSwitch.setAttribute("aria-label", "武器切替");
-  if (!weapon) {
-    hud.weaponSwitch.textContent = "武器";
-    return;
-  }
-  const prefix = gear.weapons.length > 1 ? "切替" : "武器";
-  hud.weaponSwitch.textContent = `${prefix}: ${weapon.name} / ${weaponAmmoLabel(weapon)}`;
+  if (!hud.weaponSwitch) return;
+  const weapon = getActiveWeapon();
+  const isArena = game.mode === "arena";
+  hud.weaponSwitch.classList.toggle("hidden", !isArena || !weapon);
+  hud.weaponSwitch.disabled = true;
+  hud.weaponSwitch.title = "1ラン1武器制";
+  hud.weaponSwitch.setAttribute("aria-label", "現在武器");
+  hud.weaponSwitch.textContent = weapon ? `${weapon.name} / ${weaponAmmoLabel(weapon)}` : "武器";
 }
+
 
 export function syncTouchControls() {
   if (!hud.touchControls) return;
-  const isFighting = game.mode === "fight";
-  hud.touchControls.classList.toggle("disabled", !isFighting);
-  if (!isFighting && pointer.down) resetVirtualMove();
+  const isArena = game.mode === "arena";
+  hud.touchControls.classList.toggle("disabled", !isArena);
+  if (!isArena && pointer.down) resetVirtualMove();
 }

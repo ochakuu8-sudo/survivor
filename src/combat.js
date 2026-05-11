@@ -4,6 +4,7 @@ import { angleDelta, clamp, distSq, distanceToSegmentSq, gridKey } from "./utils
 import { addEffect, addSparks } from "./effects.js";
 import { damagePlayer } from "./player.js";
 import { dropGold } from "./gold.js";
+import { createTreasureChestAt } from "./dungeon.js";
 
 export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y, sparkCount = 3, sparkSpeed = 90, source = null) {
   if (!enemy || enemy.dead) return false;
@@ -143,6 +144,7 @@ export function killEnemy(enemy, source = null) {
   game.waveKills += 1;
   dropGold(enemy);
   healPlayerFromKill(source);
+  if (enemy.elite || enemy.boss) createTreasureChestAt(enemy.x, enemy.y, enemy.boss ? "ボス宝箱" : "エリート宝箱");
   if (enemy.radius > 22) {
     addSparks(enemy.x, enemy.y, 6, 110);
     game.shake = Math.max(game.shake, 4);

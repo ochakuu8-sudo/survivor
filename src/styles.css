@@ -2182,3 +2182,187 @@ h1 {
     height: 108px;
   }
 }
+
+#skillTree.panel {
+  width: min(1120px, calc(100vw - 28px));
+  max-height: min(88vh, 860px);
+  overflow: auto;
+}
+
+.skill-tree-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.6fr);
+  gap: 14px;
+  margin: 14px 0 18px;
+}
+
+.skill-tree-summary > div,
+.skill-tree-pane {
+  border: 1px solid rgba(255, 232, 160, 0.22);
+  border-radius: 18px;
+  background: rgba(22, 32, 20, 0.78);
+  box-shadow: inset 0 0 24px rgba(255, 205, 82, 0.06);
+}
+
+.skill-tree-summary > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+}
+
+.skill-tree-summary strong {
+  color: #fff4b8;
+  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+}
+
+.skill-tree-summary small {
+  color: rgba(255, 250, 218, 0.72);
+}
+
+.skill-tree-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.75fr);
+  gap: 16px;
+}
+
+.skill-tree-pane {
+  padding: 14px;
+}
+
+.skill-tree-pane h2 {
+  margin: 0 0 12px;
+  color: #fff0a4;
+  font-size: 1rem;
+}
+
+.skill-node-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.skill-node-grid.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.skill-node {
+  min-height: 118px;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff9df;
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.skill-node strong {
+  font-size: 0.98rem;
+}
+
+.skill-node span:not(.skill-node-tier) {
+  font-size: 0.84rem;
+  line-height: 1.35;
+  color: rgba(255, 250, 228, 0.78);
+}
+
+.skill-node small {
+  color: rgba(255, 230, 142, 0.86);
+}
+
+.skill-node-tier {
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #ffe78c;
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+
+.skill-node-available {
+  cursor: pointer;
+  background: linear-gradient(150deg, rgba(45, 103, 47, 0.96), rgba(117, 91, 20, 0.92));
+  box-shadow: 0 0 0 1px rgba(255, 231, 140, 0.34), 0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+.skill-node-owned {
+  background: linear-gradient(150deg, rgba(64, 91, 112, 0.92), rgba(38, 67, 57, 0.9));
+  opacity: 0.82;
+}
+
+.skill-node-owned::after {
+  content: "取得済み";
+  color: #9ef5c1;
+  font-weight: 800;
+}
+
+.skill-node-locked,
+.skill-node-costly {
+  background: rgba(20, 24, 20, 0.86);
+  opacity: 0.66;
+}
+
+.skill-node-costly::after {
+  content: "ゴールド不足";
+  color: #ffb8a4;
+  font-weight: 800;
+}
+
+.skill-node-locked::after {
+  content: "ロック中";
+  color: #c8c0a4;
+  font-weight: 800;
+}
+
+.skill-tree-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.skill-tree-footer p {
+  margin: 0;
+  color: rgba(255, 250, 228, 0.72);
+}
+
+.skill-tree-footer button {
+  min-width: 180px;
+  min-height: 48px;
+}
+
+@media (max-width: 820px) {
+  #skillTree.panel {
+    width: calc(100vw - 16px);
+    max-height: 92vh;
+    padding: 16px;
+  }
+
+  .skill-tree-summary,
+  .skill-tree-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .skill-node-grid,
+  .skill-node-grid.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .skill-node {
+    min-height: 104px;
+    padding: 14px;
+  }
+
+  .skill-tree-footer {
+    position: sticky;
+    bottom: 0;
+    padding-top: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    background: linear-gradient(180deg, rgba(13, 20, 12, 0), rgba(13, 20, 12, 0.96) 24%);
+  }
+}

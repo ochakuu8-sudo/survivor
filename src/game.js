@@ -1,31 +1,37 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { INTERACTION_HOLD_SECONDS } from "./constants.js";
+import { BOSS_WAVE_INTERVAL, WAVE_DURATION_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
-import { autoShoot, createWeapon, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
+import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
-import { spawnEnemies, updateEnemies } from "./enemies.js";
-import { generateDungeon, hasReachedDungeonExit } from "./dungeon.js";
+import { spawnEnemies, spawnEnemy, updateEnemies } from "./enemies.js";
+import { generateArenaDungeon } from "./dungeon.js";
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
 import { updateGoldDrops } from "./gold.js";
 import { updateTreasureChests } from "./treasure.js";
 import { updateMovement } from "./player.js";
-import { generateOffers, renderShop, WEAPON_POOL } from "./shop.js";
+import { prepareStarterPick, renderStarterPick } from "./shop.js";
+import { enterUpgradeTree, hideSkillTree, initSkillProgress } from "./skillTree.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
 
 export function resetRun() {
-  game.mode = "fight";
+  game.mode = "weaponSelect";
   game.wave = 1;
   game.elapsed = 0;
   game.floorElapsed = 0;
-  game.exitHoldTimer = 0;
+  game.waveTimeLeft = WAVE_DURATION_SECONDS;
+  game.waveClearCount = 0;
+  game.eliteSpawned = false;
+  game.selectedWeapon = null;
   game.totalKills = 0;
   game.waveKills = 0;
   game.gold = 0;
+  game.goldGainBonus = 0;
+  game.waveStartHealBonus = 0;
   game.spawnClock = 0;
   game.shake = 0;
   game.damageFlash = 0;
@@ -59,7 +65,7 @@ export function resetRun() {
       storageAttachments: [],
     },
   };
-  game.dungeon = generateDungeon(game.wave);
+  game.dungeon = generateArenaDungeon(game.wave);
   game.player.x = game.dungeon.start.x;
   game.player.y = game.dungeon.start.y;
   game.player.invulnerableTimer = 0;
@@ -77,88 +83,81 @@ export function resetRun() {
   game.shopRerollsUsed = 0;
   game.starterChoices = [];
   game.treasureReward = null;
+  initSkillProgress();
   game.player.baseStats = snapshotPlayerBaseStats(game.player);
-  const stoneTemplate = WEAPON_POOL.find((template) => template.name === "石ころ") || WEAPON_POOL[0];
-  if (stoneTemplate) {
-    game.player.gear.weapons = [
-      createWeapon({ name: stoneTemplate.name, ...stoneTemplate.weapon }),
-    ];
-  }
-  game.starterChoices = [];
-  hud.shop.classList.add("hidden");
-  hud.starterPick.classList.add("hidden");
+  hud.shop?.classList.add("hidden");
+  hideSkillTree();
   hud.treasureReward.classList.add("hidden");
   hud.gameOver.classList.add("hidden");
   hud.pauseMenu.classList.add("hidden");
-  hud.debugPanel.classList.add("hidden");
+  hud.debugPanel?.classList.add("hidden");
+  prepareStarterPick();
+  renderStarterPick();
   updateHud();
 }
 
-export function startNextWave() {
-  game.mode = "fight";
-  game.wave += 1;
+export function startArenaWithSelectedWeapon() {
+  game.mode = "arena";
   game.floorElapsed = 0;
-  game.exitHoldTimer = 0;
+  game.waveTimeLeft = WAVE_DURATION_SECONDS;
   game.waveKills = 0;
   game.spawnClock = 0;
+  game.eliteSpawned = false;
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
   game.particles = [];
   game.goldDrops = [];
   game.effects = [];
-  game.shopRerollsUsed = 0;
-  game.pendingAttachmentChoice = null;
   game.treasureReward = null;
-  game.dungeon = generateDungeon(game.wave);
+  game.dungeon = generateArenaDungeon(game.wave);
   game.player.x = game.dungeon.start.x;
   game.player.y = game.dungeon.start.y;
   game.camera.x = game.player.x;
   game.camera.y = game.player.y;
-  hud.shop.classList.add("hidden");
+  applyWaveStartRecovery();
+  hideSkillTree();
+  hud.shop?.classList.add("hidden");
   hud.treasureReward.classList.add("hidden");
   updateHud();
 }
 
+export function startNextWave() {
+  game.wave += 1;
+  startArenaWithSelectedWeapon();
+}
+
+function applyWaveStartRecovery() {
+  const p = game.player;
+  const healRatio = Math.max(0, game.waveStartHealBonus || 0);
+  if (healRatio > 0) p.hp = clamp(p.hp + p.maxHp * healRatio, 0, p.maxHp);
+  if ((p.barrierMax || 0) > 0) p.barrier = p.barrierMax;
+}
+
 export function enterShop() {
-  game.mode = "shop";
-  game.enemies = [];
-  game.bullets = [];
-  game.enemyProjectiles = [];
-  game.particles = [];
-  game.goldDrops = [];
-  game.effects = [];
-  game.shopRerollsUsed = 0;
-  game.pendingAttachmentChoice = null;
-  game.shopTab = "shop";
-  game.treasureReward = null;
-  hud.treasureReward.classList.add("hidden");
-  hud.pauseMenu.classList.add("hidden");
-  hud.debugPanel.classList.add("hidden");
-  generateOffers();
-  renderShop();
-  hud.shop.classList.remove("hidden");
+  enterUpgradeTree();
 }
 
 export function endRun() {
   game.mode = "over";
-  hud.result.textContent = `第${game.wave}階層、撃破数 ${game.totalKills}、ゴールド ${game.gold}。`;
+  hud.result.textContent = `Wave ${game.wave}、撃破数 ${game.totalKills}、ゴールド ${game.gold}。`;
   hud.gameOver.classList.remove("hidden");
   hud.pauseMenu.classList.add("hidden");
-  hud.debugPanel.classList.add("hidden");
+  hud.debugPanel?.classList.add("hidden");
+  hideSkillTree();
 }
 
 export function pauseGame() {
-  if (game.mode !== "fight") return;
+  if (game.mode !== "arena") return;
   game.mode = "pause";
   hud.pauseMenu.classList.remove("hidden");
 }
 
 export function resumeGame() {
   if (game.mode !== "pause") return;
-  game.mode = "fight";
+  game.mode = "arena";
   hud.pauseMenu.classList.add("hidden");
-  hud.debugPanel.classList.add("hidden");
+  hud.debugPanel?.classList.add("hidden");
 }
 
 function update(dt) {
@@ -166,13 +165,14 @@ function update(dt) {
   game.damageFlash = Math.max(0, game.damageFlash - dt * 2.4);
   game.shake = Math.max(0, game.shake - dt * 45);
 
-  if (game.mode !== "fight") {
+  if (game.mode !== "arena") {
     updateCamera(dt);
     updateHud();
     return;
   }
 
   game.floorElapsed += dt;
+  game.waveTimeLeft = Math.max(0, WAVE_DURATION_SECONDS - game.floorElapsed);
   const p = game.player;
   p.invulnerableTimer = Math.max(0, (p.invulnerableTimer || 0) - dt);
 
@@ -181,6 +181,7 @@ function update(dt) {
   updateWeaponTimers(p, dt);
 
   spawnEnemies(dt);
+  updateWaveEvents();
   updateEnemies(dt);
   updateBullets(dt);
   updateEnemyProjectiles(dt);
@@ -191,27 +192,25 @@ function update(dt) {
   updateOrbitWeapons(dt);
   updateCamera(dt);
 
-  const exitReady = updateExitHold(p, dt);
   if (p.hp <= 0) {
     endRun();
-  } else if (exitReady) {
-    enterShop();
+  } else if (game.floorElapsed >= WAVE_DURATION_SECONDS) {
+    enterUpgradeTree();
   }
 
   updateHud();
 }
 
-function updateExitHold(player, dt) {
-  if (!hasReachedDungeonExit(player)) {
-    game.exitHoldTimer = 0;
-    return false;
-  }
-  game.exitHoldTimer = Math.min(INTERACTION_HOLD_SECONDS, (game.exitHoldTimer || 0) + dt);
-  return game.exitHoldTimer >= INTERACTION_HOLD_SECONDS;
+function updateWaveEvents() {
+  if (game.eliteSpawned || game.floorElapsed < 45) return;
+  game.eliteSpawned = true;
+  const bossWave = game.wave % BOSS_WAVE_INTERVAL === 0;
+  spawnEnemy("orc", { elite: true, boss: bossWave });
 }
 
 function updateCamera(dt) {
   const p = game.player;
+  if (!p) return;
   game.camera.x = lerp(game.camera.x, p.x, clamp(dt * 8, 0, 1));
   game.camera.y = lerp(game.camera.y, p.y, clamp(dt * 8, 0, 1));
 }
