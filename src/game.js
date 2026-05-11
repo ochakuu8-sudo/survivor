@@ -1,7 +1,7 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { BOSS_WAVE_INTERVAL, WAVE_DURATION_SECONDS } from "./constants.js";
+import { BOSS_WAVE_INTERVAL, ELITE_SPAWN_SECONDS, WAVE_DURATION_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
@@ -202,7 +202,7 @@ function update(dt) {
 }
 
 function updateWaveEvents() {
-  if (game.eliteSpawned || game.floorElapsed < 45) return;
+  if (game.eliteSpawned || game.floorElapsed < ELITE_SPAWN_SECONDS) return;
   game.eliteSpawned = true;
   const bossWave = game.wave % BOSS_WAVE_INTERVAL === 0;
   spawnEnemy("orc", { elite: true, boss: bossWave });
