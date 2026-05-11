@@ -1,7 +1,7 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { MAX_WEAPONS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
-import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponAmmoLabel, weaponMetaLabel } from "./weapons.js";
+import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponMetaLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
   attachmentRarityChanceText,
@@ -22,11 +22,9 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "石",
       rarity: "normal",
-      variantSummary: "弾薬6。威力が少し高い",
+      variantSummary: "威力が少し高い",
       damage: 42,
       fireRate: 0.9,
-      ammoCapacity: 6,
-      reloadTime: 1.35,
       bulletSpeed: 360,
       life: 1.15,
       radius: 12,
@@ -42,11 +40,9 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "石",
       rarity: "rare",
-      variantSummary: "弾薬15。弾速がとても遅いが攻撃頻度が高い",
+      variantSummary: "弾速がとても遅いが攻撃頻度が高い",
       damage: 23,
       fireRate: 3.3,
-      ammoCapacity: 15,
-      reloadTime: 1.25,
       bulletSpeed: 165,
       life: 1.55,
       range: 255,
@@ -63,11 +59,9 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "石",
       rarity: "rare",
-      variantSummary: "弾薬10。サイズが小さいがクリティカル率+50%",
+      variantSummary: "サイズが小さいがクリティカル率+50%",
       damage: 28,
       fireRate: 1.45,
-      ammoCapacity: 10,
-      reloadTime: 1.25,
       bulletSpeed: 620,
       life: 0.62,
       range: 360,
@@ -86,11 +80,9 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "石",
       rarity: "legend",
-      variantSummary: "弾薬8。跳弾+1。跳弾するたびに弾が2個に増える",
+      variantSummary: "跳弾+1。跳弾するたびに弾が2個に増える",
       damage: 32,
       fireRate: 1.15,
-      ammoCapacity: 8,
-      reloadTime: 1.45,
       bulletSpeed: 520,
       life: 0.95,
       range: 430,
@@ -109,11 +101,9 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "豆鉄砲",
       rarity: "normal",
-      variantSummary: "弾薬30。攻撃速度が早い",
+      variantSummary: "攻撃速度が早い",
       damage: 5,
       fireRate: 8.4,
-      ammoCapacity: 30,
-      reloadTime: 1.35,
       bulletSpeed: 620,
       life: 0.34,
       range: 220,
@@ -127,15 +117,13 @@ export const WEAPON_POOL = [
   {
     name: "SMG",
     rarity: "rare",
-    text: "弾が大きくばらけるが、弾薬が多い連射武器。",
+    text: "弾が大きくばらけるが、休まず撃てる連射武器。",
     weapon: {
       baseName: "豆鉄砲",
       rarity: "rare",
-      variantSummary: "弾薬60。90度にばらけやすいが弾薬が多い",
+      variantSummary: "90度にばらけやすいが攻撃頻度が高い",
       damage: 3.8,
       fireRate: 10.8,
-      ammoCapacity: 60,
-      reloadTime: 1.75,
       bulletSpeed: 650,
       life: 0.34,
       range: 220,
@@ -153,11 +141,9 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "豆鉄砲",
       rarity: "rare",
-      variantSummary: "弾薬24。射程と命中精度が高い。貫通+1",
+      variantSummary: "射程と命中精度が高い。貫通+1",
       damage: 6.2,
       fireRate: 6.2,
-      ammoCapacity: 24,
-      reloadTime: 1.45,
       bulletSpeed: 780,
       life: 0.5,
       range: 390,
@@ -176,11 +162,9 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "豆鉄砲",
       rarity: "legend",
-      variantSummary: "弾薬30。着弾時爆発",
+      variantSummary: "着弾時爆発",
       damage: 6.5,
       fireRate: 5.4,
-      ammoCapacity: 30,
-      reloadTime: 1.7,
       bulletSpeed: 560,
       life: 0.55,
       range: 300,
@@ -201,13 +185,10 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "火炎放射器",
       rarity: "normal",
-      variantSummary: "燃料8秒。標準性能",
+      variantSummary: "標準性能",
       kind: "flame",
-      fuelMode: true,
       damage: 6,
       fireRate: 5.8,
-      ammoCapacity: 8,
-      reloadTime: 1.7,
       bulletSpeed: 1,
       range: 195,
       cone: 0.62,
@@ -223,13 +204,10 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "火炎放射器",
       rarity: "rare",
-      variantSummary: "燃料6秒。炎の角度が狭い代わりに威力が高い",
+      variantSummary: "炎の角度が狭い代わりに威力が高い",
       kind: "flame",
-      fuelMode: true,
       damage: 10,
       fireRate: 5.2,
-      ammoCapacity: 6,
-      reloadTime: 1.65,
       bulletSpeed: 1,
       range: 180,
       cone: 0.34,
@@ -245,13 +223,10 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "火炎放射器",
       rarity: "rare",
-      variantSummary: "燃料10秒。威力は少し低いが範囲が広く、移動速度30%低下",
+      variantSummary: "威力は少し低いが範囲が広く、移動速度30%低下",
       kind: "flame",
-      fuelMode: true,
       damage: 4.5,
       fireRate: 5.5,
-      ammoCapacity: 10,
-      reloadTime: 1.85,
       bulletSpeed: 1,
       range: 210,
       cone: 0.86,
@@ -270,14 +245,11 @@ export const WEAPON_POOL = [
     weapon: {
       baseName: "火炎放射器",
       rarity: "legend",
-      variantSummary: "燃料8秒。全方位に炎を放つ",
+      variantSummary: "全方位に炎を放つ",
       kind: "flame",
-      fuelMode: true,
       radialFlame: true,
       damage: 6.8,
       fireRate: 4.6,
-      ammoCapacity: 8,
-      reloadTime: 2.0,
       bulletSpeed: 1,
       range: 170,
       cone: 0.46,
@@ -295,7 +267,6 @@ export const WEAPON_POOL = [
       rarity: "normal",
       variantSummary: "標準性能",
       kind: "orbit",
-      usesAmmo: false,
       damage: 20,
       fireRate: 2.6,
       bulletSpeed: 1,
@@ -317,7 +288,6 @@ export const WEAPON_POOL = [
       rarity: "rare",
       variantSummary: "回転半径が狭い",
       kind: "orbit",
-      usesAmmo: false,
       damage: 26,
       fireRate: 2.8,
       bulletSpeed: 1,
@@ -339,7 +309,6 @@ export const WEAPON_POOL = [
       rarity: "rare",
       variantSummary: "回転速度が遅いが、当たった敵を外側にノックバック",
       kind: "orbit",
-      usesAmmo: false,
       damage: 17,
       fireRate: 2.2,
       bulletSpeed: 1,
@@ -362,7 +331,6 @@ export const WEAPON_POOL = [
       rarity: "legend",
       variantSummary: "個数+2。回転が速い",
       kind: "orbit",
-      usesAmmo: false,
       orbitCount: 3,
       damage: 18,
       fireRate: 3.0,
@@ -855,7 +823,7 @@ function buildStoredWeaponCard(weapon, storageIndex) {
   const name = document.createElement("strong");
   name.textContent = weapon.name;
   const meta = document.createElement("small");
-  meta.textContent = `Lv ${syncWeaponLevel(weapon)}/${getWeaponMaxLevel(weapon)} / ${weaponMetaLabel(weapon)} / ${weaponAmmoLabel(weapon)} / アタッチメント ${weapon.attachments.length}/${getWeaponMaxAttachments(weapon)}`;
+  meta.textContent = `Lv ${syncWeaponLevel(weapon)}/${getWeaponMaxLevel(weapon)} / ${weaponMetaLabel(weapon)} / アタッチメント ${weapon.attachments.length}/${getWeaponMaxAttachments(weapon)}`;
   body.append(name, meta);
 
   const actions = document.createElement("div");
@@ -947,7 +915,7 @@ function buildWeaponSlot(weapon, index) {
   name.textContent = weapon ? weapon.name : "未装備";
   const kind = document.createElement("small");
   kind.className = "weapon-slot-kind";
-  kind.textContent = weapon ? `${weaponMetaLabel(weapon)} / ${weaponAmmoLabel(weapon)}` : "武器スロット";
+  kind.textContent = weapon ? `${weaponMetaLabel(weapon)}` : "武器スロット";
 
   const attachmentTrack = document.createElement("div");
   attachmentTrack.className = "attachment-track";

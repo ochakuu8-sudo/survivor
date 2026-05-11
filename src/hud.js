@@ -1,7 +1,7 @@
 import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
 import { resetVirtualMove } from "./input.js";
-import { getActiveWeapon, weaponAmmoLabel } from "./weapons.js";
+import { getActiveWeapon, weaponStatusLabel } from "./weapons.js";
 
 export function updateHud() {
   hud.wave.textContent = String(game.wave);
@@ -42,7 +42,7 @@ function renderWeaponSwitch() {
   hud.weaponSwitch.disabled = true;
   hud.weaponSwitch.title = "1ラン1武器制";
   hud.weaponSwitch.setAttribute("aria-label", "現在武器");
-  hud.weaponSwitch.textContent = weapon ? `${weapon.name} / ${weaponAmmoLabel(weapon)}` : "武器";
+  hud.weaponSwitch.textContent = weapon ? `${weapon.name} / ${weaponStatusLabel(weapon)}` : "武器";
 }
 
 
