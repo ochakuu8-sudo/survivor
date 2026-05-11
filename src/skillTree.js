@@ -157,6 +157,11 @@ function renderNodeMap(nodes, weapon) {
   map.className = "skill-node-map";
 
   const layout = layoutSkillNodes(nodes);
+  const gridMeta = layout.gridMeta || { tiers: 1, rows: 1 };
+  map.style.setProperty("--skill-tier-count", gridMeta.tiers);
+  map.style.setProperty("--skill-row-count", gridMeta.rows);
+  map.style.width = `${Math.max(1080, (gridMeta.tiers - 1) * 170 + 240)}px`;
+  map.style.height = `${Math.max(680, (gridMeta.rows - 1) * 138 + 240)}px`;
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.classList.add("skill-node-links");
   svg.setAttribute("viewBox", "0 0 100 100");
@@ -177,6 +182,7 @@ function renderNodeMap(nodes, weapon) {
 
   const scope = nodes[0]?.scope || "weapon";
   const selectedNode = selectedNodeForScope(nodes, scope);
+  map.appendChild(renderSkillGridLabels(gridMeta));
   map.appendChild(svg);
   for (const node of nodes) {
     const position = layout.get(node.id);
@@ -191,60 +197,76 @@ function renderNodeMap(nodes, weapon) {
 function layoutSkillNodes(nodes) {
   const tierById = new Map(nodes.map((node) => [node.id, visualTier(node, nodes)]));
   const maxTier = Math.max(...tierById.values(), 1);
-  const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const rootNodes = nodes.filter((node) => !node.requires?.length);
-  const directions = [
-    { name: "up", x: 0, y: -1 },
-    { name: "right", x: 1, y: 0 },
-    { name: "down", x: 0, y: 1 },
-    { name: "left", x: -1, y: 0 },
-  ];
-  const branchById = new Map(rootNodes.map((node, index) => [node.id, directions[index % directions.length]]));
   const layout = new Map();
+  const tierGroups = new Map();
 
-  const resolveBranch = (node, seen = new Set()) => {
-    if (branchById.has(node.id)) return branchById.get(node.id);
-    if (seen.has(node.id)) return directions[0];
-    seen.add(node.id);
-
-    const required = (node.requires || [])
-      .map((id) => nodeById.get(id))
-      .filter(Boolean)
-      .sort((a, b) => nodes.indexOf(a) - nodes.indexOf(b));
-    const branch = required.length
-      ? resolveBranch(required[0], new Set(seen))
-      : directions[branchById.size % directions.length];
-    branchById.set(node.id, branch);
-    return branch;
-  };
-
-  for (const node of nodes) {
-    resolveBranch(node);
-  }
-
-  const grouped = new Map();
   for (const node of nodes) {
     const tier = tierById.get(node.id) || 1;
-    const branch = branchById.get(node.id) || directions[0];
-    const key = `${tier}:${branch.name}`;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key).push(node);
+    if (!tierGroups.has(tier)) tierGroups.set(tier, []);
+    tierGroups.get(tier).push(node);
   }
 
-  for (const group of grouped.values()) {
-    group.sort((a, b) => nodes.indexOf(a) - nodes.indexOf(b));
+  const maxRows = Math.max(1, ...Array.from(tierGroups.values(), (group) => group.length));
+  const gridRows = Math.max(4, maxRows);
+  const xForTier = (tier) => maxTier === 1 ? 50 : 8 + ((tier - 1) / (maxTier - 1)) * 84;
+  const yForRow = (row) => gridRows === 1 ? 50 : 12 + (row / (gridRows - 1)) * 76;
+  const rowById = new Map();
+
+  for (let tier = 1; tier <= maxTier; tier += 1) {
+    const group = [...(tierGroups.get(tier) || [])];
+    group.sort((a, b) => {
+      const parentDelta = averageParentRow(a, rowById) - averageParentRow(b, rowById);
+      return parentDelta || nodes.indexOf(a) - nodes.indexOf(b);
+    });
+
+    const firstRow = Math.max(0, (gridRows - group.length) / 2);
     group.forEach((node, index) => {
-      const tier = tierById.get(node.id) || 1;
-      const branch = branchById.get(node.id) || directions[0];
-      const side = { x: -branch.y, y: branch.x };
-      const distance = maxTier === 1 ? 0 : 7 + ((tier - 1) / (maxTier - 1)) * 39;
-      const spread = (index - (group.length - 1) / 2) * 6.8;
-      const x = clamp(50 + branch.x * distance + side.x * spread, 7, 93);
-      const y = clamp(50 + branch.y * distance + side.y * spread, 7, 93);
-      layout.set(node.id, { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)), tier, branch: branch.name });
+      const row = firstRow + index;
+      rowById.set(node.id, row);
+      const x = xForTier(tier);
+      const y = yForRow(row);
+      layout.set(node.id, { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)), tier, row: Number((row + 1).toFixed(2)) });
     });
   }
+  layout.gridMeta = { tiers: maxTier, rows: gridRows };
   return layout;
+}
+
+function averageParentRow(node, rowById) {
+  const rows = (node.requires || [])
+    .map((id) => rowById.get(id))
+    .filter((row) => Number.isFinite(row));
+  if (!rows.length) return Number.MAX_SAFE_INTEGER;
+  return rows.reduce((sum, row) => sum + row, 0) / rows.length;
+}
+
+function renderSkillGridLabels({ tiers, rows }) {
+  const layer = document.createElement("div");
+  layer.className = "skill-grid-labels";
+  layer.setAttribute("aria-hidden", "true");
+
+  for (let tier = 1; tier <= tiers; tier += 1) {
+    const x = tiers === 1 ? 50 : 8 + ((tier - 1) / (tiers - 1)) * 84;
+    const column = document.createElement("span");
+    column.className = "skill-grid-column-line";
+    column.style.setProperty("--grid-x", `${x}%`);
+    layer.appendChild(column);
+
+    const label = document.createElement("span");
+    label.className = "skill-grid-tier-label";
+    label.style.setProperty("--grid-x", `${x}%`);
+    label.textContent = `T${tier}`;
+    layer.appendChild(label);
+  }
+
+  for (let row = 0; row < rows; row += 1) {
+    const line = document.createElement("span");
+    line.className = "skill-grid-row-line";
+    line.style.setProperty("--grid-y", `${rows === 1 ? 50 : 12 + (row / (rows - 1)) * 76}%`);
+    layer.appendChild(line);
+  }
+
+  return layer;
 }
 
 function orthogonalLinkPath(from, to) {
@@ -261,10 +283,6 @@ function centerSkillMapOnNode(scroller, position = { x: 50, y: 50 }) {
   const y = (position.y / 100) * scroller.scrollHeight;
   scroller.scrollLeft = Math.max(0, x - scroller.clientWidth / 2);
   scroller.scrollTop = Math.max(0, y - scroller.clientHeight / 2);
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
 }
 
 function visualTier(node, nodes, seen = new Set()) {
