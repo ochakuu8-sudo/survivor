@@ -123,6 +123,7 @@ export function initSkillProgress() {
 
 export function enterUpgradeTree() {
   game.mode = "upgradeTree";
+  selectedSkillNodes.weapon = null;
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
@@ -144,6 +145,7 @@ export function renderSkillTree() {
   hud.skillTreeWave.textContent = `Wave ${game.wave} Clear`;
   hud.skillTreeFree.textContent = freeCreditText();
   const compactPreferred = isCompactSkillTreePreferred();
+  setMobileSkillTreeFullscreen(compactPreferred);
   const title = hud.skillTree.querySelector(".panel-head h1");
   if (title) title.textContent = compactPreferred ? "スキルツリー" : "武器を改造して次のWaveへ";
   const footerHint = hud.skillTree.querySelector(".skill-tree-footer p");
@@ -215,8 +217,8 @@ function isCompactSkillTreePreferred() {
 }
 
 function renderMobileSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapon") {
-  const hadSelection = !!selectedSkillNodes[scope];
-  const selectedNode = selectedNodeForScope(nodes, scope);
+  const selectedNode = mobileSelectedNodeForScope(nodes, scope);
+  const hadSelection = !!selectedNode;
   const layout = layoutMobileSkillNodes(nodes);
   const gridMeta = layout.gridMeta || { tiers: 1, mapWidth: 400, mapHeight: 920, hub: { x: 200, y: 64, unit: "px" } };
 
@@ -262,16 +264,25 @@ function renderMobileSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapon
   }
 
   viewport.appendChild(map);
-  wrapper.append(viewport, renderMobileSkillBottomSheet(selectedNode, scope));
+  wrapper.append(viewport);
+  if (selectedNode) wrapper.appendChild(renderMobileSkillBottomSheet(selectedNode, scope));
   requestAnimationFrame(() => setupMobileSkillViewport(viewport, map, layout.get(selectedNode?.id), hadSelection));
   return wrapper;
 }
 
 function renderMobileSkillBottomSheet(node, scope) {
-  const detail = node ? renderNodeDetail(node, scope, { detailedRequirements: true }) : renderCompactSkillHint();
-  detail.classList.add("mobile-skill-bottom-sheet");
-  if (node) detail.classList.add(`mobile-skill-bottom-sheet-${nodeStatus(node)}`);
+  const detail = renderNodeDetail(node, scope, { detailedRequirements: true });
+  detail.classList.add("mobile-skill-bottom-sheet", `mobile-skill-bottom-sheet-${nodeStatus(node)}`);
   return detail;
+}
+
+function mobileSelectedNodeForScope(nodes, scope) {
+  const selectedId = selectedSkillNodes[scope];
+  return nodes.find((node) => node.id === selectedId) || null;
+}
+
+function setMobileSkillTreeFullscreen(enabled) {
+  document.body?.classList.toggle("mobile-skill-tree-open", !!enabled);
 }
 
 function layoutMobileSkillNodes(nodes) {
@@ -1028,6 +1039,7 @@ export function grantRandomAffordableNode(scope = "weapon") {
 
 export function hideSkillTree() {
   hud.skillTree?.classList.add("hidden");
+  setMobileSkillTreeFullscreen(false);
 }
 
 export function continueFromSkillTree() {
