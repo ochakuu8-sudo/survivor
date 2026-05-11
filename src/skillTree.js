@@ -130,24 +130,118 @@ export function renderSkillTree() {
   hud.skillTreeGold.textContent = String(game.gold);
   hud.skillTreeWave.textContent = `Wave ${game.wave} Clear`;
   hud.skillTreeFree.textContent = freeCreditText();
-  hud.skillTreeWeaponNodes.replaceChildren(...treeForWeapon(weapon).map((node) => renderNodeButton(node, weapon)));
-  hud.skillTreeCommonNodes.replaceChildren(...COMMON_SKILL_TREE.map((node) => renderNodeButton(node, weapon)));
+  hud.skillTreeWeaponNodes.replaceChildren(renderNodeMap(treeForWeapon(weapon), weapon));
+  hud.skillTreeCommonNodes.replaceChildren(renderNodeMap(COMMON_SKILL_TREE, weapon));
 }
 
-function renderNodeButton(node, weapon) {
+function renderNodeMap(nodes, weapon) {
+  const map = document.createElement("div");
+  map.className = "skill-node-map";
+
+  const layout = layoutSkillNodes(nodes);
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("skill-node-links");
+  svg.setAttribute("viewBox", "0 0 100 100");
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.setAttribute("aria-hidden", "true");
+
+  for (const node of nodes) {
+    for (const requiredId of node.requires || []) {
+      const from = layout.get(requiredId);
+      const to = layout.get(node.id);
+      if (!from || !to) continue;
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", from.x);
+      line.setAttribute("y1", from.y);
+      line.setAttribute("x2", to.x);
+      line.setAttribute("y2", to.y);
+      line.classList.add("skill-link", linkStatus(requiredId, node.scope));
+      svg.appendChild(line);
+    }
+  }
+
+  map.appendChild(svg);
+  for (const node of nodes) {
+    const position = layout.get(node.id);
+    map.appendChild(renderNodeButton(node, weapon, position));
+  }
+  return map;
+}
+
+function layoutSkillNodes(nodes) {
+  const tiers = new Map();
+  for (const node of nodes) {
+    const tier = visualTier(node, nodes);
+    if (!tiers.has(tier)) tiers.set(tier, []);
+    tiers.get(tier).push(node);
+  }
+
+  const tierKeys = [...tiers.keys()].sort((a, b) => a - b);
+  const maxTier = Math.max(...tierKeys, 1);
+  const layout = new Map();
+  for (const tier of tierKeys) {
+    const tierNodes = tiers.get(tier);
+    const x = maxTier === 1 ? 50 : 9 + ((tier - 1) / (maxTier - 1)) * 82;
+    tierNodes.forEach((node, index) => {
+      const y = tierNodes.length === 1 ? 50 : 11 + (index / (tierNodes.length - 1)) * 78;
+      layout.set(node.id, { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)), tier });
+    });
+  }
+  return layout;
+}
+
+function visualTier(node, nodes, seen = new Set()) {
+  if (node.scope === "weapon") return node.tier;
+  if (!node.requires?.length) return 1;
+  if (seen.has(node.id)) return 1;
+  seen.add(node.id);
+  const requiredTiers = node.requires
+    .map((id) => nodes.find((candidate) => candidate.id === id))
+    .filter(Boolean)
+    .map((required) => visualTier(required, nodes, new Set(seen)));
+  return Math.max(1, ...requiredTiers) + 1;
+}
+
+function linkStatus(requiredId, scope) {
+  return isPurchased(requiredId, scope) ? "skill-link-owned" : "skill-link-locked";
+}
+
+function renderNodeButton(node, weapon, position = { x: 50, y: 50, tier: node.tier }) {
   const button = document.createElement("button");
   button.type = "button";
   const status = nodeStatus(node);
   button.className = `skill-node skill-node-${status} tier-${node.tier}`;
+  button.style.setProperty("--node-x", `${position.x}%`);
+  button.style.setProperty("--node-y", `${position.y}%`);
   button.disabled = status === "locked" || status === "owned" || (status === "costly" && freeCredits(node.scope) <= 0);
   button.innerHTML = `
-    <span class="skill-node-tier">T${node.tier}</span>
+    <span class="skill-node-icon" aria-hidden="true">${nodeIcon(node, weapon)}</span>
+    <span class="skill-node-tier">T${position.tier}</span>
     <strong>${node.title}</strong>
     <span>${node.text}</span>
     <small>${nodeCost(node)}G${node.requires?.length ? ` / 必要: ${node.requires.length}` : ""}</small>
   `;
   button.addEventListener("click", () => purchaseNode(node.id, node.scope));
   return button;
+}
+
+function nodeIcon(node, weapon) {
+  if (node.evolveTo || node.title.includes("進化")) return "✦";
+  if (node.scope === "common") {
+    if (node.id.includes("hp") || node.id.includes("regen")) return "♥";
+    if (node.id.includes("speed")) return "➤";
+    if (node.id.includes("pickup") || node.id.includes("gold")) return "◆";
+    if (node.id.includes("armor") || node.id.includes("barrier")) return "⬟";
+    return "✚";
+  }
+  const text = `${node.id} ${node.title} ${node.text}`;
+  if (text.includes("弾") || text.includes("投") || text.includes("射") || text.includes("貫通")) return "➹";
+  if (text.includes("炎") || weapon?.baseName === "火炎放射器") return "♨";
+  if (text.includes("範囲") || text.includes("爆発") || text.includes("破片")) return "✹";
+  if (text.includes("速") || text.includes("頻度") || text.includes("連射")) return "⚡";
+  if (text.includes("容量") || text.includes("燃料") || text.includes("袋")) return "▣";
+  if (text.includes("重") || text.includes("威力") || text.includes("ダメージ")) return "✦";
+  return "●";
 }
 
 function nodeStatus(node) {
