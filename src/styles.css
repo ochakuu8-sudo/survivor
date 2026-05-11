@@ -2247,7 +2247,7 @@ h1 {
 
 .skill-node-map-scroller {
   width: 100%;
-  max-height: clamp(420px, 58vh, 620px);
+  max-height: clamp(500px, 66vh, 760px);
   overflow: auto;
   overscroll-behavior: contain;
   border-radius: 16px;
@@ -2263,17 +2263,18 @@ h1 {
 
 .skill-node-map {
   position: relative;
-  width: 1560px;
-  height: 820px;
+  width: 1080px;
+  height: 700px;
   max-width: none;
   overflow: hidden;
   border-radius: 16px;
   background:
-    radial-gradient(circle at 18% 18%, rgba(255, 230, 142, 0.12), transparent 24%),
+    radial-gradient(circle at 50% 50%, rgba(255, 230, 142, 0.16), transparent 20%),
+    radial-gradient(circle at 50% 50%, rgba(126, 245, 185, 0.08), transparent 42%),
     linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
     linear-gradient(0deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
     rgba(9, 16, 12, 0.36);
-  background-size: auto, 180px 100%, 100% 140px, auto;
+  background-size: auto, auto, 180px 100%, 100% 140px, auto;
   box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.2);
 }
 
@@ -2303,7 +2304,7 @@ h1 {
 }
 
 .skill-node {
-  --node-size: clamp(46px, 6vw, 58px);
+  --node-size: clamp(42px, 5vw, 52px);
   position: absolute;
   left: var(--node-x);
   top: var(--node-y);
@@ -2491,16 +2492,16 @@ h1 {
   }
 
   .skill-node-map-scroller {
-    max-height: clamp(360px, 56vh, 540px);
+    max-height: clamp(420px, 62vh, 620px);
   }
 
   .skill-node-map {
-    width: 1380px;
-    height: 760px;
+    width: 960px;
+    height: 660px;
   }
 
   .skill-node {
-    --node-size: clamp(40px, 11vw, 50px);
+    --node-size: clamp(38px, 10vw, 46px);
   }
 
   .skill-node-detail dl {
