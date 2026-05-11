@@ -1,6 +1,6 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { MAX_WEAPONS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
+import { MAX_WEAPONS, WAVE_DURATION_SECONDS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
 import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponMetaLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
@@ -946,7 +946,7 @@ export function renderStarterPick() {
   const kicker = hud.starterPick.querySelector(".panel-kicker");
   const heading = hud.starterPick.querySelector("h1");
   if (kicker) kicker.textContent = "最初の武器";
-  if (heading) heading.textContent = "1つを選び、60秒アリーナWaveへ";
+  if (heading) heading.textContent = `1つを選び、${WAVE_DURATION_SECONDS}秒アリーナWaveへ`;
   game.starterChoices.forEach((template, index) => {
     const card = document.createElement("article");
     card.className = "starter-card offer-weapon";
