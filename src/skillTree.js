@@ -17,6 +17,8 @@ import {
 import { WEAPON_POOL } from "./shop.js";
 import { updateHud } from "./hud.js";
 
+const selectedSkillNodes = { weapon: null, common: null };
+
 const weaponNode = (id, tier, title, text, cost, requires = [], effect = {}) => ({
   scope: "weapon",
   id,
@@ -135,6 +137,9 @@ export function renderSkillTree() {
 }
 
 function renderNodeMap(nodes, weapon) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "skill-node-map-wrap";
+
   const map = document.createElement("div");
   map.className = "skill-node-map";
 
@@ -160,12 +165,15 @@ function renderNodeMap(nodes, weapon) {
     }
   }
 
+  const scope = nodes[0]?.scope || "weapon";
+  const selectedNode = selectedNodeForScope(nodes, scope);
   map.appendChild(svg);
   for (const node of nodes) {
     const position = layout.get(node.id);
-    map.appendChild(renderNodeButton(node, weapon, position));
+    map.appendChild(renderNodeButton(node, weapon, position, selectedNode?.id === node.id));
   }
-  return map;
+  wrapper.append(map, renderNodeDetail(selectedNode, scope));
+  return wrapper;
 }
 
 function layoutSkillNodes(nodes) {
@@ -206,23 +214,98 @@ function linkStatus(requiredId, scope) {
   return isPurchased(requiredId, scope) ? "skill-link-owned" : "skill-link-locked";
 }
 
-function renderNodeButton(node, weapon, position = { x: 50, y: 50, tier: node.tier }) {
+function selectedNodeForScope(nodes, scope) {
+  if (!nodes.length) return null;
+  const selectedId = selectedSkillNodes[scope];
+  const selected = nodes.find((node) => node.id === selectedId);
+  if (selected) return selected;
+  const recommended = nodes.find((node) => nodeStatus(node) === "available")
+    || nodes.find((node) => nodeStatus(node) === "costly")
+    || nodes.find((node) => !isPurchased(node.id, node.scope))
+    || nodes[0];
+  selectedSkillNodes[scope] = recommended.id;
+  return recommended;
+}
+
+function renderNodeButton(node, weapon, position = { x: 50, y: 50, tier: node.tier }, selected = false) {
   const button = document.createElement("button");
   button.type = "button";
   const status = nodeStatus(node);
-  button.className = `skill-node skill-node-${status} tier-${node.tier}`;
+  button.className = `skill-node skill-node-${status} tier-${node.tier}${selected ? " skill-node-selected" : ""}`;
   button.style.setProperty("--node-x", `${position.x}%`);
   button.style.setProperty("--node-y", `${position.y}%`);
-  button.disabled = status === "locked" || status === "owned" || (status === "costly" && freeCredits(node.scope) <= 0);
+  button.setAttribute("aria-pressed", selected ? "true" : "false");
+  button.setAttribute("aria-label", `${node.title}、${statusLabel(status)}、詳細を表示`);
   button.innerHTML = `
     <span class="skill-node-icon" aria-hidden="true">${nodeIcon(node, weapon)}</span>
-    <span class="skill-node-tier">T${position.tier}</span>
-    <strong>${node.title}</strong>
-    <span>${node.text}</span>
-    <small>${nodeCost(node)}G${node.requires?.length ? ` / 必要: ${node.requires.length}` : ""}</small>
+    <span class="skill-node-tier" aria-hidden="true">T${position.tier}</span>
   `;
-  button.addEventListener("click", () => purchaseNode(node.id, node.scope));
+  button.addEventListener("click", () => {
+    selectedSkillNodes[node.scope] = node.id;
+    renderSkillTree();
+  });
   return button;
+}
+
+function renderNodeDetail(node, scope) {
+  const panel = document.createElement("article");
+  panel.className = "skill-node-detail";
+  if (!node) {
+    panel.textContent = "ノードがありません。";
+    return panel;
+  }
+
+  const status = nodeStatus(node);
+  const cost = nodeCost(node);
+  const free = freeCredits(scope) > 0;
+  const canPurchase = status === "available" || (status === "costly" && free);
+  const usesFreeCredit = free && canPurchase;
+  const requireText = requirementText(node);
+  panel.innerHTML = `
+    <div class="skill-node-detail-head">
+      <span class="skill-node-detail-icon" aria-hidden="true">${nodeIcon(node)}</span>
+      <div>
+        <span class="panel-kicker">${statusLabel(status)}</span>
+        <h3>${node.title}</h3>
+      </div>
+    </div>
+    <p>${node.text}</p>
+    <dl>
+      <div><dt>コスト</dt><dd>${usesFreeCredit ? "無料解放を使用" : `${cost}G`}</dd></div>
+      <div><dt>条件</dt><dd>${requireText}</dd></div>
+    </dl>
+  `;
+
+  const unlock = document.createElement("button");
+  unlock.type = "button";
+  unlock.className = "primary skill-node-unlock";
+  unlock.textContent = unlockButtonLabel(status, free);
+  unlock.disabled = !canPurchase;
+  unlock.addEventListener("click", () => purchaseNode(node.id, scope));
+  panel.appendChild(unlock);
+  return panel;
+}
+
+function requirementText(node) {
+  if (!node.requires?.length) return "なし";
+  const cleared = node.requires.filter((id) => isPurchased(id, node.scope)).length;
+  return `${cleared}/${node.requires.length} ノード開放`;
+}
+
+function statusLabel(status) {
+  return {
+    available: "開放可能",
+    costly: "ゴールド不足",
+    locked: "ロック中",
+    owned: "取得済み",
+  }[status] || "確認";
+}
+
+function unlockButtonLabel(status, free) {
+  if (status === "owned") return "取得済み";
+  if (status === "locked") return "条件未達成";
+  if (status === "costly" && !free) return "ゴールド不足";
+  return free ? "無料で開放" : "開放";
 }
 
 function nodeIcon(node, weapon) {
