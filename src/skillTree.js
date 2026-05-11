@@ -4,13 +4,11 @@ import { hud } from "./dom.js";
 import { ACTIVE_ATTACHMENTS, findAttachmentDefinition, recomputeAllAttachments } from "./attachments.js";
 import {
   addWeaponBasePercent,
-  addWeaponPierce,
   boostWeaponImpactPercent,
   createWeapon,
   expandWeaponArea,
   extendWeaponReach,
   getActiveWeapon,
-  reduceWeaponBasePercent,
   weaponStatusLabel,
   weaponMetaLabel,
 } from "./weapons.js";
@@ -52,17 +50,6 @@ export const WEAPON_SKILL_TREES = {
     weaponNode("stone_multi", 3, "両手投げ", "同時投擲 +1、ばらつき少し増加。", 56, ["stone_rapid", "stone_pace"], { custom: (weapon) => { weapon.projectiles += 1; weapon.spread += 0.16; } }),
     weaponNode("stone_shards", 3, "破片弾", "着弾時に破片ダメージの小爆発。", 62, ["stone_knock"], { custom: (weapon) => { weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 42); weapon.explosionDamage = Math.max(weapon.explosionDamage || 0, weapon.damage * 0.55); } }),
     weaponNode("stone_evolve", 4, "進化：ゴムボール", "跳弾時に弾が増える伝説形態へ進化。", 110, ["stone_ricochet", "stone_multi", "stone_shards"], { evolveTo: "ゴムボール" }),
-  ],
-  豆鉄砲: [
-    weaponNode("pea_rapid", 1, "連射機構", "攻撃頻度 +15%。", 24, [], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.15, { min: 0.15 }) }),
-    weaponNode("pea_tune", 1, "連射チューニング", "攻撃頻度 +12%。", 24, [], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.12, { min: 0.15 }) }),
-    weaponNode("pea_stable", 1, "安定グリップ", "ばらつき -25%。", 22, [], { custom: (weapon) => reduceWeaponBasePercent(weapon, "jitter", 0.25, { min: 0 }) }),
-    weaponNode("pea_range", 1, "ロングバレル", "射程 +15%。", 26, [], { custom: (weapon) => extendWeaponReach(weapon, 1.15) }),
-    weaponNode("pea_pierce", 2, "鋼芯弾", "貫通 +1。", 42, ["pea_range"], { custom: (weapon) => addWeaponPierce(weapon, 1) }),
-    weaponNode("pea_burst", 2, "炸裂豆", "着弾時に小爆発。", 48, ["pea_rapid"], { custom: (weapon) => { weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 38); weapon.explosionDamage = Math.max(weapon.explosionDamage || 0, weapon.damage * 1.6); } }),
-    weaponNode("pea_accel", 3, "高速連射", "攻撃頻度 +18%。", 54, ["pea_tune"], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.18, { min: 0.15 }) }),
-    weaponNode("pea_crit", 3, "弱点狙い", "クリティカル率 +18%。", 56, ["pea_stable", "pea_pierce"], { custom: (weapon) => { weapon.critChance += 0.18; weapon.critMultiplier += 0.25; } }),
-    weaponNode("pea_evolve", 4, "進化：流星群", "連射弾が着弾時に爆発する。", 110, ["pea_burst", "pea_accel", "pea_crit"], { evolveTo: "流星群" }),
   ],
   火炎放射器: [
     weaponNode("flame_power", 1, "高温燃焼", "ダメージ +15%。", 24, [], { attachment: "powerCore" }),

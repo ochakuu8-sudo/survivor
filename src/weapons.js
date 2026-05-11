@@ -54,38 +54,6 @@ const WEAPON_AFFIXES = {
       },
     },
   ],
-  豆鉄砲: [
-    {
-      key: "rapid",
-      prefix: "連射式",
-      text: (power) => `攻撃頻度 +${percent(0.18, power)}`,
-      apply: (weapon, power) => { weapon.fireRate *= 1 + 0.18 * power; },
-    },
-    {
-      key: "long",
-      prefix: "長銃身",
-      text: (power) => `射程 +${percent(0.18, power)}`,
-      apply: (weapon, power) => {
-        weapon.range *= 1 + 0.18 * power;
-        weapon.life *= 1 + 0.1 * power;
-      },
-    },
-    {
-      key: "large",
-      prefix: "大粒",
-      text: (power) => `威力 +${percent(0.16, power)}`,
-      apply: (weapon, power) => {
-        weapon.damage *= 1 + 0.16 * power;
-        weapon.radius += 1 + power;
-      },
-    },
-    {
-      key: "stable",
-      prefix: "安定型",
-      text: (power) => `拡散 -${percent(0.22, power)}`,
-      apply: (weapon, power) => { weapon.spread *= Math.max(0.04, 1 - 0.22 * power); },
-    },
-  ],
   火炎放射器: [
     {
       key: "hot",
