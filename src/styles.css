@@ -2358,24 +2358,26 @@ h1 {
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 1.7;
+  stroke-width: 2.2;
   vector-effect: non-scaling-stroke;
 }
 
 .skill-link-locked {
-  stroke: rgba(148, 163, 184, 0.42);
+  stroke: rgba(203, 213, 225, 0.58);
   stroke-dasharray: 5 5;
 }
 
 .skill-link-owned {
-  stroke: rgba(96, 165, 250, 0.92);
-  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.38));
+  stroke: rgba(34, 211, 238, 0.98);
+  stroke-width: 2.6;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.56));
 }
 
 .skill-link-root {
-  stroke: rgba(251, 191, 36, 0.86);
+  stroke: rgba(250, 204, 21, 0.96);
+  stroke-width: 2.4;
   stroke-dasharray: 3 6;
-  filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.3));
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.5));
 }
 
 .skill-node,
@@ -2439,7 +2441,7 @@ h1 {
   padding: 0;
   transform: translate(-50%, -50%);
   border-radius: 999px;
-  border: 2px solid rgba(226, 232, 240, 0.22);
+  border: 2px solid rgba(241, 245, 249, 0.5);
   color: #f8fafc;
   touch-action: manipulation;
   transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease, border-color 0.16s ease;
@@ -2451,8 +2453,8 @@ h1 {
 }
 
 .skill-node-selected {
-  border-color: #bfdbfe;
-  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.22), 0 0 22px rgba(96, 165, 250, 0.3);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.36), 0 0 28px rgba(34, 211, 238, 0.48);
 }
 
 .skill-node-icon {
@@ -2485,30 +2487,32 @@ h1 {
 
 .skill-node-available {
   cursor: pointer;
-  background: #2563eb;
-  box-shadow: 0 0 0 1px rgba(191, 219, 254, 0.34), 0 8px 22px rgba(0, 0, 0, 0.24);
+  border-color: rgba(224, 242, 254, 0.98);
+  background: linear-gradient(135deg, #0284c7, #22d3ee);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.24), 0 8px 22px rgba(0, 0, 0, 0.28);
 }
 
 .skill-node-owned {
   cursor: pointer;
-  background: #16a34a;
-  opacity: 0.96;
-  box-shadow: 0 0 0 1px rgba(187, 247, 208, 0.34), 0 0 14px rgba(22, 163, 74, 0.22);
+  border-color: rgba(220, 252, 231, 0.92);
+  background: linear-gradient(135deg, #16a34a, #4ade80);
+  opacity: 1;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2), 0 0 18px rgba(34, 197, 94, 0.34);
 }
 
 .skill-node-locked,
 .skill-node-costly {
   cursor: pointer;
-  background: #334155;
-  opacity: 0.76;
+  background: #475569;
+  opacity: 0.86;
 }
 
 .skill-node-costly .skill-node-icon {
-  color: #fbbf24;
+  color: #fde047;
 }
 
 .skill-node-locked .skill-node-icon {
-  color: #94a3b8;
+  color: #cbd5e1;
 }
 
 .skill-node-detail {
@@ -2855,11 +2859,11 @@ h1 {
   overflow: hidden;
   border-radius: 20px;
   background:
-    radial-gradient(circle at 50% 4%, rgba(251, 191, 36, 0.18), transparent 14%),
-    linear-gradient(180deg, rgba(59, 130, 246, 0.13), transparent 26%),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-    rgba(15, 23, 42, 0.82);
+    radial-gradient(circle at 50% 4%, rgba(250, 204, 21, 0.26), transparent 15%),
+    linear-gradient(180deg, rgba(14, 165, 233, 0.18), transparent 28%),
+    linear-gradient(90deg, rgba(186, 230, 253, 0.18) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(186, 230, 253, 0.14) 1px, transparent 1px),
+    rgba(8, 13, 30, 0.9);
   background-size: auto, auto, var(--skill-grid-size, 140px) var(--skill-grid-size, 140px), var(--skill-grid-size, 140px) var(--skill-grid-size, 140px), auto;
 }
 
@@ -2918,14 +2922,14 @@ h1 {
   }
 
   .mobile-skill-tree .skill-node {
-    grid-template-columns: 38px minmax(0, 1fr);
-    width: var(--mobile-node-width, 124px);
+    grid-template-columns: 34px minmax(0, 1fr);
+    width: var(--mobile-node-width, 114px);
     min-width: 0;
-    height: var(--mobile-node-height, 62px);
+    height: var(--mobile-node-height, 56px);
     min-height: 0;
-    padding: 7px 8px 7px 7px;
-    gap: 6px;
-    border-radius: 18px;
+    padding: 6px 7px 6px 6px;
+    gap: 5px;
+    border-radius: 16px;
     text-align: left;
     touch-action: manipulation;
   }
@@ -2936,10 +2940,10 @@ h1 {
   }
 
   .mobile-skill-tree .skill-node-icon {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     border-radius: 13px;
-    font-size: 1.02rem;
+    font-size: 0.96rem;
   }
 
   .mobile-skill-tree .skill-node-copy {
@@ -2950,14 +2954,14 @@ h1 {
 
   .mobile-skill-tree .skill-node-name {
     color: #f8fafc;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 1000;
     line-height: 1.12;
   }
 
   .mobile-skill-tree .skill-node-meta {
     color: rgba(226, 232, 240, 0.82);
-    font-size: 0.59rem;
+    font-size: 0.56rem;
     font-weight: 900;
   }
 
@@ -2967,24 +2971,25 @@ h1 {
   }
 
   .mobile-skill-tree .skill-node-available {
-    border-color: rgba(191, 219, 254, 0.96);
-    background: linear-gradient(135deg, #2563eb, #0ea5e9);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 0 26px rgba(14, 165, 233, 0.34), 0 8px 18px rgba(2, 6, 23, 0.24);
+    border-color: rgba(224, 242, 254, 1);
+    background: linear-gradient(135deg, #0284c7, #22d3ee);
+    box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.22), 0 0 26px rgba(34, 211, 238, 0.42), 0 8px 18px rgba(2, 6, 23, 0.28);
   }
 
   .mobile-skill-tree .skill-node-owned {
-    border-color: rgba(187, 247, 208, 0.76);
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16), 0 0 20px rgba(74, 222, 128, 0.28);
+    border-color: rgba(220, 252, 231, 0.92);
+    background: linear-gradient(135deg, #15803d, #4ade80);
+    box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2), 0 0 22px rgba(74, 222, 128, 0.36);
   }
 
   .mobile-skill-tree .skill-node-locked,
   .mobile-skill-tree .skill-node-costly {
-    opacity: 0.56;
+    opacity: 0.78;
   }
 
   .mobile-skill-tree .skill-node-costly {
-    border-color: rgba(251, 191, 36, 0.5);
+    border-color: rgba(250, 204, 21, 0.86);
+    background: linear-gradient(135deg, #92400e, #d97706);
   }
 
   .mobile-skill-tree .skill-node-evolution {
@@ -3005,16 +3010,16 @@ h1 {
   }
 
   .mobile-skill-tree .skill-link-locked {
-    stroke: rgba(148, 163, 184, 0.3);
+    stroke: rgba(203, 213, 225, 0.48);
   }
 
   .mobile-skill-tree .skill-link-owned {
-    stroke: rgba(125, 211, 252, 0.95);
-    stroke-width: 3;
+    stroke: rgba(34, 211, 238, 1);
+    stroke-width: 3.2;
   }
 
   .mobile-skill-tree .skill-link-root {
-    stroke: rgba(251, 191, 36, 0.82);
+    stroke: rgba(250, 204, 21, 0.98);
   }
 
   .mobile-skill-bottom-sheet {
