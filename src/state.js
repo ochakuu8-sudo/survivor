@@ -16,10 +16,20 @@ export const enemyCollisionGrid = new Map();
 export const backgroundTileCache = new Map();
 
 export const game = {
-  mode: "fight",
+  mode: "weaponSelect",
   wave: 1,
   elapsed: 0,
   floorElapsed: 0,
+  waveTimeLeft: 60,
+  waveClearCount: 0,
+  eliteSpawned: false,
+  selectedWeapon: null,
+  treePurchases: { weapon: {}, common: {} },
+  freeNodeCredits: { weapon: 0, common: 0 },
+  evolutionMaterials: 0,
+  nextWaveBuff: null,
+  goldGainBonus: 0,
+  waveStartHealBonus: 0,
   exitHoldTimer: 0,
   totalKills: 0,
   waveKills: 0,

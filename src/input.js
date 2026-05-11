@@ -1,20 +1,13 @@
 import { game, keys, pointer } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, normalize } from "./utils/math.js";
-import { startNextWave } from "./game.js";
-import { isShopTabStorage, setShopTab } from "./shop.js";
-import { cycleActiveWeapon } from "./weapons.js";
+import { continueFromSkillTree } from "./skillTree.js";
 
 export function bindInput() {
   window.addEventListener("keydown", (event) => {
     keys.add(event.code);
-    if (event.code === "Space" && game.mode === "shop") {
-      if (isShopTabStorage()) startNextWave();
-      else setShopTab("storage");
-    }
-    if ((event.code === "KeyQ" || event.code === "Tab") && game.mode === "fight") {
-      event.preventDefault();
-      cycleActiveWeapon();
+    if ((event.code === "Space" || event.code === "Enter") && game.mode === "upgradeTree") {
+      continueFromSkillTree();
     }
   });
   window.addEventListener("keyup", (event) => keys.delete(event.code));
@@ -30,7 +23,7 @@ export function bindInput() {
 }
 
 function beginVirtualMove(event) {
-  if (game.mode !== "fight") return;
+  if (game.mode !== "arena") return;
   if (event.pointerType === "mouse") return;
   event.preventDefault();
 

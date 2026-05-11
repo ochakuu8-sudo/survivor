@@ -1051,8 +1051,9 @@ export function pickStarterWeapon(index) {
   const weapon = createWeapon({ name: template.name, ...template.weapon });
   game.player.gear.weapons = [weapon];
   game.player.gear.activeWeaponIndex = 0;
+  game.selectedWeapon = weapon.baseName || weapon.name;
   game.starterChoices = [];
-  game.mode = "fight";
+  game.mode = "arena";
   hud.starterPick.classList.add("hidden");
   updateHud();
 }
@@ -1062,14 +1063,14 @@ export function renderStarterPick() {
   const kicker = hud.starterPick.querySelector(".panel-kicker");
   const heading = hud.starterPick.querySelector("h1");
   if (kicker) kicker.textContent = "最初の武器";
-  if (heading) heading.textContent = "3つから1つ選んで平原へ";
+  if (heading) heading.textContent = "1つを選び、60秒アリーナWaveへ";
   game.starterChoices.forEach((template, index) => {
     const card = document.createElement("article");
     card.className = "starter-card offer-weapon";
 
     const tag = document.createElement("span");
     tag.className = "offer-type offer-type-weapon";
-    tag.textContent = "武器";
+    tag.textContent = "メイン武器";
 
     const title = document.createElement("h2");
     title.textContent = template.name;

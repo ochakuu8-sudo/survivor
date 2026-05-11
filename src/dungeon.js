@@ -87,6 +87,60 @@ export function generateDungeon(wave) {
   return dungeon;
 }
 
+export function generateArenaDungeon(wave) {
+  const seed = ((Date.now() & 0xfffffff) ^ Math.floor(Math.random() * 0x7fffffff) ^ (wave * 2246822519)) >>> 0;
+  const rng = makeRng(seed);
+  const width = clamp(30 + wave, 30, 42);
+  const height = clamp(22 + Math.floor(wave * 0.6), 22, 32);
+  const tiles = new Array(width * height).fill(DUNGEON_FLOOR);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (x === 0 || y === 0 || x === width - 1 || y === height - 1) tiles[y * width + x] = DUNGEON_WALL;
+    }
+  }
+  const startRoom = { x: Math.floor(width / 2) - 3, y: Math.floor(height / 2) - 3, w: 7, h: 7, cx: Math.floor(width / 2), cy: Math.floor(height / 2) };
+  const rooms = [
+    { x: 2, y: 2, w: width - 4, h: height - 4, cx: Math.floor(width / 2), cy: Math.floor(height / 2) },
+  ];
+  const dungeon = {
+    seed,
+    width,
+    height,
+    tiles,
+    rooms,
+    offsetX: -width * TILE_SIZE * 0.5,
+    offsetY: -height * TILE_SIZE * 0.5,
+    start: tileCenter(width, height, startRoom.cx, startRoom.cy),
+    exit: null,
+    obstacles: [],
+    chests: [],
+    arena: true,
+  };
+  dungeon.obstacles = generateArenaObstacles(dungeon, rng);
+  return dungeon;
+}
+
+function generateArenaObstacles(dungeon, rng) {
+  const obstacles = [];
+  const count = clamp(10 + Math.floor(dungeon.width * dungeon.height / 140), 10, 22);
+  for (let i = 0; i < count; i += 1) {
+    const type = OBSTACLE_TYPES[Math.floor(rng() * (OBSTACLE_TYPES.length - 1))];
+    const tx = randInt(rng, 3, dungeon.width - 4);
+    const ty = randInt(rng, 3, dungeon.height - 4);
+    const point = dungeonTileWorldCenter(dungeon, tx, ty);
+    if (distanceSq(point.x, point.y, dungeon.start.x, dungeon.start.y) < TILE_SIZE * TILE_SIZE * 6) continue;
+    obstacles.push({
+      x: point.x + (rng() - 0.5) * TILE_SIZE * 0.34,
+      y: point.y + (rng() - 0.5) * TILE_SIZE * 0.34,
+      radius: type.radius,
+      sprite: type.sprite,
+      scale: type.scale,
+      bob: rng() * Math.PI * 2,
+    });
+  }
+  return obstacles;
+}
+
 export function moveActorWithDungeonCollision(actor, dx, dy) {
   if (!game.dungeon) {
     actor.x += dx;
@@ -125,6 +179,22 @@ export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance
     }
   }
   return best;
+}
+
+export function createTreasureChestAt(x, y, label = "改造宝箱") {
+  if (!game.dungeon) return null;
+  const chest = {
+    x,
+    y,
+    radius: 26,
+    opened: false,
+    holdTimer: 0,
+    bob: Math.random() * Math.PI * 2,
+    rewardName: label,
+  };
+  if (!Array.isArray(game.dungeon.chests)) game.dungeon.chests = [];
+  game.dungeon.chests.push(chest);
+  return chest;
 }
 
 export function hasReachedDungeonExit(actor) {

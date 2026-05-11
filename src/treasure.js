@@ -1,9 +1,8 @@
-import { INTERACTION_HOLD_SECONDS, MAX_WEAPONS } from "./constants.js";
+import { INTERACTION_HOLD_SECONDS } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
-import { createWeapon, setActiveWeaponIndex, weaponAmmoLabel, weaponMetaLabel, weaponVariantText } from "./weapons.js";
-import { weaponIcon, WEAPON_POOL } from "./shop.js";
+import { grantFreeNode, grantRandomAffordableNode, renderSkillTree } from "./skillTree.js";
 import { updateHud } from "./hud.js";
 
 export function treasureRerollPrice() {
@@ -35,6 +34,7 @@ function openTreasureChest(chest) {
   chest.holdTimer = INTERACTION_HOLD_SECONDS;
   const reward = chooseTreasureReward();
   chest.rewardName = reward.name;
+  game.modeBeforeTreasure = game.mode;
   game.mode = "treasure";
   game.treasureReward = {
     chest,
@@ -65,7 +65,7 @@ export function rerollTreasureReward() {
   if (game.gold < price) return;
   if (price > 0) game.gold -= price;
   treasure.rerollsUsed += 1;
-  treasure.reward = chooseTreasureReward(treasure.reward.baseName);
+  treasure.reward = chooseTreasureReward(treasure.reward.type);
   treasure.chest.rewardName = treasure.reward.name;
   renderTreasureReward();
   updateHud();
@@ -74,24 +74,31 @@ export function rerollTreasureReward() {
 export function claimTreasureReward() {
   const treasure = game.treasureReward;
   if (!treasure) return;
-  const reward = treasure.reward;
-  if (reward.type === "weapon") {
-    const gear = game.player.gear;
-    if (!Array.isArray(gear.storageWeapons)) gear.storageWeapons = [];
-    const weapon = reward.weapon;
-    if (gear.weapons.length < MAX_WEAPONS) {
-      gear.weapons.push(weapon);
-      setActiveWeaponIndex(gear.weapons.length - 1);
-    } else {
-      gear.storageWeapons.push(weapon);
-    }
-  } else {
-    game.gold += reward.amount || treasureGoldAmount();
-  }
+  applyTreasureReward(treasure.reward);
   game.treasureReward = null;
-  game.mode = "fight";
+  game.mode = game.modeBeforeTreasure === "arena" ? "arena" : "upgradeTree";
+  game.modeBeforeTreasure = null;
   hud.treasureReward.classList.add("hidden");
+  renderSkillTree();
   updateHud();
+}
+
+function applyTreasureReward(reward) {
+  if (reward.type === "gold") {
+    game.gold += reward.amount;
+  } else if (reward.type === "freeWeapon") {
+    grantFreeNode("weapon", 1);
+  } else if (reward.type === "freeCommon") {
+    grantFreeNode("common", 1);
+  } else if (reward.type === "instantWeapon") {
+    grantRandomAffordableNode("weapon");
+  } else if (reward.type === "evolution") {
+    game.evolutionMaterials = (game.evolutionMaterials || 0) + 1;
+    grantFreeNode("weapon", 1);
+  } else if (reward.type === "nextBuff") {
+    game.nextWaveBuff = { damage: 0.18 };
+    grantFreeNode("weapon", 1);
+  }
 }
 
 function renderTreasureReward() {
@@ -109,59 +116,67 @@ function renderTreasureReward() {
   hud.treasureReward.classList.remove("hidden");
 }
 
-function chooseTreasureReward(excludeName = "") {
-  const allCandidates = WEAPON_POOL;
-  const candidates = allCandidates.filter((template) => template.name !== excludeName);
-  const pool = candidates.length > 0 ? candidates : allCandidates;
-  if (pool.length === 0) return createGoldReward();
-  const template = pickTreasureWeaponTemplate(pool);
-  const weapon = createWeapon({ name: template.name, ...template.weapon }, {
-    floor: game.wave,
-    rollVariant: template.weapon?.rollVariant === true,
-  });
-  return {
-    type: "weapon",
-    name: weapon.name,
-    baseName: template.name,
-    text: `${template.text || ""} ${weaponVariantText(weapon)}`,
-    meta: `${weaponMetaLabel(weapon)} / ${weaponAmmoLabel(weapon)}`,
-    icon: weaponIcon(weapon),
-    weapon,
-  };
-}
-
-function pickTreasureWeaponTemplate(pool) {
-  const floor = Math.max(1, game.wave || 1);
-  const rarityWeights = floor >= 6
-    ? { normal: 42, rare: 38, legend: 20 }
-    : floor >= 3
-      ? { normal: 56, rare: 34, legend: 10 }
-      : { normal: 70, rare: 27, legend: 3 };
-  const entries = pool.map((template) => ({
-    template,
-    weight: rarityWeights[template.rarity || template.weapon?.rarity || "normal"] || 1,
-  }));
-  const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+function chooseTreasureReward(excludeType = "") {
+  const rewards = [
+    {
+      type: "instantWeapon",
+      name: "即時改造ノード",
+      text: "現在武器の購入可能ノードを1つ無料で解放する。",
+      meta: "現在武器強化",
+      icon: "★",
+      weight: 28,
+    },
+    {
+      type: "freeWeapon",
+      name: "武器ノード無料権",
+      text: "Wave後の武器ツリーで好きな購入可能ノードを1つ無料解放できる。",
+      meta: "武器ツリー",
+      icon: "W",
+      weight: 26,
+    },
+    {
+      type: "freeCommon",
+      name: "共通強化無料権",
+      text: "共通ツリーの購入可能ノードを1つ無料で取得できる。",
+      meta: "共通ツリー",
+      icon: "+",
+      weight: 16,
+    },
+    {
+      type: "evolution",
+      name: "進化素材",
+      text: "進化ノードに近づく素材。おまけで武器ノード無料権も得る。",
+      meta: "進化支援",
+      icon: "E",
+      weight: game.wave >= 3 ? 16 : 6,
+    },
+    {
+      type: "gold",
+      name: `${treasureGoldAmount()}G`,
+      text: "大量のゴールド。Wave後のスキルツリー購入に使える。",
+      meta: "通貨",
+      icon: "G",
+      amount: treasureGoldAmount(),
+      weight: 18,
+    },
+    {
+      type: "nextBuff",
+      name: "次Wave限定バフ",
+      text: "次の改造候補を広げるため、武器ノード無料権を得る。",
+      meta: "短期強化",
+      icon: "B",
+      weight: 10,
+    },
+  ].filter((reward) => reward.type !== excludeType);
+  const total = rewards.reduce((sum, reward) => sum + reward.weight, 0);
   let roll = Math.random() * total;
-  for (const entry of entries) {
-    roll -= entry.weight;
-    if (roll <= 0) return entry.template;
+  for (const reward of rewards) {
+    roll -= reward.weight;
+    if (roll <= 0) return reward;
   }
-  return entries[0]?.template || pool[0];
-}
-
-function createGoldReward() {
-  const amount = treasureGoldAmount();
-  return {
-    type: "gold",
-    name: `${amount}G`,
-    text: "武器枠が埋まっているため、宝箱の中身をゴールドとして回収する。",
-    meta: "ゴールド",
-    icon: "G",
-    amount,
-  };
+  return rewards[0];
 }
 
 function treasureGoldAmount() {
-  return 18 + game.wave * 5;
+  return 45 + game.wave * 12;
 }

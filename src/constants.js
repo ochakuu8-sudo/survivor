@@ -5,6 +5,10 @@ export const BACKGROUND_CACHE_LIMIT = 4096;
 export const MOBILE_CAMERA_ZOOM = 0.5;
 export const TOUCH_TABLET_CAMERA_ZOOM = 0.82;
 export const INTERACTION_HOLD_SECONDS = 3;
+export const WAVE_DURATION_SECONDS = 60;
+export const BOSS_WAVE_INTERVAL = 3;
+export const WAVE_NODE_PRICE_BASE = 24;
+export const WAVE_NODE_PRICE_SCALE = 0.08;
 
 export const OFFER_TYPE_LABELS = {
   weapon: "武器",
@@ -12,7 +16,7 @@ export const OFFER_TYPE_LABELS = {
   relic: "レリック",
 };
 
-export const MAX_WEAPONS = 2;
+export const MAX_WEAPONS = 1;
 export const DEFAULT_WEAPON_LIMITS = { maxLevel: 5, maxAttachments: 4 };
 export const WEAPON_RARITY_LIMITS = {
   normal: { maxLevel: 5, maxAttachments: 4 },

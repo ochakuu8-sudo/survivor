@@ -201,7 +201,7 @@ function drawProp(name, tx, ty, view, camX, camY, zoom, roll, yRoll, offsetX = 0
 }
 
 function drawWorld(view, camX, camY, zoom) {
-  drawDungeonExit(view, camX, camY, zoom);
+  if (!game.dungeon?.arena) drawDungeonExit(view, camX, camY, zoom);
 
   for (const particle of game.particles) {
     const alpha = clamp(particle.life / particle.maxLife, 0, 1);
