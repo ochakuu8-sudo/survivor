@@ -170,15 +170,16 @@ function renderNodeMap(nodes, weapon) {
   map.className = "skill-node-map";
 
   const layout = layoutSkillNodes(nodes);
-  const gridMeta = layout.gridMeta || { tiers: 1, rows: 1, lanes: 1, ringStep: 14, mapSize: 1080 };
+  const gridMeta = layout.gridMeta || { tiers: 1, rows: 1, lanes: 1, mapWidth: 1080, mapHeight: 1080, cellSize: 126 };
   map.style.setProperty("--skill-tier-count", gridMeta.tiers);
   map.style.setProperty("--skill-row-count", gridMeta.lanes);
-  map.style.width = `${gridMeta.mapSize}px`;
-  map.style.height = `${gridMeta.mapSize}px`;
+  map.style.setProperty("--skill-grid-size", `${gridMeta.cellSize || 126}px`);
+  map.style.width = `${gridMeta.mapWidth}px`;
+  map.style.height = `${gridMeta.mapHeight}px`;
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.classList.add("skill-node-links");
-  svg.setAttribute("viewBox", "0 0 100 100");
-  svg.setAttribute("preserveAspectRatio", "none");
+  svg.setAttribute("viewBox", `0 0 ${gridMeta.mapWidth} ${gridMeta.mapHeight}`);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
   svg.setAttribute("aria-hidden", "true");
 
   const hubPosition = layout.gridMeta?.hub || { x: 50, y: 50 };
@@ -233,6 +234,7 @@ function renderMobileSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapon
   map.className = "skill-node-map mobile-skill-node-map";
   map.dataset.baseWidth = String(gridMeta.mapWidth);
   map.dataset.baseHeight = String(gridMeta.mapHeight);
+  map.style.setProperty("--skill-grid-size", `${gridMeta.cellSize || 140}px`);
   map.style.width = `${gridMeta.mapWidth}px`;
   map.style.height = `${gridMeta.mapHeight}px`;
 
@@ -249,13 +251,13 @@ function renderMobileSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapon
       const to = layout.get(node.id);
       if (!from || !to) continue;
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", mobileLinkPath(from, to));
+      path.setAttribute("d", orthogonalLinkPath(from, to));
       path.classList.add("skill-link", requiredId ? linkStatus(requiredId, node.scope) : "skill-link-root", ...selectedLinkClasses(requiredId, node, selectedNode, nodes));
       svg.appendChild(path);
     }
   }
 
-  map.appendChild(renderMobileSkillGridLabels(gridMeta));
+  map.appendChild(renderSkillGridLabels(gridMeta));
   map.appendChild(svg);
   map.appendChild(renderSkillHub(weapon, gridMeta.hub));
   for (const node of nodes) {
@@ -286,110 +288,17 @@ function setMobileSkillTreeFullscreen(enabled) {
 }
 
 function layoutMobileSkillNodes(nodes) {
-  const tierById = new Map(nodes.map((node) => [node.id, visualTier(node, nodes)]));
-  const maxTier = Math.max(...tierById.values(), 1);
-  const tierGroups = new Map();
-  const layout = new Map();
-
-  for (const node of nodes) {
-    const tier = tierById.get(node.id) || 1;
-    if (!tierGroups.has(tier)) tierGroups.set(tier, []);
-    tierGroups.get(tier).push(node);
-  }
-
   const viewportWidth = typeof window === "undefined" ? 400 : window.innerWidth || 400;
-  const mapWidth = Math.round(clamp(viewportWidth - 24, 390, 430));
   const nodeWidth = viewportWidth <= 370 ? 116 : 124;
   const nodeHeight = viewportWidth <= 370 ? 58 : 62;
-  const hubSize = 72;
-  const columnPadding = viewportWidth <= 370 ? 76 : 84;
-  const columns = [columnPadding, mapWidth - columnPadding];
-  const rowGap = 24;
-  const tierGap = 48;
-  const tierLabelOffset = 26;
-  const hub = { x: Math.round(mapWidth / 2), y: 62, tier: 0, row: 0, unit: "px", nodeWidth: hubSize, nodeHeight: hubSize };
-  const tierLines = [];
-  let cursorY = 154;
-
-  for (let tier = 1; tier <= maxTier; tier += 1) {
-    const group = [...(tierGroups.get(tier) || [])];
-    group.sort((a, b) => averageParentX(a, layout, nodes) - averageParentX(b, layout, nodes) || nodes.indexOf(a) - nodes.indexOf(b));
-    const rows = Math.max(1, Math.ceil(group.length / 2));
-    const tierStartY = cursorY;
-    tierLines.push({ tier, y: tierStartY - tierLabelOffset, isEvolution: group.some(isEvolutionNode) });
-
-    group.forEach((node, index) => {
-      const isEvolution = isEvolutionNode(node);
-      const row = Math.floor(index / 2);
-      const isSingleInRow = index === group.length - 1 && group.length % 2 === 1;
-      const column = isSingleInRow || isEvolution ? 0.5 : index % 2;
-      const x = column === 0.5 ? mapWidth / 2 : columns[column];
-      const y = tierStartY + row * (nodeHeight + rowGap);
-      const width = isEvolution ? Math.min(152, mapWidth - 72) : nodeWidth;
-      const height = isEvolution ? 68 : nodeHeight;
-      layout.set(node.id, {
-        x: Math.round(x),
-        y: Math.round(y),
-        tier,
-        row,
-        unit: "px",
-        nodeWidth: width,
-        nodeHeight: height,
-      });
-    });
-
-    cursorY += rows * nodeHeight + (rows - 1) * rowGap + tierGap;
-  }
-
-  const mapHeight = Math.max(860, Math.round(cursorY + 70));
-  layout.gridMeta = { tiers: maxTier, rows: Math.max(1, ...Array.from(tierGroups.values(), (group) => Math.ceil(group.length / 2))), mapWidth, mapHeight, hub, tierLines };
-  return layout;
-}
-
-function averageParentX(node, layout, nodes) {
-  const xs = (node.requires || [])
-    .map((id) => layout.get(id)?.x)
-    .filter((x) => Number.isFinite(x));
-  if (xs.length) return xs.reduce((sum, x) => sum + x, 0) / xs.length;
-  const roots = nodes.filter((candidate) => !(candidate.requires || []).length);
-  const rootIndex = roots.indexOf(node);
-  if (rootIndex >= 0) return roots.length === 1 ? 50 : 14 + (rootIndex / (roots.length - 1)) * 72;
-  return Number.NaN;
-}
-
-function renderMobileSkillGridLabels({ tiers, tierLines = [], mapWidth = 400 }) {
-  const layer = document.createElement("div");
-  layer.className = "skill-grid-labels mobile-skill-grid-labels";
-  layer.setAttribute("aria-hidden", "true");
-
-  const lines = tierLines.length
-    ? tierLines
-    : Array.from({ length: tiers }, (_, index) => ({ tier: index + 1, y: 128 + index * 110, isEvolution: index + 1 === tiers }));
-
-  for (const { tier, y, isEvolution } of lines) {
-    const line = document.createElement("span");
-    line.className = "mobile-skill-tier-line";
-    line.style.setProperty("--grid-y", `${y}px`);
-    layer.appendChild(line);
-
-    const label = document.createElement("span");
-    label.className = "skill-grid-tier-label mobile-skill-tier-label";
-    label.style.setProperty("--grid-x", `${Math.max(30, mapWidth * 0.12)}px`);
-    label.style.setProperty("--grid-y", `${y}px`);
-    label.textContent = isEvolution ? "進化" : `T${tier}`;
-    layer.appendChild(label);
-  }
-
-  return layer;
-}
-
-function mobileLinkPath(from, to) {
-  const fromHeight = from.nodeHeight || 62;
-  const toHeight = to.nodeHeight || 62;
-  const startY = from.y + fromHeight / 2;
-  const endY = to.y - toHeight / 2;
-  const midY = startY + (endY - startY) * 0.52;
-  return `M ${from.x} ${startY} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${endY}`;
+  return buildGridSkillLayout(nodes, {
+    cellSize: viewportWidth <= 370 ? 128 : 140,
+    padding: viewportWidth <= 370 ? 104 : 116,
+    minMapSize: Math.max(760, viewportWidth + 260),
+    nodeWidth,
+    nodeHeight,
+    hubSize: 72,
+  });
 }
 
 function selectedLinkClasses(requiredId, node, selectedNode, nodes) {
@@ -642,12 +551,29 @@ function isEvolutionNode(node) {
 }
 
 function layoutSkillNodes(nodes) {
+  return buildGridSkillLayout(nodes, {
+    cellSize: 126,
+    padding: 190,
+    minMapSize: 1080,
+    hubSize: 70,
+  });
+}
+
+const GRID_DIRECTIONS = [
+  { x: 0, y: -1, name: "north" },
+  { x: 1, y: 0, name: "east" },
+  { x: 0, y: 1, name: "south" },
+  { x: -1, y: 0, name: "west" },
+];
+
+function buildGridSkillLayout(nodes, options = {}) {
   const tierById = new Map(nodes.map((node) => [node.id, visualTier(node, nodes)]));
   const maxTier = Math.max(...tierById.values(), 1);
   const layout = new Map();
-  const tierGroups = new Map();
+  const gridById = new Map();
   const branchById = new Map();
-  const branchNames = ["north", "east", "south", "west"];
+  const occupied = new Set([gridKey(0, 0)]);
+  const tierGroups = new Map();
 
   for (const node of nodes) {
     const tier = tierById.get(node.id) || 1;
@@ -656,57 +582,112 @@ function layoutSkillNodes(nodes) {
   }
 
   const roots = nodes.filter((node) => !(node.requires || []).length);
-  roots.forEach((node, index) => branchById.set(node.id, index % branchNames.length));
-
-  const maxGroupSize = Math.max(1, ...Array.from(tierGroups.values(), (group) => group.length));
-  const maxBranchLaneCount = Math.max(1, Math.ceil(maxGroupSize / branchNames.length));
-  const mapSize = Math.max(1080, 760 + maxTier * 88 + maxBranchLaneCount * 44);
-  const ringStep = Math.min(14, 42 / Math.max(maxTier, 1));
-  const laneStep = 7.2;
-  const hub = { x: 50, y: 50, tier: 0, row: 0, branch: "center" };
+  roots.forEach((node, index) => branchById.set(node.id, index % GRID_DIRECTIONS.length));
 
   for (let tier = 1; tier <= maxTier; tier += 1) {
     const group = [...(tierGroups.get(tier) || [])];
     group.sort((a, b) => {
-      const parentDelta = averageParentRow(a, layout) - averageParentRow(b, layout);
-      return parentDelta || nodes.indexOf(a) - nodes.indexOf(b);
+      const branchDelta = inheritedBranchIndex(a, branchById, nodes) - inheritedBranchIndex(b, branchById, nodes);
+      return branchDelta || nodes.indexOf(a) - nodes.indexOf(b);
     });
 
     for (const node of group) {
-      if (!branchById.has(node.id)) {
-        branchById.set(node.id, inheritedBranchIndex(node, branchById, nodes));
-      }
+      if (!branchById.has(node.id)) branchById.set(node.id, inheritedBranchIndex(node, branchById, nodes));
+      const branchIndex = branchById.get(node.id) || 0;
+      const parent = primaryGridParent(node, gridById) || { x: 0, y: 0 };
+      const grid = claimAdjacentGridCell(parent, branchIndex, occupied);
+      gridById.set(node.id, grid);
+      occupied.add(gridKey(grid.x, grid.y));
     }
+  }
 
-    const branchGroups = new Map(branchNames.map((_, index) => [index, []]));
-    for (const node of group) branchGroups.get(branchById.get(node.id) || 0).push(node);
+  const cells = [{ x: 0, y: 0 }, ...gridById.values()];
+  const minX = Math.min(...cells.map((cell) => cell.x));
+  const maxX = Math.max(...cells.map((cell) => cell.x));
+  const minY = Math.min(...cells.map((cell) => cell.y));
+  const maxY = Math.max(...cells.map((cell) => cell.y));
+  const cellSize = options.cellSize || 126;
+  const padding = options.padding || 180;
+  const contentWidth = (maxX - minX) * cellSize + padding * 2;
+  const contentHeight = (maxY - minY) * cellSize + padding * 2;
+  const mapWidth = Math.max(options.minMapSize || 1080, contentWidth);
+  const mapHeight = Math.max(options.minMapSize || 1080, contentHeight);
+  const offsetX = (mapWidth - contentWidth) / 2;
+  const offsetY = (mapHeight - contentHeight) / 2;
+  const toPixel = (grid) => ({
+    x: Math.round(offsetX + padding + (grid.x - minX) * cellSize),
+    y: Math.round(offsetY + padding + (grid.y - minY) * cellSize),
+  });
+  const hubPoint = toPixel({ x: 0, y: 0 });
+  const hub = { ...hubPoint, gridX: 0, gridY: 0, tier: 0, row: 0, unit: "px", nodeWidth: options.hubSize, nodeHeight: options.hubSize };
 
-    for (const [branchIndex, branchNodes] of branchGroups.entries()) {
-      branchNodes.forEach((node, index) => {
-        const lane = index - (branchNodes.length - 1) / 2;
-        const distance = tier * ringStep;
-        const offset = lane * laneStep;
-        const position = positionForBranch(branchIndex, distance, offset);
-        layout.set(node.id, {
-          x: Number(position.x.toFixed(2)),
-          y: Number(position.y.toFixed(2)),
-          tier,
-          row: Number((lane + 1).toFixed(2)),
-          branch: branchNames[branchIndex],
-        });
-      });
-    }
+  for (const node of nodes) {
+    const grid = gridById.get(node.id) || { x: 0, y: 0 };
+    const pixel = toPixel(grid);
+    const branchIndex = branchById.get(node.id) || 0;
+    layout.set(node.id, {
+      ...pixel,
+      gridX: grid.x,
+      gridY: grid.y,
+      tier: tierById.get(node.id) || 1,
+      row: Math.abs(grid.x) + Math.abs(grid.y),
+      branch: GRID_DIRECTIONS[branchIndex]?.name || "north",
+      unit: "px",
+      nodeWidth: options.nodeWidth,
+      nodeHeight: options.nodeHeight,
+    });
   }
 
   layout.gridMeta = {
     tiers: maxTier,
-    rows: maxGroupSize,
-    lanes: maxBranchLaneCount,
-    ringStep,
-    mapSize,
+    rows: Math.max(1, maxY - minY + 1),
+    lanes: Math.max(1, maxX - minX + 1),
+    unit: "px",
+    cellSize,
+    mapWidth,
+    mapHeight,
+    minX,
+    maxX,
+    minY,
+    maxY,
     hub,
   };
   return layout;
+}
+
+function primaryGridParent(node, gridById) {
+  for (const id of node.requires || []) {
+    const parent = gridById.get(id);
+    if (parent) return parent;
+  }
+  return null;
+}
+
+function claimAdjacentGridCell(parent, branchIndex, occupied) {
+  const preferred = GRID_DIRECTIONS[branchIndex % GRID_DIRECTIONS.length];
+  const orderedDirections = [
+    preferred,
+    GRID_DIRECTIONS[(branchIndex + 1) % GRID_DIRECTIONS.length],
+    GRID_DIRECTIONS[(branchIndex + GRID_DIRECTIONS.length - 1) % GRID_DIRECTIONS.length],
+    GRID_DIRECTIONS[(branchIndex + 2) % GRID_DIRECTIONS.length],
+  ];
+  for (const direction of orderedDirections) {
+    const candidate = { x: parent.x + direction.x, y: parent.y + direction.y };
+    if (!occupied.has(gridKey(candidate.x, candidate.y))) return candidate;
+  }
+
+  for (let distance = 2; distance <= 8; distance += 1) {
+    const outward = { x: parent.x + preferred.x * distance, y: parent.y + preferred.y * distance };
+    for (const direction of orderedDirections) {
+      const candidate = { x: outward.x + direction.x, y: outward.y + direction.y };
+      if (!occupied.has(gridKey(candidate.x, candidate.y))) return candidate;
+    }
+  }
+  return { x: parent.x + preferred.x, y: parent.y + preferred.y };
+}
+
+function gridKey(x, y) {
+  return `${x},${y}`;
 }
 
 function inheritedBranchIndex(node, branchById, nodes) {
@@ -717,51 +698,45 @@ function inheritedBranchIndex(node, branchById, nodes) {
   return nodes.indexOf(node) % 4;
 }
 
-function positionForBranch(branchIndex, distance, offset) {
-  switch (branchIndex % 4) {
-    case 0:
-      return { x: 50 + offset, y: 50 - distance };
-    case 1:
-      return { x: 50 + distance, y: 50 + offset };
-    case 2:
-      return { x: 50 + offset, y: 50 + distance };
-    default:
-      return { x: 50 - distance, y: 50 + offset };
-  }
-}
-
-function averageParentRow(node, layout) {
-  const rows = (node.requires || [])
-    .map((id) => layout.get(id)?.y)
-    .filter((row) => Number.isFinite(row));
-  if (!rows.length) return Number.MAX_SAFE_INTEGER;
-  return rows.reduce((sum, row) => sum + row, 0) / rows.length;
-}
-
-function renderSkillGridLabels({ tiers, ringStep }) {
+function renderSkillGridLabels({ tiers, ringStep, unit, cellSize = 126, mapWidth = 1080, mapHeight = 1080, hub = { x: 540, y: 540 } }) {
   const layer = document.createElement("div");
   layer.className = "skill-grid-labels";
   layer.setAttribute("aria-hidden", "true");
 
   const horizontal = document.createElement("span");
   horizontal.className = "skill-grid-axis skill-grid-axis-horizontal";
+  horizontal.style.setProperty("--axis-y", unit === "px" ? `${hub.y}px` : "50%");
   layer.appendChild(horizontal);
 
   const vertical = document.createElement("span");
   vertical.className = "skill-grid-axis skill-grid-axis-vertical";
+  vertical.style.setProperty("--axis-x", unit === "px" ? `${hub.x}px` : "50%");
   layer.appendChild(vertical);
 
   for (let tier = 1; tier <= tiers; tier += 1) {
-    const radius = tier * ringStep;
     const ring = document.createElement("span");
-    ring.className = "skill-grid-ring";
-    ring.style.setProperty("--ring-radius", `${radius}%`);
+    ring.className = `skill-grid-ring${unit === "px" ? " skill-grid-square-ring" : ""}`;
+    if (unit === "px") {
+      const radius = tier * cellSize;
+      ring.style.setProperty("--ring-left", `${hub.x - radius}px`);
+      ring.style.setProperty("--ring-top", `${hub.y - radius}px`);
+      ring.style.setProperty("--ring-size", `${radius * 2}px`);
+    } else {
+      const radius = tier * ringStep;
+      ring.style.setProperty("--ring-radius", `${radius}%`);
+    }
     layer.appendChild(ring);
 
     const label = document.createElement("span");
     label.className = "skill-grid-tier-label";
-    label.style.setProperty("--grid-x", `${50 + radius}%`);
-    label.style.setProperty("--grid-y", "50%");
+    if (unit === "px") {
+      label.style.setProperty("--grid-x", `${Math.min(mapWidth - 44, hub.x + tier * cellSize)}px`);
+      label.style.setProperty("--grid-y", `${hub.y}px`);
+    } else {
+      const radius = tier * ringStep;
+      label.style.setProperty("--grid-x", `${50 + radius}%`);
+      label.style.setProperty("--grid-y", "50%");
+    }
     label.textContent = `T${tier}`;
     layer.appendChild(label);
   }
@@ -981,9 +956,19 @@ export function purchaseNode(id, scope = "weapon") {
   if (node.evolveTo) evolveWeapon(node.evolveTo);
   recomputeAllAttachments();
   reapplyPurchasedCustomNodes();
+  selectedSkillNodes[scope] = nextAvailableNodeAfterPurchase(node, scope)?.id || node.id;
   renderSkillTree();
   updateHud();
   return true;
+}
+
+function nextAvailableNodeAfterPurchase(purchasedNode, scope) {
+  const nodes = treeForWeapon();
+  return nodes.find((node) =>
+    !isPurchased(node.id, scope)
+    && nodeStatus(node) === "available"
+    && (node.requires || []).includes(purchasedNode.id)
+  ) || nodes.find((node) => !isPurchased(node.id, scope) && nodeStatus(node) === "available") || null;
 }
 
 function reapplyPurchasedCustomNodes() {
