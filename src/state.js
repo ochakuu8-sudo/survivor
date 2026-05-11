@@ -37,6 +37,7 @@ export const game = {
   waveKills: 0,
   gold: 0,
   spawnClock: 0,
+  spawnBatchSize: 0,
   shake: 0,
   damageFlash: 0,
   camera: { x: 0, y: 0 },

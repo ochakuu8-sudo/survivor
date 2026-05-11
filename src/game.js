@@ -33,6 +33,7 @@ export function resetRun() {
   game.goldGainBonus = 0;
   game.waveStartHealBonus = 0;
   game.spawnClock = 0;
+  game.spawnBatchSize = 0;
   game.shake = 0;
   game.damageFlash = 0;
   game.camera.x = 0;
@@ -102,6 +103,7 @@ export function startArenaWithSelectedWeapon() {
   game.waveTimeLeft = WAVE_DURATION_SECONDS;
   game.waveKills = 0;
   game.spawnClock = 0;
+  game.spawnBatchSize = 0;
   game.eliteSpawned = false;
   game.enemies = [];
   game.bullets = [];
