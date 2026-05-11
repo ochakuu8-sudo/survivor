@@ -1,4 +1,4 @@
-import { TAU } from "./constants.js";
+import { TAU, WAVE_DURATION_SECONDS } from "./constants.js";
 import { game, nextEnemyId } from "./state.js";
 import { distanceToSegmentSq, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
@@ -9,7 +9,7 @@ import { moveActorWithDungeonCollision, pickDungeonSpawnPoint } from "./dungeon.
 const BASE_ENEMY_CAP = 65;
 const ENEMY_CAP_PER_WAVE = 10;
 const HARD_ENEMY_CAP = 220;
-const MAX_SPAWNS_PER_FRAME = 3;
+const SPAWN_BATCH_INTERVAL_SECONDS = 10;
 const FLOOR_SPEED_START = 0.48;
 const FLOOR_SPEED_STEP_SECONDS = 15;
 const FLOOR_SPEED_STEP_GAIN = 0.25;
@@ -40,32 +40,34 @@ function enemyCapForWave(elapsed = game.floorElapsed || 0) {
   return Math.min(HARD_ENEMY_CAP, Math.max(8 + game.wave * 2, Math.ceil(baseCap * pressure)));
 }
 
-function spawnIntervalForWave(elapsed = game.floorElapsed || 0) {
-  const baseInterval = Math.max(0.16, 0.72 - (game.wave - 1) * 0.045);
-  return Math.max(0.11, baseInterval / enemyFloorSpawnPressure(elapsed));
+function spawnBatchSizeForWave() {
+  const batchesPerWave = Math.max(1, Math.ceil(WAVE_DURATION_SECONDS / SPAWN_BATCH_INTERVAL_SECONDS));
+  const openingCap = enemyCapForWave(0);
+  return Math.max(4 + game.wave, Math.ceil(openingCap / batchesPerWave));
 }
 
 export function spawnEnemies(dt) {
   const elapsed = game.floorElapsed || 0;
   const cap = enemyCapForWave(elapsed);
-  const interval = spawnIntervalForWave(elapsed);
 
   if (game.enemies.length >= cap) {
-    game.spawnClock = Math.min(game.spawnClock, interval * 0.5);
+    game.spawnClock = Math.min(game.spawnClock, SPAWN_BATCH_INTERVAL_SECONDS * 0.5);
     return;
   }
 
   game.spawnClock -= dt;
-  let spawned = 0;
-  while (game.spawnClock <= 0 && game.enemies.length < cap && spawned < MAX_SPAWNS_PER_FRAME) {
-    spawnEnemy();
-    game.spawnClock += interval * (0.75 + Math.random() * 0.65);
-    spawned += 1;
+  if (game.spawnClock > 0) return;
+
+  if (!game.spawnBatchSize) game.spawnBatchSize = spawnBatchSizeForWave();
+  const batchSize = game.spawnBatchSize;
+  const availableSlots = cap - game.enemies.length;
+  const spawnCount = Math.min(batchSize, availableSlots);
+  for (let i = 0; i < spawnCount; i += 1) {
+    spawnEnemy(undefined, { anywhere: true });
   }
 
-  if (spawned >= MAX_SPAWNS_PER_FRAME && game.spawnClock <= 0) {
-    game.spawnClock = interval * 0.5;
-  }
+  game.spawnClock += SPAWN_BATCH_INTERVAL_SECONDS;
+  if (game.spawnClock <= 0) game.spawnClock = SPAWN_BATCH_INTERVAL_SECONDS;
 }
 
 export function spawnEnemy(forceType, options = {}) {
@@ -79,8 +81,8 @@ export function spawnEnemy(forceType, options = {}) {
   const dungeonSpawn = pickDungeonSpawnPoint(
     game.player.x,
     game.player.y,
-    Math.min(visibleW, visibleH) * 0.48,
-    Math.max(visibleW, visibleH) * 1.15 + margin,
+    options.anywhere ? 0 : Math.min(visibleW, visibleH) * 0.48,
+    options.anywhere ? Infinity : Math.max(visibleW, visibleH) * 1.15 + margin,
   );
   if (dungeonSpawn) {
     x = dungeonSpawn.x;
