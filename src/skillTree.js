@@ -186,30 +186,90 @@ function renderNodeMap(nodes, weapon) {
     map.appendChild(renderNodeButton(node, weapon, position, selectedNode?.id === node.id));
   }
   scroller.appendChild(map);
+  requestAnimationFrame(() => centerSkillMapOnNode(scroller, layout.get(selectedNode?.id)));
   wrapper.append(scroller, renderNodeDetail(selectedNode, scope));
   return wrapper;
 }
 
 function layoutSkillNodes(nodes) {
-  const tiers = new Map();
+  const tierById = new Map(nodes.map((node) => [node.id, visualTier(node, nodes)]));
+  const maxTier = Math.max(...tierById.values(), 1);
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const branchAngles = [-90, 0, 90, 180];
+  const rootNodes = nodes.filter((node) => !node.requires?.length);
+  const branchById = new Map(rootNodes.map((node, index) => [node.id, branchAngles[index % branchAngles.length]]));
+  const layout = new Map();
+
+  const resolveBranch = (node, seen = new Set()) => {
+    if (branchById.has(node.id)) return branchById.get(node.id);
+    if (!node.requires?.length || seen.has(node.id)) return branchAngles[branchById.size % branchAngles.length];
+    seen.add(node.id);
+
+    const vectors = node.requires
+      .map((id) => nodeById.get(id))
+      .filter(Boolean)
+      .map((required) => angleToVector(resolveBranch(required, new Set(seen))));
+    if (!vectors.length) return branchAngles[branchById.size % branchAngles.length];
+
+    const vector = vectors.reduce((sum, current) => ({
+      x: sum.x + current.x,
+      y: sum.y + current.y,
+    }), { x: 0, y: 0 });
+    const angle = vectorToAngle(vector);
+    branchById.set(node.id, angle);
+    return angle;
+  };
+
   for (const node of nodes) {
-    const tier = visualTier(node, nodes);
-    if (!tiers.has(tier)) tiers.set(tier, []);
-    tiers.get(tier).push(node);
+    resolveBranch(node);
   }
 
-  const tierKeys = [...tiers.keys()].sort((a, b) => a - b);
-  const maxTier = Math.max(...tierKeys, 1);
-  const layout = new Map();
-  for (const tier of tierKeys) {
-    const tierNodes = tiers.get(tier);
-    const x = maxTier === 1 ? 50 : 9 + ((tier - 1) / (maxTier - 1)) * 82;
-    tierNodes.forEach((node, index) => {
-      const y = tierNodes.length === 1 ? 50 : 11 + (index / (tierNodes.length - 1)) * 78;
+  const grouped = new Map();
+  for (const node of nodes) {
+    const tier = tierById.get(node.id) || 1;
+    const angle = branchById.get(node.id) || 0;
+    const key = `${tier}:${Math.round(angle / 45) * 45}`;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(node);
+  }
+
+  for (const group of grouped.values()) {
+    group.sort((a, b) => nodes.indexOf(a) - nodes.indexOf(b));
+    group.forEach((node, index) => {
+      const tier = tierById.get(node.id) || 1;
+      const angle = branchById.get(node.id) || 0;
+      const main = angleToVector(angle);
+      const side = { x: -main.y, y: main.x };
+      const radius = maxTier === 1 ? 0 : 5 + ((tier - 1) / (maxTier - 1)) * 39;
+      const spread = (index - (group.length - 1) / 2) * 6.5;
+      const x = clamp(50 + main.x * radius + side.x * spread, 6, 94);
+      const y = clamp(50 + main.y * radius + side.y * spread, 6, 94);
       layout.set(node.id, { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)), tier });
     });
   }
   return layout;
+}
+
+function angleToVector(angle) {
+  const radians = (angle * Math.PI) / 180;
+  return { x: Math.cos(radians), y: Math.sin(radians) };
+}
+
+function vectorToAngle(vector) {
+  if (Math.abs(vector.x) < 0.001 && Math.abs(vector.y) < 0.001) return 0;
+  return (Math.atan2(vector.y, vector.x) * 180) / Math.PI;
+}
+
+function centerSkillMapOnNode(scroller, position = { x: 50, y: 50 }) {
+  if (!scroller) return;
+  const x = (position.x / 100) * scroller.scrollWidth;
+  const y = (position.y / 100) * scroller.scrollHeight;
+  scroller.scrollLeft = Math.max(0, x - scroller.clientWidth / 2);
+  scroller.scrollTop = Math.max(0, y - scroller.clientHeight / 2);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function visualTier(node, nodes, seen = new Set()) {
