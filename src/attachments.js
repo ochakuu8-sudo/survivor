@@ -69,9 +69,8 @@ function restorePlayerBaseStats() {
   });
 }
 
-function boostWeaponAmmoCapacity(weapon, percent) {
-  if (!weapon?.usesAmmo) return;
-  addWeaponBasePercent(weapon, "ammoCapacity", percent, { min: weapon.fuelMode ? 0.5 : 1 });
+function boostWeaponAttackSpeed(weapon, percent) {
+  addWeaponBasePercent(weapon, "fireRate", percent, { min: 0.15 });
 }
 
 export function recomputeAllAttachments() {
@@ -191,14 +190,13 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
-    key: "ammoPack",
-    name: "弾薬容量+15%",
+    key: "speedCore",
+    name: "攻撃頻度+15%",
     stars: 1,
     category: "stat",
-    requiresAmmo: true,
-    text: "弾薬容量 +15%。燃料武器は燃料秒数が伸びる。",
+    text: "攻撃頻度 +15%。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 0.15);
+      boostWeaponAttackSpeed(weapon, 0.15);
     },
   },
   {
@@ -524,14 +522,13 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
-    key: "ammoPack2",
-    name: "弾薬容量+25%",
+    key: "speedCore2",
+    name: "攻撃頻度+25%",
     stars: 2,
     category: "stat",
-    requiresAmmo: true,
-    text: "弾薬容量 +25%。燃料武器は燃料秒数が伸びる。",
+    text: "攻撃頻度 +25%。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 0.25);
+      boostWeaponAttackSpeed(weapon, 0.25);
     },
   },
   {
@@ -545,14 +542,13 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
-    key: "ammoPack3",
-    name: "弾薬容量+40%",
+    key: "speedCore3",
+    name: "攻撃頻度+40%",
     stars: 3,
     category: "stat",
-    requiresAmmo: true,
-    text: "弾薬容量 +40%。燃料武器は燃料秒数が伸びる。",
+    text: "攻撃頻度 +40%。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 0.4);
+      boostWeaponAttackSpeed(weapon, 0.4);
     },
   },
   {
@@ -566,14 +562,13 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
-    key: "ammoPack4",
-    name: "弾薬容量+60%",
+    key: "speedCore4",
+    name: "攻撃頻度+60%",
     stars: 4,
     category: "stat",
-    requiresAmmo: true,
-    text: "弾薬容量 +60%。燃料武器は燃料秒数が伸びる。",
+    text: "攻撃頻度 +60%。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 0.6);
+      boostWeaponAttackSpeed(weapon, 0.6);
     },
   },
   {
@@ -587,14 +582,13 @@ export const ACTIVE_ATTACHMENTS = [
     },
   },
   {
-    key: "ammoPack5",
-    name: "弾薬容量+85%",
+    key: "speedCore5",
+    name: "攻撃頻度+85%",
     stars: 5,
     category: "stat",
-    requiresAmmo: true,
-    text: "弾薬容量 +85%。燃料武器は燃料秒数が伸びる。",
+    text: "攻撃頻度 +85%。",
     attach: (weapon) => {
-      boostWeaponAmmoCapacity(weapon, 0.85);
+      boostWeaponAttackSpeed(weapon, 0.85);
     },
   },
   {
@@ -1043,9 +1037,6 @@ export function canAttachToWeapon(definition, weapon) {
   if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weaponName)) {
     return false;
   }
-  if (definition.requiresAmmo && !weapon.usesAmmo) {
-    return false;
-  }
   return true;
 }
 
@@ -1068,9 +1059,6 @@ export function addAttachmentToWeapon(weapon, attachment) {
   if (!definition?.key) return false;
   const weaponName = weapon.baseName || weapon.name;
   if (definition.compatibleWeapons && !definition.compatibleWeapons.includes(weaponName)) {
-    return false;
-  }
-  if (definition.requiresAmmo && !weapon.usesAmmo) {
     return false;
   }
   const stars = attachment.stars || definition.stars || 1;

@@ -1,4 +1,4 @@
-import { FIXED_RELOAD_SECONDS, TAU, WEAPON_STAT_KEYS, getWeaponMaxLevel } from "./constants.js";
+import { TAU, WEAPON_STAT_KEYS, getWeaponMaxLevel } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
 import { distanceToSegmentSq, distSq } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -212,7 +212,7 @@ function roundWeaponStats(weapon) {
   WEAPON_STAT_KEYS.forEach((key) => {
     const value = weapon[key];
     if (typeof value !== "number") return;
-    const integers = new Set(["projectiles", "pierce", "chainCount", "orbitCount", "ammoCapacity"]);
+    const integers = new Set(["projectiles", "pierce", "chainCount", "orbitCount"]);
     weapon[key] = integers.has(key)
       ? Math.max(0, Math.round(value))
       : Math.round(value * 100) / 100;
@@ -261,13 +261,6 @@ export function createWeapon(template, options = {}) {
   const kind = template.kind || "projectile";
   const bulletSpeed = template.bulletSpeed ?? 690;
   const life = template.life || 0.72;
-  const usesAmmo = template.usesAmmo ?? kind !== "orbit";
-  const fuelMode = !!template.fuelMode;
-  const ammoCapacity = usesAmmo
-    ? fuelMode
-      ? Math.max(0.5, template.ammoCapacity || 8)
-      : Math.max(1, Math.round(template.ammoCapacity || 8))
-    : 0;
   const rarityKey = template.rarity || "normal";
   const rarityLabel = template.rarityLabel || {
     normal: "ノーマル",
@@ -305,15 +298,6 @@ export function createWeapon(template, options = {}) {
     radius: template.radius || 9,
     jitter: template.jitter || 0,
     kick: template.kick || 1.8,
-    usesAmmo,
-    fuelMode,
-    ammoCapacity,
-    ammo: usesAmmo
-      ? Math.min(ammoCapacity, Math.max(0, fuelMode ? (template.ammo ?? ammoCapacity) : Math.round(template.ammo ?? ammoCapacity)))
-      : 0,
-    reloadTime: usesAmmo ? FIXED_RELOAD_SECONDS : 0,
-    reloadTimer: 0,
-    reloading: false,
     critChance: template.critChance || 0,
     critMultiplier: template.critMultiplier || 1.75,
     freezeChance: template.freezeChance || 0,
@@ -388,33 +372,9 @@ export function cycleActiveWeapon() {
   return getActiveWeapon(game.player);
 }
 
-export function weaponUsesAmmo(weapon) {
-  return !!weapon && weapon.usesAmmo !== false && weapon.kind !== "orbit";
-}
-
-function startWeaponReload(weapon) {
-  if (!weaponUsesAmmo(weapon) || weapon.reloading) return;
-  weapon.reloadTime = FIXED_RELOAD_SECONDS;
-  weapon.reloadTimer = FIXED_RELOAD_SECONDS;
-  weapon.reloading = true;
-}
-
-function completeWeaponReload(weapon) {
-  weapon.ammo = weapon.fuelMode
-    ? Math.max(0.5, weapon.ammoCapacity || 1)
-    : Math.max(1, Math.round(weapon.ammoCapacity || 1));
-  weapon.reloadTimer = 0;
-  weapon.reloading = false;
-}
-
-export function weaponAmmoLabel(weapon) {
+export function weaponStatusLabel(weapon) {
   if (!weapon) return "武器なし";
-  if (!weaponUsesAmmo(weapon)) return "弾薬なし";
-  if (weapon.reloading) return `${weapon.fuelMode ? "補給" : "リロード"} ${Math.max(0, weapon.reloadTimer || 0).toFixed(1)}秒`;
-  if (weapon.fuelMode) {
-    return `燃料 ${Math.max(0, weapon.ammo || 0).toFixed(1)}秒/${Math.max(0.5, weapon.ammoCapacity || 1).toFixed(0)}秒`;
-  }
-  return `弾薬 ${Math.max(0, Math.ceil(weapon.ammo || 0))}/${Math.max(1, Math.round(weapon.ammoCapacity || 1))}`;
+  return "無制限攻撃";
 }
 
 export function weaponKindLabel(weapon) {
@@ -463,23 +423,6 @@ export function updateWeaponTimers(player, dt) {
   clampActiveWeaponIndex(player.gear);
   for (const weapon of player.gear.weapons) {
     weapon.shootTimer = Math.max(0, weapon.shootTimer - dt);
-    if (!weaponUsesAmmo(weapon)) continue;
-
-    weapon.reloadTime = FIXED_RELOAD_SECONDS;
-    weapon.ammoCapacity = weapon.fuelMode
-      ? Math.max(0.5, weapon.ammoCapacity || 1)
-      : Math.max(1, Math.round(weapon.ammoCapacity || 1));
-    weapon.ammo = Math.min(
-      weapon.ammoCapacity,
-      Math.max(0, weapon.fuelMode ? (weapon.ammo ?? weapon.ammoCapacity) : Math.round(weapon.ammo ?? weapon.ammoCapacity)),
-    );
-
-    if (weapon.reloading) {
-      weapon.reloadTimer = Math.max(0, (weapon.reloadTimer || 0) - dt);
-      if (weapon.reloadTimer <= 0) completeWeaponReload(weapon);
-    } else if (weapon.ammo <= 0) {
-      startWeaponReload(weapon);
-    }
   }
 }
 
@@ -565,13 +508,6 @@ export function autoShoot() {
 
   if (!weapon || weapon.kind === "orbit") return;
   if (weapon.shootTimer > 0) return;
-  if (weaponUsesAmmo(weapon)) {
-    if (weapon.reloading || (weapon.ammo || 0) <= 0) {
-      startWeaponReload(weapon);
-      return;
-    }
-  }
-
   let target = null;
   if (TARGETLESS_KINDS.has(weapon.kind)) {
     // Always fire on cooldown; direction comes from facing or self-position.
@@ -582,11 +518,6 @@ export function autoShoot() {
   }
 
   fireWeapon(weapon, target);
-  if (weaponUsesAmmo(weapon)) {
-    const ammoCost = weapon.fuelMode ? 1 / Math.max(0.1, weapon.fireRate || 1) : 1;
-    weapon.ammo = Math.max(0, (weapon.ammo || 0) - ammoCost);
-    if (weapon.ammo <= 0) startWeaponReload(weapon);
-  }
   weapon.shootTimer = 1 / weapon.fireRate;
   game.shake = Math.max(game.shake, weapon.kick);
 }

@@ -11,7 +11,7 @@ import {
   extendWeaponReach,
   getActiveWeapon,
   reduceWeaponBasePercent,
-  weaponAmmoLabel,
+  weaponStatusLabel,
   weaponMetaLabel,
 } from "./weapons.js";
 import { WEAPON_POOL } from "./shop.js";
@@ -44,33 +44,33 @@ export const WEAPON_SKILL_TREES = {
     weaponNode("stone_power", 1, "重い握り", "威力 +20%。", 24, [], { attachment: "powerCore" }),
     weaponNode("stone_range", 1, "遠投フォーム", "射程 +15%。", 22, [], { custom: (weapon) => extendWeaponReach(weapon, 1.15) }),
     weaponNode("stone_rapid", 1, "投げ慣れ", "攻撃頻度 +13%。", 24, [], { attachment: "rapidMechanism" }),
-    weaponNode("stone_ammo", 1, "石袋", "弾薬容量 +25%。", 26, [], { custom: (weapon) => addWeaponBasePercent(weapon, "ammoCapacity", 0.25, { min: 1 }) }),
+    weaponNode("stone_pace", 1, "握り込み", "攻撃頻度 +12%。", 26, [], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.12, { min: 0.15 }) }),
     weaponNode("stone_knock", 2, "芯当て", "ノックバック +8、威力も少し上昇。", 34, ["stone_power"], { custom: (weapon) => { weapon.knockback += 8; boostWeaponImpactPercent(weapon, 0.08); } }),
     weaponNode("stone_ricochet", 2, "跳ね石", "跳弾 +1。", 42, ["stone_range"], { attachment: "ricochetCore" }),
-    weaponNode("stone_multi", 3, "両手投げ", "同時投擲 +1、ばらつき少し増加。", 56, ["stone_rapid", "stone_ammo"], { custom: (weapon) => { weapon.projectiles += 1; weapon.spread += 0.16; } }),
+    weaponNode("stone_multi", 3, "両手投げ", "同時投擲 +1、ばらつき少し増加。", 56, ["stone_rapid", "stone_pace"], { custom: (weapon) => { weapon.projectiles += 1; weapon.spread += 0.16; } }),
     weaponNode("stone_shards", 3, "破片弾", "着弾時に破片ダメージの小爆発。", 62, ["stone_knock"], { custom: (weapon) => { weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 42); weapon.explosionDamage = Math.max(weapon.explosionDamage || 0, weapon.damage * 0.55); } }),
     weaponNode("stone_evolve", 4, "進化：ゴムボール", "跳弾時に弾が増える伝説形態へ進化。", 110, ["stone_ricochet", "stone_multi", "stone_shards"], { evolveTo: "ゴムボール" }),
   ],
   豆鉄砲: [
     weaponNode("pea_rapid", 1, "連射機構", "攻撃頻度 +15%。", 24, [], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.15, { min: 0.15 }) }),
-    weaponNode("pea_ammo", 1, "拡張マガジン", "弾薬容量 +25%。", 24, [], { custom: (weapon) => addWeaponBasePercent(weapon, "ammoCapacity", 0.25, { min: 1 }) }),
+    weaponNode("pea_tune", 1, "連射チューニング", "攻撃頻度 +12%。", 24, [], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.12, { min: 0.15 }) }),
     weaponNode("pea_stable", 1, "安定グリップ", "ばらつき -25%。", 22, [], { custom: (weapon) => reduceWeaponBasePercent(weapon, "jitter", 0.25, { min: 0 }) }),
     weaponNode("pea_range", 1, "ロングバレル", "射程 +15%。", 26, [], { custom: (weapon) => extendWeaponReach(weapon, 1.15) }),
     weaponNode("pea_pierce", 2, "鋼芯弾", "貫通 +1。", 42, ["pea_range"], { custom: (weapon) => addWeaponPierce(weapon, 1) }),
     weaponNode("pea_burst", 2, "炸裂豆", "着弾時に小爆発。", 48, ["pea_rapid"], { custom: (weapon) => { weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 38); weapon.explosionDamage = Math.max(weapon.explosionDamage || 0, weapon.damage * 1.6); } }),
-    weaponNode("pea_reload", 3, "高速リロード", "実質弾切れ時間を短縮する容量追加。", 54, ["pea_ammo"], { custom: (weapon) => addWeaponBasePercent(weapon, "ammoCapacity", 0.35, { min: 1 }) }),
+    weaponNode("pea_accel", 3, "高速連射", "攻撃頻度 +18%。", 54, ["pea_tune"], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.18, { min: 0.15 }) }),
     weaponNode("pea_crit", 3, "弱点狙い", "クリティカル率 +18%。", 56, ["pea_stable", "pea_pierce"], { custom: (weapon) => { weapon.critChance += 0.18; weapon.critMultiplier += 0.25; } }),
-    weaponNode("pea_evolve", 4, "進化：流星群", "連射弾が着弾時に爆発する。", 110, ["pea_burst", "pea_reload", "pea_crit"], { evolveTo: "流星群" }),
+    weaponNode("pea_evolve", 4, "進化：流星群", "連射弾が着弾時に爆発する。", 110, ["pea_burst", "pea_accel", "pea_crit"], { evolveTo: "流星群" }),
   ],
   火炎放射器: [
     weaponNode("flame_power", 1, "高温燃焼", "ダメージ +15%。", 24, [], { attachment: "powerCore" }),
-    weaponNode("flame_fuel", 1, "大型タンク", "燃料容量 +25%。", 24, [], { custom: (weapon) => addWeaponBasePercent(weapon, "ammoCapacity", 0.25, { min: 0.5 }) }),
+    weaponNode("flame_pressure", 1, "高圧タンク", "攻撃頻度 +12%。", 24, [], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.12, { min: 0.15 }) }),
     weaponNode("flame_range", 1, "加圧ノズル", "射程 +15%。", 26, [], { custom: (weapon) => extendWeaponReach(weapon, 1.15) }),
     weaponNode("flame_cone", 1, "ワイドコーン", "コーン範囲 +20%。", 30, [], { custom: (weapon) => addWeaponBasePercent(weapon, "cone", 0.2, { min: 0.1, max: 1.4 }) }),
-    weaponNode("flame_economy", 2, "燃費改善", "燃料容量 +35%。", 42, ["flame_fuel"], { custom: (weapon) => addWeaponBasePercent(weapon, "ammoCapacity", 0.35, { min: 0.5 }) }),
+    weaponNode("flame_stability", 2, "圧力安定", "射程 +12%。", 42, ["flame_pressure"], { custom: (weapon) => extendWeaponReach(weapon, 1.12) }),
     weaponNode("flame_slow", 2, "粘着炎", "炎に鈍足効果を付与。", 46, ["flame_range"], { custom: (weapon) => { weapon.freezeChance += 0.28; weapon.freezeSlow = Math.min(weapon.freezeSlow || 0.62, 0.55); weapon.freezeDuration = Math.max(weapon.freezeDuration || 1.6, 1.8); } }),
     weaponNode("flame_focus", 3, "狭角高火力", "範囲を絞ってダメージ +35%。", 58, ["flame_power"], { custom: (weapon) => { boostWeaponImpactPercent(weapon, 0.35); weapon.cone = Math.max(0.28, weapon.cone * 0.78); } }),
-    weaponNode("flame_wall", 3, "火炎壁", "範囲と持続感を強化。", 56, ["flame_cone", "flame_economy"], { custom: (weapon) => expandWeaponArea(weapon, 2) }),
+    weaponNode("flame_wall", 3, "火炎壁", "範囲と持続感を強化。", 56, ["flame_cone", "flame_stability"], { custom: (weapon) => expandWeaponArea(weapon, 2) }),
     weaponNode("flame_evolve", 4, "進化：フレア", "全方位に炎を放つ。", 110, ["flame_slow", "flame_focus", "flame_wall"], { evolveTo: "フレア" }),
   ],
   モーニングスター: [
@@ -126,7 +126,7 @@ export function renderSkillTree() {
   if (!hud.skillTree || !hud.skillTreeWeaponNodes || !hud.skillTreeCommonNodes) return;
   const weapon = getActiveWeapon();
   hud.skillTreeWeaponName.textContent = weapon?.name || "武器未選択";
-  hud.skillTreeWeaponMeta.textContent = weapon ? `${weaponMetaLabel(weapon)} / ${weaponAmmoLabel(weapon)}` : "";
+  hud.skillTreeWeaponMeta.textContent = weapon ? `${weaponMetaLabel(weapon)} / ${weaponStatusLabel(weapon)}` : "";
   hud.skillTreeGold.textContent = String(game.gold);
   hud.skillTreeWave.textContent = `Wave ${game.wave} Clear`;
   hud.skillTreeFree.textContent = freeCreditText();
@@ -239,7 +239,6 @@ function nodeIcon(node, weapon) {
   if (text.includes("炎") || weapon?.baseName === "火炎放射器") return "♨";
   if (text.includes("範囲") || text.includes("爆発") || text.includes("破片")) return "✹";
   if (text.includes("速") || text.includes("頻度") || text.includes("連射")) return "⚡";
-  if (text.includes("容量") || text.includes("燃料") || text.includes("袋")) return "▣";
   if (text.includes("重") || text.includes("威力") || text.includes("ダメージ")) return "✦";
   return "●";
 }
@@ -309,7 +308,6 @@ function reapplyPurchasedCustomNodes() {
     if (!isPurchased(node.id, "common")) continue;
     if (node.custom) node.custom(weapon);
   }
-  if (weapon?.usesAmmo) weapon.ammo = Math.min(weapon.ammoCapacity, Math.max(weapon.ammo || 0, weapon.ammoCapacity));
 }
 
 function addAttachmentNode(weapon, attachmentKey, nodeId) {
