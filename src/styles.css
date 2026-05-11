@@ -2825,6 +2825,243 @@ h1 {
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.28), inset 0 0 24px rgba(148, 163, 184, 0.08);
 }
 
+.mobile-skill-tree {
+  position: relative;
+  display: grid;
+  min-height: min(620px, calc(100dvh - 176px));
+  padding-bottom: 176px;
+}
+
+.mobile-skill-tree-viewport {
+  position: relative;
+  min-height: clamp(420px, calc(100dvh - 270px), 650px);
+  max-height: clamp(420px, calc(100dvh - 270px), 650px);
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  background: rgba(15, 23, 42, 0.58);
+  touch-action: none;
+}
+
+.mobile-skill-node-map {
+  overflow: hidden;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 50% 4%, rgba(251, 191, 36, 0.18), transparent 14%),
+    linear-gradient(180deg, rgba(59, 130, 246, 0.13), transparent 26%),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    rgba(15, 23, 42, 0.82);
+  background-size: auto, auto, 96px 96px, 96px 96px, auto;
+}
+
+.mobile-skill-grid-labels .mobile-skill-tier-line {
+  position: absolute;
+  top: var(--grid-y);
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.32), rgba(251, 191, 36, 0.18), rgba(96, 165, 250, 0.32), transparent);
+}
+
+.mobile-skill-tier-label {
+  font-size: 0.66rem;
+}
+
+.skill-link-selected-prereq,
+.skill-link-selected-branch {
+  stroke: #f8fafc;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 7px rgba(147, 197, 253, 0.78));
+}
+
+.skill-link-selected-branch {
+  stroke: #fde68a;
+}
+
+.skill-node-copy {
+  display: none;
+}
+
+.skill-node-name,
+.skill-node-meta {
+  display: block;
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skill-node-evolution {
+  border-color: rgba(251, 191, 36, 0.92);
+  background: radial-gradient(circle at 50% 35%, rgba(251, 191, 36, 0.95), rgba(147, 51, 234, 0.78));
+  box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.16), 0 0 30px rgba(251, 191, 36, 0.34);
+}
+
+@media (max-width: 820px) {
+  .skill-node-map-wrap {
+    gap: 0;
+  }
+
+  .mobile-skill-tree .skill-node,
+  .mobile-skill-tree .skill-node-hub {
+    --node-size: 54px;
+  }
+
+  .mobile-skill-tree .skill-node {
+    grid-template-columns: 42px minmax(72px, 1fr);
+    width: clamp(136px, 33vw, 168px);
+    min-width: 136px;
+    height: auto;
+    min-height: 62px;
+    padding: 7px 9px 7px 7px;
+    gap: 7px;
+    border-radius: 18px;
+    text-align: left;
+    touch-action: manipulation;
+  }
+
+  .mobile-skill-tree .skill-node:not(:disabled):hover,
+  .mobile-skill-tree .skill-node-selected {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+
+  .mobile-skill-tree .skill-node-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    font-size: 1.13rem;
+  }
+
+  .mobile-skill-tree .skill-node-copy {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+  }
+
+  .mobile-skill-tree .skill-node-name {
+    color: #f8fafc;
+    font-size: 0.78rem;
+    font-weight: 1000;
+    line-height: 1.12;
+  }
+
+  .mobile-skill-tree .skill-node-meta {
+    color: rgba(226, 232, 240, 0.82);
+    font-size: 0.63rem;
+    font-weight: 900;
+  }
+
+  .mobile-skill-tree .skill-node-tier {
+    right: 7px;
+    bottom: -9px;
+  }
+
+  .mobile-skill-tree .skill-node-available {
+    border-color: rgba(191, 219, 254, 0.96);
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2), 0 0 26px rgba(14, 165, 233, 0.34), 0 8px 18px rgba(2, 6, 23, 0.24);
+  }
+
+  .mobile-skill-tree .skill-node-owned {
+    border-color: rgba(187, 247, 208, 0.76);
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16), 0 0 20px rgba(74, 222, 128, 0.28);
+  }
+
+  .mobile-skill-tree .skill-node-locked,
+  .mobile-skill-tree .skill-node-costly {
+    opacity: 0.56;
+  }
+
+  .mobile-skill-tree .skill-node-costly {
+    border-color: rgba(251, 191, 36, 0.5);
+  }
+
+  .mobile-skill-tree .skill-node-evolution {
+    opacity: 1;
+  }
+
+  .mobile-skill-tree .skill-node-hub {
+    width: 72px;
+    height: 72px;
+  }
+
+  .mobile-skill-tree .skill-node-hub-label {
+    bottom: -15px;
+  }
+
+  .mobile-skill-tree .skill-link {
+    stroke-width: 2.3;
+  }
+
+  .mobile-skill-tree .skill-link-locked {
+    stroke: rgba(148, 163, 184, 0.3);
+  }
+
+  .mobile-skill-tree .skill-link-owned {
+    stroke: rgba(125, 211, 252, 0.95);
+    stroke-width: 3;
+  }
+
+  .mobile-skill-tree .skill-link-root {
+    stroke: rgba(251, 191, 36, 0.82);
+  }
+
+  .mobile-skill-bottom-sheet {
+    position: fixed;
+    z-index: 12;
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: max(10px, env(safe-area-inset-left));
+    max-height: min(36dvh, 270px);
+    overflow: auto;
+    padding: 12px;
+    border-color: rgba(96, 165, 250, 0.48);
+    border-radius: 20px 20px 18px 18px;
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+    box-shadow: 0 -12px 34px rgba(2, 6, 23, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  }
+
+  .mobile-skill-bottom-sheet .skill-node-detail-head {
+    grid-template-columns: 38px 1fr;
+    gap: 9px;
+  }
+
+  .mobile-skill-bottom-sheet .skill-node-detail-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 13px;
+  }
+
+  .mobile-skill-bottom-sheet h3 {
+    font-size: 0.98rem;
+  }
+
+  .mobile-skill-bottom-sheet p {
+    font-size: 0.84rem;
+    line-height: 1.38;
+  }
+
+  .mobile-skill-bottom-sheet dl {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .mobile-skill-bottom-sheet dl > div {
+    padding: 7px 8px;
+    border-radius: 11px;
+  }
+
+  .mobile-skill-bottom-sheet dd {
+    font-size: 0.78rem;
+  }
+
+  .mobile-skill-bottom-sheet .skill-node-unlock {
+    min-height: 48px;
+    border-radius: 14px;
+  }
+}
+
 .skill-tree-footer {
   display: flex;
   align-items: center;
@@ -2971,5 +3208,20 @@ h1 {
   .skill-tree-footer button {
     width: 100%;
     min-height: 50px;
+  }
+}
+
+@media (max-width: 820px) {
+  .mobile-skill-tree .mobile-skill-tree-viewport {
+    min-height: clamp(420px, calc(100dvh - 270px), 650px);
+    max-height: clamp(420px, calc(100dvh - 270px), 650px);
+  }
+
+  .mobile-skill-tree .mobile-skill-node-map {
+    max-width: none;
+  }
+
+  .mobile-skill-bottom-sheet.skill-node-detail dl {
+    grid-template-columns: 1fr 1fr;
   }
 }
