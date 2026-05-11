@@ -2199,10 +2199,10 @@ h1 {
 .skill-tree-summary > div,
 .skill-tree-pane,
 .skill-node-detail {
-  border: 1px solid rgba(255, 232, 160, 0.22);
+  border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 18px;
-  background: rgba(22, 32, 20, 0.78);
-  box-shadow: inset 0 0 24px rgba(255, 205, 82, 0.06);
+  background: rgba(15, 23, 42, 0.86);
+  box-shadow: inset 0 0 24px rgba(148, 163, 184, 0.08);
 }
 
 .skill-tree-summary > div {
@@ -2212,12 +2212,12 @@ h1 {
 }
 
 .skill-tree-summary strong {
-  color: #fff4b8;
+  color: #e2e8f0;
   font-size: clamp(1.05rem, 2.2vw, 1.35rem);
 }
 
 .skill-tree-summary small {
-  color: rgba(255, 250, 218, 0.72);
+  color: rgba(226, 232, 240, 0.72);
 }
 
 .skill-tree-layout {
@@ -2232,7 +2232,7 @@ h1 {
 
 .skill-tree-pane h2 {
   margin: 0 0 10px;
-  color: #fff0a4;
+  color: #e2e8f0;
   font-size: 1rem;
 }
 
@@ -2253,7 +2253,7 @@ h1 {
   border-radius: 16px;
   cursor: grab;
   -webkit-overflow-scrolling: touch;
-  scrollbar-color: rgba(255, 231, 140, 0.58) rgba(0, 0, 0, 0.24);
+  scrollbar-color: rgba(96, 165, 250, 0.58) rgba(15, 23, 42, 0.54);
   scrollbar-width: thin;
 }
 
@@ -2269,13 +2269,13 @@ h1 {
   overflow: hidden;
   border-radius: 16px;
   background:
-    radial-gradient(circle at 50% 50%, rgba(255, 230, 142, 0.16), transparent 20%),
-    radial-gradient(circle at 50% 50%, rgba(126, 245, 185, 0.08), transparent 42%),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    rgba(9, 16, 12, 0.36);
-  background-size: auto, auto, 180px 100%, 100% 140px, auto;
-  box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.2);
+    linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, transparent calc(50% - 1px), rgba(96, 165, 250, 0.2) 50%, transparent calc(50% + 1px)),
+    linear-gradient(0deg, transparent calc(50% - 1px), rgba(96, 165, 250, 0.18) 50%, transparent calc(50% + 1px)),
+    rgba(15, 23, 42, 0.74);
+  background-size: 120px 120px, 120px 120px, auto, auto, auto;
+  box-shadow: inset 0 0 36px rgba(0, 0, 0, 0.22);
 }
 
 .skill-node-links {
@@ -2288,19 +2288,21 @@ h1 {
 }
 
 .skill-link {
+  fill: none;
   stroke-linecap: round;
-  stroke-width: 1.45;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
   vector-effect: non-scaling-stroke;
 }
 
 .skill-link-locked {
-  stroke: rgba(174, 164, 132, 0.36);
+  stroke: rgba(148, 163, 184, 0.42);
   stroke-dasharray: 5 5;
 }
 
 .skill-link-owned {
-  stroke: rgba(126, 245, 185, 0.78);
-  filter: drop-shadow(0 0 5px rgba(90, 245, 164, 0.48));
+  stroke: rgba(96, 165, 250, 0.92);
+  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.38));
 }
 
 .skill-node {
@@ -2315,8 +2317,8 @@ h1 {
   padding: 0;
   transform: translate(-50%, -50%);
   border-radius: 999px;
-  border: 2px solid rgba(255, 255, 255, 0.16);
-  color: #fff9df;
+  border: 2px solid rgba(226, 232, 240, 0.22);
+  color: #f8fafc;
   touch-action: manipulation;
   transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease, border-color 0.16s ease;
 }
@@ -2327,8 +2329,8 @@ h1 {
 }
 
 .skill-node-selected {
-  border-color: #fff4a8;
-  box-shadow: 0 0 0 4px rgba(255, 231, 140, 0.2), 0 0 22px rgba(255, 220, 104, 0.34);
+  border-color: #bfdbfe;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.22), 0 0 22px rgba(96, 165, 250, 0.3);
 }
 
 .skill-node-icon {
@@ -2337,9 +2339,9 @@ h1 {
   width: calc(var(--node-size) - 12px);
   height: calc(var(--node-size) - 12px);
   border-radius: inherit;
-  background: rgba(0, 0, 0, 0.24);
-  box-shadow: inset 0 0 10px rgba(255, 232, 160, 0.12);
-  color: #ffe78c;
+  background: rgba(15, 23, 42, 0.38);
+  box-shadow: inset 0 0 10px rgba(148, 163, 184, 0.14);
+  color: #e2e8f0;
   font-size: clamp(1rem, 2.4vw, 1.35rem);
   font-weight: 900;
 }
@@ -2350,10 +2352,10 @@ h1 {
   bottom: -5px;
   min-width: 20px;
   padding: 2px 5px;
-  border: 1px solid rgba(255, 244, 184, 0.42);
+  border: 1px solid rgba(226, 232, 240, 0.42);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.72);
-  color: #ffe78c;
+  background: rgba(15, 23, 42, 0.82);
+  color: #cbd5e1;
   font-weight: 900;
   font-size: 0.58rem;
   line-height: 1;
@@ -2361,30 +2363,30 @@ h1 {
 
 .skill-node-available {
   cursor: pointer;
-  background: linear-gradient(150deg, rgba(45, 103, 47, 0.96), rgba(117, 91, 20, 0.92));
-  box-shadow: 0 0 0 1px rgba(255, 231, 140, 0.34), 0 8px 22px rgba(0, 0, 0, 0.24), 0 0 18px rgba(255, 220, 104, 0.2);
+  background: #2563eb;
+  box-shadow: 0 0 0 1px rgba(191, 219, 254, 0.34), 0 8px 22px rgba(0, 0, 0, 0.24);
 }
 
 .skill-node-owned {
   cursor: pointer;
-  background: linear-gradient(150deg, rgba(64, 91, 112, 0.92), rgba(38, 67, 57, 0.9));
-  opacity: 0.94;
-  box-shadow: 0 0 0 1px rgba(126, 245, 185, 0.36), 0 0 16px rgba(90, 245, 164, 0.22);
+  background: #16a34a;
+  opacity: 0.96;
+  box-shadow: 0 0 0 1px rgba(187, 247, 208, 0.34), 0 0 14px rgba(22, 163, 74, 0.22);
 }
 
 .skill-node-locked,
 .skill-node-costly {
   cursor: pointer;
-  background: rgba(20, 24, 20, 0.86);
-  opacity: 0.74;
+  background: #334155;
+  opacity: 0.76;
 }
 
 .skill-node-costly .skill-node-icon {
-  color: #ffb8a4;
+  color: #fbbf24;
 }
 
 .skill-node-locked .skill-node-icon {
-  color: #c8c0a4;
+  color: #94a3b8;
 }
 
 .skill-node-detail {
@@ -2406,8 +2408,8 @@ h1 {
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background: rgba(0, 0, 0, 0.24);
-  color: #ffe78c;
+  background: rgba(15, 23, 42, 0.38);
+  color: #e2e8f0;
   font-size: 1.25rem;
   font-weight: 900;
 }
@@ -2419,12 +2421,12 @@ h1 {
 }
 
 .skill-node-detail h3 {
-  color: #fff4b8;
+  color: #e2e8f0;
   font-size: 1.05rem;
 }
 
 .skill-node-detail p {
-  color: rgba(255, 250, 228, 0.82);
+  color: rgba(226, 232, 240, 0.82);
   line-height: 1.45;
 }
 
@@ -2437,18 +2439,18 @@ h1 {
 .skill-node-detail dl > div {
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(15, 23, 42, 0.46);
 }
 
 .skill-node-detail dt {
-  color: #9df7ff;
+  color: #bfdbfe;
   font-size: 0.65rem;
   font-weight: 900;
 }
 
 .skill-node-detail dd {
   margin: 2px 0 0;
-  color: #fff0a4;
+  color: #e2e8f0;
   font-weight: 900;
 }
 
@@ -2467,7 +2469,7 @@ h1 {
 
 .skill-tree-footer p {
   margin: 0;
-  color: rgba(255, 250, 228, 0.72);
+  color: rgba(226, 232, 240, 0.72);
 }
 
 .skill-tree-footer button {
@@ -2514,6 +2516,6 @@ h1 {
     padding-top: 10px;
     flex-direction: column;
     align-items: stretch;
-    background: linear-gradient(180deg, rgba(13, 20, 12, 0), rgba(13, 20, 12, 0.96) 24%);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.96) 24%);
   }
 }

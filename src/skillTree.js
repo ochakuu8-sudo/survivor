@@ -168,13 +168,10 @@ function renderNodeMap(nodes, weapon) {
       const from = layout.get(requiredId);
       const to = layout.get(node.id);
       if (!from || !to) continue;
-      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line.setAttribute("x1", from.x);
-      line.setAttribute("y1", from.y);
-      line.setAttribute("x2", to.x);
-      line.setAttribute("y2", to.y);
-      line.classList.add("skill-link", linkStatus(requiredId, node.scope));
-      svg.appendChild(line);
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", orthogonalLinkPath(from, to));
+      path.classList.add("skill-link", linkStatus(requiredId, node.scope));
+      svg.appendChild(path);
     }
   }
 
@@ -195,29 +192,30 @@ function layoutSkillNodes(nodes) {
   const tierById = new Map(nodes.map((node) => [node.id, visualTier(node, nodes)]));
   const maxTier = Math.max(...tierById.values(), 1);
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const branchAngles = [-90, 0, 90, 180];
   const rootNodes = nodes.filter((node) => !node.requires?.length);
-  const branchById = new Map(rootNodes.map((node, index) => [node.id, branchAngles[index % branchAngles.length]]));
+  const directions = [
+    { name: "up", x: 0, y: -1 },
+    { name: "right", x: 1, y: 0 },
+    { name: "down", x: 0, y: 1 },
+    { name: "left", x: -1, y: 0 },
+  ];
+  const branchById = new Map(rootNodes.map((node, index) => [node.id, directions[index % directions.length]]));
   const layout = new Map();
 
   const resolveBranch = (node, seen = new Set()) => {
     if (branchById.has(node.id)) return branchById.get(node.id);
-    if (!node.requires?.length || seen.has(node.id)) return branchAngles[branchById.size % branchAngles.length];
+    if (seen.has(node.id)) return directions[0];
     seen.add(node.id);
 
-    const vectors = node.requires
+    const required = (node.requires || [])
       .map((id) => nodeById.get(id))
       .filter(Boolean)
-      .map((required) => angleToVector(resolveBranch(required, new Set(seen))));
-    if (!vectors.length) return branchAngles[branchById.size % branchAngles.length];
-
-    const vector = vectors.reduce((sum, current) => ({
-      x: sum.x + current.x,
-      y: sum.y + current.y,
-    }), { x: 0, y: 0 });
-    const angle = vectorToAngle(vector);
-    branchById.set(node.id, angle);
-    return angle;
+      .sort((a, b) => nodes.indexOf(a) - nodes.indexOf(b));
+    const branch = required.length
+      ? resolveBranch(required[0], new Set(seen))
+      : directions[branchById.size % directions.length];
+    branchById.set(node.id, branch);
+    return branch;
   };
 
   for (const node of nodes) {
@@ -227,8 +225,8 @@ function layoutSkillNodes(nodes) {
   const grouped = new Map();
   for (const node of nodes) {
     const tier = tierById.get(node.id) || 1;
-    const angle = branchById.get(node.id) || 0;
-    const key = `${tier}:${Math.round(angle / 45) * 45}`;
+    const branch = branchById.get(node.id) || directions[0];
+    const key = `${tier}:${branch.name}`;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key).push(node);
   }
@@ -237,27 +235,24 @@ function layoutSkillNodes(nodes) {
     group.sort((a, b) => nodes.indexOf(a) - nodes.indexOf(b));
     group.forEach((node, index) => {
       const tier = tierById.get(node.id) || 1;
-      const angle = branchById.get(node.id) || 0;
-      const main = angleToVector(angle);
-      const side = { x: -main.y, y: main.x };
-      const radius = maxTier === 1 ? 0 : 5 + ((tier - 1) / (maxTier - 1)) * 39;
-      const spread = (index - (group.length - 1) / 2) * 6.5;
-      const x = clamp(50 + main.x * radius + side.x * spread, 6, 94);
-      const y = clamp(50 + main.y * radius + side.y * spread, 6, 94);
-      layout.set(node.id, { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)), tier });
+      const branch = branchById.get(node.id) || directions[0];
+      const side = { x: -branch.y, y: branch.x };
+      const distance = maxTier === 1 ? 0 : 7 + ((tier - 1) / (maxTier - 1)) * 39;
+      const spread = (index - (group.length - 1) / 2) * 6.8;
+      const x = clamp(50 + branch.x * distance + side.x * spread, 7, 93);
+      const y = clamp(50 + branch.y * distance + side.y * spread, 7, 93);
+      layout.set(node.id, { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)), tier, branch: branch.name });
     });
   }
   return layout;
 }
 
-function angleToVector(angle) {
-  const radians = (angle * Math.PI) / 180;
-  return { x: Math.cos(radians), y: Math.sin(radians) };
-}
-
-function vectorToAngle(vector) {
-  if (Math.abs(vector.x) < 0.001 && Math.abs(vector.y) < 0.001) return 0;
-  return (Math.atan2(vector.y, vector.x) * 180) / Math.PI;
+function orthogonalLinkPath(from, to) {
+  const horizontalFirst = Math.abs(to.x - from.x) >= Math.abs(to.y - from.y);
+  const mid = horizontalFirst
+    ? { x: to.x, y: from.y }
+    : { x: from.x, y: to.y };
+  return `M ${from.x} ${from.y} L ${mid.x} ${mid.y} L ${to.x} ${to.y}`;
 }
 
 function centerSkillMapOnNode(scroller, position = { x: 50, y: 50 }) {
