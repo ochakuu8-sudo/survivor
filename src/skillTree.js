@@ -143,10 +143,13 @@ export function renderSkillTree() {
   hud.skillTreeGold.textContent = String(game.gold);
   hud.skillTreeWave.textContent = `Wave ${game.wave} Clear`;
   hud.skillTreeFree.textContent = freeCreditText();
+  const compactPreferred = isCompactSkillTreePreferred();
+  const title = hud.skillTree.querySelector(".panel-head h1");
+  if (title) title.textContent = compactPreferred ? "スキル強化" : "武器を改造して次のWaveへ";
   const footerHint = hud.skillTree.querySelector(".skill-tree-footer p");
   if (footerHint) {
-    footerHint.textContent = isCompactSkillTreePreferred()
-      ? "Tierごとに縦スクロールし、ノードをタップして詳細と開放条件を確認できます。"
+    footerHint.textContent = compactPreferred
+      ? "買えるノードを上に表示中。タップで詳細と前提を確認できます。"
       : "ノードをタップして詳細を確認し、マップはスワイプ／ドラッグで全体を移動できます。";
   }
   hud.skillTreeWeaponNodes.replaceChildren(renderNodeMap(treeForWeapon(weapon), weapon));
@@ -215,50 +218,68 @@ function renderCompactSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapo
   const wrapper = document.createElement("div");
   wrapper.className = "compact-skill-tree";
 
-  const selectedNode = selectedNodeForScope(nodes, scope);
+  const selectedNode = compactSelectedNodeForScope(nodes, scope);
   const list = document.createElement("div");
   list.className = "compact-skill-tree-list";
 
-  const tierGroups = groupNodesByTier(nodes);
-  const tierEntries = Array.from(tierGroups.entries()).sort(([a], [b]) => a - b);
+  const { tiers, evolution } = groupCompactNodes(nodes);
+  const tierEntries = Array.from(tiers.entries()).sort(([a], [b]) => a - b);
   for (const [tier, group] of tierEntries) {
-    const section = document.createElement("section");
-    const hasEvolution = group.some(isEvolutionNode);
-    section.className = `compact-skill-tier${hasEvolution ? " compact-skill-tier-evolution" : ""}`;
-    section.setAttribute("aria-label", compactTierTitle(tier, hasEvolution));
-
-    const heading = document.createElement("div");
-    heading.className = "compact-skill-tier-heading";
-    heading.innerHTML = `
-      <span>${compactTierTitle(tier, hasEvolution)}</span>
-      <small>${compactTierHint(group)}</small>
-    `;
-    section.appendChild(heading);
-
-    for (const node of group) {
-      section.appendChild(renderCompactSkillCard(node, weapon, selectedNode?.id === node.id));
-    }
-
-    list.appendChild(section);
+    list.appendChild(renderCompactSkillSection(tier, group, weapon, selectedNode));
+  }
+  if (evolution.length) {
+    list.appendChild(renderCompactSkillSection(null, evolution, weapon, selectedNode, true));
   }
 
-  const stickyDetail = renderNodeDetail(selectedNode, scope);
-  stickyDetail.classList.add("compact-skill-sticky-detail");
-  wrapper.append(list, stickyDetail);
+  const detail = renderCompactSkillDetail(selectedNode, scope);
+  wrapper.append(list, detail);
   return wrapper;
 }
 
-function groupNodesByTier(nodes) {
-  const groups = new Map();
+function renderCompactSkillSection(tier, group, weapon, selectedNode, hasEvolution = false) {
+  const section = document.createElement("section");
+  section.className = `compact-skill-tier${hasEvolution ? " compact-skill-tier-evolution" : ""}`;
+  section.setAttribute("aria-label", compactTierTitle(tier, hasEvolution));
+
+  const heading = document.createElement("div");
+  heading.className = "compact-skill-tier-heading";
+  heading.innerHTML = `
+    <span>${compactTierTitle(tier, hasEvolution)}</span>
+    <small>${compactTierHint(group)}</small>
+  `;
+  section.appendChild(heading);
+
+  for (const node of group) {
+    section.appendChild(renderCompactSkillCard(node, weapon, selectedNode?.id === node.id));
+  }
+  return section;
+}
+
+function groupCompactNodes(nodes) {
+  const tiers = new Map();
+  const evolution = [];
   for (const node of nodes) {
+    if (isEvolutionNode(node)) {
+      evolution.push(node);
+      continue;
+    }
     const tier = visualTier(node, nodes);
-    if (!groups.has(tier)) groups.set(tier, []);
-    groups.get(tier).push(node);
+    if (!tiers.has(tier)) tiers.set(tier, []);
+    tiers.get(tier).push(node);
   }
-  for (const group of groups.values()) {
-    group.sort((a, b) => (isEvolutionNode(a) === isEvolutionNode(b) ? nodes.indexOf(a) - nodes.indexOf(b) : isEvolutionNode(a) ? 1 : -1));
+  for (const group of [...tiers.values(), evolution]) {
+    group.sort((a, b) => compactNodePriority(a) - compactNodePriority(b) || nodes.indexOf(a) - nodes.indexOf(b));
   }
-  return groups;
+  return { tiers, evolution };
+}
+
+function compactNodePriority(node) {
+  return { available: 0, costly: 1, locked: 2, owned: 3 }[nodeStatus(node)] ?? 4;
+}
+
+function compactSelectedNodeForScope(nodes, scope) {
+  const selectedId = selectedSkillNodes[scope];
+  return nodes.find((node) => node.id === selectedId) || null;
 }
 
 function renderCompactSkillCard(node, weapon, selected = false) {
@@ -269,38 +290,56 @@ function renderCompactSkillCard(node, weapon, selected = false) {
   card.setAttribute("aria-pressed", selected ? "true" : "false");
   card.setAttribute("aria-label", `${node.title}、${statusLabel(status)}、詳細を表示`);
 
-  const requires = compactRequirementNames(node);
+  card.dataset.nodeId = node.id;
   card.innerHTML = `
     <span class="compact-skill-card-icon" aria-hidden="true">${nodeIcon(node, weapon)}</span>
     <span class="compact-skill-card-copy">
       <span class="compact-skill-card-title-row">
-        <strong>${node.title}</strong>
+        <strong>${status === "owned" ? "✓ " : ""}${node.title}</strong>
         <span class="compact-skill-status">${statusLabel(status)}</span>
       </span>
-      <span class="compact-skill-card-text">${node.text}</span>
-      <span class="compact-skill-card-meta">
-        <span>コスト: ${nodeCost(node)}G</span>
-        ${requires ? `<span>前提: ${requires}</span>` : `<span>前提: なし</span>`}
+      <span class="compact-skill-card-main-row">
+        <span class="compact-skill-card-text">${node.text}</span>
+        <span class="compact-skill-cost">${nodeCost(node)}G</span>
       </span>
     </span>
   `;
   card.addEventListener("click", () => {
     selectedSkillNodes[node.scope] = node.id;
-    renderSkillTree();
+    updateCompactSkillSelection(node);
+    updateCompactSkillDetail(node);
   });
   return card;
 }
 
-function compactRequirementNames(node) {
-  if (!node.requires?.length) return "";
-  const nodes = treeForWeapon();
-  return node.requires
-    .map((id) => {
-      const required = nodes.find((candidate) => candidate.id === id);
-      const mark = isPurchased(id, node.scope) ? "✓" : "未";
-      return `${mark}${required?.title || id}`;
-    })
-    .join(" / ");
+function updateCompactSkillSelection(node) {
+  const tree = hud.skillTreeWeaponNodes?.querySelector(".compact-skill-tree");
+  if (!tree) return;
+  for (const card of tree.querySelectorAll(".compact-skill-card")) {
+    const selected = card.dataset.nodeId === node.id;
+    card.classList.toggle("compact-skill-card-selected", selected);
+    card.setAttribute("aria-pressed", selected ? "true" : "false");
+  }
+}
+
+function updateCompactSkillDetail(node) {
+  const current = hud.skillTreeWeaponNodes?.querySelector(".compact-skill-detail-slot");
+  if (!current) return;
+  current.replaceWith(renderCompactSkillDetail(node, node.scope));
+}
+
+function renderCompactSkillDetail(node, scope) {
+  const detail = node ? renderNodeDetail(node, scope, { detailedRequirements: true }) : renderCompactSkillHint();
+  detail.classList.add("compact-skill-detail-slot");
+  if (node) detail.classList.add("compact-skill-selected-detail");
+  return detail;
+}
+
+function renderCompactSkillHint() {
+  const hint = document.createElement("aside");
+  hint.className = "compact-skill-detail-hint";
+  hint.textContent = "気になるノードをタップすると、効果・コスト・前提ノードをここに表示します。";
+  return hint;
 }
 
 function compactTierTitle(tier, hasEvolution = false) {
@@ -524,7 +563,7 @@ function renderNodeButton(node, weapon, position = { x: 50, y: 50, tier: node.ti
   return button;
 }
 
-function renderNodeDetail(node, scope) {
+function renderNodeDetail(node, scope, { detailedRequirements = false } = {}) {
   const panel = document.createElement("article");
   panel.className = "skill-node-detail";
   if (!node) {
@@ -537,7 +576,7 @@ function renderNodeDetail(node, scope) {
   const free = freeCredits(scope) > 0;
   const canPurchase = status === "available" || (status === "costly" && free);
   const usesFreeCredit = free && canPurchase;
-  const requireText = requirementText(node);
+  const requireText = requirementText(node, detailedRequirements);
   panel.innerHTML = `
     <div class="skill-node-detail-head">
       <span class="skill-node-detail-icon" aria-hidden="true">${nodeIcon(node)}</span>
@@ -563,10 +602,17 @@ function renderNodeDetail(node, scope) {
   return panel;
 }
 
-function requirementText(node) {
+function requirementText(node, detailed = false) {
   if (!node.requires?.length) return "なし";
   const cleared = node.requires.filter((id) => isPurchased(id, node.scope)).length;
-  return `${cleared}/${node.requires.length} ノード開放`;
+  if (!detailed) return `${cleared}/${node.requires.length} ノード開放`;
+  const nodes = treeForWeapon();
+  const requirements = node.requires.map((id) => {
+    const required = nodes.find((candidate) => candidate.id === id);
+    const mark = isPurchased(id, node.scope) ? "✓" : "未";
+    return `${mark} ${required?.title || id}`;
+  });
+  return requirements.join(" / ");
 }
 
 function statusLabel(status) {
