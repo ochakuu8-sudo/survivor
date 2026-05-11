@@ -143,10 +143,18 @@ export function renderSkillTree() {
   hud.skillTreeGold.textContent = String(game.gold);
   hud.skillTreeWave.textContent = `Wave ${game.wave} Clear`;
   hud.skillTreeFree.textContent = freeCreditText();
+  const footerHint = hud.skillTree.querySelector(".skill-tree-footer p");
+  if (footerHint) {
+    footerHint.textContent = isCompactSkillTreePreferred()
+      ? "Tierごとに縦スクロールし、ノードをタップして詳細と開放条件を確認できます。"
+      : "ノードをタップして詳細を確認し、マップはスワイプ／ドラッグで全体を移動できます。";
+  }
   hud.skillTreeWeaponNodes.replaceChildren(renderNodeMap(treeForWeapon(weapon), weapon));
 }
 
 function renderNodeMap(nodes, weapon) {
+  if (isCompactSkillTreePreferred()) return renderCompactSkillTree(nodes, weapon);
+
   const wrapper = document.createElement("div");
   wrapper.className = "skill-node-map-wrap";
 
@@ -195,6 +203,119 @@ function renderNodeMap(nodes, weapon) {
   requestAnimationFrame(() => centerSkillMapOnNode(scroller, layout.get(selectedNode?.id)));
   wrapper.append(scroller, renderNodeDetail(selectedNode, scope));
   return wrapper;
+}
+
+
+function isCompactSkillTreePreferred() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(max-width: 720px)").matches || window.matchMedia("(pointer: coarse)").matches;
+}
+
+function renderCompactSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapon") {
+  const wrapper = document.createElement("div");
+  wrapper.className = "compact-skill-tree";
+
+  const selectedNode = selectedNodeForScope(nodes, scope);
+  const list = document.createElement("div");
+  list.className = "compact-skill-tree-list";
+
+  const tierGroups = groupNodesByTier(nodes);
+  const tierEntries = Array.from(tierGroups.entries()).sort(([a], [b]) => a - b);
+  for (const [tier, group] of tierEntries) {
+    const section = document.createElement("section");
+    const hasEvolution = group.some(isEvolutionNode);
+    section.className = `compact-skill-tier${hasEvolution ? " compact-skill-tier-evolution" : ""}`;
+    section.setAttribute("aria-label", compactTierTitle(tier, hasEvolution));
+
+    const heading = document.createElement("div");
+    heading.className = "compact-skill-tier-heading";
+    heading.innerHTML = `
+      <span>${compactTierTitle(tier, hasEvolution)}</span>
+      <small>${compactTierHint(group)}</small>
+    `;
+    section.appendChild(heading);
+
+    for (const node of group) {
+      section.appendChild(renderCompactSkillCard(node, weapon, selectedNode?.id === node.id));
+    }
+
+    list.appendChild(section);
+  }
+
+  const stickyDetail = renderNodeDetail(selectedNode, scope);
+  stickyDetail.classList.add("compact-skill-sticky-detail");
+  wrapper.append(list, stickyDetail);
+  return wrapper;
+}
+
+function groupNodesByTier(nodes) {
+  const groups = new Map();
+  for (const node of nodes) {
+    const tier = visualTier(node, nodes);
+    if (!groups.has(tier)) groups.set(tier, []);
+    groups.get(tier).push(node);
+  }
+  for (const group of groups.values()) {
+    group.sort((a, b) => (isEvolutionNode(a) === isEvolutionNode(b) ? nodes.indexOf(a) - nodes.indexOf(b) : isEvolutionNode(a) ? 1 : -1));
+  }
+  return groups;
+}
+
+function renderCompactSkillCard(node, weapon, selected = false) {
+  const status = nodeStatus(node);
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = `compact-skill-card compact-skill-card-${status}${selected ? " compact-skill-card-selected" : ""}${isEvolutionNode(node) ? " compact-skill-card-evolution" : ""}`;
+  card.setAttribute("aria-pressed", selected ? "true" : "false");
+  card.setAttribute("aria-label", `${node.title}、${statusLabel(status)}、詳細を表示`);
+
+  const requires = compactRequirementNames(node);
+  card.innerHTML = `
+    <span class="compact-skill-card-icon" aria-hidden="true">${nodeIcon(node, weapon)}</span>
+    <span class="compact-skill-card-copy">
+      <span class="compact-skill-card-title-row">
+        <strong>${node.title}</strong>
+        <span class="compact-skill-status">${statusLabel(status)}</span>
+      </span>
+      <span class="compact-skill-card-text">${node.text}</span>
+      <span class="compact-skill-card-meta">
+        <span>コスト: ${nodeCost(node)}G</span>
+        ${requires ? `<span>前提: ${requires}</span>` : `<span>前提: なし</span>`}
+      </span>
+    </span>
+  `;
+  card.addEventListener("click", () => {
+    selectedSkillNodes[node.scope] = node.id;
+    renderSkillTree();
+  });
+  return card;
+}
+
+function compactRequirementNames(node) {
+  if (!node.requires?.length) return "";
+  const nodes = treeForWeapon();
+  return node.requires
+    .map((id) => {
+      const required = nodes.find((candidate) => candidate.id === id);
+      const mark = isPurchased(id, node.scope) ? "✓" : "未";
+      return `${mark}${required?.title || id}`;
+    })
+    .join(" / ");
+}
+
+function compactTierTitle(tier, hasEvolution = false) {
+  return hasEvolution ? "進化ノード" : `Tier ${tier}`;
+}
+
+function compactTierHint(group) {
+  if (group.some(isEvolutionNode)) return "最終進化への到達点";
+  const available = group.filter((node) => nodeStatus(node) === "available").length;
+  const owned = group.filter((node) => nodeStatus(node) === "owned").length;
+  return `取得済み ${owned}/${group.length}${available ? ` / 開放可能 ${available}` : ""}`;
+}
+
+function isEvolutionNode(node) {
+  return !!node.evolveTo || node.title.includes("進化");
 }
 
 function layoutSkillNodes(nodes) {
