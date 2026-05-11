@@ -149,7 +149,7 @@ export function renderSkillTree() {
   const footerHint = hud.skillTree.querySelector(".skill-tree-footer p");
   if (footerHint) {
     footerHint.textContent = compactPreferred
-      ? "スマホ用の縦型ノードマップです。ピンチで拡大、ドラッグで移動、タップで詳細を確認できます。"
+      ? "スマホ用の縦型ノードマップです。ドラッグで移動し、タップで詳細を確認できます。"
       : "ノードをタップして詳細を確認し、マップはスワイプ／ドラッグで全体を移動できます。";
   }
   hud.skillTreeWeaponNodes.replaceChildren(renderNodeMap(treeForWeapon(weapon), weapon));
@@ -218,14 +218,14 @@ function renderMobileSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapon
   const hadSelection = !!selectedSkillNodes[scope];
   const selectedNode = selectedNodeForScope(nodes, scope);
   const layout = layoutMobileSkillNodes(nodes);
-  const gridMeta = layout.gridMeta || { tiers: 1, mapWidth: 560, mapHeight: 920, hub: { x: 50, y: 6 } };
+  const gridMeta = layout.gridMeta || { tiers: 1, mapWidth: 400, mapHeight: 920, hub: { x: 200, y: 64, unit: "px" } };
 
   const wrapper = document.createElement("div");
   wrapper.className = "mobile-skill-tree";
 
   const viewport = document.createElement("div");
   viewport.className = "mobile-skill-tree-viewport skill-node-map-scroller";
-  viewport.setAttribute("aria-label", "スマホ向けスキルツリーマップ。ピンチで拡大縮小、ドラッグで移動できます。");
+  viewport.setAttribute("aria-label", "スマホ向けスキルツリーマップ。ドラッグで移動し、タップで詳細を確認できます。");
 
   const map = document.createElement("div");
   map.className = "skill-node-map mobile-skill-node-map";
@@ -236,8 +236,8 @@ function renderMobileSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapon
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.classList.add("skill-node-links", "mobile-skill-node-links");
-  svg.setAttribute("viewBox", "0 0 100 100");
-  svg.setAttribute("preserveAspectRatio", "none");
+  svg.setAttribute("viewBox", `0 0 ${gridMeta.mapWidth} ${gridMeta.mapHeight}`);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
   svg.setAttribute("aria-hidden", "true");
 
   for (const node of nodes) {
@@ -286,25 +286,52 @@ function layoutMobileSkillNodes(nodes) {
     tierGroups.get(tier).push(node);
   }
 
-  const maxTierSize = Math.max(1, ...Array.from(tierGroups.values(), (group) => group.length));
-  const mapWidth = Math.max(540, Math.min(760, 180 + maxTierSize * 118));
-  const mapHeight = Math.max(860, 184 + maxTier * 126);
-  const hub = { x: 50, y: 5.8, tier: 0, row: 0 };
+  const viewportWidth = typeof window === "undefined" ? 400 : window.innerWidth || 400;
+  const mapWidth = Math.round(clamp(viewportWidth - 24, 390, 430));
+  const nodeWidth = viewportWidth <= 370 ? 116 : 124;
+  const nodeHeight = viewportWidth <= 370 ? 58 : 62;
+  const hubSize = 72;
+  const columnPadding = viewportWidth <= 370 ? 76 : 84;
+  const columns = [columnPadding, mapWidth - columnPadding];
+  const rowGap = 24;
+  const tierGap = 48;
+  const tierLabelOffset = 26;
+  const hub = { x: Math.round(mapWidth / 2), y: 62, tier: 0, row: 0, unit: "px", nodeWidth: hubSize, nodeHeight: hubSize };
+  const tierLines = [];
+  let cursorY = 154;
 
   for (let tier = 1; tier <= maxTier; tier += 1) {
     const group = [...(tierGroups.get(tier) || [])];
     group.sort((a, b) => averageParentX(a, layout, nodes) - averageParentX(b, layout, nodes) || nodes.indexOf(a) - nodes.indexOf(b));
-    const y = 12 + ((tier - 1) / Math.max(1, maxTier - 1)) * 78;
+    const rows = Math.max(1, Math.ceil(group.length / 2));
+    const tierStartY = cursorY;
+    tierLines.push({ tier, y: tierStartY - tierLabelOffset, isEvolution: group.some(isEvolutionNode) });
+
     group.forEach((node, index) => {
-      const parentX = averageParentX(node, layout, nodes);
-      const spread = group.length === 1 ? 0 : (index - (group.length - 1) / 2) * Math.min(20, 70 / Math.max(2, group.length));
-      const fallbackX = group.length === 1 ? 50 : 12 + (index / (group.length - 1)) * 76;
-      const x = clamp(Number.isFinite(parentX) ? parentX + spread : fallbackX, 9, 91);
-      layout.set(node.id, { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)), tier, row: index });
+      const isEvolution = isEvolutionNode(node);
+      const row = Math.floor(index / 2);
+      const isSingleInRow = index === group.length - 1 && group.length % 2 === 1;
+      const column = isSingleInRow || isEvolution ? 0.5 : index % 2;
+      const x = column === 0.5 ? mapWidth / 2 : columns[column];
+      const y = tierStartY + row * (nodeHeight + rowGap);
+      const width = isEvolution ? Math.min(152, mapWidth - 72) : nodeWidth;
+      const height = isEvolution ? 68 : nodeHeight;
+      layout.set(node.id, {
+        x: Math.round(x),
+        y: Math.round(y),
+        tier,
+        row,
+        unit: "px",
+        nodeWidth: width,
+        nodeHeight: height,
+      });
     });
+
+    cursorY += rows * nodeHeight + (rows - 1) * rowGap + tierGap;
   }
 
-  layout.gridMeta = { tiers: maxTier, rows: maxTierSize, mapWidth, mapHeight, hub };
+  const mapHeight = Math.max(860, Math.round(cursorY + 70));
+  layout.gridMeta = { tiers: maxTier, rows: Math.max(1, ...Array.from(tierGroups.values(), (group) => Math.ceil(group.length / 2))), mapWidth, mapHeight, hub, tierLines };
   return layout;
 }
 
@@ -319,23 +346,26 @@ function averageParentX(node, layout, nodes) {
   return Number.NaN;
 }
 
-function renderMobileSkillGridLabels({ tiers }) {
+function renderMobileSkillGridLabels({ tiers, tierLines = [], mapWidth = 400 }) {
   const layer = document.createElement("div");
   layer.className = "skill-grid-labels mobile-skill-grid-labels";
   layer.setAttribute("aria-hidden", "true");
 
-  for (let tier = 1; tier <= tiers; tier += 1) {
-    const y = 12 + ((tier - 1) / Math.max(1, tiers - 1)) * 78;
+  const lines = tierLines.length
+    ? tierLines
+    : Array.from({ length: tiers }, (_, index) => ({ tier: index + 1, y: 128 + index * 110, isEvolution: index + 1 === tiers }));
+
+  for (const { tier, y, isEvolution } of lines) {
     const line = document.createElement("span");
     line.className = "mobile-skill-tier-line";
-    line.style.setProperty("--grid-y", `${y}%`);
+    line.style.setProperty("--grid-y", `${y}px`);
     layer.appendChild(line);
 
     const label = document.createElement("span");
     label.className = "skill-grid-tier-label mobile-skill-tier-label";
-    label.style.setProperty("--grid-x", "5%");
-    label.style.setProperty("--grid-y", `${y}%`);
-    label.textContent = tier === tiers ? "進化" : `T${tier}`;
+    label.style.setProperty("--grid-x", `${Math.max(30, mapWidth * 0.12)}px`);
+    label.style.setProperty("--grid-y", `${y}px`);
+    label.textContent = isEvolution ? "進化" : `T${tier}`;
     layer.appendChild(label);
   }
 
@@ -343,8 +373,12 @@ function renderMobileSkillGridLabels({ tiers }) {
 }
 
 function mobileLinkPath(from, to) {
-  const midY = from.y + (to.y - from.y) * 0.5;
-  return `M ${from.x} ${from.y} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`;
+  const fromHeight = from.nodeHeight || 62;
+  const toHeight = to.nodeHeight || 62;
+  const startY = from.y + fromHeight / 2;
+  const endY = to.y - toHeight / 2;
+  const midY = startY + (endY - startY) * 0.52;
+  return `M ${from.x} ${startY} C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${endY}`;
 }
 
 function selectedLinkClasses(requiredId, node, selectedNode, nodes) {
@@ -369,15 +403,15 @@ function setupMobileSkillViewport(viewport, map, selectedPosition, focusSelected
   if (!viewport || !map) return;
   const baseWidth = Number(map.dataset.baseWidth) || map.offsetWidth;
   const baseHeight = Number(map.dataset.baseHeight) || map.offsetHeight;
-  const minScale = Math.max(0.58, Math.min(0.92, (viewport.clientWidth - 22) / baseWidth));
-  const targetScale = focusSelected ? Math.max(minScale, 0.82) : minScale;
-  applyMobileMapScale(map, baseWidth, baseHeight, targetScale);
-  centerSkillMapOnNode(viewport, selectedPosition || { x: 50, y: 12 });
-  enableMobileMapGestures(viewport, map, baseWidth, baseHeight, minScale);
+  map.dataset.scale = "1";
+  map.style.width = `${baseWidth}px`;
+  map.style.height = `${baseHeight}px`;
+  centerSkillMapOnNode(viewport, focusSelected ? selectedPosition : { x: baseWidth / 2, y: 112, unit: "px" });
+  enableMobileMapGestures(viewport, map, baseWidth, baseHeight, 1);
 }
 
 function applyMobileMapScale(map, baseWidth, baseHeight, scale) {
-  const nextScale = clamp(scale, 0.58, 1.45);
+  const nextScale = clamp(scale, 1, 1);
   map.dataset.scale = String(nextScale);
   map.style.width = `${Math.round(baseWidth * nextScale)}px`;
   map.style.height = `${Math.round(baseHeight * nextScale)}px`;
@@ -727,8 +761,10 @@ function renderSkillGridLabels({ tiers, ringStep }) {
 function renderSkillHub(weapon, position = { x: 50, y: 50 }) {
   const hub = document.createElement("div");
   hub.className = "skill-node-hub";
-  hub.style.setProperty("--node-x", `${position.x}%`);
-  hub.style.setProperty("--node-y", `${position.y}%`);
+  hub.style.setProperty("--node-x", position.unit === "px" ? `${position.x}px` : `${position.x}%`);
+  hub.style.setProperty("--node-y", position.unit === "px" ? `${position.y}px` : `${position.y}%`);
+  if (position.nodeWidth) hub.style.setProperty("--mobile-node-width", `${position.nodeWidth}px`);
+  if (position.nodeHeight) hub.style.setProperty("--mobile-node-height", `${position.nodeHeight}px`);
   hub.innerHTML = `
     <span class="skill-node-hub-icon" aria-hidden="true">${weapon ? nodeIcon({ id: weapon.name, title: weapon.name, text: "" }, weapon) : "✦"}</span>
     <span class="skill-node-hub-label">中心</span>
@@ -747,8 +783,8 @@ function orthogonalLinkPath(from, to) {
 
 function centerSkillMapOnNode(scroller, position = { x: 50, y: 50 }) {
   if (!scroller) return;
-  const x = (position.x / 100) * scroller.scrollWidth;
-  const y = (position.y / 100) * scroller.scrollHeight;
+  const x = position.unit === "px" ? position.x : (position.x / 100) * scroller.scrollWidth;
+  const y = position.unit === "px" ? position.y : (position.y / 100) * scroller.scrollHeight;
   scroller.scrollLeft = Math.max(0, x - scroller.clientWidth / 2);
   scroller.scrollTop = Math.max(0, y - scroller.clientHeight / 2);
 }
@@ -787,8 +823,10 @@ function renderNodeButton(node, weapon, position = { x: 50, y: 50, tier: node.ti
   button.type = "button";
   const status = nodeStatus(node);
   button.className = `skill-node skill-node-${status} tier-${node.tier}${selected ? " skill-node-selected" : ""}${isEvolutionNode(node) ? " skill-node-evolution" : ""}`;
-  button.style.setProperty("--node-x", `${position.x}%`);
-  button.style.setProperty("--node-y", `${position.y}%`);
+  button.style.setProperty("--node-x", position.unit === "px" ? `${position.x}px` : `${position.x}%`);
+  button.style.setProperty("--node-y", position.unit === "px" ? `${position.y}px` : `${position.y}%`);
+  if (position.nodeWidth) button.style.setProperty("--mobile-node-width", `${position.nodeWidth}px`);
+  if (position.nodeHeight) button.style.setProperty("--mobile-node-height", `${position.nodeHeight}px`);
   button.setAttribute("aria-pressed", selected ? "true" : "false");
   button.setAttribute("aria-label", `${node.title}、${statusLabel(status)}、詳細を表示`);
   button.innerHTML = `
