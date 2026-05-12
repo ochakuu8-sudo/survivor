@@ -1,6 +1,6 @@
-import { RUN_DURATION_SECONDS, TAU } from "./constants.js";
-import { game, nextEnemyId } from "./state.js";
-import { distanceToSegmentSq, normalize } from "./utils/math.js";
+import { COLLISION_CELL_SIZE, RUN_DURATION_SECONDS, TAU } from "./constants.js";
+import { enemyCollisionGrid, game, nextEnemyId } from "./state.js";
+import { distanceToSegmentSq, gridKey, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
 import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
@@ -11,6 +11,9 @@ const SPAWN_BATCH_SIZE = 18;
 const OPENING_ENEMY_COUNT = 48;
 const OFFSCREEN_SPAWN_MARGIN = 120;
 const SAFETY_ENEMY_CAP = 3000;
+const ENEMY_PUSH_RADIUS_SCALE = 0.62;
+const ENEMY_PUSH_STRENGTH = 0.42;
+const ENEMY_PUSH_MAX_STEP = 5.5;
 
 function runProgress(elapsed = game.floorElapsed || 0) {
   return Math.min(1, Math.max(0, elapsed / RUN_DURATION_SECONDS));
@@ -249,6 +252,71 @@ export function updateEnemies(dt) {
       updateMeleeEnemy(enemy, p, dt);
     }
   }
+
+  resolveEnemySeparation();
+}
+
+function enemyPushRadius(enemy) {
+  return Math.max(7, enemy.radius * ENEMY_PUSH_RADIUS_SCALE);
+}
+
+function buildEnemySeparationGrid() {
+  enemyCollisionGrid.clear();
+  for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
+    const cellX = Math.floor(enemy.x / COLLISION_CELL_SIZE);
+    const cellY = Math.floor(enemy.y / COLLISION_CELL_SIZE);
+    const key = gridKey(cellX, cellY);
+    let cell = enemyCollisionGrid.get(key);
+    if (!cell) {
+      cell = [];
+      enemyCollisionGrid.set(key, cell);
+    }
+    cell.push(enemy);
+  }
+  return enemyCollisionGrid;
+}
+
+function resolveEnemySeparation() {
+  if (game.enemies.length < 2) return;
+
+  const grid = buildEnemySeparationGrid();
+  for (const [key, cell] of grid) {
+    const [cellXText, cellYText] = key.split(":");
+    const cellX = Number(cellXText);
+    const cellY = Number(cellYText);
+
+    for (const enemy of cell) {
+      for (let yOffset = -1; yOffset <= 1; yOffset += 1) {
+        for (let xOffset = -1; xOffset <= 1; xOffset += 1) {
+          const otherCell = grid.get(gridKey(cellX + xOffset, cellY + yOffset));
+          if (!otherCell) continue;
+
+          for (const other of otherCell) {
+            if (other === enemy || other.id <= enemy.id) continue;
+            separateEnemyPair(enemy, other);
+          }
+        }
+      }
+    }
+  }
+}
+
+function separateEnemyPair(a, b) {
+  const delta = shortestDungeonDelta(game.dungeon, a.x, a.y, b.x, b.y);
+  const minDist = enemyPushRadius(a) + enemyPushRadius(b);
+  const distSq = delta.dx * delta.dx + delta.dy * delta.dy;
+  if (distSq >= minDist * minDist) return;
+
+  const distance = Math.sqrt(distSq);
+  const nx = distance > 0.0001 ? delta.dx / distance : Math.cos((a.id * 12.9898 + b.id * 78.233) % TAU);
+  const ny = distance > 0.0001 ? delta.dy / distance : Math.sin((a.id * 12.9898 + b.id * 78.233) % TAU);
+  const overlap = minDist - distance;
+  const step = Math.min(ENEMY_PUSH_MAX_STEP, overlap * ENEMY_PUSH_STRENGTH * 0.5);
+  if (step <= 0.001) return;
+
+  moveActorWithDungeonCollision(a, -nx * step, -ny * step);
+  moveActorWithDungeonCollision(b, nx * step, ny * step);
 }
 
 function updateMeleeEnemy(enemy, p, dt) {
