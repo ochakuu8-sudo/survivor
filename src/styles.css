@@ -2187,18 +2187,21 @@ h1 {
   width: min(1120px, calc(100vw - 28px));
   max-height: min(90vh, 860px);
   overflow: auto;
-  border-color: rgba(255, 251, 235, 0.95);
-  color: #17405f;
-  background: linear-gradient(180deg, rgba(204, 231, 238, 0.98), rgba(174, 213, 225, 0.96));
-  box-shadow: 0 16px 0 rgba(70, 109, 150, 0.22), 0 24px 56px rgba(44, 78, 110, 0.22);
+  border-color: rgba(255, 228, 107, 0.74);
+  color: #fff9f2;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255, 93, 150, 0.18), transparent 34%),
+    radial-gradient(circle at 86% 12%, rgba(85, 246, 199, 0.16), transparent 32%),
+    linear-gradient(180deg, rgba(45, 39, 109, 0.98), rgba(29, 27, 76, 0.98));
+  box-shadow: 0 16px 0 rgba(18, 14, 52, 0.66), 0 24px 56px rgba(10, 8, 32, 0.4);
 }
 
 #skillTree .panel-head h1 {
-  color: #17405f;
+  color: #fff9f2;
 }
 
 #skillTree .panel-kicker {
-  color: #2563eb;
+  color: #84ffda;
 }
 
 .skill-tree-summary {
@@ -2211,10 +2214,12 @@ h1 {
 .skill-tree-summary > div,
 .skill-tree-pane,
 .skill-node-detail {
-  border: 1px solid rgba(125, 165, 214, 0.34);
+  border: 1px solid rgba(255, 249, 242, 0.18);
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(204, 231, 238, 0.97), rgba(187, 220, 230, 0.94));
-  box-shadow: 0 10px 28px rgba(70, 109, 150, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.86);
+  background:
+    linear-gradient(180deg, rgba(255, 93, 150, 0.1), transparent 42%),
+    rgba(45, 39, 109, 0.88);
+  box-shadow: 0 10px 28px rgba(10, 8, 32, 0.26), inset 0 1px 0 rgba(255, 249, 242, 0.12);
 }
 
 .skill-tree-summary > div {
@@ -2224,12 +2229,12 @@ h1 {
 }
 
 .skill-tree-summary strong {
-  color: #17405f;
+  color: #fff9f2;
   font-size: clamp(1.05rem, 2.2vw, 1.35rem);
 }
 
 .skill-tree-summary small {
-  color: rgba(44, 78, 110, 0.72);
+  color: rgba(217, 247, 255, 0.72);
 }
 
 .skill-tree-layout {
@@ -2244,7 +2249,7 @@ h1 {
 
 .skill-tree-pane h2 {
   margin: 0 0 10px;
-  color: #17405f;
+  color: #fff9f2;
   font-size: 1rem;
 }
 
@@ -2265,7 +2270,7 @@ h1 {
   border-radius: 16px;
   cursor: grab;
   -webkit-overflow-scrolling: touch;
-  scrollbar-color: rgba(59, 130, 246, 0.62) rgba(219, 234, 254, 0.84);
+  scrollbar-color: rgba(85, 246, 199, 0.62) rgba(18, 14, 52, 0.84);
   scrollbar-width: thin;
 }
 
@@ -2279,15 +2284,15 @@ h1 {
   height: 680px;
   max-width: none;
   overflow: hidden;
-  border: 1px solid rgba(125, 165, 214, 0.34);
+  border: 1px solid rgba(85, 246, 199, 0.22);
   border-radius: 16px;
   background:
-    radial-gradient(circle at 50% 45%, rgba(250, 204, 21, 0.42), transparent 34%),
-    linear-gradient(90deg, rgba(96, 165, 250, 0.16) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(96, 165, 250, 0.12) 1px, transparent 1px),
-    linear-gradient(135deg, #bddde8 0%, #a7cfdd 54%, #b3ddc4 100%);
+    radial-gradient(circle at 50% 45%, rgba(255, 228, 107, 0.2), transparent 34%),
+    linear-gradient(90deg, rgba(85, 246, 199, 0.12) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 249, 242, 0.08) 1px, transparent 1px),
+    linear-gradient(135deg, #251c56 0%, #302b72 54%, #195331 100%);
   background-size: auto, var(--skill-grid-size, 126px) var(--skill-grid-size, 126px), var(--skill-grid-size, 126px) var(--skill-grid-size, 126px), auto;
-  box-shadow: inset 0 0 38px rgba(99, 179, 237, 0.16), 0 12px 28px rgba(70, 109, 150, 0.12);
+  box-shadow: inset 0 0 38px rgba(85, 246, 199, 0.1), 0 12px 28px rgba(10, 8, 32, 0.24);
 }
 
 .skill-grid-labels,
@@ -2309,10 +2314,10 @@ h1 {
   transform: translate(-50%, -50%);
   min-width: 34px;
   padding: 4px 8px;
-  border: 1px solid rgba(37, 99, 235, 0.28);
+  border: 1px solid rgba(85, 246, 199, 0.34);
   border-radius: 999px;
-  color: #1d4f91;
-  background: rgba(255, 255, 255, 0.86);
+  color: #84ffda;
+  background: rgba(15, 18, 55, 0.78);
   font-size: 0.7rem;
   font-weight: 1000;
   text-align: center;
@@ -2455,8 +2460,8 @@ h1 {
   padding: 0;
   transform: translate(-50%, -50%);
   border-radius: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.92);
-  color: #12324a;
+  border: 2px solid rgba(255, 249, 242, 0.74);
+  color: #10273a;
   touch-action: manipulation;
   transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease, border-color 0.16s ease;
 }
@@ -2468,7 +2473,7 @@ h1 {
 
 .skill-node-selected {
   border-color: #fde68a;
-  box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.34), 0 0 0 9px rgba(59, 130, 246, 0.16), 0 12px 26px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 5px rgba(255, 228, 107, 0.34), 0 0 0 9px rgba(85, 246, 199, 0.16), 0 12px 26px rgba(10, 8, 32, 0.34);
 }
 
 .skill-node-icon {
@@ -2477,9 +2482,9 @@ h1 {
   width: calc(var(--node-size) - 12px);
   height: calc(var(--node-size) - 12px);
   border-radius: 10px;
-  background: rgba(226, 242, 244, 0.76);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 3px 8px rgba(30, 64, 175, 0.12);
-  color: #12324a;
+  background: rgba(255, 249, 242, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 3px 8px rgba(10, 8, 32, 0.18);
+  color: #10273a;
   font-size: clamp(1.08rem, 2.6vw, 1.5rem);
   font-weight: 900;
   line-height: 1;
@@ -2491,10 +2496,10 @@ h1 {
   bottom: -5px;
   min-width: 20px;
   padding: 2px 5px;
-  border: 1px solid rgba(30, 64, 175, 0.18);
+  border: 1px solid rgba(255, 249, 242, 0.2);
   border-radius: 999px;
-  background: rgba(223, 241, 245, 0.9);
-  color: #1d4ed8;
+  background: rgba(15, 18, 55, 0.78);
+  color: #84ffda;
   font-weight: 900;
   font-size: 0.58rem;
   line-height: 1;
@@ -2518,7 +2523,8 @@ h1 {
 .skill-node-locked,
 .skill-node-costly {
   cursor: pointer;
-  background: linear-gradient(135deg, #b6c6d5, #8fa3b8);
+  border-color: rgba(255, 249, 242, 0.28);
+  background: linear-gradient(135deg, #5a5285, #3a346f);
   opacity: 0.9;
 }
 
@@ -2532,7 +2538,8 @@ h1 {
 }
 
 .skill-node-locked .skill-node-icon {
-  color: #64748b;
+  color: #d9f7ff;
+  background: rgba(255, 249, 242, 0.18);
 }
 
 .skill-node-detail {
@@ -2554,8 +2561,8 @@ h1 {
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #bfdbfe, #fde68a);
-  color: #17405f;
+  background: linear-gradient(135deg, #55f6c7, #ffe46b);
+  color: #10273a;
   font-size: 1.35rem;
   font-weight: 900;
 }
@@ -2567,12 +2574,12 @@ h1 {
 }
 
 .skill-node-detail h3 {
-  color: #17405f;
+  color: #fff9f2;
   font-size: 1.05rem;
 }
 
 .skill-node-detail p {
-  color: rgba(31, 65, 94, 0.82);
+  color: rgba(217, 247, 255, 0.82);
   line-height: 1.45;
 }
 
@@ -2585,18 +2592,18 @@ h1 {
 .skill-node-detail dl > div {
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(219, 234, 254, 0.62);
+  background: rgba(15, 18, 55, 0.34);
 }
 
 .skill-node-detail dt {
-  color: #2563eb;
+  color: #84ffda;
   font-size: 0.65rem;
   font-weight: 900;
 }
 
 .skill-node-detail dd {
   margin: 2px 0 0;
-  color: #17405f;
+  color: #fff9f2;
   font-weight: 900;
 }
 
@@ -2648,15 +2655,15 @@ h1 {
   gap: 8px;
   min-height: 30px;
   padding: 6px 9px;
-  border: 1px solid rgba(37, 99, 235, 0.28);
+  border: 1px solid rgba(85, 246, 199, 0.32);
   border-radius: 999px;
-  color: #17405f;
-  background: rgba(200, 226, 233, 0.92);
+  color: #fff9f2;
+  background: rgba(15, 18, 55, 0.52);
   font-weight: 1000;
 }
 
 .compact-skill-tier-heading small {
-  color: rgba(44, 78, 110, 0.64);
+  color: rgba(217, 247, 255, 0.68);
   font-size: 0.7rem;
   font-weight: 800;
   text-align: right;
@@ -2677,11 +2684,11 @@ h1 {
   min-height: 60px;
   width: 100%;
   padding: 8px;
-  border: 2px solid rgba(125, 165, 214, 0.28);
+  border: 2px solid rgba(255, 249, 242, 0.16);
   border-radius: 14px;
-  color: #17405f;
-  background: rgba(199, 225, 232, 0.9);
-  box-shadow: 0 4px 0 rgba(70, 109, 150, 0.12);
+  color: #fff9f2;
+  background: rgba(15, 18, 55, 0.52);
+  box-shadow: 0 4px 0 rgba(10, 8, 32, 0.26);
   text-align: left;
 }
 
@@ -2703,35 +2710,35 @@ h1 {
 
 .compact-skill-card-selected {
   border-color: #fde68a;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.24), 0 4px 0 rgba(70, 109, 150, 0.12);
+  box-shadow: 0 0 0 3px rgba(85, 246, 199, 0.2), 0 4px 0 rgba(10, 8, 32, 0.26);
 }
 
 .compact-skill-card-available {
   border-color: rgba(14, 116, 144, 0.62);
   background: linear-gradient(135deg, #7dd3fc, #6ee7b7);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16), 0 5px 0 rgba(70, 109, 150, 0.14);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18), 0 5px 0 rgba(10, 8, 32, 0.24);
 }
 
 .compact-skill-card-owned {
-  border-color: rgba(52, 211, 153, 0.48);
-  background: rgba(187, 247, 208, 0.78);
+  border-color: rgba(85, 246, 199, 0.46);
+  background: rgba(85, 246, 199, 0.18);
   opacity: 0.95;
 }
 
 .compact-skill-card-costly {
-  border-color: rgba(251, 191, 36, 0.62);
-  background: rgba(253, 230, 138, 0.78);
+  border-color: rgba(255, 228, 107, 0.66);
+  background: rgba(255, 228, 107, 0.2);
 }
 
 .compact-skill-card-locked {
-  border-color: rgba(100, 116, 139, 0.22);
-  background: rgba(203, 213, 225, 0.82);
-  opacity: 0.68;
+  border-color: rgba(255, 249, 242, 0.12);
+  background: rgba(15, 18, 55, 0.42);
+  opacity: 0.74;
 }
 
 .compact-skill-card-evolution {
   border-color: rgba(251, 191, 36, 0.78);
-  background: radial-gradient(circle at 18% 20%, rgba(251, 191, 36, 0.42), transparent 32%), rgba(254, 243, 199, 0.88);
+  background: radial-gradient(circle at 18% 20%, rgba(255, 228, 107, 0.34), transparent 32%), rgba(255, 93, 150, 0.2);
 }
 
 .compact-skill-card-icon {
@@ -2740,8 +2747,8 @@ h1 {
   width: 34px;
   height: 34px;
   border-radius: 11px;
-  background: rgba(226, 242, 244, 0.78);
-  color: #17405f;
+  background: rgba(255, 249, 242, 0.86);
+  color: #10273a;
   font-size: 1.12rem;
   font-weight: 1000;
 }
@@ -2766,7 +2773,7 @@ h1 {
 }
 
 .compact-skill-card-title-row strong {
-  color: #17405f;
+  color: #fff9f2;
   overflow: hidden;
   font-size: 0.92rem;
   line-height: 1.12;
@@ -2811,7 +2818,7 @@ h1 {
 
 .compact-skill-card-text,
 .compact-skill-card-meta {
-  color: rgba(31, 65, 94, 0.78);
+  color: rgba(217, 247, 255, 0.78);
   font-size: 0.78rem;
   line-height: 1.25;
 }
@@ -2826,8 +2833,8 @@ h1 {
 .compact-skill-cost {
   padding: 2px 6px;
   border-radius: 999px;
-  color: #17405f;
-  background: rgba(255, 255, 255, 0.66);
+  color: #10273a;
+  background: rgba(255, 228, 107, 0.9);
   font-size: 0.74rem;
   font-weight: 1000;
   line-height: 1.2;
@@ -2837,7 +2844,7 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 10px;
-  color: rgba(37, 99, 235, 0.78);
+  color: rgba(132, 255, 218, 0.82);
   font-size: 0.74rem;
   font-weight: 800;
 }
@@ -2845,18 +2852,18 @@ h1 {
 .compact-skill-detail-hint {
   margin-top: 2px;
   padding: 8px 10px;
-  border: 1px dashed rgba(125, 165, 214, 0.38);
+  border: 1px dashed rgba(85, 246, 199, 0.3);
   border-radius: 14px;
-  color: rgba(31, 65, 94, 0.68);
-  background: rgba(219, 234, 254, 0.54);
+  color: rgba(217, 247, 255, 0.72);
+  background: rgba(15, 18, 55, 0.38);
   font-size: 0.8rem;
   text-align: center;
 }
 
 .compact-skill-selected-detail {
   margin-top: 2px;
-  border-color: rgba(96, 165, 250, 0.42);
-  box-shadow: 0 8px 24px rgba(70, 109, 150, 0.14), inset 0 0 24px rgba(255, 255, 255, 0.38);
+  border-color: rgba(85, 246, 199, 0.36);
+  box-shadow: 0 8px 24px rgba(10, 8, 32, 0.28), inset 0 0 24px rgba(255, 249, 242, 0.08);
 }
 
 .mobile-skill-tree {
@@ -2870,8 +2877,8 @@ h1 {
   position: relative;
   min-height: clamp(420px, calc(100dvh - 230px), 690px);
   max-height: clamp(420px, calc(100dvh - 230px), 690px);
-  border: 1px solid rgba(125, 165, 214, 0.34);
-  background: rgba(181, 214, 225, 0.82);
+  border: 1px solid rgba(85, 246, 199, 0.22);
+  background: rgba(15, 18, 55, 0.44);
   touch-action: pan-x pan-y;
 }
 
@@ -2879,11 +2886,11 @@ h1 {
   overflow: hidden;
   border-radius: 20px;
   background:
-    radial-gradient(circle at 50% 4%, rgba(250, 204, 21, 0.42), transparent 18%),
-    linear-gradient(180deg, rgba(186, 230, 253, 0.48), transparent 32%),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.18) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(56, 189, 248, 0.14) 1px, transparent 1px),
-    linear-gradient(135deg, #bddde8 0%, #a7cfdd 58%, #b3ddc4 100%);
+    radial-gradient(circle at 50% 4%, rgba(255, 228, 107, 0.22), transparent 18%),
+    linear-gradient(180deg, rgba(85, 246, 199, 0.1), transparent 32%),
+    linear-gradient(90deg, rgba(85, 246, 199, 0.13) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(255, 249, 242, 0.08) 1px, transparent 1px),
+    linear-gradient(135deg, #251c56 0%, #302b72 58%, #195331 100%);
   background-size: auto, auto, var(--skill-grid-size, 140px) var(--skill-grid-size, 140px), var(--skill-grid-size, 140px) var(--skill-grid-size, 140px), auto;
 }
 
@@ -2903,9 +2910,9 @@ h1 {
 
 .skill-link-selected-prereq,
 .skill-link-selected-branch {
-  stroke: #2563eb;
+  stroke: #55f6c7;
   stroke-width: 3;
-  filter: drop-shadow(0 0 7px rgba(147, 197, 253, 0.58));
+  filter: drop-shadow(0 0 7px rgba(85, 246, 199, 0.5));
 }
 
 .skill-link-selected-branch {
@@ -2979,7 +2986,7 @@ h1 {
   .mobile-skill-tree .skill-node-available {
     border-color: rgba(14, 116, 144, 0.76);
     background: linear-gradient(135deg, #38bdf8, #22d3ee 48%, #5eead4);
-    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18), 0 0 26px rgba(14, 165, 233, 0.22), 0 8px 18px rgba(70, 109, 150, 0.16);
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18), 0 0 26px rgba(14, 165, 233, 0.22), 0 8px 18px rgba(10, 8, 32, 0.26);
   }
 
   .mobile-skill-tree .skill-node-owned {
@@ -3046,10 +3053,12 @@ h1 {
     max-height: min(30dvh, 238px);
     overflow: auto;
     padding: 12px;
-    border-color: rgba(96, 165, 250, 0.38);
+    border-color: rgba(85, 246, 199, 0.32);
     border-radius: 20px 20px 18px 18px;
-    background: linear-gradient(180deg, rgba(204, 231, 238, 0.98), rgba(187, 220, 230, 0.98));
-    box-shadow: 0 -12px 34px rgba(70, 109, 150, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+    background:
+      linear-gradient(180deg, rgba(255, 93, 150, 0.1), transparent 42%),
+      rgba(45, 39, 109, 0.98);
+    box-shadow: 0 -12px 34px rgba(10, 8, 32, 0.34), 0 0 0 1px rgba(255, 249, 242, 0.12) inset;
   }
 
   .mobile-skill-bottom-sheet .skill-node-detail-head {
@@ -3102,7 +3111,7 @@ h1 {
 
 .skill-tree-footer p {
   margin: 0;
-  color: rgba(44, 78, 110, 0.72);
+  color: rgba(217, 247, 255, 0.72);
 }
 
 .skill-tree-footer button {
@@ -3132,7 +3141,7 @@ h1 {
     margin: 0 0 8px;
     padding: 4px;
     border-radius: 16px;
-    background: rgba(219, 234, 254, 0.5);
+    background: rgba(15, 18, 55, 0.34);
   }
 
   .skill-tree-summary,
@@ -3281,7 +3290,7 @@ h1 {
     overflow: hidden;
     border: 0;
     border-radius: 0;
-    background: radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.28), transparent 34%), linear-gradient(180deg, #bddde8, #a7cfdd 58%, #b3ddc4);
+    background: radial-gradient(circle at 50% 0%, rgba(255, 228, 107, 0.18), transparent 34%), linear-gradient(180deg, #2d276d, #251c56 58%, #195331);
     box-shadow: none;
     transform: none;
   }
@@ -3293,10 +3302,10 @@ h1 {
     margin: 0 88px 6px 0;
     padding: 6px 10px;
     align-items: center;
-    border: 1px solid rgba(96, 165, 250, 0.24);
+    border: 1px solid rgba(85, 246, 199, 0.24);
     border-radius: 14px;
-    background: rgba(199, 225, 232, 0.9);
-    box-shadow: 0 6px 18px rgba(70, 109, 150, 0.16);
+    background: rgba(15, 18, 55, 0.72);
+    box-shadow: 0 6px 18px rgba(10, 8, 32, 0.24);
   }
 
   body.mobile-skill-tree-open #skillTree .panel-head h1 {
