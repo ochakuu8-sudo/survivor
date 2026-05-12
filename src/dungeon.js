@@ -305,13 +305,61 @@ export function dungeonVisualTileCoords(dungeon, tx, ty) {
 }
 
 export function dungeonFloorSprite(tx, ty, dungeon = null) {
-  if (dungeon?.arena && dungeon.wrapEdges) return "pavement";
+  if (dungeon?.arena && dungeon.wrapEdges) return arenaWrapFloorSprite(tx, ty, dungeon);
   const visual = dungeonVisualTileCoords(dungeon, tx, ty);
   const roll = hash2(visual.tx, visual.ty, 23);
   if (roll < 0.14) return "lane";
   if (roll < 0.3) return "sidewalk";
   if (roll < 0.42) return "crosswalk";
   return "road";
+}
+
+function arenaWrapFloorSprite(tx, ty, dungeon) {
+  const visual = dungeonVisualTileCoords(dungeon, tx, ty);
+  const seamBand = 2;
+  const nearHorizontalSeam = visual.tx < seamBand || visual.tx >= dungeon.width - seamBand;
+  const nearVerticalSeam = visual.ty < seamBand || visual.ty >= dungeon.height - seamBand;
+
+  // Keep the torus join calm and matching on both sides of the wrap, while
+  // preserving varied plaza/trail patches away from the seam.
+  if (nearHorizontalSeam || nearVerticalSeam) {
+    const corner = nearHorizontalSeam && nearVerticalSeam;
+    if (corner) return "sidewalk";
+    const seamRoll = hash2(
+      nearHorizontalSeam ? Math.min(visual.tx, dungeon.width - 1 - visual.tx) : Math.floor(visual.tx / 2),
+      nearVerticalSeam ? Math.min(visual.ty, dungeon.height - 1 - visual.ty) : Math.floor(visual.ty / 2),
+      dungeon.seed ^ 0x51eaf
+    );
+    return seamRoll < 0.28 ? "sidewalk" : "road";
+  }
+
+  const gardenPatch = periodicPatchValue(visual.tx, visual.ty, dungeon.width, dungeon.height, dungeon.seed ^ 0x8a31, 5);
+  if (gardenPatch > 0.76) return "pavement";
+  if (gardenPatch > 0.62) return "sidewalk";
+
+  const pathPatch = periodicPatchValue(visual.tx, visual.ty, dungeon.width, dungeon.height, dungeon.seed ^ 0xc49d, 4);
+  if (pathPatch > 0.78) return "crosswalk";
+  if (pathPatch > 0.58) return "lane";
+
+  return hash2(visual.tx, visual.ty, dungeon.seed ^ 0x2d17) < 0.18 ? "sidewalk" : "road";
+}
+
+function periodicPatchValue(tx, ty, width, height, seed, count) {
+  let value = 0;
+  for (let i = 0; i < count; i += 1) {
+    const cx = Math.floor(hash2(i, seed, 11) * width);
+    const cy = Math.floor(hash2(i, seed, 17) * height);
+    const dx = torusTileDistance(tx, cx, width);
+    const dy = torusTileDistance(ty, cy, height);
+    const radius = 2.4 + hash2(i, seed, 23) * 3.8;
+    value = Math.max(value, 1 - (dx * dx + dy * dy) / (radius * radius));
+  }
+  return clamp(value, 0, 1);
+}
+
+function torusTileDistance(a, b, size) {
+  const direct = Math.abs(a - b);
+  return Math.min(direct, size - direct);
 }
 
 function canStandAt(dungeon, x, y, radius) {
