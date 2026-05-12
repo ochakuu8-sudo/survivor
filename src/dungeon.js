@@ -16,12 +16,24 @@ const OBSTACLE_TYPES = [
   { sprite: "fieldFlowers", radius: 0, clearance: 24, scale: 1 },
 ];
 const EXIT_INTERACTION_RADIUS_SCALE = 2;
+const DUNGEON_WIDTH_BASE = 48;
+const DUNGEON_WIDTH_PER_WAVE = 2.4;
+const DUNGEON_WIDTH_MAX = 84;
+const DUNGEON_HEIGHT_BASE = 36;
+const DUNGEON_HEIGHT_PER_WAVE = 2.2;
+const DUNGEON_HEIGHT_MAX = 62;
+const ARENA_WIDTH_BASE = 36;
+const ARENA_WIDTH_PER_WAVE = 1.2;
+const ARENA_WIDTH_MAX = 50;
+const ARENA_HEIGHT_BASE = 26;
+const ARENA_HEIGHT_PER_WAVE = 0.75;
+const ARENA_HEIGHT_MAX = 38;
 
 export function generateDungeon(wave) {
   const seed = ((Date.now() & 0xfffffff) ^ Math.floor(Math.random() * 0x7fffffff) ^ (wave * 2654435761)) >>> 0;
   const rng = makeRng(seed);
-  const width = clamp(42 + wave * 2, 42, 72);
-  const height = clamp(32 + wave * 2, 32, 54);
+  const width = Math.floor(clamp(DUNGEON_WIDTH_BASE + wave * DUNGEON_WIDTH_PER_WAVE, DUNGEON_WIDTH_BASE, DUNGEON_WIDTH_MAX));
+  const height = Math.floor(clamp(DUNGEON_HEIGHT_BASE + wave * DUNGEON_HEIGHT_PER_WAVE, DUNGEON_HEIGHT_BASE, DUNGEON_HEIGHT_MAX));
   const tiles = new Array(width * height).fill(DUNGEON_WALL);
   const rooms = [];
 
@@ -90,8 +102,8 @@ export function generateDungeon(wave) {
 export function generateArenaDungeon(wave) {
   const seed = ((Date.now() & 0xfffffff) ^ Math.floor(Math.random() * 0x7fffffff) ^ (wave * 2246822519)) >>> 0;
   const rng = makeRng(seed);
-  const width = clamp(30 + wave, 30, 42);
-  const height = clamp(22 + Math.floor(wave * 0.6), 22, 32);
+  const width = Math.floor(clamp(ARENA_WIDTH_BASE + wave * ARENA_WIDTH_PER_WAVE, ARENA_WIDTH_BASE, ARENA_WIDTH_MAX));
+  const height = Math.floor(clamp(ARENA_HEIGHT_BASE + wave * ARENA_HEIGHT_PER_WAVE, ARENA_HEIGHT_BASE, ARENA_HEIGHT_MAX));
   const tiles = new Array(width * height).fill(DUNGEON_FLOOR);
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
@@ -122,7 +134,7 @@ export function generateArenaDungeon(wave) {
 
 function generateArenaObstacles(dungeon, rng) {
   const obstacles = [];
-  const count = clamp(10 + Math.floor(dungeon.width * dungeon.height / 140), 10, 22);
+  const count = clamp(10 + Math.floor(dungeon.width * dungeon.height / 180), 10, 22);
   for (let i = 0; i < count; i += 1) {
     const type = OBSTACLE_TYPES[Math.floor(rng() * (OBSTACLE_TYPES.length - 1))];
     const tx = randInt(rng, 3, dungeon.width - 4);
