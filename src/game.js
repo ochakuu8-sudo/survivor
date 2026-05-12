@@ -6,7 +6,7 @@ import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
 import { resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
-import { generateArenaDungeon } from "./dungeon.js";
+import { generateArenaDungeon, shortestDungeonDelta, wrapDungeonPoint } from "./dungeon.js";
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
@@ -302,6 +302,14 @@ function updateRunEvents() {
 function updateCamera(dt) {
   const p = game.player;
   if (!p) return;
+  if (game.dungeon?.wrapEdges) {
+    const t = clamp(dt * 8, 0, 1);
+    const delta = shortestDungeonDelta(game.dungeon, game.camera.x, game.camera.y, p.x, p.y);
+    game.camera.x += delta.dx * t;
+    game.camera.y += delta.dy * t;
+    wrapDungeonPoint(game.dungeon, game.camera);
+    return;
+  }
   game.camera.x = lerp(game.camera.x, p.x, clamp(dt * 8, 0, 1));
   game.camera.y = lerp(game.camera.y, p.y, clamp(dt * 8, 0, 1));
 }

@@ -2,6 +2,7 @@ import { TAU, WEAPON_STAT_KEYS, getWeaponMaxLevel } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
 import { distanceToSegmentSq, distSq } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
+import { shortestDungeonDelta, shortestDungeonDistanceSq } from "./dungeon.js";
 import {
   damageEnemy,
   damageEnemiesInCone,
@@ -562,7 +563,7 @@ function findTargetForWeapon(player, weapon) {
   let bestDistance = Math.pow(weapon.range || (weapon.bulletSpeed || 690) * (weapon.life || 0.72), 2);
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
-    const distance = distSq(player.x, player.y, enemy.x, enemy.y);
+    const distance = shortestDungeonDistanceSq(game.dungeon, player.x, player.y, enemy.x, enemy.y);
     if (distance < bestDistance) {
       bestDistance = distance;
       best = enemy;
@@ -577,7 +578,7 @@ function fireWeapon(weapon, target) {
   const angle = usesFacing
     ? Math.atan2(p.facingY ?? 0, p.facingX ?? 1)
     : target
-      ? Math.atan2(target.y - p.y, target.x - p.x)
+      ? targetAngle(p, target)
       : 0;
   if (weapon.kind === "flame") {
     fireFlame(weapon, angle);
@@ -612,6 +613,11 @@ function fireWeapon(weapon, target) {
     return;
   }
   fireProjectileWeapon(weapon, angle);
+}
+
+function targetAngle(from, target) {
+  const delta = shortestDungeonDelta(game.dungeon, from.x, from.y, target.x, target.y);
+  return Math.atan2(delta.dy, delta.dx);
 }
 
 function fireProjectileWeapon(weapon, angle) {

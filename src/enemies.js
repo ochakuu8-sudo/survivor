@@ -4,7 +4,7 @@ import { distanceToSegmentSq, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
 import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
-import { moveActorWithDungeonCollision, pickDungeonSpawnPoint } from "./dungeon.js";
+import { moveActorWithDungeonCollision, pickDungeonSpawnPoint, shortestDungeonDelta } from "./dungeon.js";
 
 const SPAWN_BATCH_INTERVAL = 4.0;
 const SPAWN_BATCH_SIZE = 18;
@@ -254,7 +254,8 @@ export function updateEnemies(dt) {
 function updateMeleeEnemy(enemy, p, dt) {
   enemy.attackTimer = Math.max(0, (enemy.attackTimer ?? 0) - dt);
   if (enemy.attackTimer < 0.0001) enemy.attackTimer = 0;
-  const dir = normalize(p.x - enemy.x, p.y - enemy.y);
+  const chaseDelta = shortestDungeonDelta(game.dungeon, enemy.x, enemy.y, p.x, p.y);
+  const dir = normalize(chaseDelta.dx, chaseDelta.dy);
   moveActorWithDungeonCollision(enemy, dir.x * enemy.speed * dt, dir.y * enemy.speed * dt);
 
   const minDist = p.radius + enemy.radius;
@@ -274,8 +275,9 @@ function updateMeleeEnemy(enemy, p, dt) {
 function updateArcher(enemy, p, dt) {
   enemy.shotCooldown = Math.max(0, (enemy.shotCooldown ?? 0) - dt);
 
-  const dx = p.x - enemy.x;
-  const dy = p.y - enemy.y;
+  const delta = shortestDungeonDelta(game.dungeon, enemy.x, enemy.y, p.x, p.y);
+  const dx = delta.dx;
+  const dy = delta.dy;
   const distance = Math.hypot(dx, dy) || 0.0001;
 
   if (distance > enemy.shootRange) {
@@ -360,8 +362,9 @@ function updateOrc(enemy, p, dt) {
     return;
   }
 
-  const dx = p.x - enemy.x;
-  const dy = p.y - enemy.y;
+  const delta = shortestDungeonDelta(game.dungeon, enemy.x, enemy.y, p.x, p.y);
+  const dx = delta.dx;
+  const dy = delta.dy;
   const distance = Math.hypot(dx, dy) || 0.0001;
   if (distance > enemy.attackRange) {
     moveActorWithDungeonCollision(enemy, (dx / distance) * enemy.speed * dt, (dy / distance) * enemy.speed * dt);
@@ -370,8 +373,8 @@ function updateOrc(enemy, p, dt) {
   if (enemy.chargeCooldownLeft <= 0 && distance <= enemy.attackRange) {
     enemy.orcState = "charging";
     enemy.chargeTimer = enemy.chargeDuration;
-    enemy.swingTargetX = p.x;
-    enemy.swingTargetY = p.y;
+    enemy.swingTargetX = enemy.x + dx;
+    enemy.swingTargetY = enemy.y + dy;
     const swingX = enemy.x + (dx / distance) * enemy.swingRange;
     const swingY = enemy.y + (dy / distance) * enemy.swingRange;
     addTelegraphLine(enemy.x, enemy.y, swingX, swingY, enemy.swingWidth, enemy.chargeDuration);

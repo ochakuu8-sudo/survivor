@@ -105,11 +105,6 @@ export function generateArenaDungeon(wave) {
   const width = Math.floor(clamp(ARENA_WIDTH_BASE + wave * ARENA_WIDTH_PER_WAVE, ARENA_WIDTH_BASE, ARENA_WIDTH_MAX));
   const height = Math.floor(clamp(ARENA_HEIGHT_BASE + wave * ARENA_HEIGHT_PER_WAVE, ARENA_HEIGHT_BASE, ARENA_HEIGHT_MAX));
   const tiles = new Array(width * height).fill(DUNGEON_FLOOR);
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      if (x === 0 || y === 0 || x === width - 1 || y === height - 1) tiles[y * width + x] = DUNGEON_WALL;
-    }
-  }
   const startRoom = { x: Math.floor(width / 2) - 3, y: Math.floor(height / 2) - 3, w: 7, h: 7, cx: Math.floor(width / 2), cy: Math.floor(height / 2) };
   const rooms = [
     { x: 2, y: 2, w: width - 4, h: height - 4, cx: Math.floor(width / 2), cy: Math.floor(height / 2) },
@@ -127,6 +122,7 @@ export function generateArenaDungeon(wave) {
     obstacles: [],
     chests: [],
     arena: true,
+    wrapEdges: true,
   };
   dungeon.obstacles = generateArenaObstacles(dungeon, rng);
   return dungeon;
@@ -162,13 +158,66 @@ export function moveActorWithDungeonCollision(actor, dx, dy) {
 
   if (dx !== 0) {
     const nextX = actor.x + dx;
-    if (canStandAt(game.dungeon, nextX, actor.y, actor.radius * 0.72)) actor.x = nextX;
+    if (canStandAt(game.dungeon, nextX, actor.y, actor.radius * 0.72)) actor.x = wrapDungeonX(game.dungeon, nextX);
   }
 
   if (dy !== 0) {
     const nextY = actor.y + dy;
-    if (canStandAt(game.dungeon, actor.x, nextY, actor.radius * 0.72)) actor.y = nextY;
+    if (canStandAt(game.dungeon, actor.x, nextY, actor.radius * 0.72)) actor.y = wrapDungeonY(game.dungeon, nextY);
   }
+}
+
+export function wrapDungeonPoint(dungeon, point) {
+  if (!dungeon?.wrapEdges || !point) return point;
+  point.x = wrapDungeonX(dungeon, point.x);
+  point.y = wrapDungeonY(dungeon, point.y);
+  return point;
+}
+
+export function shortestDungeonDelta(dungeon, fromX, fromY, toX, toY) {
+  let dx = toX - fromX;
+  let dy = toY - fromY;
+  if (dungeon?.wrapEdges) {
+    const worldWidth = dungeonWorldWidth(dungeon);
+    const worldHeight = dungeonWorldHeight(dungeon);
+    if (Math.abs(dx) > worldWidth / 2) dx -= Math.sign(dx) * worldWidth;
+    if (Math.abs(dy) > worldHeight / 2) dy -= Math.sign(dy) * worldHeight;
+  }
+  return { dx, dy };
+}
+
+export function shortestDungeonDistanceSq(dungeon, ax, ay, bx, by) {
+  const delta = shortestDungeonDelta(dungeon, ax, ay, bx, by);
+  return delta.dx * delta.dx + delta.dy * delta.dy;
+}
+
+export function nearestDungeonPoint(dungeon, x, y, originX, originY) {
+  if (!dungeon?.wrapEdges) return { x, y };
+  const delta = shortestDungeonDelta(dungeon, originX, originY, x, y);
+  return { x: originX + delta.dx, y: originY + delta.dy };
+}
+
+export function wrapDungeonX(dungeon, x) {
+  if (!dungeon?.wrapEdges) return x;
+  return wrapValue(x, dungeon.offsetX, dungeonWorldWidth(dungeon));
+}
+
+export function wrapDungeonY(dungeon, y) {
+  if (!dungeon?.wrapEdges) return y;
+  return wrapValue(y, dungeon.offsetY, dungeonWorldHeight(dungeon));
+}
+
+function dungeonWorldWidth(dungeon) {
+  return dungeon.width * TILE_SIZE;
+}
+
+function dungeonWorldHeight(dungeon) {
+  return dungeon.height * TILE_SIZE;
+}
+
+function wrapValue(value, min, size) {
+  if (size <= 0) return value;
+  return ((((value - min) % size) + size) % size) + min;
 }
 
 export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance, options = {}) {
@@ -218,7 +267,13 @@ export function hasReachedDungeonExit(actor) {
 }
 
 export function getDungeonTile(dungeon, tx, ty) {
-  if (!dungeon || tx < 0 || ty < 0 || tx >= dungeon.width || ty >= dungeon.height) return DUNGEON_WALL;
+  if (!dungeon) return DUNGEON_WALL;
+  if (dungeon.wrapEdges) {
+    const wrappedX = ((tx % dungeon.width) + dungeon.width) % dungeon.width;
+    const wrappedY = ((ty % dungeon.height) + dungeon.height) % dungeon.height;
+    return dungeon.tiles[wrappedY * dungeon.width + wrappedX];
+  }
+  if (tx < 0 || ty < 0 || tx >= dungeon.width || ty >= dungeon.height) return DUNGEON_WALL;
   return dungeon.tiles[ty * dungeon.width + tx];
 }
 

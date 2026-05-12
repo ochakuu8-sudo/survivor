@@ -4,7 +4,7 @@ import { angleDelta, clamp, distSq, distanceToSegmentSq, gridKey } from "./utils
 import { addEffect, addSparks } from "./effects.js";
 import { damagePlayer } from "./player.js";
 import { dropGold } from "./gold.js";
-import { createTreasureChestAt } from "./dungeon.js";
+import { createTreasureChestAt, shortestDungeonDistanceSq, wrapDungeonPoint } from "./dungeon.js";
 
 export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y, sparkCount = 3, sparkSpeed = 90, source = null) {
   if (!enemy || enemy.dead) return false;
@@ -55,7 +55,7 @@ export function damageEnemiesInRadius(x, y, radius, amount, edgeScale = 0.65, so
   let hits = 0;
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
-    const distance = Math.hypot(enemy.x - x, enemy.y - y);
+    const distance = Math.sqrt(shortestDungeonDistanceSq(game.dungeon, x, y, enemy.x, enemy.y));
     if (distance > radius + enemy.radius) continue;
     const centerFactor = 1 - clamp((distance - enemy.radius) / Math.max(1, radius), 0, 1);
     const damage = amount * (edgeScale + (1 - edgeScale) * centerFactor);
@@ -111,7 +111,7 @@ export function findNearestEnemyFrom(x, y, range, blocked = new Set()) {
   let bestDistance = range * range;
   for (const enemy of game.enemies) {
     if (enemy.dead || blocked.has(enemy.id)) continue;
-    const distance = distSq(x, y, enemy.x, enemy.y);
+    const distance = shortestDungeonDistanceSq(game.dungeon, x, y, enemy.x, enemy.y);
     if (distance < bestDistance) {
       bestDistance = distance;
       best = enemy;
@@ -237,9 +237,10 @@ export function updateEnemyProjectiles(dt) {
     proj.life -= dt;
     proj.x += proj.vx * dt;
     proj.y += proj.vy * dt;
+    wrapDungeonPoint(game.dungeon, proj);
     if (proj.life <= 0) continue;
     const reach = (proj.radius || 8) + p.radius;
-    if (distSq(p.x, p.y, proj.x, proj.y) <= reach * reach) {
+    if (shortestDungeonDistanceSq(game.dungeon, p.x, p.y, proj.x, proj.y) <= reach * reach) {
       damagePlayer(proj.damage);
       addEffect({
         type: "burst",
