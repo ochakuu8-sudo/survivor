@@ -6,11 +6,11 @@ import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 import { moveActorWithDungeonCollision, pickDungeonSpawnPoint } from "./dungeon.js";
 
-const SPAWN_BATCH_INTERVAL = 10.0;
-const SPAWN_BATCH_SIZE = 12;
-const OPENING_ENEMY_COUNT = 14;
+const SPAWN_BATCH_INTERVAL = 4.0;
+const SPAWN_BATCH_SIZE = 18;
+const OPENING_ENEMY_COUNT = 48;
 const OFFSCREEN_SPAWN_MARGIN = 120;
-const SAFETY_ENEMY_CAP = 1200;
+const SAFETY_ENEMY_CAP = 3000;
 
 function runProgress(elapsed = game.floorElapsed || 0) {
   return Math.min(1, Math.max(0, elapsed / RUN_DURATION_SECONDS));
@@ -80,7 +80,7 @@ export function spawnEnemies(dt) {
   game.spawnClock -= dt;
   if (game.spawnClock > 0) return;
 
-  game.spawnBatchSize = SPAWN_BATCH_SIZE;
+  game.spawnBatchSize = Math.ceil(SPAWN_BATCH_SIZE * enemyRunSpawnPressure());
   const spawnCount = Math.min(game.spawnBatchSize, SAFETY_ENEMY_CAP - game.enemies.length);
   for (let i = 0; i < spawnCount; i += 1) {
     spawnEnemy(undefined, { offscreen: true });
@@ -91,6 +91,8 @@ export function spawnEnemies(dt) {
 }
 
 export function spawnEnemy(forceType, options = {}) {
+  if (game.enemies.length >= SAFETY_ENEMY_CAP) return null;
+
   const view = viewSize();
   const zoom = cameraZoom(view);
   const visibleW = view.w / zoom;
