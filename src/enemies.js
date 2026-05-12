@@ -1,4 +1,4 @@
-import { TAU, WAVE_DURATION_SECONDS } from "./constants.js";
+import { RUN_DURATION_SECONDS, TAU } from "./constants.js";
 import { game, nextEnemyId } from "./state.js";
 import { distanceToSegmentSq, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
@@ -6,68 +6,103 @@ import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 import { moveActorWithDungeonCollision, pickDungeonSpawnPoint } from "./dungeon.js";
 
-const BASE_ENEMY_CAP = 65;
-const ENEMY_CAP_PER_WAVE = 10;
-const HARD_ENEMY_CAP = 220;
-const SPAWN_BATCH_INTERVAL_SECONDS = 10;
-const FLOOR_SPEED_START = 0.48;
-const FLOOR_SPEED_STEP_SECONDS = 15;
-const FLOOR_SPEED_STEP_GAIN = 0.25;
-const FLOOR_SPEED_MAX = 1.85;
-const FLOOR_SPAWN_BASE_PRESSURE = 0.6;
-const FLOOR_SPAWN_STEP_SECONDS = 15;
-const FLOOR_SPAWN_STEP_GAIN = 0.25;
+const BASE_ENEMY_CAP = 55;
+const HARD_ENEMY_CAP = 240;
+const SPAWN_BATCH_INTERVAL_START = 5.0;
+const SPAWN_BATCH_INTERVAL_END = 2.2;
+const OPENING_ENEMY_COUNT = 14;
 
-export function enemyFloorSpeedMultiplier(elapsed = game.floorElapsed || 0) {
-  return Math.min(FLOOR_SPEED_MAX, FLOOR_SPEED_START * enemyFloorStepMultiplier(elapsed, FLOOR_SPEED_STEP_SECONDS, FLOOR_SPEED_STEP_GAIN));
+function runProgress(elapsed = game.floorElapsed || 0) {
+  return Math.min(1, Math.max(0, elapsed / RUN_DURATION_SECONDS));
 }
 
-export function enemyFloorSpawnPressure(elapsed = game.floorElapsed || 0) {
-  return FLOOR_SPAWN_BASE_PRESSURE * enemyFloorStepMultiplier(elapsed, FLOOR_SPAWN_STEP_SECONDS, FLOOR_SPAWN_STEP_GAIN);
+export function enemyRunSpeedMultiplier(elapsed = game.floorElapsed || 0) {
+  const p = runProgress(elapsed);
+  return 0.8 + p * 0.9 + p * p * 0.7;
 }
 
-function floorStep(elapsed, seconds) {
-  return Math.floor(Math.max(0, elapsed) / seconds);
+export function enemyRunSpawnPressure(elapsed = game.floorElapsed || 0) {
+  const p = runProgress(elapsed);
+  return 1.0 + p * 2.2 + p * p * 1.4;
 }
 
-function enemyFloorStepMultiplier(elapsed, seconds, gain) {
-  return 1 + floorStep(elapsed, seconds) * gain;
+function enemyCapForRun(elapsed = game.floorElapsed || 0) {
+  const pressure = enemyRunSpawnPressure(elapsed);
+  return Math.min(HARD_ENEMY_CAP, Math.ceil(BASE_ENEMY_CAP * pressure));
 }
 
-function enemyCapForWave(elapsed = game.floorElapsed || 0) {
-  const baseCap = BASE_ENEMY_CAP + game.wave * ENEMY_CAP_PER_WAVE;
-  const pressure = enemyFloorSpawnPressure(elapsed);
-  return Math.min(HARD_ENEMY_CAP, Math.max(8 + game.wave * 2, Math.ceil(baseCap * pressure)));
+function spawnIntervalForRun(elapsed = game.floorElapsed || 0) {
+  const p = runProgress(elapsed);
+  return SPAWN_BATCH_INTERVAL_START + (SPAWN_BATCH_INTERVAL_END - SPAWN_BATCH_INTERVAL_START) * p;
 }
 
-function spawnBatchSizeForWave() {
-  const batchesPerWave = Math.max(1, Math.ceil(WAVE_DURATION_SECONDS / SPAWN_BATCH_INTERVAL_SECONDS));
-  const openingCap = enemyCapForWave(0);
-  return Math.max(4 + game.wave, Math.ceil(openingCap / batchesPerWave));
+function spawnBatchSizeForRun(elapsed = game.floorElapsed || 0) {
+  const pressure = enemyRunSpawnPressure(elapsed);
+  return Math.max(8, Math.ceil(9 * pressure));
+}
+
+function pickEnemyTypeByTime(elapsed) {
+  const roll = Math.random();
+
+  if (elapsed < 30) return "walker";
+
+  if (elapsed < 60) return roll < 0.25 ? "runner" : "walker";
+
+  if (elapsed < 105) {
+    if (roll < 0.22) return "runner";
+    if (roll < 0.38) return "archer";
+    return "walker";
+  }
+
+  if (elapsed < 180) {
+    if (roll < 0.24) return "runner";
+    if (roll < 0.42) return "archer";
+    if (roll < 0.52) return "orc";
+    return "walker";
+  }
+
+  if (elapsed < 255) {
+    if (roll < 0.28) return "runner";
+    if (roll < 0.48) return "archer";
+    if (roll < 0.62) return "orc";
+    return "walker";
+  }
+
+  if (roll < 0.35) return "runner";
+  if (roll < 0.55) return "archer";
+  if (roll < 0.72) return "orc";
+  return "walker";
+}
+
+export function spawnOpeningEnemies() {
+  const count = OPENING_ENEMY_COUNT;
+  for (let i = 0; i < count; i += 1) {
+    spawnEnemy("walker", { anywhere: true });
+  }
 }
 
 export function spawnEnemies(dt) {
   const elapsed = game.floorElapsed || 0;
-  const cap = enemyCapForWave(elapsed);
+  const cap = enemyCapForRun(elapsed);
+  const interval = spawnIntervalForRun(elapsed);
 
   if (game.enemies.length >= cap) {
-    game.spawnClock = Math.min(game.spawnClock, SPAWN_BATCH_INTERVAL_SECONDS * 0.5);
+    game.spawnClock = Math.min(game.spawnClock, interval * 0.5);
     return;
   }
 
   game.spawnClock -= dt;
   if (game.spawnClock > 0) return;
 
-  if (!game.spawnBatchSize) game.spawnBatchSize = spawnBatchSizeForWave();
-  const batchSize = game.spawnBatchSize;
+  game.spawnBatchSize = spawnBatchSizeForRun(elapsed);
   const availableSlots = cap - game.enemies.length;
-  const spawnCount = Math.min(batchSize, availableSlots);
+  const spawnCount = Math.min(game.spawnBatchSize, availableSlots);
   for (let i = 0; i < spawnCount; i += 1) {
     spawnEnemy(undefined, { anywhere: true });
   }
 
-  game.spawnClock += SPAWN_BATCH_INTERVAL_SECONDS;
-  if (game.spawnClock <= 0) game.spawnClock = SPAWN_BATCH_INTERVAL_SECONDS;
+  game.spawnClock += interval;
+  if (game.spawnClock <= 0) game.spawnClock = interval;
 }
 
 export function spawnEnemy(forceType, options = {}) {
@@ -105,16 +140,11 @@ export function spawnEnemy(forceType, options = {}) {
     }
   }
 
-  const roll = Math.random();
-  const wave = game.wave;
-  let type = forceType || "walker";
-  if (!forceType) {
-    if (wave >= 3 && roll < 0.12) type = "orc";
-    else if (wave >= 2 && roll < 0.34) type = "runner";
-    else if (wave >= 2 && roll < 0.48) type = "archer";
-  }
+  const elapsed = game.floorElapsed || 0;
+  let type = forceType || pickEnemyTypeByTime(elapsed);
+  const progress = Math.min(1, Math.max(0, elapsed / RUN_DURATION_SECONDS));
 
-  const baseHp = Math.round((28 + wave * 8) * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
+  const baseHp = Math.round((28 + progress * 34) * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
   const enemy = {
     id: nextEnemyId(),
     kind: "melee",
@@ -123,9 +153,9 @@ export function spawnEnemy(forceType, options = {}) {
     radius: 18,
     hp: baseHp,
     maxHp: baseHp,
-    speed: 78 + wave * 3,
-    attackDamage: Math.round(9 + wave * 0.8),
-    attackCooldown: Math.max(0.74, 1.08 - wave * 0.012),
+    speed: 78 + progress * 16,
+    attackDamage: Math.round(9 + progress * 4),
+    attackCooldown: Math.max(0.74, 1.08 - progress * 0.18),
     attackTimer: 0,
     sprite: "zombieA",
     readableSprite: "zombieAReadable",
@@ -137,9 +167,9 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.radius = 16;
     enemy.hp = Math.round(baseHp * 0.72);
     enemy.maxHp = enemy.hp;
-    enemy.speed = 122 + wave * 4;
-    enemy.attackDamage = Math.round(7 + wave * 0.65);
-    enemy.attackCooldown = Math.max(0.52, 0.76 - wave * 0.008);
+    enemy.speed = 122 + progress * 26;
+    enemy.attackDamage = Math.round(7 + progress * 3);
+    enemy.attackCooldown = Math.max(0.52, 0.76 - progress * 0.12);
     enemy.sprite = "zombieB";
     enemy.readableSprite = "zombieBReadable";
   } else if (type === "orc") {
@@ -147,14 +177,14 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.radius = 27;
     enemy.hp = Math.round(baseHp * 2.85);
     enemy.maxHp = enemy.hp;
-    enemy.speed = 58 + wave * 2.4;
+    enemy.speed = 58 + progress * 14;
     enemy.attackDamage = 0;
     enemy.attackCooldown = 9999;
     enemy.sprite = "orc";
     enemy.readableSprite = "orcReadable";
     enemy.orcState = "idle";
     enemy.chargeTimer = 0;
-    enemy.chargeDuration = Math.max(0.7, 0.95 - wave * 0.02);
+    enemy.chargeDuration = Math.max(0.7, 0.95 - progress * 0.22);
     enemy.chargeCooldown = 1.6;
     enemy.chargeCooldownLeft = 0.6 + Math.random() * 0.6;
     enemy.attackRange = 130;
@@ -162,20 +192,20 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.swingWidth = 110;
     enemy.swingTargetX = 0;
     enemy.swingTargetY = 0;
-    enemy.slamDamage = Math.round(28 + wave * 1.5);
+    enemy.slamDamage = Math.round(28 + progress * 8);
   } else if (type === "archer") {
     enemy.kind = "archer";
     enemy.radius = 17;
     enemy.hp = Math.round(baseHp * 0.85);
     enemy.maxHp = enemy.hp;
-    enemy.speed = 92 + wave * 2.4;
+    enemy.speed = 92 + progress * 18;
     enemy.attackDamage = 0;
     enemy.attackCooldown = 9999;
     enemy.sprite = "skeletonArcher";
     enemy.readableSprite = "skeletonArcherReadable";
     enemy.shotCooldown = 0.6 + Math.random() * 0.6;
-    enemy.shotInterval = Math.max(1.4, 2.4 - wave * 0.05);
-    enemy.shotDamage = Math.round(16 + wave * 1.4);
+    enemy.shotInterval = Math.max(1.4, 2.4 - progress * 0.75);
+    enemy.shotDamage = Math.round(16 + progress * 5);
     enemy.shootRange = 320;
     enemy.preferredDistance = 220;
   }
@@ -192,13 +222,13 @@ export function spawnEnemy(forceType, options = {}) {
 
   enemy.baseMaxHp = enemy.maxHp;
   enemy.baseSpeed = enemy.baseSpeed || enemy.speed;
-  enemy.speed = enemy.baseSpeed * enemyFloorSpeedMultiplier();
+  enemy.speed = enemy.baseSpeed * enemyRunSpeedMultiplier();
   game.enemies.push(enemy);
 }
 
 export function updateEnemies(dt) {
   const p = game.player;
-  const floorSpeed = enemyFloorSpeedMultiplier();
+  const floorSpeed = enemyRunSpeedMultiplier();
   for (const enemy of game.enemies) {
     if (enemy.baseSpeed == null) enemy.baseSpeed = enemy.speed;
     if ((enemy.slowTimer || 0) > 0) {

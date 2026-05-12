@@ -2,13 +2,13 @@ import { INTERACTION_HOLD_SECONDS } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
-import { grantFreeNode, grantRandomAffordableNode, renderSkillTree } from "./skillTree.js";
+import { renderSkillTree } from "./skillTree.js";
 import { updateHud } from "./hud.js";
 
 export function treasureRerollPrice() {
   const used = game.treasureReward?.rerollsUsed || 0;
   if (used === 0) return 0;
-  return 10 + game.wave * 5 + (used - 1) * 5;
+  return 5 + used * 5;
 }
 
 export function updateTreasureChests(dt = 0) {
@@ -62,8 +62,8 @@ export function rerollTreasureReward() {
   const treasure = game.treasureReward;
   if (!treasure) return;
   const price = treasureRerollPrice();
-  if (game.gold < price) return;
-  if (price > 0) game.gold -= price;
+  if ((game.runPoints || 0) < price) return;
+  if (price > 0) game.runPoints -= price;
   treasure.rerollsUsed += 1;
   treasure.reward = chooseTreasureReward(treasure.reward.type);
   treasure.chest.rewardName = treasure.reward.name;
@@ -84,18 +84,20 @@ export function claimTreasureReward() {
 }
 
 function applyTreasureReward(reward) {
-  if (reward.type === "gold") {
-    game.gold += reward.amount;
-  } else if (reward.type === "freeWeapon") {
-    grantFreeNode("weapon", 1);
-  } else if (reward.type === "instantWeapon") {
-    grantRandomAffordableNode("weapon");
-  } else if (reward.type === "evolution") {
-    game.evolutionMaterials = (game.evolutionMaterials || 0) + 1;
-    grantFreeNode("weapon", 1);
-  } else if (reward.type === "nextBuff") {
-    game.nextWaveBuff = { damage: 0.18 };
-    grantFreeNode("weapon", 1);
+  const p = game.player;
+  if (reward.type === "points") {
+    game.runPoints = (game.runPoints || 0) + reward.amount;
+  } else if (reward.type === "damageBuff") {
+    p.weaponPowerBonus = (p.weaponPowerBonus || 0) + reward.amount;
+  } else if (reward.type === "speedBuff") {
+    p.speed *= reward.multiplier;
+  } else if (reward.type === "pickupBuff") {
+    p.pickup += reward.amount;
+  } else if (reward.type === "hpBuff") {
+    p.maxHp += reward.amount;
+    p.hp = Math.min(p.maxHp, p.hp + reward.amount);
+  } else if (reward.type === "pointBoost") {
+    game.goldGainBonus = Math.max(game.goldGainBonus || 0, reward.amount);
   }
 }
 
@@ -109,53 +111,66 @@ function renderTreasureReward() {
   hud.treasureRewardMeta.textContent = reward.meta;
   const price = treasureRerollPrice();
   const free = price === 0;
-  hud.treasureReroll.textContent = free ? "リロール 無料" : `リロール ${price}G`;
-  hud.treasureReroll.disabled = !free && game.gold < price;
+  hud.treasureReroll.textContent = free ? "リロール 無料" : `リロール ${price}pt`;
+  hud.treasureReroll.disabled = !free && (game.runPoints || 0) < price;
   hud.treasureReward.classList.remove("hidden");
 }
 
 function chooseTreasureReward(excludeType = "") {
   const rewards = [
     {
-      type: "instantWeapon",
-      name: "即時改造ノード",
-      text: "現在武器の購入可能ノードを1つ無料で解放する。",
-      meta: "現在武器強化",
-      icon: "★",
-      weight: 28,
+      type: "points",
+      name: "+20pt",
+      text: "このランの回収ポイントを20pt増やす。死亡しても持ち帰れる。",
+      meta: "ポイント報酬",
+      icon: "P",
+      amount: 20,
+      weight: 24,
     },
     {
-      type: "freeWeapon",
-      name: "武器ノード無料権",
-      text: "Wave後の武器ツリーで好きな購入可能ノードを1つ無料解放できる。",
-      meta: "武器ツリー",
-      icon: "W",
-      weight: 26,
+      type: "damageBuff",
+      name: "攻撃力 +20%相当",
+      text: "このラン中だけ基礎ダメージを底上げする。",
+      meta: "ラン中限定",
+      icon: "⚔",
+      amount: Math.max(3, Math.round((game.player?.gear?.weapons?.[0]?.damage || 15) * 0.2)),
+      weight: 22,
     },
     {
-      type: "evolution",
-      name: "進化素材",
-      text: "進化ノードに近づく素材。おまけで武器ノード無料権も得る。",
-      meta: "進化支援",
-      icon: "E",
-      weight: game.wave >= 3 ? 16 : 6,
-    },
-    {
-      type: "gold",
-      name: `${treasureGoldAmount()}G`,
-      text: "大量のゴールド。Wave後のスキルツリー購入に使える。",
-      meta: "通貨",
-      icon: "G",
-      amount: treasureGoldAmount(),
+      type: "speedBuff",
+      name: "移動速度 +15%",
+      text: "このラン中だけ移動速度が上がる。",
+      meta: "ラン中限定",
+      icon: "➤",
+      multiplier: 1.15,
       weight: 18,
     },
     {
-      type: "nextBuff",
-      name: "次Wave限定バフ",
-      text: "次の改造候補を広げるため、武器ノード無料権を得る。",
-      meta: "短期強化",
-      icon: "B",
-      weight: 10,
+      type: "pickupBuff",
+      name: "吸引範囲 +50",
+      text: "このラン中だけポイント欠片を集めやすくなる。",
+      meta: "ラン中限定",
+      icon: "◎",
+      amount: 50,
+      weight: 16,
+    },
+    {
+      type: "hpBuff",
+      name: "最大HP +10",
+      text: "このラン中だけ最大HPと現在HPが増える。",
+      meta: "ラン中限定",
+      icon: "+",
+      amount: 10,
+      weight: 14,
+    },
+    {
+      type: "pointBoost",
+      name: "ポイント取得量 +50%",
+      text: "このラン中、ポイント欠片の取得量が増える。",
+      meta: "ラン中限定",
+      icon: "✦",
+      amount: 0.5,
+      weight: 12,
     },
   ].filter((reward) => reward.type !== excludeType);
   const total = rewards.reduce((sum, reward) => sum + reward.weight, 0);
@@ -165,8 +180,4 @@ function chooseTreasureReward(excludeType = "") {
     if (roll <= 0) return reward;
   }
   return rewards[0];
-}
-
-function treasureGoldAmount() {
-  return 45 + game.wave * 12;
 }

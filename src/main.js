@@ -3,12 +3,12 @@ import { canvas, hud } from "./dom.js";
 import { buildAtlas } from "./sprites.js";
 import { SpriteRenderer } from "./renderer.js";
 import { bindInput } from "./input.js";
-import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame, startNextWave } from "./game.js";
+import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame } from "./game.js";
 import { openDebugPanel, setupDebug } from "./debug.js";
-import { continueFromSkillTree, renderSkillTree } from "./skillTree.js";
+import { applyPurchasedSkillTreeToActiveWeapon, continueFromSkillTree, enterUpgradeTree, renderSkillTree } from "./skillTree.js";
 import { claimTreasureReward, rerollTreasureReward } from "./treasure.js";
 
-hud.restart.addEventListener("click", resetRun);
+hud.restart.addEventListener("click", enterUpgradeTree);
 
 hud.pauseBtn.addEventListener("click", pauseGame);
 hud.resumeBtn.addEventListener("click", resumeGame);
@@ -22,9 +22,9 @@ if (import.meta.env.DEV && hud.pauseDebugBtn) {
   hud.pauseDebugBtn.classList.add("hidden");
 }
 hud.pauseRestartBtn.addEventListener("click", resetRun);
-if (hud.shopContinue) hud.shopContinue.addEventListener("click", startNextWave);
 if (hud.skillTreeContinue) hud.skillTreeContinue.addEventListener("click", continueFromSkillTree);
-window.addEventListener("skill-tree-continue", () => startNextWave());
+window.addEventListener("skill-tree-continue", () => resetRun());
+window.addEventListener("starter-weapon-picked", () => applyPurchasedSkillTreeToActiveWeapon());
 if (hud.treasureReroll) hud.treasureReroll.addEventListener("click", rerollTreasureReward);
 if (hud.treasureTake) hud.treasureTake.addEventListener("click", claimTreasureReward);
 if (hud.weaponSwitch) {

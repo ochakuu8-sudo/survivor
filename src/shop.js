@@ -1,6 +1,7 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { MAX_WEAPONS, WAVE_DURATION_SECONDS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
+import { MAX_WEAPONS, RUN_DURATION_SECONDS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
+import { spawnOpeningEnemies } from "./enemies.js";
 import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponMetaLabel } from "./weapons.js";
 import {
   addAttachmentToWeapon,
@@ -937,6 +938,12 @@ export function pickStarterWeapon(index) {
   game.selectedWeapon = weapon.baseName || weapon.name;
   game.starterChoices = [];
   game.mode = "arena";
+  game.floorElapsed = 0;
+  game.waveTimeLeft = RUN_DURATION_SECONDS;
+  game.spawnClock = 0;
+  game.spawnBatchSize = 0;
+  window.dispatchEvent(new CustomEvent("starter-weapon-picked"));
+  spawnOpeningEnemies();
   hud.starterPick.classList.add("hidden");
   updateHud();
 }
@@ -946,7 +953,7 @@ export function renderStarterPick() {
   const kicker = hud.starterPick.querySelector(".panel-kicker");
   const heading = hud.starterPick.querySelector("h1");
   if (kicker) kicker.textContent = "最初の武器";
-  if (heading) heading.textContent = `1つを選び、${WAVE_DURATION_SECONDS}秒アリーナWaveへ`;
+  if (heading) heading.textContent = "1つを選び、5分サバイバルへ";
   game.starterChoices.forEach((template, index) => {
     const card = document.createElement("article");
     card.className = "starter-card offer-weapon";

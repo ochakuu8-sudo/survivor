@@ -16,7 +16,7 @@
 
       <section id="hud" aria-live="polite">
         <div class="hud-block hud-wave">
-          <span class="hud-label">Wave</span>
+          <span class="hud-label">Run</span>
           <strong id="waveText">1</strong>
         </div>
         <div class="hud-meter">
@@ -24,7 +24,7 @@
           <strong id="hpText" class="hp-text">30/30</strong>
         </div>
         <div class="hud-block hud-gold">
-          <span class="hud-label">ゴールド</span>
+          <span class="hud-label">ポイント</span>
           <strong id="goldText">0</strong>
         </div>
         <div class="hud-block hud-kills">
@@ -63,8 +63,8 @@
       <section id="skillTree" class="panel hidden" aria-label="スキルツリー強化">
         <div class="panel-head">
           <div>
-            <span id="skillTreeWave" class="panel-kicker">Wave Clear</span>
-            <h1>武器を改造して次のWaveへ</h1>
+            <span id="skillTreeWave" class="panel-kicker">ラン外成長</span>
+            <h1>SPで武器を恒久強化</h1>
           </div>
         </div>
         <div class="skill-tree-summary">
@@ -74,7 +74,7 @@
             <small id="skillTreeWeaponMeta"></small>
           </div>
           <div>
-            <span class="hud-label">ゴールド</span>
+            <span class="hud-label">所持SP</span>
             <strong id="skillTreeGold">0</strong>
             <small id="skillTreeFree">無料解放なし</small>
           </div>
@@ -87,7 +87,7 @@
         </div>
         <div class="skill-tree-footer">
           <p>ノードをタップして詳細を確認し、マップはスワイプ／ドラッグで全体を移動できます。</p>
-          <button id="skillTreeContinueBtn" type="button" class="primary">次のWaveへ</button>
+          <button id="skillTreeContinueBtn" type="button" class="primary">再挑戦へ</button>
         </div>
       </section>
 
@@ -116,7 +116,7 @@
         <span class="panel-kicker">ラン終了</span>
         <h1>探索はここまで</h1>
         <p id="resultText"></p>
-        <button id="restartBtn" type="button" class="primary">やり直す</button>
+        <button id="restartBtn" type="button" class="primary">スキルツリーへ</button>
       </section>
 
       <div id="touchControls" aria-label="タッチ操作">
@@ -162,8 +162,8 @@
           <button id="dbgInvuln" type="button">無敵 OFF</button>
         </div>
         <div class="debug-row debug-actions">
-          <button id="dbgShop" type="button">ショップ</button>
-          <button id="dbgNextWave" type="button">次夜</button>
+          <button id="dbgShop" type="button">スキルツリー</button>
+          <button id="dbgNextWave" type="button">+60秒</button>
         </div>
       </aside>
     </main>
