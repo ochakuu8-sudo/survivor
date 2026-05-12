@@ -269,7 +269,7 @@ function renderMobileSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapon
   viewport.appendChild(map);
   wrapper.append(viewport);
   if (selectedNode) wrapper.appendChild(renderMobileSkillBottomSheet(selectedNode, scope));
-  requestAnimationFrame(() => setupMobileSkillViewport(viewport, map, layout.get(selectedNode?.id), hadSelection));
+  requestAnimationFrame(() => setupMobileSkillViewport(viewport, map, hadSelection ? layout.get(selectedNode?.id) : null, gridMeta.hub));
   return wrapper;
 }
 
@@ -290,15 +290,15 @@ function setMobileSkillTreeFullscreen(enabled) {
 
 function layoutMobileSkillNodes(nodes) {
   const viewportWidth = typeof window === "undefined" ? 400 : window.innerWidth || 400;
-  const nodeWidth = viewportWidth <= 370 ? 106 : 114;
-  const nodeHeight = viewportWidth <= 370 ? 54 : 56;
+  const cellSize = viewportWidth <= 370 ? 68 : 74;
+  const nodeSize = viewportWidth <= 370 ? 38 : 42;
   return buildGridSkillLayout(nodes, {
-    cellSize: viewportWidth <= 370 ? 112 : 122,
-    padding: viewportWidth <= 370 ? 86 : 96,
-    minMapSize: Math.max(680, viewportWidth + 210),
-    nodeWidth,
-    nodeHeight,
-    hubSize: 68,
+    cellSize,
+    padding: cellSize * 2,
+    minMapSize: Math.max(560, viewportWidth + cellSize * 4),
+    nodeWidth: nodeSize,
+    nodeHeight: nodeSize,
+    hubSize: nodeSize + 6,
   });
 }
 
@@ -320,14 +320,14 @@ function isAncestorNode(ancestorId, nodeId, nodes, seen = new Set()) {
   return node.requires.some((id) => isAncestorNode(ancestorId, id, nodes, seen));
 }
 
-function setupMobileSkillViewport(viewport, map, selectedPosition, focusSelected = true) {
+function setupMobileSkillViewport(viewport, map, selectedPosition, hubPosition) {
   if (!viewport || !map) return;
   const baseWidth = Number(map.dataset.baseWidth) || map.offsetWidth;
   const baseHeight = Number(map.dataset.baseHeight) || map.offsetHeight;
   map.dataset.scale = "1";
   map.style.width = `${baseWidth}px`;
   map.style.height = `${baseHeight}px`;
-  centerSkillMapOnNode(viewport, focusSelected ? selectedPosition : { x: baseWidth / 2, y: baseHeight / 2, unit: "px" });
+  centerSkillMapOnNode(viewport, selectedPosition || hubPosition || { x: baseWidth / 2, y: baseHeight / 2, unit: "px" });
   enableMobileMapGestures(viewport, map, baseWidth, baseHeight, 1);
 }
 
