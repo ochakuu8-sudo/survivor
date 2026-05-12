@@ -1,4 +1,4 @@
-import { COLLISION_CELL_SIZE } from "./constants.js";
+import { ATTACK_OVERLAP_PADDING, COLLISION_CELL_SIZE } from "./constants.js";
 import { game } from "./state.js";
 import { distSq, gridKey } from "./utils/math.js";
 import { buildEnemyGrid, damageEnemy, explodeBullet, removeDeadEnemies } from "./combat.js";
@@ -43,7 +43,7 @@ export function updateBullets(dt) {
         for (const enemy of cell) {
           if (enemy.dead) continue;
           if (bullet.hitIds.has(enemy.id)) continue;
-          const range = enemy.radius + bullet.radius;
+          const range = enemy.radius + bullet.radius + ATTACK_OVERLAP_PADDING;
           if (distSq(bullet.x, bullet.y, enemy.x, enemy.y) > range * range) continue;
 
           bullet.hitIds.add(enemy.id);

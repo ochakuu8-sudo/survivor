@@ -1,4 +1,4 @@
-import { COLLISION_CELL_SIZE } from "./constants.js";
+import { ATTACK_OVERLAP_PADDING, COLLISION_CELL_SIZE } from "./constants.js";
 import { game, enemyCollisionGrid } from "./state.js";
 import { angleDelta, clamp, distSq, distanceToSegmentSq, gridKey } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -56,7 +56,7 @@ export function damageEnemiesInRadius(x, y, radius, amount, edgeScale = 0.65, so
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
     const distance = Math.sqrt(shortestDungeonDistanceSq(game.dungeon, x, y, enemy.x, enemy.y));
-    if (distance > radius + enemy.radius) continue;
+    if (distance > radius + enemy.radius + ATTACK_OVERLAP_PADDING) continue;
     const centerFactor = 1 - clamp((distance - enemy.radius) / Math.max(1, radius), 0, 1);
     const damage = amount * (edgeScale + (1 - edgeScale) * centerFactor);
     damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 80, source);
@@ -70,7 +70,7 @@ export function damageEnemiesInLine(x1, y1, x2, y2, halfWidth, amount, maxHits =
   const hits = [];
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
-    const range = enemy.radius + halfWidth;
+    const range = enemy.radius + halfWidth + ATTACK_OVERLAP_PADDING;
     if (distanceToSegmentSq(enemy.x, enemy.y, x1, y1, x2, y2) > range * range) continue;
     hits.push({
       enemy,
@@ -96,7 +96,7 @@ export function damageEnemiesInCone(x, y, angle, range, halfAngle, amount, sourc
     const dx = enemy.x - x;
     const dy = enemy.y - y;
     const distance = Math.hypot(dx, dy);
-    if (distance > range + enemy.radius) continue;
+    if (distance > range + enemy.radius + ATTACK_OVERLAP_PADDING) continue;
     if (Math.abs(angleDelta(Math.atan2(dy, dx), angle)) > halfAngle) continue;
     const nearFactor = 1 - clamp(distance / Math.max(1, range), 0, 1);
     damageEnemy(enemy, amount * (0.78 + nearFactor * 0.32), enemy.x, enemy.y, 2, 85, source);

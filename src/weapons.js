@@ -1,4 +1,4 @@
-import { TAU, WEAPON_STAT_KEYS, getWeaponMaxLevel } from "./constants.js";
+import { ATTACK_OVERLAP_PADDING, TAU, WEAPON_STAT_KEYS, getWeaponMaxLevel } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
 import { distanceToSegmentSq, distSq } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -526,7 +526,7 @@ export function updateOrbitWeapons(dt) {
     for (const enemy of game.enemies) {
       if (enemy.dead) continue;
       if (weapon.hitCooldowns.has(enemy.id)) continue;
-      const range = enemy.radius + areaRadius;
+      const range = enemy.radius + areaRadius + ATTACK_OVERLAP_PADDING;
       if (distanceToSegmentSq(enemy.x, enemy.y, px, py, cx, cy) > range * range) continue;
       damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 90, weapon);
       if (weapon.orbitPushOut > 0) {
