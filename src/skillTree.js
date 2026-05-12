@@ -882,14 +882,17 @@ function unlockButtonLabel(status, free) {
 }
 
 function nodeIcon(node, weapon) {
-  if (node.evolveTo || node.title.includes("進化")) return "✦";
+  if (node.evolveTo || node.title.includes("進化")) return "🦋";
   const text = `${node.id} ${node.title} ${node.text}`;
-  if (text.includes("弾") || text.includes("投") || text.includes("射") || text.includes("貫通")) return "➹";
-  if (text.includes("炎") || weapon?.baseName === "火炎放射器") return "♨";
-  if (text.includes("範囲") || text.includes("爆発") || text.includes("破片")) return "✹";
+  if (text.includes("炎") || weapon?.baseName === "火炎放射器") return "🔥";
+  if (text.includes("範囲") || text.includes("爆発") || text.includes("破片")) return "💥";
   if (text.includes("速") || text.includes("頻度") || text.includes("連射")) return "⚡";
-  if (text.includes("重") || text.includes("威力") || text.includes("ダメージ")) return "✦";
-  return "●";
+  if (text.includes("貫通")) return "🪡";
+  if (text.includes("弾") || text.includes("投") || text.includes("射")) return "🎯";
+  if (text.includes("重") || text.includes("威力") || text.includes("ダメージ")) return "💪";
+  if (text.includes("クリティカル") || text.includes("急所")) return "⭐";
+  if (text.includes("ノックバック") || text.includes("押し")) return "🛡️";
+  return "✨";
 }
 
 function nodeStatus(node) {
