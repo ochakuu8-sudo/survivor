@@ -1,7 +1,7 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { RUN_DURATION_SECONDS } from "./constants.js";
+import { MAX_FRAME_DELTA_SECONDS, RUN_DURATION_SECONDS, TARGET_FRAME_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
@@ -348,10 +348,17 @@ export function resize() {
 }
 
 export function frame(now) {
-  const dt = clamp((now - timing.lastFrame) / 1000, 0, 0.033);
+  const elapsed = clamp((now - timing.lastFrame) / 1000, 0, MAX_FRAME_DELTA_SECONDS);
   timing.lastFrame = now;
   resize();
-  update(dt);
+
+  let remaining = elapsed;
+  while (remaining > 0) {
+    const dt = Math.min(TARGET_FRAME_SECONDS, remaining);
+    update(dt);
+    remaining -= dt;
+  }
+
   render();
   requestAnimationFrame(frame);
 }
