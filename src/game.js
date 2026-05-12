@@ -331,8 +331,19 @@ export function prepareCanvas() {
   return size.dpr;
 }
 
+let lastCanvasSize = { width: 0, height: 0, dpr: 0 };
+
 export function resize() {
   const size = measureCanvas();
+  if (
+    size.width === lastCanvasSize.width &&
+    size.height === lastCanvasSize.height &&
+    size.dpr === lastCanvasSize.dpr
+  ) {
+    return;
+  }
+
+  lastCanvasSize = size;
   state.renderer.resize(size.width, size.height, size.dpr);
 }
 

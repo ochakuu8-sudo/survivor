@@ -62,4 +62,5 @@ export const hud = {
   dbgInvuln: document.querySelector("#dbgInvuln"),
   dbgShop: document.querySelector("#dbgShop"),
   dbgNextWave: document.querySelector("#dbgNextWave"),
+  debugStats: document.querySelector("#debugStats"),
 };
