@@ -2189,7 +2189,7 @@ h1 {
   overflow: auto;
   border-color: rgba(255, 251, 235, 0.95);
   color: #17405f;
-  background: linear-gradient(180deg, rgba(255, 253, 235, 0.98), rgba(224, 247, 255, 0.96));
+  background: linear-gradient(180deg, rgba(204, 231, 238, 0.98), rgba(174, 213, 225, 0.96));
   box-shadow: 0 16px 0 rgba(70, 109, 150, 0.22), 0 24px 56px rgba(44, 78, 110, 0.22);
 }
 
@@ -2213,7 +2213,7 @@ h1 {
 .skill-node-detail {
   border: 1px solid rgba(125, 165, 214, 0.34);
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 255, 248, 0.98), rgba(236, 248, 255, 0.94));
+  background: linear-gradient(180deg, rgba(204, 231, 238, 0.97), rgba(187, 220, 230, 0.94));
   box-shadow: 0 10px 28px rgba(70, 109, 150, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 
@@ -2282,10 +2282,10 @@ h1 {
   border: 1px solid rgba(125, 165, 214, 0.34);
   border-radius: 16px;
   background:
-    radial-gradient(circle at 50% 45%, rgba(255, 246, 188, 0.8), transparent 34%),
+    radial-gradient(circle at 50% 45%, rgba(250, 204, 21, 0.42), transparent 34%),
     linear-gradient(90deg, rgba(96, 165, 250, 0.16) 1px, transparent 1px),
     linear-gradient(0deg, rgba(96, 165, 250, 0.12) 1px, transparent 1px),
-    linear-gradient(135deg, #fff9df 0%, #e6f7ff 54%, #f6fff2 100%);
+    linear-gradient(135deg, #bddde8 0%, #a7cfdd 54%, #b3ddc4 100%);
   background-size: auto, var(--skill-grid-size, 126px) var(--skill-grid-size, 126px), var(--skill-grid-size, 126px) var(--skill-grid-size, 126px), auto;
   box-shadow: inset 0 0 38px rgba(99, 179, 237, 0.16), 0 12px 28px rgba(70, 109, 150, 0.12);
 }
@@ -2436,7 +2436,7 @@ h1 {
   transform: translateX(-50%);
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(255, 251, 235, 0.94);
+  background: rgba(254, 243, 199, 0.88);
   color: #92400e;
   font-size: 0.58rem;
   line-height: 1;
@@ -2467,8 +2467,8 @@ h1 {
 }
 
 .skill-node-selected {
-  border-color: #ffffff;
-  box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.4), 0 0 0 9px rgba(59, 130, 246, 0.16), 0 12px 26px rgba(37, 99, 235, 0.2);
+  border-color: #fde68a;
+  box-shadow: 0 0 0 5px rgba(250, 204, 21, 0.34), 0 0 0 9px rgba(59, 130, 246, 0.16), 0 12px 26px rgba(37, 99, 235, 0.2);
 }
 
 .skill-node-icon {
@@ -2477,7 +2477,7 @@ h1 {
   width: calc(var(--node-size) - 12px);
   height: calc(var(--node-size) - 12px);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(226, 242, 244, 0.76);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 3px 8px rgba(30, 64, 175, 0.12);
   color: #12324a;
   font-size: clamp(1.08rem, 2.6vw, 1.5rem);
@@ -2493,7 +2493,7 @@ h1 {
   padding: 2px 5px;
   border: 1px solid rgba(30, 64, 175, 0.18);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(223, 241, 245, 0.9);
   color: #1d4ed8;
   font-weight: 900;
   font-size: 0.58rem;
@@ -2502,15 +2502,15 @@ h1 {
 
 .skill-node-available {
   cursor: pointer;
-  border-color: rgba(255, 255, 255, 0.98);
-  background: linear-gradient(135deg, #7dd3fc, #67e8f9 48%, #a7f3d0);
+  border-color: rgba(14, 116, 144, 0.72);
+  background: linear-gradient(135deg, #38bdf8, #22d3ee 48%, #5eead4);
   box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18), 0 10px 22px rgba(14, 116, 144, 0.22);
 }
 
 .skill-node-owned {
   cursor: pointer;
-  border-color: rgba(255, 255, 255, 0.94);
-  background: linear-gradient(135deg, #86efac, #34d399);
+  border-color: rgba(21, 128, 61, 0.68);
+  background: linear-gradient(135deg, #4ade80, #10b981);
   opacity: 1;
   box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.22), 0 8px 18px rgba(22, 163, 74, 0.22);
 }
@@ -2518,13 +2518,13 @@ h1 {
 .skill-node-locked,
 .skill-node-costly {
   cursor: pointer;
-  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  background: linear-gradient(135deg, #b6c6d5, #8fa3b8);
   opacity: 0.9;
 }
 
 .skill-node-costly {
   border-color: rgba(251, 191, 36, 0.78);
-  background: linear-gradient(135deg, #fef3c7, #fbbf24);
+  background: linear-gradient(135deg, #fde68a, #f59e0b);
 }
 
 .skill-node-costly .skill-node-icon {
@@ -2554,7 +2554,7 @@ h1 {
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background: linear-gradient(135deg, #dbeafe, #fef3c7);
+  background: linear-gradient(135deg, #bfdbfe, #fde68a);
   color: #17405f;
   font-size: 1.35rem;
   font-weight: 900;
@@ -2651,7 +2651,7 @@ h1 {
   border: 1px solid rgba(37, 99, 235, 0.28);
   border-radius: 999px;
   color: #17405f;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(200, 226, 233, 0.92);
   font-weight: 1000;
 }
 
@@ -2665,7 +2665,7 @@ h1 {
 .compact-skill-tier-evolution .compact-skill-tier-heading {
   border-color: rgba(251, 191, 36, 0.72);
   color: #7c2d12;
-  background: linear-gradient(135deg, #fff7ad, #fed7aa);
+  background: linear-gradient(135deg, #fde68a, #fdba74);
 }
 
 .compact-skill-card {
@@ -2680,7 +2680,7 @@ h1 {
   border: 2px solid rgba(125, 165, 214, 0.28);
   border-radius: 14px;
   color: #17405f;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(199, 225, 232, 0.9);
   box-shadow: 0 4px 0 rgba(70, 109, 150, 0.12);
   text-align: left;
 }
@@ -2702,36 +2702,36 @@ h1 {
 }
 
 .compact-skill-card-selected {
-  border-color: #ffffff;
+  border-color: #fde68a;
   box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.24), 0 4px 0 rgba(70, 109, 150, 0.12);
 }
 
 .compact-skill-card-available {
-  border-color: rgba(255, 255, 255, 0.98);
-  background: linear-gradient(135deg, #bae6fd, #a7f3d0);
+  border-color: rgba(14, 116, 144, 0.62);
+  background: linear-gradient(135deg, #7dd3fc, #6ee7b7);
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16), 0 5px 0 rgba(70, 109, 150, 0.14);
 }
 
 .compact-skill-card-owned {
   border-color: rgba(52, 211, 153, 0.48);
-  background: rgba(220, 252, 231, 0.78);
+  background: rgba(187, 247, 208, 0.78);
   opacity: 0.95;
 }
 
 .compact-skill-card-costly {
   border-color: rgba(251, 191, 36, 0.62);
-  background: rgba(254, 243, 199, 0.86);
+  background: rgba(253, 230, 138, 0.78);
 }
 
 .compact-skill-card-locked {
   border-color: rgba(100, 116, 139, 0.22);
-  background: rgba(241, 245, 249, 0.84);
+  background: rgba(203, 213, 225, 0.82);
   opacity: 0.68;
 }
 
 .compact-skill-card-evolution {
   border-color: rgba(251, 191, 36, 0.78);
-  background: radial-gradient(circle at 18% 20%, rgba(251, 191, 36, 0.42), transparent 32%), rgba(255, 251, 235, 0.94);
+  background: radial-gradient(circle at 18% 20%, rgba(251, 191, 36, 0.42), transparent 32%), rgba(254, 243, 199, 0.88);
 }
 
 .compact-skill-card-icon {
@@ -2740,7 +2740,7 @@ h1 {
   width: 34px;
   height: 34px;
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(226, 242, 244, 0.78);
   color: #17405f;
   font-size: 1.12rem;
   font-weight: 1000;
@@ -2871,7 +2871,7 @@ h1 {
   min-height: clamp(420px, calc(100dvh - 230px), 690px);
   max-height: clamp(420px, calc(100dvh - 230px), 690px);
   border: 1px solid rgba(125, 165, 214, 0.34);
-  background: rgba(239, 249, 255, 0.74);
+  background: rgba(181, 214, 225, 0.82);
   touch-action: pan-x pan-y;
 }
 
@@ -2883,7 +2883,7 @@ h1 {
     linear-gradient(180deg, rgba(186, 230, 253, 0.48), transparent 32%),
     linear-gradient(90deg, rgba(56, 189, 248, 0.18) 1px, transparent 1px),
     linear-gradient(0deg, rgba(56, 189, 248, 0.14) 1px, transparent 1px),
-    linear-gradient(135deg, #fff9df 0%, #e6f7ff 58%, #f6fff2 100%);
+    linear-gradient(135deg, #bddde8 0%, #a7cfdd 58%, #b3ddc4 100%);
   background-size: auto, auto, var(--skill-grid-size, 140px) var(--skill-grid-size, 140px), var(--skill-grid-size, 140px) var(--skill-grid-size, 140px), auto;
 }
 
@@ -2977,14 +2977,14 @@ h1 {
   }
 
   .mobile-skill-tree .skill-node-available {
-    border-color: rgba(255, 255, 255, 1);
-    background: linear-gradient(135deg, #7dd3fc, #67e8f9 48%, #a7f3d0);
+    border-color: rgba(14, 116, 144, 0.76);
+    background: linear-gradient(135deg, #38bdf8, #22d3ee 48%, #5eead4);
     box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18), 0 0 26px rgba(14, 165, 233, 0.22), 0 8px 18px rgba(70, 109, 150, 0.16);
   }
 
   .mobile-skill-tree .skill-node-owned {
-    border-color: rgba(255, 255, 255, 0.94);
-    background: linear-gradient(135deg, #86efac, #34d399);
+    border-color: rgba(21, 128, 61, 0.7);
+    background: linear-gradient(135deg, #4ade80, #10b981);
     box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.22), 0 0 22px rgba(22, 163, 74, 0.2);
   }
 
@@ -2995,7 +2995,7 @@ h1 {
 
   .mobile-skill-tree .skill-node-costly {
     border-color: rgba(250, 204, 21, 0.86);
-    background: linear-gradient(135deg, #fef3c7, #fbbf24);
+    background: linear-gradient(135deg, #fde68a, #f59e0b);
   }
 
   .mobile-skill-tree .skill-node-evolution {
@@ -3048,7 +3048,7 @@ h1 {
     padding: 12px;
     border-color: rgba(96, 165, 250, 0.38);
     border-radius: 20px 20px 18px 18px;
-    background: linear-gradient(180deg, rgba(255, 255, 248, 0.98), rgba(236, 248, 255, 0.98));
+    background: linear-gradient(180deg, rgba(204, 231, 238, 0.98), rgba(187, 220, 230, 0.98));
     box-shadow: 0 -12px 34px rgba(70, 109, 150, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
   }
 
@@ -3228,7 +3228,7 @@ h1 {
     padding-top: 10px;
     flex-direction: column;
     align-items: stretch;
-    background: linear-gradient(180deg, rgba(255, 253, 235, 0), rgba(255, 253, 235, 0.96) 24%);
+    background: linear-gradient(180deg, rgba(189, 221, 232, 0), rgba(189, 221, 232, 0.96) 24%);
   }
 
   .skill-tree-footer p {
@@ -3281,7 +3281,7 @@ h1 {
     overflow: hidden;
     border: 0;
     border-radius: 0;
-    background: radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.3), transparent 34%), linear-gradient(180deg, #fff9df, #e6f7ff 58%, #f6fff2);
+    background: radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.28), transparent 34%), linear-gradient(180deg, #bddde8, #a7cfdd 58%, #b3ddc4);
     box-shadow: none;
     transform: none;
   }
@@ -3295,7 +3295,7 @@ h1 {
     align-items: center;
     border: 1px solid rgba(96, 165, 250, 0.24);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.88);
+    background: rgba(199, 225, 232, 0.9);
     box-shadow: 0 6px 18px rgba(70, 109, 150, 0.16);
   }
 
