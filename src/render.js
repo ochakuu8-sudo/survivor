@@ -16,6 +16,7 @@ import {
   dungeonFloorSprite,
   getDungeonTile,
   isWalkableTile,
+  nearestDungeonPoint,
 } from "./dungeon.js";
 
 export function render() {
@@ -552,9 +553,10 @@ function drawSceneryObstacle(obstacle, view, camX, camY, zoom) {
 }
 
 export function worldToScreen(x, y, view, camX, camY, zoom = 1) {
+  const point = nearestDungeonPoint(game.dungeon, x, y, camX, camY);
   return {
-    x: (x - camX) * zoom + view.w / 2,
-    y: (y - camY) * zoom + view.h / 2,
+    x: (point.x - camX) * zoom + view.w / 2,
+    y: (point.y - camY) * zoom + view.h / 2,
   };
 }
 

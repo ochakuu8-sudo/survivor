@@ -3,6 +3,7 @@ import { game } from "./state.js";
 import { distSq, gridKey } from "./utils/math.js";
 import { buildEnemyGrid, damageEnemy, explodeBullet, removeDeadEnemies } from "./combat.js";
 import { addEffect } from "./effects.js";
+import { shortestDungeonDelta, shortestDungeonDistanceSq, wrapDungeonPoint } from "./dungeon.js";
 
 export function updateBullets(dt) {
   const enemyGrid = buildEnemyGrid();
@@ -11,6 +12,7 @@ export function updateBullets(dt) {
     bullet.life -= dt;
     bullet.x += bullet.vx * dt;
     bullet.y += bullet.vy * dt;
+    wrapDungeonPoint(game.dungeon, bullet);
     if (bullet.life <= 0) {
       if (bullet.kind === "pulseBomb") continue;
       if (bullet.explosionRadius > 0) explodeBullet(bullet);
@@ -94,7 +96,7 @@ function findRicochetTargets(x, y, range, count, justHitId) {
   const candidates = [];
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
-    const distance = distSq(x, y, enemy.x, enemy.y);
+    const distance = shortestDungeonDistanceSq(game.dungeon, x, y, enemy.x, enemy.y);
     if (distance > rangeSq) continue;
     candidates.push({
       enemy,
@@ -116,8 +118,9 @@ function findRicochetTargets(x, y, range, count, justHitId) {
 }
 
 function retargetRicochetBullet(bullet, target, speed, justHitId) {
-  const dx = target.x - bullet.x;
-  const dy = target.y - bullet.y;
+  const delta = shortestDungeonDelta(game.dungeon, bullet.x, bullet.y, target.x, target.y);
+  const dx = delta.dx;
+  const dy = delta.dy;
   const len = Math.hypot(dx, dy) || 1;
   bullet.vx = (dx / len) * speed;
   bullet.vy = (dy / len) * speed;
