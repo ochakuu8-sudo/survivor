@@ -6,7 +6,7 @@ import { createWeapon, findWeapon, setActiveWeaponIndex } from "./weapons.js";
 import { spawnEnemy } from "./enemies.js";
 import { killEnemy } from "./combat.js";
 import { WEAPON_POOL } from "./shop.js";
-import { enterShop, startNextWave } from "./game.js";
+import { enterShop } from "./game.js";
 import { updateHud } from "./hud.js";
 
 export function setupDebug() {
@@ -41,7 +41,9 @@ export function setupDebug() {
   });
   hud.dbgNextWave.addEventListener("click", () => {
     if (!game.player?.gear?.weapons?.length) return;
-    startNextWave();
+    game.floorElapsed = Math.min(299, (game.floorElapsed || 0) + 60);
+    game.runPoints = (game.runPoints || 0) + 20;
+    updateHud();
   });
 }
 

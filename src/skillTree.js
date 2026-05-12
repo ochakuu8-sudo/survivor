@@ -1,4 +1,4 @@
-import { WAVE_NODE_PRICE_BASE, WAVE_NODE_PRICE_SCALE } from "./constants.js";
+import { WAVE_NODE_PRICE_BASE } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { ACTIVE_ATTACHMENTS, findAttachmentDefinition, recomputeAllAttachments } from "./attachments.js";
@@ -115,7 +115,8 @@ function treeForWeapon(weapon = getActiveWeapon()) {
 }
 
 export function initSkillProgress() {
-  game.treePurchases = { weapon: {} };
+  if (!game.treePurchases) game.treePurchases = { weapon: {} };
+  if (!game.treePurchases.weapon) game.treePurchases.weapon = {};
   game.freeNodeCredits = { weapon: 0 };
   game.evolutionMaterials = 0;
   game.nextWaveBuff = null;
@@ -130,7 +131,6 @@ export function enterUpgradeTree() {
   game.particles = [];
   game.goldDrops = [];
   game.effects = [];
-  game.waveClearCount = (game.waveClearCount || 0) + 1;
   renderSkillTree();
   hud.skillTree?.classList.remove("hidden");
   updateHud();
@@ -141,13 +141,13 @@ export function renderSkillTree() {
   const weapon = getActiveWeapon();
   hud.skillTreeWeaponName.textContent = weapon?.name || "武器未選択";
   hud.skillTreeWeaponMeta.textContent = weapon ? `${weaponMetaLabel(weapon)} / ${weaponStatusLabel(weapon)}` : "";
-  hud.skillTreeGold.textContent = String(game.gold);
-  hud.skillTreeWave.textContent = `Wave ${game.wave} Clear`;
+  hud.skillTreeGold.textContent = String(game.totalSkillPoints || 0);
+  hud.skillTreeWave.textContent = "ラン外成長";
   hud.skillTreeFree.textContent = freeCreditText();
   const fullscreenPreferred = isMobileSkillTreeFullscreenPreferred();
   setMobileSkillTreeFullscreen(fullscreenPreferred);
   const title = hud.skillTree.querySelector(".panel-head h1");
-  if (title) title.textContent = fullscreenPreferred ? "スキルツリー" : "武器を改造して次のWaveへ";
+  if (title) title.textContent = fullscreenPreferred ? "スキルツリー" : "SPで武器を恒久強化";
   const footerHint = hud.skillTree.querySelector(".skill-tree-footer p");
   if (footerHint) {
     footerHint.textContent = "スマホ側と同じノードマップです。ドラッグで移動し、タップ／クリックで詳細を確認できます。";
@@ -476,7 +476,7 @@ function renderCompactSkillCard(node, weapon, selected = false) {
       </span>
       <span class="compact-skill-card-main-row">
         <span class="compact-skill-card-text">${node.text}</span>
-        <span class="compact-skill-cost">${nodeCost(node)}G</span>
+        <span class="compact-skill-cost">${nodeCost(node)}SP</span>
       </span>
     </span>
   `;
@@ -802,7 +802,7 @@ function renderNodeButton(node, weapon, position = { x: 50, y: 50, tier: node.ti
     <span class="skill-node-icon" aria-hidden="true">${nodeIcon(node, weapon)}</span>
     <span class="skill-node-copy">
       <span class="skill-node-name">${node.title}</span>
-      <span class="skill-node-meta">${nodeCost(node)}G · ${statusLabel(status)}</span>
+      <span class="skill-node-meta">${nodeCost(node)}SP · ${statusLabel(status)}</span>
     </span>
     <span class="skill-node-tier" aria-hidden="true">T${position.tier}</span>
   `;
@@ -837,7 +837,7 @@ function renderNodeDetail(node, scope, { detailedRequirements = false } = {}) {
     </div>
     <p>${node.text}</p>
     <dl>
-      <div><dt>コスト</dt><dd>${usesFreeCredit ? "無料解放を使用" : `${cost}G`}</dd></div>
+      <div><dt>コスト</dt><dd>${usesFreeCredit ? "無料解放を使用" : `${cost}SP`}</dd></div>
       <div><dt>条件</dt><dd>${requireText}</dd></div>
     </dl>
   `;
@@ -868,7 +868,7 @@ function requirementText(node, detailed = false) {
 function statusLabel(status) {
   return {
     available: "開放可能",
-    costly: "ゴールド不足",
+    costly: "SP不足",
     locked: "ロック中",
     owned: "取得済み",
   }[status] || "確認";
@@ -877,7 +877,7 @@ function statusLabel(status) {
 function unlockButtonLabel(status, free) {
   if (status === "owned") return "取得済み";
   if (status === "locked") return "条件未達成";
-  if (status === "costly" && !free) return "ゴールド不足";
+  if (status === "costly" && !free) return "SP不足";
   return free ? "無料で開放" : "開放";
 }
 
@@ -898,7 +898,7 @@ function nodeIcon(node, weapon) {
 function nodeStatus(node) {
   if (isPurchased(node.id, node.scope)) return "owned";
   if (!isUnlocked(node)) return "locked";
-  return game.gold >= nodeCost(node) || freeCredits(node.scope) > 0 ? "available" : "costly";
+  return (game.totalSkillPoints || 0) >= nodeCost(node) || freeCredits(node.scope) > 0 ? "available" : "costly";
 }
 
 function isUnlocked(node) {
@@ -910,8 +910,7 @@ function isPurchased(id, scope) {
 }
 
 function nodeCost(node) {
-  const scale = 1 + Math.max(0, game.wave - 1) * WAVE_NODE_PRICE_SCALE;
-  return Math.round((node.cost || WAVE_NODE_PRICE_BASE) * scale);
+  return Math.round(node.cost || WAVE_NODE_PRICE_BASE);
 }
 
 function freeCredits(scope) {
@@ -934,8 +933,8 @@ export function purchaseNode(id, scope = "weapon") {
   if (freeCredits(scope) > 0) {
     game.freeNodeCredits[scope] -= 1;
   } else {
-    if (game.gold < cost) return false;
-    game.gold -= cost;
+    if ((game.totalSkillPoints || 0) < cost) return false;
+    game.totalSkillPoints -= cost;
   }
   game.treePurchases[scope][id] = true;
   if (node.attachment) addAttachmentNode(getActiveWeapon(), node.attachment, node.id);
@@ -955,6 +954,21 @@ function nextAvailableNodeAfterPurchase(purchasedNode, scope) {
     && nodeStatus(node) === "available"
     && (node.requires || []).includes(purchasedNode.id)
   ) || nodes.find((node) => !isPurchased(node.id, scope) && nodeStatus(node) === "available") || null;
+}
+
+export function applyPurchasedSkillTreeToActiveWeapon() {
+  const weapon = getActiveWeapon();
+  if (!weapon) return;
+  const nodes = treeForWeapon(weapon).filter((node) => isPurchased(node.id, "weapon"));
+  weapon.attachments = (weapon.attachments || []).filter((attachment) => attachment.source !== "skillNode");
+  for (const node of nodes) {
+    if (node.attachment) addAttachmentNode(weapon, node.attachment, node.id);
+    if (node.evolveTo) evolveWeapon(node.evolveTo);
+  }
+  recomputeAllAttachments();
+  for (const node of nodes) {
+    if (node.custom) node.custom(getActiveWeapon());
+  }
 }
 
 function reapplyPurchasedCustomNodes() {

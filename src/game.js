@@ -1,11 +1,11 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { BOSS_WAVE_INTERVAL, ELITE_SPAWN_SECONDS, WAVE_DURATION_SECONDS } from "./constants.js";
+import { RUN_DURATION_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
-import { spawnEnemies, spawnEnemy, updateEnemies } from "./enemies.js";
+import { spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
 import { generateArenaDungeon } from "./dungeon.js";
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
@@ -23,12 +23,20 @@ export function resetRun() {
   game.wave = 1;
   game.elapsed = 0;
   game.floorElapsed = 0;
-  game.waveTimeLeft = WAVE_DURATION_SECONDS;
+  game.waveTimeLeft = RUN_DURATION_SECONDS;
   game.waveClearCount = 0;
   game.eliteSpawned = false;
   game.selectedWeapon = null;
   game.totalKills = 0;
   game.waveKills = 0;
+  game.runPoints = 0;
+  game.runResult = null;
+  game.runPhase = 1;
+  game.spawnedMilestones = {
+    elite90: false,
+    elite180: false,
+    boss270: false,
+  };
   game.gold = 0;
   game.goldGainBonus = 0;
   game.waveStartHealBonus = 0;
@@ -89,6 +97,7 @@ export function resetRun() {
   hud.shop?.classList.add("hidden");
   hideSkillTree();
   hud.treasureReward.classList.add("hidden");
+  hud.restart.textContent = "スキルツリーへ";
   hud.gameOver.classList.add("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel?.classList.add("hidden");
@@ -100,11 +109,16 @@ export function resetRun() {
 export function startArenaWithSelectedWeapon() {
   game.mode = "arena";
   game.floorElapsed = 0;
-  game.waveTimeLeft = WAVE_DURATION_SECONDS;
+  game.waveTimeLeft = RUN_DURATION_SECONDS;
   game.waveKills = 0;
   game.spawnClock = 0;
   game.spawnBatchSize = 0;
   game.eliteSpawned = false;
+  game.spawnedMilestones = {
+    elite90: false,
+    elite180: false,
+    boss270: false,
+  };
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
@@ -121,6 +135,7 @@ export function startArenaWithSelectedWeapon() {
   hideSkillTree();
   hud.shop?.classList.add("hidden");
   hud.treasureReward.classList.add("hidden");
+  spawnOpeningEnemies();
   updateHud();
 }
 
@@ -141,8 +156,68 @@ export function enterShop() {
 }
 
 export function endRun() {
-  game.mode = "over";
-  hud.result.textContent = `Wave ${game.wave}、撃破数 ${game.totalKills}、ゴールド ${game.gold}。`;
+  finishRun("dead");
+}
+
+export function calculateRunBonus(result) {
+  const t = game.floorElapsed || 0;
+  let bonus = 0;
+  if (t >= 60) bonus += 10;
+  if (t >= 120) bonus += 15;
+  if (t >= 180) bonus += 20;
+  if (t >= 240) bonus += 25;
+  if (result === "clear") bonus += 50;
+  return bonus;
+}
+
+export function formatTime(seconds) {
+  const safe = Math.max(0, Math.floor(seconds || 0));
+  const m = Math.floor(safe / 60);
+  const sec = String(safe % 60).padStart(2, "0");
+  return `${m}:${sec}`;
+}
+
+export function finishRun(result) {
+  if (game.mode === "result") return;
+  const survivalTime = Math.min(game.floorElapsed || 0, RUN_DURATION_SECONDS);
+  const bonusPoints = calculateRunBonus(result);
+  const totalEarnedPoints = (game.runPoints || 0) + bonusPoints;
+
+  game.mode = "result";
+  game.runResult = {
+    result,
+    survivalTime,
+    kills: game.totalKills,
+    waveKills: game.waveKills,
+    runPoints: game.runPoints || 0,
+    bonusPoints,
+    totalEarnedPoints,
+  };
+  game.totalSkillPoints = (game.totalSkillPoints || 0) + totalEarnedPoints;
+  game.bestSurvivalTime = Math.max(game.bestSurvivalTime || 0, survivalTime);
+
+  game.enemies = [];
+  game.bullets = [];
+  game.enemyProjectiles = [];
+  game.particles = [];
+  game.goldDrops = [];
+  game.effects = [];
+
+  showRunResult();
+}
+
+function showRunResult() {
+  const r = game.runResult;
+  const time = formatTime(r?.survivalTime || 0);
+  const best = formatTime(game.bestSurvivalTime || 0);
+  hud.result.textContent =
+    `${r?.result === "clear" ? "5分生存クリア！" : "探索はここまで"}\n` +
+    `到達時間 ${time} / 最高 ${best}\n` +
+    `撃破数 ${r?.kills || 0}\n` +
+    `回収 ${r?.runPoints || 0}pt / ボーナス ${r?.bonusPoints || 0}pt\n` +
+    `獲得 ${r?.totalEarnedPoints || 0}pt\n` +
+    `所持SP ${game.totalSkillPoints || 0}pt`;
+  hud.restart.textContent = "スキルツリーへ";
   hud.gameOver.classList.remove("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel?.classList.add("hidden");
@@ -174,7 +249,7 @@ function update(dt) {
   }
 
   game.floorElapsed += dt;
-  game.waveTimeLeft = Math.max(0, WAVE_DURATION_SECONDS - game.floorElapsed);
+  game.waveTimeLeft = Math.max(0, RUN_DURATION_SECONDS - game.floorElapsed);
   const p = game.player;
   p.invulnerableTimer = Math.max(0, (p.invulnerableTimer || 0) - dt);
 
@@ -183,7 +258,7 @@ function update(dt) {
   updateWeaponTimers(p, dt);
 
   spawnEnemies(dt);
-  updateWaveEvents();
+  updateRunEvents();
   updateEnemies(dt);
   updateBullets(dt);
   updateEnemyProjectiles(dt);
@@ -195,19 +270,32 @@ function update(dt) {
   updateCamera(dt);
 
   if (p.hp <= 0) {
-    endRun();
-  } else if (game.floorElapsed >= WAVE_DURATION_SECONDS) {
-    enterUpgradeTree();
+    finishRun("dead");
+  } else if (game.floorElapsed >= RUN_DURATION_SECONDS) {
+    finishRun("clear");
   }
 
   updateHud();
 }
 
-function updateWaveEvents() {
-  if (game.eliteSpawned || game.floorElapsed < ELITE_SPAWN_SECONDS) return;
-  game.eliteSpawned = true;
-  const bossWave = game.wave % BOSS_WAVE_INTERVAL === 0;
-  spawnEnemy("orc", { elite: true, boss: bossWave });
+function updateRunEvents() {
+  const t = game.floorElapsed || 0;
+  const m = game.spawnedMilestones || (game.spawnedMilestones = { elite90: false, elite180: false, boss270: false });
+
+  if (!m.elite90 && t >= 90) {
+    m.elite90 = true;
+    spawnEnemy("orc", { elite: true });
+  }
+
+  if (!m.elite180 && t >= 180) {
+    m.elite180 = true;
+    spawnEnemy("orc", { elite: true });
+  }
+
+  if (!m.boss270 && t >= 270) {
+    m.boss270 = true;
+    spawnEnemy("orc", { elite: true, boss: true });
+  }
 }
 
 function updateCamera(dt) {

@@ -1,4 +1,4 @@
-import { WAVE_DURATION_SECONDS } from "./constants.js";
+import { RUN_DURATION_SECONDS } from "./constants.js";
 
 export const keys = new Set();
 
@@ -22,7 +22,7 @@ export const game = {
   wave: 1,
   elapsed: 0,
   floorElapsed: 0,
-  waveTimeLeft: WAVE_DURATION_SECONDS,
+  waveTimeLeft: RUN_DURATION_SECONDS,
   waveClearCount: 0,
   eliteSpawned: false,
   selectedWeapon: null,
@@ -35,6 +35,16 @@ export const game = {
   exitHoldTimer: 0,
   totalKills: 0,
   waveKills: 0,
+  runPoints: 0,
+  totalSkillPoints: 0,
+  bestSurvivalTime: 0,
+  runResult: null,
+  runPhase: 1,
+  spawnedMilestones: {
+    elite90: false,
+    elite180: false,
+    boss270: false,
+  },
   gold: 0,
   spawnClock: 0,
   spawnBatchSize: 0,

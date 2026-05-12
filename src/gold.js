@@ -1,12 +1,12 @@
 import { TAU } from "./constants.js";
 import { game } from "./state.js";
-import { clamp, distSq } from "./utils/math.js";
+import { clamp } from "./utils/math.js";
 import { addEffect } from "./effects.js";
 
 const MAX_GOLD_DROPS = 260;
 
 export function dropGold(enemy) {
-  const pieces = goldCoinCountForEnemy(enemy);
+  const pieces = pointCountForEnemy(enemy);
 
   for (let i = 0; i < pieces; i += 1) {
     const angle = Math.random() * TAU;
@@ -68,7 +68,7 @@ export function updateGoldDrops(dt) {
 }
 
 function collectGold(drop) {
-  game.gold += Math.max(1, Math.round(drop.value * (1 + (game.goldGainBonus || 0))));
+  game.runPoints = (game.runPoints || 0) + Math.max(1, Math.round(drop.value * (1 + (game.goldGainBonus || 0))));
   addEffect({
     type: "burst",
     x: drop.x,
@@ -81,9 +81,11 @@ function collectGold(drop) {
   });
 }
 
-function goldCoinCountForEnemy(enemy) {
-  if (Number.isFinite(enemy.goldCoins)) return Math.max(0, Math.round(enemy.goldCoins));
-  if (enemy.kind === "archer" || enemy.readableSprite === "skeletonArcherReadable") return 2;
+function pointCountForEnemy(enemy) {
+  if (enemy.boss) return 25;
+  if (enemy.elite) return 10;
   if (enemy.kind === "orc") return 4;
+  if (enemy.kind === "archer" || enemy.readableSprite === "skeletonArcherReadable") return 2;
+  if (enemy.readableSprite === "zombieBReadable") return 2;
   return 1;
 }
