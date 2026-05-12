@@ -171,18 +171,20 @@ export function moveActorWithDungeonCollision(actor, dx, dy) {
   }
 }
 
-export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance) {
+export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance, options = {}) {
   const dungeon = game.dungeon;
   if (!dungeon) return null;
+  const { fallbackToBest = true, predicate = null } = options;
   let best = null;
   let bestDistance = 0;
-  for (let i = 0; i < 80; i += 1) {
+  for (let i = 0; i < 120; i += 1) {
     const room = dungeon.rooms[Math.floor(Math.random() * dungeon.rooms.length)];
     const tx = randInt(Math.random, room.x + 1, room.x + room.w - 2);
     const ty = randInt(Math.random, room.y + 1, room.y + room.h - 2);
     if (!isWalkableTile(dungeon, tx, ty)) continue;
     const point = tileCenter(dungeon.width, dungeon.height, tx, ty);
     if (!canStandAt(dungeon, point.x, point.y, 22)) continue;
+    if (predicate && !predicate(point)) continue;
     const distance = Math.hypot(point.x - originX, point.y - originY);
     if (distance >= minDistance && distance <= maxDistance) return point;
     if (distance > bestDistance) {
@@ -190,7 +192,7 @@ export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance
       bestDistance = distance;
     }
   }
-  return best;
+  return fallbackToBest ? best : null;
 }
 
 export function createTreasureChestAt(x, y, label = "改造宝箱") {
