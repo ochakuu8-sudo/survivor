@@ -296,8 +296,18 @@ export function dungeonTileWorldCenter(dungeon, tx, ty) {
   };
 }
 
-export function dungeonFloorSprite(tx, ty) {
-  const roll = hash2(tx, ty, 23);
+export function dungeonVisualTileCoords(dungeon, tx, ty) {
+  if (!dungeon?.wrapEdges) return { tx, ty };
+  return {
+    tx: ((tx % dungeon.width) + dungeon.width) % dungeon.width,
+    ty: ((ty % dungeon.height) + dungeon.height) % dungeon.height,
+  };
+}
+
+export function dungeonFloorSprite(tx, ty, dungeon = null) {
+  if (dungeon?.arena && dungeon.wrapEdges) return "pavement";
+  const visual = dungeonVisualTileCoords(dungeon, tx, ty);
+  const roll = hash2(visual.tx, visual.ty, 23);
   if (roll < 0.14) return "lane";
   if (roll < 0.3) return "sidewalk";
   if (roll < 0.42) return "crosswalk";

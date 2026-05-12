@@ -14,6 +14,7 @@ import {
   DUNGEON_EXIT,
   DUNGEON_WALL,
   dungeonFloorSprite,
+  dungeonVisualTileCoords,
   getDungeonTile,
   isWalkableTile,
   nearestDungeonPoint,
@@ -96,7 +97,7 @@ function drawDungeonBackground(dungeon, view, camX, camY, zoom) {
         continue;
       }
 
-      state.renderer.draw(dungeonFloorSprite(tx, ty), screen.x, screen.y, size, size, {
+      state.renderer.draw(dungeonFloorSprite(tx, ty, dungeon), screen.x, screen.y, size, size, {
         tint: tile === DUNGEON_EXIT ? [1, 0.96, 0.68] : [1, 1, 0.94],
       });
       state.renderer.draw("white", screen.x, screen.y, size, size, {
@@ -105,9 +106,10 @@ function drawDungeonBackground(dungeon, view, camX, camY, zoom) {
       });
 
       if (tile !== DUNGEON_EXIT) {
-        const propRoll = hash2(tx, ty, dungeon.seed);
-        if (propRoll < 0.035) drawProp("trash", tx, ty, view, camX, camY, zoom, hash2(tx, ty, 7), hash2(tx, ty, 17), dungeon.offsetX, dungeon.offsetY);
-        else if (propRoll < 0.055) drawProp("sign", tx, ty, view, camX, camY, zoom, hash2(tx, ty, 11), hash2(tx, ty, 19), dungeon.offsetX, dungeon.offsetY);
+        const visual = dungeonVisualTileCoords(dungeon, tx, ty);
+        const propRoll = hash2(visual.tx, visual.ty, dungeon.seed);
+        if (propRoll < 0.035) drawProp("trash", tx, ty, view, camX, camY, zoom, hash2(visual.tx, visual.ty, 7), hash2(visual.tx, visual.ty, 17), dungeon.offsetX, dungeon.offsetY);
+        else if (propRoll < 0.055) drawProp("sign", tx, ty, view, camX, camY, zoom, hash2(visual.tx, visual.ty, 11), hash2(visual.tx, visual.ty, 19), dungeon.offsetX, dungeon.offsetY);
       }
     }
   }
