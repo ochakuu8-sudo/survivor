@@ -144,76 +144,23 @@ export function renderSkillTree() {
   hud.skillTreeGold.textContent = String(game.gold);
   hud.skillTreeWave.textContent = `Wave ${game.wave} Clear`;
   hud.skillTreeFree.textContent = freeCreditText();
-  const compactPreferred = isCompactSkillTreePreferred();
-  setMobileSkillTreeFullscreen(compactPreferred);
+  const fullscreenPreferred = isMobileSkillTreeFullscreenPreferred();
+  setMobileSkillTreeFullscreen(fullscreenPreferred);
   const title = hud.skillTree.querySelector(".panel-head h1");
-  if (title) title.textContent = compactPreferred ? "スキルツリー" : "武器を改造して次のWaveへ";
+  if (title) title.textContent = fullscreenPreferred ? "スキルツリー" : "武器を改造して次のWaveへ";
   const footerHint = hud.skillTree.querySelector(".skill-tree-footer p");
   if (footerHint) {
-    footerHint.textContent = compactPreferred
-      ? "スマホ用の縦型ノードマップです。ドラッグで移動し、タップで詳細を確認できます。"
-      : "ノードをタップして詳細を確認し、マップはスワイプ／ドラッグで全体を移動できます。";
+    footerHint.textContent = "スマホ側と同じノードマップです。ドラッグで移動し、タップ／クリックで詳細を確認できます。";
   }
   hud.skillTreeWeaponNodes.replaceChildren(renderNodeMap(treeForWeapon(weapon), weapon));
 }
 
 function renderNodeMap(nodes, weapon) {
-  if (isCompactSkillTreePreferred()) return renderMobileSkillTree(nodes, weapon);
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "skill-node-map-wrap";
-
-  const scroller = document.createElement("div");
-  scroller.className = "skill-node-map-scroller";
-
-  const map = document.createElement("div");
-  map.className = "skill-node-map";
-
-  const layout = layoutSkillNodes(nodes);
-  const gridMeta = layout.gridMeta || { tiers: 1, rows: 1, lanes: 1, mapWidth: 1080, mapHeight: 1080, cellSize: 126 };
-  map.style.setProperty("--skill-tier-count", gridMeta.tiers);
-  map.style.setProperty("--skill-row-count", gridMeta.lanes);
-  map.style.setProperty("--skill-grid-size", `${gridMeta.cellSize || 126}px`);
-  map.style.width = `${gridMeta.mapWidth}px`;
-  map.style.height = `${gridMeta.mapHeight}px`;
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.classList.add("skill-node-links");
-  svg.setAttribute("viewBox", `0 0 ${gridMeta.mapWidth} ${gridMeta.mapHeight}`);
-  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-  svg.setAttribute("aria-hidden", "true");
-
-  const hubPosition = layout.gridMeta?.hub || { x: 50, y: 50 };
-  const scope = nodes[0]?.scope || "weapon";
-  const hadSelection = !!selectedSkillNodes[scope];
-  const selectedNode = selectedNodeForScope(nodes, scope);
-  for (const node of nodes) {
-    const requirements = node.requires?.length ? node.requires : [null];
-    for (const requiredId of requirements) {
-      const from = requiredId ? layout.get(requiredId) : hubPosition;
-      const to = layout.get(node.id);
-      if (!from || !to) continue;
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", orthogonalLinkPath(from, to));
-      path.classList.add("skill-link", requiredId ? linkStatus(requiredId, node.scope) : "skill-link-root", ...selectedLinkClasses(requiredId, node, selectedNode, nodes));
-      svg.appendChild(path);
-    }
-  }
-
-  map.appendChild(renderSkillGridLabels(gridMeta));
-  map.appendChild(svg);
-  map.appendChild(renderSkillHub(weapon, hubPosition));
-  for (const node of nodes) {
-    const position = layout.get(node.id);
-    map.appendChild(renderNodeButton(node, weapon, position, selectedNode?.id === node.id));
-  }
-  scroller.appendChild(map);
-  requestAnimationFrame(() => centerSkillMapOnNode(scroller, hadSelection ? layout.get(selectedNode?.id) : hubPosition));
-  wrapper.append(scroller, renderNodeDetail(selectedNode, scope));
-  return wrapper;
+  return renderMobileSkillTree(nodes, weapon);
 }
 
 
-function isCompactSkillTreePreferred() {
+function isMobileSkillTreeFullscreenPreferred() {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
   return window.matchMedia("(max-width: 720px)").matches || window.matchMedia("(pointer: coarse)").matches;
 }
@@ -343,6 +290,41 @@ function enableMobileMapGestures(viewport, map, baseWidth, baseHeight, minScale)
   viewport.dataset.gesturesReady = "true";
   let lastTouch = null;
   let pinchStart = null;
+  let pointerDrag = null;
+  let suppressNextClick = false;
+
+  viewport.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "touch" || event.button !== 0) return;
+    pointerDrag = { x: event.clientX, y: event.clientY, moved: false };
+    viewport.setPointerCapture?.(event.pointerId);
+  });
+
+  viewport.addEventListener("pointermove", (event) => {
+    if (!pointerDrag || event.pointerType === "touch") return;
+    const dx = event.clientX - pointerDrag.x;
+    const dy = event.clientY - pointerDrag.y;
+    viewport.scrollLeft -= dx;
+    viewport.scrollTop -= dy;
+    pointerDrag.moved = pointerDrag.moved || Math.abs(dx) + Math.abs(dy) > 5;
+    pointerDrag.x = event.clientX;
+    pointerDrag.y = event.clientY;
+  });
+
+  const endPointerDrag = (event) => {
+    if (!pointerDrag || event.pointerType === "touch") return;
+    viewport.releasePointerCapture?.(event.pointerId);
+    suppressNextClick = pointerDrag.moved;
+    pointerDrag = null;
+  };
+  viewport.addEventListener("pointerup", endPointerDrag);
+  viewport.addEventListener("pointercancel", endPointerDrag);
+  viewport.addEventListener("pointerleave", endPointerDrag);
+  viewport.addEventListener("click", (event) => {
+    if (!suppressNextClick) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressNextClick = false;
+  }, true);
 
   viewport.addEventListener("touchstart", (event) => {
     if (event.touches.length === 1) {
