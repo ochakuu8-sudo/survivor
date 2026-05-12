@@ -65,6 +65,7 @@ export const game = {
   starterChoices: [],
   treasureReward: null,
   dungeon: null,
+  renderStats: null,
 };
 
 let enemyId = 1;

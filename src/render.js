@@ -8,7 +8,7 @@ import {
 } from "./constants.js";
 import * as state from "./state.js";
 import { game, backgroundTileCache } from "./state.js";
-import { canvas } from "./dom.js";
+import { canvas, hud } from "./dom.js";
 import { clamp, gridKey, hash2, mod } from "./utils/math.js";
 import {
   DUNGEON_EXIT,
@@ -34,6 +34,7 @@ export function render() {
   drawBackgroundDepth(view);
   drawWorld(view, camX, camY, zoom);
   state.renderer.flush();
+  publishRenderStats();
 }
 
 function drawBackgroundDepth(view) {
@@ -203,12 +204,89 @@ function drawProp(name, tx, ty, view, camX, camY, zoom, roll, yRoll, offsetX = 0
   });
 }
 
+const DEFAULT_CULL_MARGIN = 96;
+const MAX_RENDERED_ENEMIES = 900;
+
+function createFrameRenderStats() {
+  return {
+    enemies: game.enemies.length,
+    visibleEnemies: 0,
+    renderedEnemies: 0,
+    bullets: game.bullets.length,
+    visibleBullets: 0,
+    enemyProjectiles: game.enemyProjectiles.length,
+    visibleEnemyProjectiles: 0,
+    goldDrops: game.goldDrops.length,
+    visibleGoldDrops: 0,
+    effects: game.effects.length,
+    visibleEffects: 0,
+    particles: game.particles.length,
+    visibleParticles: 0,
+    quads: 0,
+    drawCalls: 0,
+    flushes: 0,
+  };
+}
+
+function publishRenderStats() {
+  const stats = game.renderStats || createFrameRenderStats();
+  const rendererStats = state.renderer.stats || {};
+  stats.quads = rendererStats.quads || 0;
+  stats.drawCalls = rendererStats.drawCalls || 0;
+  stats.flushes = rendererStats.flushes || 0;
+  stats.maxVertices = rendererStats.maxVertices || 0;
+  stats.skippedSprites = rendererStats.skippedSprites || 0;
+  stats.frameBufferUploads = rendererStats.frameBufferUploads || 0;
+  game.renderStats = stats;
+
+  if (hud.debugStats && !hud.debugPanel?.classList.contains("hidden")) {
+    hud.debugStats.textContent =
+      `enemies ${stats.visibleEnemies}/${stats.enemies} rendered ${stats.renderedEnemies}\n` +
+      `bullets ${stats.visibleBullets}/${stats.bullets} enemy ${stats.visibleEnemyProjectiles}/${stats.enemyProjectiles}\n` +
+      `drops ${stats.visibleGoldDrops}/${stats.goldDrops} particles ${stats.visibleParticles}/${stats.particles} effects ${stats.visibleEffects}/${stats.effects}\n` +
+      `quads ${stats.quads} drawCalls ${stats.drawCalls} flushes ${stats.flushes}`;
+  }
+}
+
+function visiblePositionForDraw(item, camX, camY) {
+  if (game.dungeon?.wrapEdges) {
+    return nearestDungeonPoint(game.dungeon, item.x, item.y, camX, camY);
+  }
+  return { x: item.x, y: item.y };
+}
+
+function isVisibleWorld(x, y, radius, view, camX, camY, zoom, margin = DEFAULT_CULL_MARGIN) {
+  const visibleW = view.w / zoom;
+  const visibleH = view.h / zoom;
+  return (
+    x + radius >= camX - visibleW / 2 - margin &&
+    x - radius <= camX + visibleW / 2 + margin &&
+    y + radius >= camY - visibleH / 2 - margin &&
+    y - radius <= camY + visibleH / 2 + margin
+  );
+}
+
+function isVisibleLineWorld(x1, y1, x2, y2, width, view, camX, camY, zoom, margin = DEFAULT_CULL_MARGIN) {
+  const start = game.dungeon?.wrapEdges ? nearestDungeonPoint(game.dungeon, x1, y1, camX, camY) : { x: x1, y: y1 };
+  const end = game.dungeon?.wrapEdges ? nearestDungeonPoint(game.dungeon, x2, y2, start.x, start.y) : { x: x2, y: y2 };
+  const cx = (start.x + end.x) * 0.5;
+  const cy = (start.y + end.y) * 0.5;
+  const radius = Math.hypot(end.x - start.x, end.y - start.y) * 0.5 + width;
+  return isVisibleWorld(cx, cy, radius, view, camX, camY, zoom, margin);
+}
+
 function drawWorld(view, camX, camY, zoom) {
+  const frameStats = createFrameRenderStats();
+
   if (!game.dungeon?.arena) drawDungeonExit(view, camX, camY, zoom);
 
   for (const particle of game.particles) {
     const alpha = clamp(particle.life / particle.maxLife, 0, 1);
-    const screen = worldToScreen(particle.x, particle.y, view, camX, camY, zoom);
+    const radius = Math.max(12, particle.size * 1.4);
+    const pos = visiblePositionForDraw(particle, camX, camY);
+    if (!isVisibleWorld(pos.x, pos.y, radius, view, camX, camY, zoom, 64)) continue;
+    frameStats.visibleParticles += 1;
+    const screen = worldToScreen(pos.x, pos.y, view, camX, camY, zoom);
     const size = particle.size * (1.2 - alpha * 0.2) * zoom;
     state.renderer.draw(particle.sprite, screen.x, screen.y, size, size, {
       alpha,
@@ -216,34 +294,79 @@ function drawWorld(view, camX, camY, zoom) {
     });
   }
 
-  drawGoldDrops(view, camX, camY, zoom);
+  drawGoldDrops(view, camX, camY, zoom, frameStats);
 
-  const actors = (game.dungeon?.obstacles || []).map((obstacle) => ({
-    kind: "obstacle",
-    y: obstacle.y + (obstacle.radius || 10) * 0.45,
-    item: obstacle,
-  }));
-  actors.push(...(game.dungeon?.chests || []).map((chest) => ({
-    kind: "chest",
-    y: chest.y + chest.radius * 0.55,
-    item: chest,
-  })));
-  actors.push(...game.enemies.map((enemy) => ({ kind: "enemy", y: enemy.y, item: enemy })));
+  const actors = [];
+  for (const obstacle of game.dungeon?.obstacles || []) {
+    const sprite = state.atlas.sprites[obstacle.sprite];
+    const scale = obstacle.scale || 1;
+    const radius = Math.max(obstacle.radius || 10, sprite ? Math.max(sprite.w, sprite.h) * scale * 0.55 : 28);
+    const pos = visiblePositionForDraw(obstacle, camX, camY);
+    if (!isVisibleWorld(pos.x, pos.y, radius, view, camX, camY, zoom)) continue;
+    actors.push({
+      kind: "obstacle",
+      y: pos.y + (obstacle.radius || 10) * 0.45,
+      item: obstacle,
+      drawX: pos.x,
+      drawY: pos.y,
+    });
+  }
+
+  for (const chest of game.dungeon?.chests || []) {
+    const pos = visiblePositionForDraw(chest, camX, camY);
+    if (!isVisibleWorld(pos.x, pos.y, chest.radius * 2.2, view, camX, camY, zoom)) continue;
+    actors.push({
+      kind: "chest",
+      y: pos.y + chest.radius * 0.55,
+      item: chest,
+      drawX: pos.x,
+      drawY: pos.y,
+    });
+  }
+
+  const visibleEnemies = [];
+  for (const enemy of game.enemies) {
+    const pos = visiblePositionForDraw(enemy, camX, camY);
+    const radius = enemy.radius * 3.2;
+    if (!isVisibleWorld(pos.x, pos.y, radius, view, camX, camY, zoom)) continue;
+    const dx = pos.x - camX;
+    const dy = pos.y - camY;
+    visibleEnemies.push({
+      kind: "enemy",
+      y: pos.y,
+      item: enemy,
+      drawX: pos.x,
+      drawY: pos.y,
+      distanceSq: dx * dx + dy * dy,
+    });
+  }
+
+  frameStats.visibleEnemies = visibleEnemies.length;
+  if (visibleEnemies.length > MAX_RENDERED_ENEMIES) {
+    visibleEnemies.sort((a, b) => a.distanceSq - b.distanceSq);
+    visibleEnemies.length = MAX_RENDERED_ENEMIES;
+  }
+  frameStats.renderedEnemies = visibleEnemies.length;
+  actors.push(...visibleEnemies);
   actors.push({ kind: "player", y: game.player.y, item: game.player });
   actors.sort((a, b) => a.y - b.y);
 
   for (const actor of actors) {
     if (actor.kind === "player") drawPlayer(actor.item, view, camX, camY, zoom);
-    else if (actor.kind === "obstacle") drawSceneryObstacle(actor.item, view, camX, camY, zoom);
-    else if (actor.kind === "chest") drawTreasureChest(actor.item, view, camX, camY, zoom);
-    else drawEnemy(actor.item, view, camX, camY, zoom);
+    else if (actor.kind === "obstacle") drawSceneryObstacle(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
+    else if (actor.kind === "chest") drawTreasureChest(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
+    else drawEnemy(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
   }
 
   drawOrbitWeapons(view, camX, camY, zoom);
-  drawEffects(view, camX, camY, zoom);
+  drawEffects(view, camX, camY, zoom, frameStats);
 
   for (const bullet of game.bullets) {
-    const screen = worldToScreen(bullet.x, bullet.y, view, camX, camY, zoom);
+    const pos = visiblePositionForDraw(bullet, camX, camY);
+    const radius = Math.max(32, (bullet.radius || 8) * 4);
+    if (!isVisibleWorld(pos.x, pos.y, radius, view, camX, camY, zoom, 128)) continue;
+    frameStats.visibleBullets += 1;
+    const screen = worldToScreen(pos.x, pos.y, view, camX, camY, zoom);
     if (bullet.kind === "timedBomb" || bullet.kind === "pulseBomb") {
       let fuseAlpha;
       if (bullet.kind === "pulseBomb") {
@@ -285,7 +408,11 @@ function drawWorld(view, camX, camY, zoom) {
   }
 
   for (const proj of game.enemyProjectiles) {
-    const screen = worldToScreen(proj.x, proj.y, view, camX, camY, zoom);
+    const pos = visiblePositionForDraw(proj, camX, camY);
+    const radius = Math.max(36, (proj.radius || 8) * 5);
+    if (!isVisibleWorld(pos.x, pos.y, radius, view, camX, camY, zoom, 128)) continue;
+    frameStats.visibleEnemyProjectiles += 1;
+    const screen = worldToScreen(pos.x, pos.y, view, camX, camY, zoom);
     const size = (proj.radius || 8) * zoom;
     state.renderer.draw("glowAmber", screen.x, screen.y, size * 6, size * 6, { alpha: 0.18 });
     state.renderer.draw("shadow", screen.x, screen.y + size * 1.6, size * 4, size * 1.4, { alpha: 0.5 });
@@ -294,7 +421,10 @@ function drawWorld(view, camX, camY, zoom) {
       tint: [1, 1, 1],
     });
   }
+
+  game.renderStats = frameStats;
 }
+
 
 function drawDungeonExit(view, camX, camY, zoom) {
   const exit = game.dungeon?.exit;
@@ -390,11 +520,13 @@ function drawOrbitWeapons(view, camX, camY, zoom) {
   }
 }
 
-function drawEffects(view, camX, camY, zoom) {
+function drawEffects(view, camX, camY, zoom, frameStats) {
   for (const effect of game.effects) {
     const alpha = clamp(effect.life / effect.maxLife, 0, 1);
     if (effect.type === "line" || effect.type === "damageLine") {
       const pulse = effect.type === "damageLine" ? 1 + Math.sin(game.elapsed * 26) * 0.12 : 1;
+      if (!isVisibleLineWorld(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * 2.2, view, camX, camY, zoom, 128)) continue;
+      frameStats.visibleEffects += 1;
       drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * 1.9, view, camX, camY, zoom, {
         tint: effect.tint || [1, 1, 1],
         alpha: alpha * (effect.type === "damageLine" ? 0.42 : 0.3),
@@ -404,8 +536,12 @@ function drawEffects(view, camX, camY, zoom) {
         alpha: alpha * 0.9,
       });
     } else if (effect.type === "burst") {
-      const screen = worldToScreen(effect.x, effect.y, view, camX, camY, zoom);
+      const pos = visiblePositionForDraw(effect, camX, camY);
       const pulse = 1 + (1 - alpha) * 0.55;
+      const radius = effect.radius * pulse;
+      if (!isVisibleWorld(pos.x, pos.y, radius, view, camX, camY, zoom, 128)) continue;
+      frameStats.visibleEffects += 1;
+      const screen = worldToScreen(pos.x, pos.y, view, camX, camY, zoom);
       const size = effect.radius * 2 * pulse * zoom;
       state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, size, size, {
         tint: effect.tint || [1, 1, 1],
@@ -416,7 +552,10 @@ function drawEffects(view, camX, camY, zoom) {
         alpha: alpha * 0.16,
       });
     } else if (effect.type === "telegraph") {
-      const screen = worldToScreen(effect.x, effect.y, view, camX, camY, zoom);
+      const pos = visiblePositionForDraw(effect, camX, camY);
+      if (!isVisibleWorld(pos.x, pos.y, effect.radius, view, camX, camY, zoom, 128)) continue;
+      frameStats.visibleEffects += 1;
+      const screen = worldToScreen(pos.x, pos.y, view, camX, camY, zoom);
       const t = clamp(1 - alpha, 0, 1);
       const size = effect.radius * 2 * zoom;
       state.renderer.draw(effect.glow || "glowRed", screen.x, screen.y, size, size, {
@@ -424,6 +563,8 @@ function drawEffects(view, camX, camY, zoom) {
         alpha: 0.18 + t * 0.26,
       });
     } else if (effect.type === "telegraphLine") {
+      if (!isVisibleLineWorld(effect.x1, effect.y1, effect.x2, effect.y2, effect.width, view, camX, camY, zoom, 128)) continue;
+      frameStats.visibleEffects += 1;
       const t = clamp(1 - alpha, 0, 1);
       drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width, view, camX, camY, zoom, {
         tint: effect.tint || [0.86, 0.2, 0.18],
@@ -468,8 +609,8 @@ function drawPlayer(player, view, camX, camY, zoom) {
   });
 }
 
-function drawEnemy(enemy, view, camX, camY, zoom) {
-  const screen = worldToScreen(enemy.x, enemy.y, view, camX, camY, zoom);
+function drawEnemy(enemy, view, camX, camY, zoom, drawX = enemy.x, drawY = enemy.y) {
+  const screen = worldToScreen(drawX, drawY, view, camX, camY, zoom);
   const isLarge = enemy.kind === "orc";
   const size = enemy.radius * (isLarge ? 3.0 : 2.7) * zoom;
   const wobble = Math.sin(game.elapsed * 7 + enemy.wobble) * 0.08;
@@ -494,12 +635,14 @@ function drawEnemy(enemy, view, camX, camY, zoom) {
   }
 }
 
-function drawGoldDrops(view, camX, camY, zoom) {
+function drawGoldDrops(view, camX, camY, zoom, frameStats) {
   for (const drop of game.goldDrops) {
-    const screen = worldToScreen(drop.x, drop.y, view, camX, camY, zoom);
+    const pos = visiblePositionForDraw(drop, camX, camY);
+    if (!isVisibleWorld(pos.x, pos.y, 28, view, camX, camY, zoom, 80)) continue;
+    frameStats.visibleGoldDrops += 1;
+    const screen = worldToScreen(pos.x, pos.y, view, camX, camY, zoom);
     const bob = Math.sin(game.elapsed * 8 + drop.bob) * 1.5 * zoom;
     const size = 23 * zoom;
-    if (screen.x < -size || screen.x > view.w + size || screen.y < -size || screen.y > view.h + size) continue;
     const magnetized = drop.age >= drop.magnetDelay;
     state.renderer.draw("shadow", screen.x, screen.y + 9 * zoom, 24 * zoom, 9 * zoom, { alpha: 0.42 });
     if (magnetized) {
@@ -511,8 +654,8 @@ function drawGoldDrops(view, camX, camY, zoom) {
   }
 }
 
-function drawTreasureChest(chest, view, camX, camY, zoom) {
-  const screen = worldToScreen(chest.x, chest.y, view, camX, camY, zoom);
+function drawTreasureChest(chest, view, camX, camY, zoom, drawX = chest.x, drawY = chest.y) {
+  const screen = worldToScreen(drawX, drawY, view, camX, camY, zoom);
   const spriteName = chest.opened ? "treasureChestOpen" : "treasureChest";
   const bob = chest.opened ? 0 : Math.sin(game.elapsed * 3 + chest.bob) * 1.6 * zoom;
   const width = 54 * zoom;
@@ -536,10 +679,10 @@ function drawHoldProgress(x, y, progress, width, zoom, tint) {
   });
 }
 
-function drawSceneryObstacle(obstacle, view, camX, camY, zoom) {
+function drawSceneryObstacle(obstacle, view, camX, camY, zoom, drawX = obstacle.x, drawY = obstacle.y) {
   const sprite = state.atlas.sprites[obstacle.sprite];
   if (!sprite) return;
-  const screen = worldToScreen(obstacle.x, obstacle.y, view, camX, camY, zoom);
+  const screen = worldToScreen(drawX, drawY, view, camX, camY, zoom);
   const scale = obstacle.scale || 1;
   const width = sprite.w * scale * zoom;
   const height = sprite.h * scale * zoom;
