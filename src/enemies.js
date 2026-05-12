@@ -6,11 +6,11 @@ import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 import { moveActorWithDungeonCollision, pickDungeonSpawnPoint } from "./dungeon.js";
 
-const BASE_ENEMY_CAP = 55;
-const HARD_ENEMY_CAP = 240;
-const SPAWN_BATCH_INTERVAL_START = 5.0;
-const SPAWN_BATCH_INTERVAL_END = 2.2;
+const SPAWN_BATCH_INTERVAL = 10.0;
+const SPAWN_BATCH_SIZE = 12;
 const OPENING_ENEMY_COUNT = 14;
+const OFFSCREEN_SPAWN_MARGIN = 120;
+const SAFETY_ENEMY_CAP = 1200;
 
 function runProgress(elapsed = game.floorElapsed || 0) {
   return Math.min(1, Math.max(0, elapsed / RUN_DURATION_SECONDS));
@@ -24,21 +24,6 @@ export function enemyRunSpeedMultiplier(elapsed = game.floorElapsed || 0) {
 export function enemyRunSpawnPressure(elapsed = game.floorElapsed || 0) {
   const p = runProgress(elapsed);
   return 1.0 + p * 2.2 + p * p * 1.4;
-}
-
-function enemyCapForRun(elapsed = game.floorElapsed || 0) {
-  const pressure = enemyRunSpawnPressure(elapsed);
-  return Math.min(HARD_ENEMY_CAP, Math.ceil(BASE_ENEMY_CAP * pressure));
-}
-
-function spawnIntervalForRun(elapsed = game.floorElapsed || 0) {
-  const p = runProgress(elapsed);
-  return SPAWN_BATCH_INTERVAL_START + (SPAWN_BATCH_INTERVAL_END - SPAWN_BATCH_INTERVAL_START) * p;
-}
-
-function spawnBatchSizeForRun(elapsed = game.floorElapsed || 0) {
-  const pressure = enemyRunSpawnPressure(elapsed);
-  return Math.max(8, Math.ceil(9 * pressure));
 }
 
 function pickEnemyTypeByTime(elapsed) {
@@ -74,35 +59,35 @@ function pickEnemyTypeByTime(elapsed) {
   return "walker";
 }
 
+export function resetEnemySpawnTimer() {
+  game.spawnClock = SPAWN_BATCH_INTERVAL;
+  game.spawnBatchSize = SPAWN_BATCH_SIZE;
+}
+
 export function spawnOpeningEnemies() {
   const count = OPENING_ENEMY_COUNT;
   for (let i = 0; i < count; i += 1) {
-    spawnEnemy("walker", { anywhere: true });
+    spawnEnemy("walker", { offscreen: true });
   }
 }
 
 export function spawnEnemies(dt) {
-  const elapsed = game.floorElapsed || 0;
-  const cap = enemyCapForRun(elapsed);
-  const interval = spawnIntervalForRun(elapsed);
-
-  if (game.enemies.length >= cap) {
-    game.spawnClock = Math.min(game.spawnClock, interval * 0.5);
+  if (game.enemies.length >= SAFETY_ENEMY_CAP) {
+    game.spawnClock = Math.min(game.spawnClock, SPAWN_BATCH_INTERVAL * 0.5);
     return;
   }
 
   game.spawnClock -= dt;
   if (game.spawnClock > 0) return;
 
-  game.spawnBatchSize = spawnBatchSizeForRun(elapsed);
-  const availableSlots = cap - game.enemies.length;
-  const spawnCount = Math.min(game.spawnBatchSize, availableSlots);
+  game.spawnBatchSize = SPAWN_BATCH_SIZE;
+  const spawnCount = Math.min(game.spawnBatchSize, SAFETY_ENEMY_CAP - game.enemies.length);
   for (let i = 0; i < spawnCount; i += 1) {
-    spawnEnemy(undefined, { anywhere: true });
+    spawnEnemy(undefined, { offscreen: true });
   }
 
-  game.spawnClock += interval;
-  if (game.spawnClock <= 0) game.spawnClock = interval;
+  game.spawnClock += SPAWN_BATCH_INTERVAL;
+  if (game.spawnClock <= 0) game.spawnClock = SPAWN_BATCH_INTERVAL;
 }
 
 export function spawnEnemy(forceType, options = {}) {
@@ -110,33 +95,48 @@ export function spawnEnemy(forceType, options = {}) {
   const zoom = cameraZoom(view);
   const visibleW = view.w / zoom;
   const visibleH = view.h / zoom;
-  const margin = 95;
+  const margin = OFFSCREEN_SPAWN_MARGIN;
+  const camX = game.camera?.x ?? game.player.x;
+  const camY = game.camera?.y ?? game.player.y;
+  const requireOffscreen = options.offscreen !== false;
+  const isOffscreen = (point) =>
+    point.x < camX - visibleW / 2 - margin ||
+    point.x > camX + visibleW / 2 + margin ||
+    point.y < camY - visibleH / 2 - margin ||
+    point.y > camY + visibleH / 2 + margin;
+
   let x = game.player.x;
   let y = game.player.y;
   const dungeonSpawn = pickDungeonSpawnPoint(
-    game.player.x,
-    game.player.y,
-    options.anywhere ? 0 : Math.min(visibleW, visibleH) * 0.48,
-    options.anywhere ? Infinity : Math.max(visibleW, visibleH) * 1.15 + margin,
+    camX,
+    camY,
+    requireOffscreen ? Math.min(visibleW, visibleH) * 0.5 : 0,
+    Infinity,
+    {
+      fallbackToBest: !requireOffscreen,
+      predicate: requireOffscreen ? isOffscreen : null,
+    },
   );
   if (dungeonSpawn) {
     x = dungeonSpawn.x;
     y = dungeonSpawn.y;
+  } else if (game.dungeon && requireOffscreen) {
+    return null;
   } else {
     const side = Math.floor(Math.random() * 4);
 
     if (side === 0) {
-      x += (Math.random() - 0.5) * (visibleW + margin * 2);
-      y -= visibleH / 2 + margin;
+      x = camX + (Math.random() - 0.5) * (visibleW + margin * 2);
+      y = camY - visibleH / 2 - margin;
     } else if (side === 1) {
-      x += visibleW / 2 + margin;
-      y += (Math.random() - 0.5) * (visibleH + margin * 2);
+      x = camX + visibleW / 2 + margin;
+      y = camY + (Math.random() - 0.5) * (visibleH + margin * 2);
     } else if (side === 2) {
-      x += (Math.random() - 0.5) * (visibleW + margin * 2);
-      y += visibleH / 2 + margin;
+      x = camX + (Math.random() - 0.5) * (visibleW + margin * 2);
+      y = camY + visibleH / 2 + margin;
     } else {
-      x -= visibleW / 2 + margin;
-      y += (Math.random() - 0.5) * (visibleH + margin * 2);
+      x = camX - visibleW / 2 - margin;
+      y = camY + (Math.random() - 0.5) * (visibleH + margin * 2);
     }
   }
 
@@ -224,6 +224,7 @@ export function spawnEnemy(forceType, options = {}) {
   enemy.baseSpeed = enemy.baseSpeed || enemy.speed;
   enemy.speed = enemy.baseSpeed * enemyRunSpeedMultiplier();
   game.enemies.push(enemy);
+  return enemy;
 }
 
 export function updateEnemies(dt) {

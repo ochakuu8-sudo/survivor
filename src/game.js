@@ -5,7 +5,7 @@ import { RUN_DURATION_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
-import { spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
+import { resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
 import { generateArenaDungeon } from "./dungeon.js";
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
@@ -136,6 +136,7 @@ export function startArenaWithSelectedWeapon() {
   hud.shop?.classList.add("hidden");
   hud.treasureReward.classList.add("hidden");
   spawnOpeningEnemies();
+  resetEnemySpawnTimer();
   updateHud();
 }
 
