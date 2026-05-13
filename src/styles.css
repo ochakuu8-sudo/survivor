@@ -3532,29 +3532,54 @@ h1 {
   white-space: nowrap;
 }
 
+.modding-card {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
+}
+
 .modding-card h2 {
-  margin: 0.25rem 0 0;
-  font-size: 1.25rem;
+  margin: 0.18rem 0 0;
+  font-size: 1.08rem;
+  line-height: 1.08;
+}
+
+.modding-card .treasure-copy p {
+  margin: 0.24rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.modding-main-icon,
+.mod-slot-icon {
+  border-color: rgba(255, 249, 242, 0.28);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 44%), #ffe46b;
 }
 
 .modding-slots {
   display: grid;
-  gap: 0.45rem;
-  margin: 1rem 0 0;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 0.4rem;
+  margin: 0.7rem 0 0;
   padding: 0;
   list-style: none;
 }
 
 .mod-slot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem;
+  align-items: stretch;
+  min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 0.7rem;
   color: rgba(255, 255, 255, 0.74);
-  padding: 0.45rem 0.65rem;
+  padding: 0.35rem;
   background: rgba(255, 255, 255, 0.06);
 }
 
 .mod-slot.active {
-  border-color: rgba(255, 215, 106, 0.8);
+  border-color: rgba(255, 215, 106, 0.86);
   color: #fff5cf;
   background: rgba(255, 196, 65, 0.16);
   box-shadow: 0 0 18px rgba(255, 196, 65, 0.16);
@@ -3562,4 +3587,68 @@ h1 {
 
 .mod-slot.locked {
   opacity: 0.8;
+}
+
+.mod-slot-select {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 0.38rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+}
+
+.mod-slot-select:hover:not(:disabled) {
+  transform: none;
+  background: transparent;
+}
+
+.mod-slot-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 249, 242, 0.28);
+  border-radius: 0.55rem;
+  color: #10273a;
+  font-size: 0.76rem;
+  font-weight: 1000;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.14);
+}
+
+.mod-slot-copy {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.mod-slot-copy strong,
+.mod-slot-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mod-slot-copy strong {
+  color: #fff9f2;
+  font-size: 0.78rem;
+  line-height: 1.05;
+}
+
+.mod-slot-copy small {
+  color: rgba(255, 249, 242, 0.68);
+  font-size: 0.62rem;
+  line-height: 1;
+}
+
+.mod-slot-reroll {
+  align-self: center;
+  min-width: 48px;
+  padding: 0.46rem 0.35rem;
+  border-radius: 0.55rem;
+  font-size: 0.68rem;
+  line-height: 1;
 }
