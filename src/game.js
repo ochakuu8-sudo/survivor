@@ -3,7 +3,7 @@ import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { MAX_FRAME_DELTA_SECONDS, RUN_DURATION_SECONDS, TARGET_FRAME_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
-import { autoShoot, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
+import { autoShoot, getActiveWeapon, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
 import { resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
 import { generateArenaDungeon, shortestDungeonDelta, wrapDungeonPoint } from "./dungeon.js";
@@ -17,6 +17,7 @@ import { prepareStarterPick, renderStarterPick } from "./shop.js";
 import { enterUpgradeTree, hideSkillTree, initSkillProgress } from "./skillTree.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
+import { hideModdingPanel, levelUpWeapon } from "./modding.js";
 
 export function resetRun() {
   game.mode = "weaponSelect";
@@ -37,6 +38,14 @@ export function resetRun() {
     elite90: false,
     elite180: false,
     boss270: false,
+    weaponLv2: false,
+    weaponLv3: false,
+    weaponLv4: false,
+    weaponLv5: false,
+    weaponLv6: false,
+    weaponLv7: false,
+    weaponLv8: false,
+    weaponLv9: false,
   };
   game.gold = 0;
   game.goldGainBonus = 0;
@@ -89,6 +98,8 @@ export function resetRun() {
   game.effects = [];
   game.offers = [];
   game.pendingAttachmentChoice = null;
+  game.pendingMod = null;
+  game.modding = { rerollBaseCost: 10 };
   game.shopTab = "shop";
   game.shopRerollsUsed = 0;
   game.starterChoices = [];
@@ -98,7 +109,8 @@ export function resetRun() {
   hud.shop?.classList.add("hidden");
   hideSkillTree();
   hud.treasureReward.classList.add("hidden");
-  hud.restart.textContent = "スキルツリーへ";
+  hideModdingPanel();
+  hud.restart.textContent = "もう一度プレイ";
   hud.gameOver.classList.add("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel?.classList.add("hidden");
@@ -119,6 +131,14 @@ export function startArenaWithSelectedWeapon() {
     elite90: false,
     elite180: false,
     boss270: false,
+    weaponLv2: false,
+    weaponLv3: false,
+    weaponLv4: false,
+    weaponLv5: false,
+    weaponLv6: false,
+    weaponLv7: false,
+    weaponLv8: false,
+    weaponLv9: false,
   };
   game.enemies = [];
   game.bullets = [];
@@ -195,7 +215,6 @@ export function finishRun(result) {
     bonusPoints,
     totalEarnedPoints,
   };
-  game.totalSkillPoints = (game.totalSkillPoints || 0) + totalEarnedPoints;
   game.bestSurvivalTime = Math.max(game.bestSurvivalTime || 0, survivalTime);
 
   game.enemies = [];
@@ -217,13 +236,13 @@ function showRunResult() {
     `到達時間 ${time} / 最高 ${best}\n` +
     `撃破数 ${r?.kills || 0}\n` +
     `回収 ${r?.runPoints || 0}pt / ボーナス ${r?.bonusPoints || 0}pt\n` +
-    `獲得 ${r?.totalEarnedPoints || 0}pt\n` +
-    `所持SP ${game.totalSkillPoints || 0}pt`;
-  hud.restart.textContent = "スキルツリーへ";
+    `ラン中ビルドはリセットされます`;
+  hud.restart.textContent = "もう一度プレイ";
   hud.gameOver.classList.remove("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel?.classList.add("hidden");
   hideSkillTree();
+  hideModdingPanel();
 }
 
 export function pauseGame() {
@@ -292,6 +311,24 @@ function updateRunEvents() {
   if (!m.elite180 && t >= 180) {
     m.elite180 = true;
     spawnEnemy("orc", { elite: true });
+  }
+
+  const levelMilestones = [
+    ["weaponLv2", 30],
+    ["weaponLv3", 60],
+    ["weaponLv4", 90],
+    ["weaponLv5", 120],
+    ["weaponLv6", 160],
+    ["weaponLv7", 200],
+    ["weaponLv8", 240],
+    ["weaponLv9", 270],
+  ];
+  for (const [key, seconds] of levelMilestones) {
+    if (!m[key] && t >= seconds) {
+      m[key] = true;
+      levelUpWeapon(getActiveWeapon());
+      break;
+    }
   }
 
   if (!m.boss270 && t >= 270) {

@@ -104,6 +104,31 @@
         </div>
       </section>
 
+      <section id="moddingPanel" class="panel narrow hidden" aria-label="武器改造結果">
+        <div class="panel-head">
+          <div>
+            <span class="panel-kicker">武器改造</span>
+            <h1>新アタッチメント装着</h1>
+          </div>
+          <strong id="moddingGold" class="modding-gold">0G</strong>
+        </div>
+        <article class="treasure-card modding-card">
+          <span class="treasure-icon">★</span>
+          <div class="treasure-copy">
+            <strong id="moddingWeaponName">武器</strong>
+            <small id="moddingWeaponLevel">Lv 1/9</small>
+            <h2 id="moddingAttachmentName">アタッチメント</h2>
+            <small id="moddingAttachmentMeta"></small>
+            <p id="moddingAttachmentText"></p>
+          </div>
+        </article>
+        <ol id="moddingSlots" class="modding-slots"></ol>
+        <div class="treasure-actions">
+          <button id="moddingRerollBtn" type="button">無料リロール</button>
+          <button id="moddingTakeBtn" type="button" class="primary">採用</button>
+        </div>
+      </section>
+
       <section id="treasureReward" class="panel narrow hidden" aria-label="宝箱報酬">
         <div class="panel-head">
           <div>
@@ -129,7 +154,7 @@
         <span class="panel-kicker">ラン終了</span>
         <h1>探索はここまで</h1>
         <p id="resultText"></p>
-        <button id="restartBtn" type="button" class="primary">スキルツリーへ</button>
+        <button id="restartBtn" type="button" class="primary">もう一度プレイ</button>
       </section>
 
       <div id="touchControls" aria-label="タッチ操作">

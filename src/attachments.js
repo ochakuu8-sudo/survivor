@@ -9,6 +9,7 @@ import {
   reduceWeaponBasePercent,
   restoreWeaponBaseStats,
 } from "./weapons.js";
+import { tagsForAttachment } from "./data/attachmentTags.js";
 
 const STAR_LABELS = { 1: "★", 2: "★★", 3: "★★★", 4: "★★★★", 5: "★★★★★" };
 
@@ -86,6 +87,8 @@ export function recomputeAllAttachments() {
         attachment.name = definition.name;
         attachment.category = definition.category || attachment.category;
         attachment.stars = attachment.stars || definition.stars || 1;
+        attachment.locked = !!attachment.locked;
+        attachment.tags = attachment.tags || tagsForAttachment(definition);
         definition.attach(weapon, attachment);
       }
     });
@@ -1067,6 +1070,8 @@ export function addAttachmentToWeapon(weapon, attachment) {
     name: definition.name,
     stars,
     category: definition.category || "stat",
+    locked: false,
+    tags: tagsForAttachment(definition),
   });
   recomputeAllAttachments();
   if (definition.barrierGain > 0) {

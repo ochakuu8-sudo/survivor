@@ -5,10 +5,11 @@ import { SpriteRenderer } from "./renderer.js";
 import { bindInput } from "./input.js";
 import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame } from "./game.js";
 import { openDebugPanel, setupDebug } from "./debug.js";
-import { applyPurchasedSkillTreeToActiveWeapon, continueFromSkillTree, enterDebugSkillTree, enterUpgradeTree, renderSkillTree } from "./skillTree.js";
+import { continueFromSkillTree, enterDebugSkillTree, renderSkillTree } from "./skillTree.js";
+import { claimPendingAttachment, rerollPendingAttachment } from "./modding.js";
 import { claimTreasureReward, rerollTreasureReward } from "./treasure.js";
 
-hud.restart.addEventListener("click", enterUpgradeTree);
+hud.restart.addEventListener("click", resetRun);
 
 hud.pauseBtn.addEventListener("click", pauseGame);
 hud.resumeBtn.addEventListener("click", resumeGame);
@@ -25,7 +26,8 @@ if (import.meta.env.DEV && hud.pauseDebugBtn) {
 hud.pauseRestartBtn.addEventListener("click", resetRun);
 if (hud.skillTreeContinue) hud.skillTreeContinue.addEventListener("click", continueFromSkillTree);
 window.addEventListener("skill-tree-continue", () => resetRun());
-window.addEventListener("starter-weapon-picked", () => applyPurchasedSkillTreeToActiveWeapon());
+if (hud.moddingReroll) hud.moddingReroll.addEventListener("click", rerollPendingAttachment);
+if (hud.moddingTake) hud.moddingTake.addEventListener("click", claimPendingAttachment);
 if (hud.treasureReroll) hud.treasureReroll.addEventListener("click", rerollTreasureReward);
 if (hud.treasureTake) hud.treasureTake.addEventListener("click", claimTreasureReward);
 if (hud.weaponSwitch) {
