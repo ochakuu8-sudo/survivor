@@ -276,6 +276,21 @@ export function createWeapon(template, options = {}) {
     ricochetCount: template.ricochetCount || 0,
     ricochetRange: template.ricochetRange || 220,
     ricochetSplitCount: template.ricochetSplitCount || 1,
+    ricochetSpeedScale: template.ricochetSpeedScale || 1,
+    splitShardCount: template.splitShardCount || 0,
+    hitShardCount: template.hitShardCount || 0,
+    elasticGrowth: template.elasticGrowth ? { ...template.elasticGrowth } : null,
+    splitSpawnLimit: template.splitSpawnLimit || 10,
+    chainShatterChance: template.chainShatterChance || 0,
+    chainShatterRadiusScale: template.chainShatterRadiusScale || 0.6,
+    chainShatterDamageScale: template.chainShatterDamageScale || 0.45,
+    criticalThrowEvery: template.criticalThrowEvery || 0,
+    criticalThrowDamageScale: template.criticalThrowDamageScale || 1.5,
+    criticalThrowSizeScale: template.criticalThrowSizeScale || 1.35,
+    masterStoneInterval: template.masterStoneInterval || 0,
+    masterStoneTimer: template.masterStoneTimer ?? (template.masterStoneInterval || 0),
+    masterStoneDamageScale: template.masterStoneDamageScale || 2.8,
+    masterStoneEliteBossBonus: template.masterStoneEliteBossBonus || 0,
     radialFlame: !!template.radialFlame,
     orbitCount: template.orbitCount || 1,
     orbitPushOut: template.orbitPushOut || 0,
@@ -284,6 +299,15 @@ export function createWeapon(template, options = {}) {
     effectTint: template.effectTint ? [...template.effectTint] : [1, 1, 1],
     effectGlow: template.effectGlow || "glowAmber",
     bulletSprite: template.bulletSprite || null,
+    stoneVisual: {
+      form: "normal",
+      sizeScale: 1,
+      trail: "none",
+      hitEffect: "normal",
+      ...(template.stoneVisual || {}),
+    },
+    stoneFlags: { ...(template.stoneFlags || {}) },
+    throwCounter: template.throwCounter || 0,
     shootTimer: template.shootTimer ?? 0.45,
     attachments: [],
     rarity: rarityKey,
@@ -392,6 +416,9 @@ export function updateWeaponTimers(player, dt) {
   clampActiveWeaponIndex(player.gear);
   for (const weapon of player.gear.weapons) {
     weapon.shootTimer = Math.max(0, weapon.shootTimer - dt);
+    if ((weapon.masterStoneInterval || 0) > 0) {
+      weapon.masterStoneTimer = Math.max(0, (weapon.masterStoneTimer ?? weapon.masterStoneInterval) - dt);
+    }
   }
 }
 
@@ -476,6 +503,7 @@ export function autoShoot() {
   const weapon = getActiveWeapon(p);
 
   if (!weapon || weapon.kind === "orbit") return;
+  fireMasterStoneIfReady(weapon);
   if (weapon.shootTimer > 0) return;
   let target = null;
   if (TARGETLESS_KINDS.has(weapon.kind)) {
@@ -558,6 +586,35 @@ export function updateOrbitWeapons(dt) {
   if (hits > 0) game.shake = Math.max(game.shake, (weapon.kick || 1.5) * 0.5);
 }
 
+function findHighestHpEnemy() {
+  let best = null;
+  for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
+    if (!best || (enemy.hp || 0) > (best.hp || 0)) best = enemy;
+  }
+  return best;
+}
+
+function fireMasterStoneIfReady(weapon) {
+  if ((weapon.masterStoneInterval || 0) <= 0 || (weapon.masterStoneTimer || 0) > 0) return;
+  const target = findHighestHpEnemy();
+  if (!target) return;
+  const p = game.player;
+  const angle = targetAngle(p, target);
+  fireBullet(angle, weapon, { master: true, target });
+  weapon.masterStoneTimer = weapon.masterStoneInterval;
+  addEffect({
+    type: "burst",
+    x: p.x,
+    y: p.y,
+    radius: 28,
+    life: 0.18,
+    maxLife: 0.18,
+    glow: "glowCyan",
+    tint: [1, 1, 1],
+  });
+}
+
 function findTargetForWeapon(player, weapon) {
   let best = null;
   let bestDistance = Math.pow(weapon.range || (weapon.bulletSpeed || 690) * (weapon.life || 0.72), 2);
@@ -621,6 +678,7 @@ function targetAngle(from, target) {
 }
 
 function fireProjectileWeapon(weapon, angle) {
+  weapon.throwCounter = (weapon.throwCounter || 0) + 1;
   const count = Math.max(1, Math.round(weapon.projectiles || 1));
   const spread = count === 1 ? 0 : MULTI_PROJECTILE_STEP;
   for (let i = 0; i < count; i += 1) {
@@ -630,11 +688,16 @@ function fireProjectileWeapon(weapon, angle) {
   }
 }
 
-function fireBullet(angle, weapon) {
+function fireBullet(angle, weapon, options = {}) {
   const p = game.player;
-  const speed = weapon.bulletSpeed;
+  const speed = options.master ? Math.max(weapon.bulletSpeed * 1.25, 620) : weapon.bulletSpeed;
   const bonus = p.weaponPowerBonus;
-  const tumbles = !!weapon.bulletSprite;
+  const isCriticalThrow = !options.master && weapon.criticalThrowEvery > 0 && weapon.throwCounter % weapon.criticalThrowEvery === 0;
+  const damageScale = options.master ? (weapon.masterStoneDamageScale || 2.8) : isCriticalThrow ? (weapon.criticalThrowDamageScale || 1.5) : 1;
+  const sizeScale = options.master ? 1.5 : isCriticalThrow ? (weapon.criticalThrowSizeScale || 1.35) : 1;
+  const visual = weapon.stoneVisual || {};
+  const originId = `${weapon.id}:${game.elapsed.toFixed(3)}:${Math.random().toString(36).slice(2, 8)}`;
+  const tumbles = !!(options.master ? "stoneMaster" : weapon.bulletSprite);
   game.bullets.push({
     kind: "projectile",
     x: p.x + Math.cos(angle) * 25,
@@ -642,15 +705,15 @@ function fireBullet(angle, weapon) {
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
     angle,
-    radius: weapon.radius,
-    damage: weapon.damage + bonus,
+    radius: weapon.radius * sizeScale,
+    damage: (weapon.damage + bonus) * damageScale,
     life: weapon.life,
     maxLife: weapon.life,
-    pierce: weapon.pierce,
+    pierce: options.master ? (weapon.pierce || 0) + 3 : weapon.pierce,
     knockback: weapon.knockback || 0,
-    explosionRadius: weapon.explosionRadius,
-    explosionDamage: weapon.explosionDamage + bonus,
-    critChance: weapon.critChance || 0,
+    explosionRadius: options.master ? 0 : weapon.explosionRadius,
+    explosionDamage: (weapon.explosionDamage + bonus) * damageScale,
+    critChance: options.master || isCriticalThrow ? 1 : (weapon.critChance || 0),
     critMultiplier: weapon.critMultiplier || 1.75,
     freezeChance: weapon.freezeChance || 0,
     freezeSlow: weapon.freezeSlow || 0.62,
@@ -659,9 +722,26 @@ function fireBullet(angle, weapon) {
     ricochetCount: weapon.ricochetCount || 0,
     ricochetRange: weapon.ricochetRange || 220,
     ricochetSplitCount: weapon.ricochetSplitCount || 1,
-    bulletTint: weapon.bulletTint,
-    bulletGlow: weapon.bulletGlow,
-    bulletSprite: weapon.bulletSprite || null,
+    ricochetSpeedScale: weapon.ricochetSpeedScale || 1,
+    splitShardCount: weapon.splitShardCount || 0,
+    hitShardCount: weapon.hitShardCount || 0,
+    elasticGrowth: weapon.elasticGrowth ? { ...weapon.elasticGrowth } : null,
+    splitSpawnLimit: weapon.splitSpawnLimit || 10,
+    chainShatterChance: weapon.chainShatterChance || 0,
+    chainShatterRadiusScale: weapon.chainShatterRadiusScale || 0.6,
+    chainShatterDamageScale: weapon.chainShatterDamageScale || 0.45,
+    isCriticalStone: isCriticalThrow,
+    isMasterStone: !!options.master,
+    eliteBossBonus: options.master ? (weapon.masterStoneEliteBossBonus || 0) : 0,
+    originId,
+    spawnedFromOrigin: 1,
+    lastHitId: null,
+    bulletTint: options.master ? [1, 1, 1] : isCriticalThrow ? [1, 1, 0.92] : weapon.bulletTint,
+    bulletGlow: options.master ? "glowCyan" : isCriticalThrow ? "glowAmber" : weapon.bulletGlow,
+    bulletSprite: options.master ? "stoneMaster" : weapon.bulletSprite || null,
+    visualForm: options.master ? "master" : visual.form || "normal",
+    trail: options.master ? "white" : visual.trail || "none",
+    hitEffect: options.master ? "critical" : visual.hitEffect || "normal",
     effectTint: weapon.effectTint,
     effectGlow: weapon.effectGlow,
     spinSeed: tumbles ? Math.random() * TAU : 0,

@@ -8,8 +8,10 @@ import { createTreasureChestAt, shortestDungeonDistanceSq, wrapDungeonPoint } fr
 
 export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y, sparkCount = 3, sparkSpeed = 90, source = null) {
   if (!enemy || enemy.dead) return false;
+  const eliteBossScale = source?.eliteBossBonus && (enemy.elite || enemy.boss) ? 1 + source.eliteBossBonus : 1;
+  const scaledAmount = amount * eliteBossScale;
   const crit = source?.critChance > 0 && Math.random() < source.critChance;
-  const damage = crit ? amount * (source.critMultiplier || 1.75) : amount;
+  const damage = crit ? scaledAmount * (source.critMultiplier || 1.75) : scaledAmount;
   enemy.hp -= damage;
   enemy.hit = 1;
   if (source?.freezeChance > 0 && Math.random() < source.freezeChance) {
@@ -195,9 +197,44 @@ export function explodeBullet(bullet) {
     glow: bullet.effectGlow || "glowRed",
     tint: bullet.effectTint || [1, 0.56, 0.18],
   });
-  addSparks(bullet.x, bullet.y, 9, 150);
-  damageEnemiesInRadius(bullet.x, bullet.y, radius, bullet.explosionDamage || bullet.damage, 0.58, bullet);
-  game.shake = Math.max(game.shake, 5);
+  addSparks(bullet.x, bullet.y, 9, 150, bullet.visualForm === "meteor" ? "spark" : "spark");
+
+  let hits = 0;
+  const amount = bullet.explosionDamage || bullet.damage;
+  const edgeScale = bullet.visualForm === "meteor" ? 0.38 : 0.58;
+  for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
+    const distance = Math.sqrt(shortestDungeonDistanceSq(game.dungeon, bullet.x, bullet.y, enemy.x, enemy.y));
+    if (distance > radius + enemy.radius) continue;
+    const centerFactor = 1 - clamp((distance - enemy.radius) / Math.max(1, radius), 0, 1);
+    const damage = bullet.visualForm === "meteor"
+      ? amount * (0.6 + centerFactor)
+      : amount * (edgeScale + (1 - edgeScale) * centerFactor);
+    const killed = damageEnemy(enemy, damage, enemy.x, enemy.y, 2, 80, bullet);
+    hits += 1;
+    if (killed && bullet.chainShatterChance > 0 && Math.random() < bullet.chainShatterChance) {
+      addEffect({
+        type: "burst",
+        x: enemy.x,
+        y: enemy.y,
+        radius: radius * (bullet.chainShatterRadiusScale || 0.6),
+        life: 0.28,
+        maxLife: 0.28,
+        glow: bullet.effectGlow || "glowAmber",
+        tint: bullet.effectTint || [0.72, 0.48, 0.28],
+      });
+      damageEnemiesInRadius(
+        enemy.x,
+        enemy.y,
+        radius * (bullet.chainShatterRadiusScale || 0.6),
+        amount * (bullet.chainShatterDamageScale || 0.45),
+        0.55,
+        { ...bullet, chainShatterChance: 0 },
+      );
+    }
+  }
+  if (hits > 0) removeDeadEnemies();
+  game.shake = Math.max(game.shake, bullet.visualForm === "meteor" ? 8 : 5);
 }
 
 export function updateEffects(dt) {
