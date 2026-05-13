@@ -32,7 +32,7 @@ export const WEAPON_RARITY_LIMITS = {
 };
 export const MAX_ATTACHMENTS = WEAPON_RARITY_LIMITS.legend.maxAttachments;
 export const MAX_WEAPON_LEVEL = WEAPON_RARITY_LIMITS.legend.maxLevel;
-export const PLAYER_INVULNERABLE_SECONDS = 2.5;
+export const PLAYER_INVULNERABLE_SECONDS = 0.5;
 
 export function getWeaponRarityLimits(weapon) {
   return WEAPON_RARITY_LIMITS[weapon?.rarity] || DEFAULT_WEAPON_LIMITS;
