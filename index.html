@@ -21,7 +21,19 @@
         </div>
         <div class="hud-meter">
           <span class="hud-label">HP</span>
-          <strong id="hpText" class="hp-text">30/30</strong>
+          <div
+            id="hpGauge"
+            class="meter-shell hp-gauge"
+            role="progressbar"
+            aria-label="HP"
+            aria-valuemin="0"
+            aria-valuemax="30"
+            aria-valuenow="30"
+          >
+            <div id="hpGaugeFill" class="meter-fill hp-gauge-fill"></div>
+            <div id="hpBarrierFill" class="hp-barrier-fill"></div>
+            <strong id="hpText" class="hp-text">30/30</strong>
+          </div>
         </div>
         <div class="hud-block hud-gold">
           <span class="hud-label">ポイント</span>
