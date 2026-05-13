@@ -66,6 +66,7 @@ export const game = {
   treasureReward: null,
   dungeon: null,
   renderStats: null,
+  debugSkillTreeMode: false,
 };
 
 let enemyId = 1;
