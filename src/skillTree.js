@@ -32,29 +32,23 @@ const weaponNode = (id, tier, title, text, cost, requires = [], effect = {}) => 
 
 export const WEAPON_SKILL_TREES = {
   石: [
-    weaponNode("stone_power", 1, "重い握り", "威力 +20%。", 24, [], { attachment: "powerCore" }),
-    weaponNode("stone_range", 1, "遠投フォーム", "射程 +15%。", 22, [], { custom: (weapon) => extendWeaponReach(weapon, 1.15) }),
-    weaponNode("stone_rapid", 1, "投げ慣れ", "攻撃頻度 +13%。", 24, [], { attachment: "rapidMechanism" }),
-    weaponNode("stone_pace", 1, "握り込み", "攻撃頻度 +12%。", 26, [], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.12, { min: 0.15 }) }),
-    weaponNode("stone_knock", 2, "芯当て", "ノックバック +8、威力も少し上昇。", 34, ["stone_power"], { custom: (weapon) => { weapon.knockback += 8; boostWeaponImpactPercent(weapon, 0.08); } }),
-    weaponNode("stone_speed", 2, "高速スナップ", "弾速 +16%、射程も少し上昇。", 36, ["stone_range"], { custom: (weapon) => { addWeaponBasePercent(weapon, "bulletSpeed", 0.16, { min: 1 }); extendWeaponReach(weapon, 1.06); } }),
-    weaponNode("stone_reload", 2, "拾い投げ", "攻撃頻度 +16%。", 38, ["stone_rapid"], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.16, { min: 0.15 }) }),
-    weaponNode("stone_focus", 2, "投擲の構え", "ばらつきを抑え、クリティカル率 +5%。", 34, ["stone_pace"], { custom: (weapon) => { weapon.spread = Math.max(0.04, weapon.spread - 0.06); weapon.critChance += 0.05; } }),
-    weaponNode("stone_ricochet", 3, "跳ね石", "跳弾 +1。", 48, ["stone_speed"], { attachment: "ricochetCore" }),
-    weaponNode("stone_pierce", 3, "貫き石", "貫通 +1、弾が少し大きくなる。", 46, ["stone_knock", "stone_focus"], { custom: (weapon) => addWeaponPierce(weapon, 1) }),
-    weaponNode("stone_multi", 3, "両手投げ", "同時投擲 +1、ばらつき少し増加。", 56, ["stone_reload", "stone_focus"], { custom: (weapon) => { weapon.projectiles += 1; weapon.spread += 0.16; } }),
-    weaponNode("stone_shards", 3, "破片弾", "着弾時に破片ダメージの小爆発。", 62, ["stone_knock"], { custom: (weapon) => { weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 42); weapon.explosionDamage = Math.max(weapon.explosionDamage || 0, weapon.damage * 0.55); } }),
-    weaponNode("stone_critical", 4, "急所狙い", "クリティカル率 +10%、倍率 +20%。", 64, ["stone_pierce"], { custom: (weapon) => { weapon.critChance += 0.1; weapon.critMultiplier += 0.2; } }),
-    weaponNode("stone_barrage", 4, "石つぶて連打", "攻撃頻度 +18%、弾速 +8%。", 70, ["stone_multi", "stone_reload"], { custom: (weapon) => { addWeaponBasePercent(weapon, "fireRate", 0.18, { min: 0.15 }); addWeaponBasePercent(weapon, "bulletSpeed", 0.08, { min: 1 }); } }),
-    weaponNode("stone_fragstorm", 4, "破砕嵐", "爆発範囲 +24%、爆発威力 +18%。", 72, ["stone_shards", "stone_ricochet"], { custom: (weapon) => { expandWeaponArea(weapon, 3); addWeaponBasePercent(weapon, "explosionDamage", 0.18, { min: 0 }); } }),
-    weaponNode("stone_heavy_arc", 4, "山なり豪投", "威力 +22%、射程 +10%、攻撃頻度 -6%。", 68, ["stone_speed", "stone_power"], { custom: (weapon) => { boostWeaponImpactPercent(weapon, 0.22); extendWeaponReach(weapon, 1.1); addWeaponBasePercent(weapon, "fireRate", -0.06, { min: 0.15 }); } }),
-    weaponNode("stone_split", 5, "割れ散る軌道", "跳弾分裂 +1、ばらつき増加。", 84, ["stone_ricochet", "stone_barrage"], { custom: (weapon) => { weapon.ricochetSplitCount += 1; weapon.spread += 0.08; } }),
-    weaponNode("stone_guard", 5, "守り投げ", "ノックバック +12、敵を押し返しやすくなる。", 76, ["stone_heavy_arc", "stone_critical"], { custom: (weapon) => { weapon.knockback += 12; weapon.kick += 0.4; } }),
-    weaponNode("stone_cluster", 5, "礫クラスター", "同時投擲 +1、爆発範囲 +12%。", 92, ["stone_multi", "stone_fragstorm"], { custom: (weapon) => { weapon.projectiles += 1; expandWeaponArea(weapon, 1.5); } }),
-    weaponNode("stone_precision", 5, "職人の握り", "クリティカル率 +8%、ばらつき低下。", 78, ["stone_focus", "stone_barrage"], { custom: (weapon) => { weapon.critChance += 0.08; weapon.spread = Math.max(0.03, weapon.spread - 0.08); } }),
-    weaponNode("stone_avalanche", 6, "落石連鎖", "跳弾 +1、跳弾距離 +20%。", 102, ["stone_split", "stone_cluster"], { custom: (weapon) => { weapon.ricochetCount += 1; addWeaponBasePercent(weapon, "ricochetRange", 0.2, { min: 0 }); } }),
-    weaponNode("stone_meteor", 6, "隕石核", "威力 +28%、爆発威力 +28%。", 108, ["stone_guard", "stone_fragstorm"], { custom: (weapon) => { boostWeaponImpactPercent(weapon, 0.28); addWeaponBasePercent(weapon, "explosionDamage", 0.28, { min: 0 }); } }),
-    weaponNode("stone_evolve", 7, "進化：ゴムボール", "跳弾時に弾が増える伝説形態へ進化。", 130, ["stone_avalanche", "stone_meteor", "stone_precision"], { evolveTo: "ゴムボール" }),
+    weaponNode("stone_bounce", 1, "跳ね石", "命中した石が近くの別敵へ1回跳ねる。黄色い反射線と短い残像が出る。", 50, [], { custom: (weapon) => { weapon.ricochetCount += 1; weapon.ricochetSpeedScale = Math.max(weapon.ricochetSpeedScale || 1, 1.1); setStoneVisual(weapon, { trail: "yellow", hitEffect: "bounce" }); setStoneFlag(weapon, "bounce"); } }),
+    weaponNode("stone_reflect", 2, "反射する石", "跳弾 +1。敵へ強く誘導され、橙色の少し大きい石になる。", 110, ["stone_bounce"], { custom: (weapon) => { weapon.ricochetCount += 1; weapon.ricochetRange = Math.max(weapon.ricochetRange || 220, 280); addWeaponBasePercent(weapon, "radius", 0.1, { min: 2 }); boostWeaponImpactPercent(weapon, 0.1); setStoneVisual(weapon, { form: "bouncy", trail: "orange", hitEffect: "bounce", sizeScale: 1.1 }); weapon.bulletTint = [1, 0.72, 0.25]; weapon.bulletGlow = "glowAmber"; } }),
+    weaponNode("stone_split_bounce", 3, "割れ跳ね", "跳弾時に短射程の小石を1個飛ばす。本体は欠けた見た目になる。", 220, ["stone_reflect"], { custom: (weapon) => { weapon.splitShardCount = (weapon.splitShardCount || 0) + 1; setStoneVisual(weapon, { form: "cracked", trail: "orange", hitEffect: "shatter" }); setStoneFlag(weapon, "splitBounce"); } }),
+    weaponNode("stone_elastic_core", 4, "弾む核", "跳弾するたび最大3回まで石が膨らみ、威力も上がる。", 360, ["stone_split_bounce"], { custom: (weapon) => { weapon.elasticGrowth = { size: 0.08, damage: 0.08, max: 3 }; setStoneVisual(weapon, { form: "bouncy", trail: "orange", hitEffect: "bounce" }); setStoneFlag(weapon, "elasticCore"); } }),
+    weaponNode("stone_evolve_rubber", 5, "進化：ゴムボール", "跳弾時に2つへ分裂するゴムボール化。1投あたり最大10弾まで。", 600, ["stone_elastic_core"], { evolveTo: "ゴムボール" }),
+
+    weaponNode("stone_cracked", 1, "ひび割れ石", "命中時に小範囲へ破砕ダメージ。ひび割れた大きめの石になる。", 50, [], { custom: (weapon) => { weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 36); weapon.explosionDamage = Math.max(weapon.explosionDamage || 0, weapon.damage * 0.3); addWeaponBasePercent(weapon, "radius", 0.08, { min: 2 }); boostWeaponImpactPercent(weapon, 0.08); setStoneVisual(weapon, { form: "cracked", hitEffect: "shatter", sizeScale: 1.08 }); setStoneFlag(weapon, "cracked"); weapon.bulletSprite = "stoneCracked"; } }),
+    weaponNode("stone_shrapnel", 2, "破片弾", "命中時に3方向へ短射程の破片を飛ばす。鋭い形の石になる。", 110, ["stone_cracked"], { custom: (weapon) => { weapon.hitShardCount = (weapon.hitShardCount || 0) + 3; addWeaponBasePercent(weapon, "radius", 0.1, { min: 2 }); boostWeaponImpactPercent(weapon, 0.1); setStoneVisual(weapon, { form: "sharp", trail: "yellow", hitEffect: "shatter", sizeScale: 1.1 }); weapon.bulletSprite = "stoneSharp"; } }),
+    weaponNode("stone_blast", 3, "爆ぜ石", "着弾時の爆発が大きくなり、中心が赤く光る大型石になる。", 220, ["stone_shrapnel"], { custom: (weapon) => { addWeaponBasePercent(weapon, "explosionRadius", 0.35, { min: 36 }); addWeaponBasePercent(weapon, "explosionDamage", 0.3, { min: 0 }); boostWeaponImpactPercent(weapon, 0.1); addWeaponBasePercent(weapon, "radius", 0.15, { min: 2 }); setStoneVisual(weapon, { form: "cracked", trail: "red", hitEffect: "explosion", sizeScale: 1.15 }); weapon.bulletTint = [1, 0.46, 0.32]; weapon.effectTint = [0.76, 0.48, 0.28]; weapon.effectGlow = "glowRed"; } }),
+    weaponNode("stone_chain_shatter", 4, "連鎖破砕", "爆発で倒した敵の地点に35%で小さな二次破砕が発生する。", 360, ["stone_blast"], { custom: (weapon) => { weapon.chainShatterChance = Math.max(weapon.chainShatterChance || 0, 0.35); weapon.chainShatterRadiusScale = 0.6; weapon.chainShatterDamageScale = 0.45; setStoneVisual(weapon, { form: "cracked", trail: "red", hitEffect: "explosion" }); setStoneFlag(weapon, "chainShatter"); } }),
+    weaponNode("stone_evolve_meteor", 5, "進化：隕石核", "黒赤い隕石核化。大爆発と6個の破片を放つが攻撃頻度は少し低下。", 600, ["stone_chain_shatter"], { evolveTo: "隕石核" }),
+
+    weaponNode("stone_heavy", 1, "重石", "大きく重い石。威力とノックバックが上がるが投げ間隔は少し長い。", 50, [], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.2, { min: 2 }); boostWeaponImpactPercent(weapon, 0.25); weapon.knockback += 8; addWeaponBasePercent(weapon, "fireRate", -0.05, { min: 0.15 }); setStoneVisual(weapon, { form: "heavy", hitEffect: "heavy", sizeScale: 1.2 }); weapon.bulletSprite = "stoneHeavy"; } }),
+    weaponNode("stone_piercing", 2, "貫き石", "貫通 +1。ばらつきが減り、鋭い石がまっすぐ速く飛ぶ。", 110, ["stone_heavy"], { custom: (weapon) => { addWeaponPierce(weapon, 1); weapon.spread = Math.max(0.03, weapon.spread * 0.7); addWeaponBasePercent(weapon, "bulletSpeed", 0.15, { min: 1 }); boostWeaponImpactPercent(weapon, 0.1); addWeaponBasePercent(weapon, "radius", 0.1, { min: 2 }); setStoneVisual(weapon, { form: "sharp", trail: "white", hitEffect: "pierce", sizeScale: 1.1 }); weapon.bulletSprite = "stoneSharp"; } }),
+    weaponNode("stone_critical_throw", 3, "会心投げ", "4投に1回、白く光る巨大な確定会心石を投げる。", 220, ["stone_piercing"], { custom: (weapon) => { weapon.criticalThrowEvery = 4; weapon.criticalThrowDamageScale = 1.5; weapon.criticalThrowSizeScale = 1.35; weapon.critChance += 0.1; setStoneVisual(weapon, { form: "sharp", trail: "white", hitEffect: "critical" }); setStoneFlag(weapon, "criticalThrow"); } }),
+    weaponNode("stone_boulder", 4, "巨岩投げ", "岩サイズの石で敵を押し潰す。さらに大きく強いが遅くなる。", 360, ["stone_critical_throw"], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.3, { min: 2 }); boostWeaponImpactPercent(weapon, 0.35); weapon.knockback += 15; addWeaponBasePercent(weapon, "bulletSpeed", -0.08, { min: 1 }); addWeaponBasePercent(weapon, "fireRate", -0.08, { min: 0.15 }); setStoneVisual(weapon, { form: "heavy", hitEffect: "heavy", sizeScale: 1.3 }); weapon.bulletSprite = "stoneHeavy"; } }),
+    weaponNode("stone_evolve_master", 5, "進化：名人の一石", "2.5秒ごとに最もHPの高い敵へ、白く光る巨大な精密投石を放つ。", 600, ["stone_boulder"], { evolveTo: "名人の一石" }),
   ],
   火炎放射器: [
     weaponNode("flame_power", 1, "高温燃焼", "ダメージ +15%。", 24, [], { attachment: "powerCore" }),
@@ -108,6 +102,28 @@ export const WEAPON_SKILL_TREES = {
   ],
 };
 
+
+function ensureStoneState(weapon) {
+  if (!weapon) return;
+  weapon.stoneVisual = {
+    form: "normal",
+    sizeScale: 1,
+    trail: "none",
+    hitEffect: "normal",
+    ...(weapon.stoneVisual || {}),
+  };
+  weapon.stoneFlags = { ...(weapon.stoneFlags || {}) };
+}
+
+function setStoneVisual(weapon, visual = {}) {
+  ensureStoneState(weapon);
+  weapon.stoneVisual = { ...weapon.stoneVisual, ...visual };
+}
+
+function setStoneFlag(weapon, flag) {
+  ensureStoneState(weapon);
+  if (flag) weapon.stoneFlags[flag] = true;
+}
 
 function treeForWeapon(weapon = getActiveWeapon()) {
   const key = weapon?.baseName || weapon?.name || "石";

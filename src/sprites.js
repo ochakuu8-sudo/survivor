@@ -73,6 +73,69 @@ function drawPixelStone(ctx, w, h) {
   px(ctx, cx + 10, cy - 1, 1, 4, "#241b13");
 }
 
+function drawPixelStoneCracked(ctx, w, h) {
+  drawPixelStone(ctx, w, h);
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 2, cy - 5, 2, 5, "#1d1410");
+  px(ctx, cx, cy - 1, 5, 2, "#1d1410");
+  px(ctx, cx + 4, cy + 1, 2, 4, "#1d1410");
+}
+
+function drawPixelStoneBouncy(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 11, cy + 7, 22, 3, "rgba(35, 25, 76, 0.28)");
+  px(ctx, cx - 10, cy - 7, 20, 18, "#c66b17");
+  px(ctx, cx - 12, cy - 4, 24, 12, "#f29a24");
+  px(ctx, cx - 8, cy - 9, 16, 20, "#ffcf48");
+  px(ctx, cx - 7, cy - 6, 14, 12, "#ffe56a");
+  px(ctx, cx - 4, cy - 7, 5, 3, "#fff6b0");
+  px(ctx, cx + 3, cy + 3, 4, 2, "#b95312");
+}
+
+function drawPixelStoneSharp(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 13, cy + 6, 24, 3, "rgba(35, 25, 76, 0.3)");
+  px(ctx, cx - 13, cy - 2, 21, 8, "#4b4033");
+  px(ctx, cx - 8, cy - 6, 19, 12, "#85745c");
+  px(ctx, cx + 8, cy - 3, 7, 6, "#c6b087");
+  px(ctx, cx - 6, cy - 4, 8, 2, "#d7c49b");
+  px(ctx, cx - 4, cy + 2, 13, 2, "#302319");
+}
+
+function drawPixelStoneHeavy(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 14, cy + 8, 28, 4, "rgba(17, 12, 43, 0.36)");
+  px(ctx, cx - 13, cy - 7, 26, 16, "#2f281f");
+  px(ctx, cx - 15, cy - 3, 30, 10, "#4f4739");
+  px(ctx, cx - 10, cy - 9, 21, 18, "#73664f");
+  px(ctx, cx - 8, cy - 6, 10, 4, "#a69370");
+  px(ctx, cx + 4, cy + 2, 7, 3, "#251b14");
+}
+
+function drawPixelStoneMeteor(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 15, cy + 8, 30, 4, "rgba(17, 12, 43, 0.38)");
+  px(ctx, cx - 13, cy - 8, 26, 19, "#241719");
+  px(ctx, cx - 15, cy - 4, 30, 12, "#392024");
+  px(ctx, cx - 10, cy - 10, 20, 20, "#4a2522");
+  px(ctx, cx - 5, cy - 4, 9, 7, "#ff4d2e");
+  px(ctx, cx - 2, cy - 2, 4, 3, "#ffd36b");
+  px(ctx, cx + 6, cy + 3, 5, 3, "#bd1e22");
+}
+
+function drawPixelStoneMaster(ctx, w, h) {
+  drawPixelStoneSharp(ctx, w, h);
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 10, cy - 8, 20, 3, "rgba(255,255,255,0.62)");
+  px(ctx, cx - 2, cy - 11, 4, 24, "rgba(255,255,255,0.55)");
+}
+
 function drawPixelGoldCoin(ctx, w, h) {
   const cx = Math.floor(w / 2);
   const cy = Math.floor(h / 2);
@@ -627,6 +690,24 @@ export function buildAtlas() {
   });
   add("stoneReadable", 32, 22, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelStone, 1, "rgba(17, 12, 43, 0.6)");
+  });
+  add("stoneCracked", 32, 22, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelStoneCracked, 1, "rgba(17, 12, 43, 0.6)");
+  });
+  add("stoneBouncy", 32, 22, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelStoneBouncy, 1, "rgba(17, 12, 43, 0.5)");
+  });
+  add("stoneSharp", 38, 22, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelStoneSharp, 1, "rgba(17, 12, 43, 0.58)");
+  });
+  add("stoneHeavy", 38, 26, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelStoneHeavy, 1, "rgba(17, 12, 43, 0.62)");
+  });
+  add("stoneMeteor", 40, 28, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelStoneMeteor, 1, "rgba(17, 12, 43, 0.7)");
+  });
+  add("stoneMaster", 42, 24, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelStoneMaster, 1, "rgba(17, 12, 43, 0.4)");
   });
 
   add("goldCoin", 34, 34, (ctx, w, h) => {
