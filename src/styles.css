@@ -2342,6 +2342,26 @@ h1 {
   background: linear-gradient(180deg, transparent, rgba(56, 189, 248, 0.28), rgba(250, 204, 21, 0.3), rgba(56, 189, 248, 0.28), transparent);
 }
 
+.skill-grid-lane-line {
+  top: 28px;
+  bottom: 28px;
+  left: var(--axis-x, 50%);
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, transparent, rgba(85, 246, 199, 0.22), rgba(250, 204, 21, 0.24), rgba(85, 246, 199, 0.22), transparent);
+}
+
+.skill-grid-tier-line {
+  position: absolute;
+  top: var(--grid-y, 50%);
+  left: 28px;
+  right: 28px;
+  height: 1px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.22), rgba(85, 246, 199, 0.18), rgba(56, 189, 248, 0.22), transparent);
+  pointer-events: none;
+}
+
 .skill-grid-ring {
   left: 50%;
   top: 50%;
