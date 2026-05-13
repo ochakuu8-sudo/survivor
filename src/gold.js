@@ -68,7 +68,9 @@ export function updateGoldDrops(dt) {
 }
 
 function collectGold(drop) {
-  game.runPoints = (game.runPoints || 0) + Math.max(1, Math.round(drop.value * (1 + (game.goldGainBonus || 0))));
+  const amount = Math.max(1, Math.round(drop.value * (1 + (game.goldGainBonus || 0))));
+  game.runPoints = (game.runPoints || 0) + amount;
+  game.gold = (game.gold || 0) + amount;
   addEffect({
     type: "burst",
     x: drop.x,

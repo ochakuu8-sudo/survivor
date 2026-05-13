@@ -62,8 +62,8 @@ export function rerollTreasureReward() {
   const treasure = game.treasureReward;
   if (!treasure) return;
   const price = treasureRerollPrice();
-  if ((game.runPoints || 0) < price) return;
-  if (price > 0) game.runPoints -= price;
+  if ((game.gold || 0) < price) return;
+  if (price > 0) game.gold -= price;
   treasure.rerollsUsed += 1;
   treasure.reward = chooseTreasureReward(treasure.reward.type);
   treasure.chest.rewardName = treasure.reward.name;
@@ -87,6 +87,7 @@ function applyTreasureReward(reward) {
   const p = game.player;
   if (reward.type === "points") {
     game.runPoints = (game.runPoints || 0) + reward.amount;
+    game.gold = (game.gold || 0) + reward.amount;
   } else if (reward.type === "damageBuff") {
     p.weaponPowerBonus = (p.weaponPowerBonus || 0) + reward.amount;
   } else if (reward.type === "speedBuff") {
@@ -111,8 +112,8 @@ function renderTreasureReward() {
   hud.treasureRewardMeta.textContent = reward.meta;
   const price = treasureRerollPrice();
   const free = price === 0;
-  hud.treasureReroll.textContent = free ? "リロール 無料" : `リロール ${price}pt`;
-  hud.treasureReroll.disabled = !free && (game.runPoints || 0) < price;
+  hud.treasureReroll.textContent = free ? "リロール 無料" : `リロール ${price}G`;
+  hud.treasureReroll.disabled = !free && (game.gold || 0) < price;
   hud.treasureReward.classList.remove("hidden");
 }
 
@@ -121,7 +122,7 @@ function chooseTreasureReward(excludeType = "") {
     {
       type: "points",
       name: "+20pt",
-      text: "このランの回収ポイントを20pt増やす。死亡しても持ち帰れる。",
+      text: "このラン中の回収ポイントと所持ゴールドを20増やす。ラン終了時に強さはリセットされる。",
       meta: "ポイント報酬",
       icon: "P",
       amount: 20,

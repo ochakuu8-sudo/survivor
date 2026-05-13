@@ -1,6 +1,6 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { MAX_WEAPONS, RUN_DURATION_SECONDS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
+import { MAX_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, RUN_DURATION_SECONDS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
 import { resetEnemySpawnTimer, spawnOpeningEnemies } from "./enemies.js";
 import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponMetaLabel } from "./weapons.js";
 import {
@@ -333,8 +333,7 @@ function shuffle(items) {
 
 function syncWeaponLevel(weapon) {
   if (!weapon) return 1;
-  const levelFromAttachments = (weapon.attachments?.length || 0) + 1;
-  weapon.level = Math.min(getWeaponMaxLevel(weapon), Math.max(1, weapon.level || 1, levelFromAttachments));
+  weapon.level = Math.min(MAX_WEAPON_LEVEL, Math.max(1, weapon.level || 1));
   return weapon.level;
 }
 
@@ -385,6 +384,7 @@ function normalizeAttachment(definition, stars) {
     name: definition.name,
     stars: stars || definition.stars || 1,
     category: definition.category || "stat",
+    locked: false,
   };
 }
 
@@ -394,7 +394,7 @@ export function beginWeaponLevelUp(weaponId) {
   const weapon = findWeapon(weaponId);
   if (!weapon || game.pendingAttachmentChoice) return;
   const level = syncWeaponLevel(weapon);
-  if (level >= getWeaponMaxLevel(weapon) || weapon.attachments.length >= getWeaponMaxAttachments(weapon)) return;
+  if (level >= MAX_WEAPON_LEVEL || weapon.attachments.length >= MAX_ATTACHMENTS) return;
   const price = weaponLevelUpPrice(weapon);
   if (game.gold < price) return;
   const nextLevel = level + 1;

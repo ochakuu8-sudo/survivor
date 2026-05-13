@@ -60,6 +60,10 @@ export const game = {
   effects: [],
   offers: [],
   pendingAttachmentChoice: null,
+  pendingMod: null,
+  modding: {
+    rerollBaseCost: 10,
+  },
   shopTab: "shop",
   shopRerollsUsed: 0,
   starterChoices: [],
