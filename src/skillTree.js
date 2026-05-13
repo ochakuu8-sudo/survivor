@@ -540,7 +540,7 @@ function layoutSkillNodes(nodes) {
   });
 }
 
-const SKILL_GRID_SIZE = 7;
+const SKILL_GRID_SIZE = 5;
 const SKILL_GRID_RADIUS = Math.floor(SKILL_GRID_SIZE / 2);
 
 const GRID_DIRECTIONS = [
@@ -634,10 +634,10 @@ function buildGridSkillLayout(nodes, options = {}) {
 
 function buildFixedGridBranchPaths() {
   return [
-    [{ x: 0, y: -1 }, { x: 1, y: -1 }, { x: 2, y: -1 }, { x: 3, y: -1 }, { x: 3, y: 0 }, { x: 3, y: 1 }, { x: 3, y: 2 }, { x: 3, y: 3 }],
-    [{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 1, y: 2 }, { x: 1, y: 3 }, { x: 0, y: 3 }, { x: -1, y: 3 }, { x: -2, y: 3 }, { x: -3, y: 3 }],
-    [{ x: 0, y: 1 }, { x: -1, y: 1 }, { x: -2, y: 1 }, { x: -3, y: 1 }, { x: -3, y: 0 }, { x: -3, y: -1 }, { x: -3, y: -2 }, { x: -3, y: -3 }],
-    [{ x: -1, y: 0 }, { x: -1, y: -1 }, { x: -1, y: -2 }, { x: -1, y: -3 }, { x: 0, y: -3 }, { x: 1, y: -3 }, { x: 2, y: -3 }, { x: 3, y: -3 }],
+    [{ x: 0, y: -1 }, { x: 1, y: -1 }, { x: 2, y: -1 }, { x: 2, y: 0 }, { x: 2, y: 1 }, { x: 2, y: 2 }],
+    [{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 1, y: 2 }, { x: 0, y: 2 }, { x: -1, y: 2 }, { x: -2, y: 2 }],
+    [{ x: 0, y: 1 }, { x: -1, y: 1 }, { x: -2, y: 1 }, { x: -2, y: 0 }, { x: -2, y: -1 }, { x: -2, y: -2 }],
+    [{ x: -1, y: 0 }, { x: -1, y: -1 }, { x: -1, y: -2 }, { x: 0, y: -2 }, { x: 1, y: -2 }, { x: 2, y: -2 }],
   ];
 }
 
