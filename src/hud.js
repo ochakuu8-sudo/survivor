@@ -10,7 +10,7 @@ export function updateHud() {
   if (hud.gold) hud.gold.textContent = String(game.runPoints || 0);
   if (hud.shopGold) hud.shopGold.textContent = String(game.totalSkillPoints || 0);
   hud.kills.textContent = String(game.totalKills || 0);
-  renderHpText();
+  renderHpGauge();
   renderWeaponSwitch();
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
   if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "arena");
@@ -33,12 +33,27 @@ function objectiveText() {
   return "準備中";
 }
 
-function renderHpText() {
-  if (!hud.hpText) return;
+function renderHpGauge() {
+  if (!hud.hpText || !game.player) return;
   const hp = Math.max(0, Math.ceil(game.player.hp));
   const maxHp = Math.max(1, Math.ceil(game.player.maxHp));
   const barrier = Math.max(0, Math.ceil(game.player.barrier || 0));
+  const hpRatio = Math.max(0, Math.min(1, hp / maxHp));
+  const barrierRatio = Math.max(0, Math.min(1, barrier / maxHp));
+
   hud.hpText.textContent = barrier > 0 ? `${hp}/${maxHp} ◆${barrier}` : `${hp}/${maxHp}`;
+  if (hud.hpGaugeFill) hud.hpGaugeFill.style.width = `${Math.round(hpRatio * 1000) / 10}%`;
+  if (hud.hpBarrierFill) {
+    hud.hpBarrierFill.style.width = `${Math.round(barrierRatio * 1000) / 10}%`;
+    hud.hpBarrierFill.classList.toggle("hidden", barrier <= 0);
+  }
+  if (hud.hpGauge) {
+    hud.hpGauge.setAttribute("aria-valuemax", String(maxHp));
+    hud.hpGauge.setAttribute("aria-valuenow", String(hp));
+    hud.hpGauge.classList.toggle("hp-gauge-low", hpRatio <= 0.3);
+    hud.hpGauge.classList.toggle("hp-gauge-critical", hpRatio <= 0.15);
+    hud.hpGauge.classList.toggle("hp-gauge-barrier", barrier > 0);
+  }
 }
 
 function renderWeaponSwitch() {

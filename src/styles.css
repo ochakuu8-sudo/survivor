@@ -282,17 +282,22 @@ button:disabled {
 }
 
 .hp-text {
-  min-width: 66px;
-  color: #ffe8ee;
-  font-size: 1rem;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  color: #fff9f2;
+  font-size: 0.82rem;
   font-weight: 1000;
   line-height: 1;
-  text-align: left;
+  text-align: center;
   text-shadow:
     0 2px 0 rgba(103, 16, 32, 0.95),
-    1px 0 0 rgba(103, 16, 32, 0.78),
-    -1px 0 0 rgba(103, 16, 32, 0.78),
-    0 0 7px rgba(255, 79, 104, 0.46);
+    1px 0 0 rgba(103, 16, 32, 0.82),
+    -1px 0 0 rgba(103, 16, 32, 0.82),
+    0 0 7px rgba(255, 79, 104, 0.6);
 }
 
 .meter-shell {
@@ -303,6 +308,19 @@ button:disabled {
   background: rgba(15, 18, 55, 0.78);
 }
 
+.hp-gauge {
+  width: 126px;
+  height: 22px;
+  border: 2px solid rgba(255, 250, 210, 0.82);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px) 0 0 / 12px 100%,
+    rgba(46, 14, 35, 0.86);
+  box-shadow:
+    0 2px 0 rgba(103, 16, 32, 0.54),
+    inset 0 2px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.24);
+}
+
 .meter-fill {
   width: 100%;
   height: 100%;
@@ -310,6 +328,51 @@ button:disabled {
   background: linear-gradient(90deg, #55f6c7, #ffe46b, #ff5d96);
   box-shadow: 0 0 14px rgba(85, 246, 199, 0.55);
   transition: width 120ms linear;
+}
+
+.hp-gauge-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 1;
+  min-width: 0;
+  background: linear-gradient(90deg, #49ec8b, #ffe46b 72%, #ff7a8f);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -3px 0 rgba(103, 16, 32, 0.26),
+    0 0 12px rgba(255, 93, 150, 0.45);
+}
+
+.hp-barrier-fill {
+  position: absolute;
+  inset: 2px 2px 2px auto;
+  z-index: 2;
+  min-width: 5px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(157, 247, 255, 0.62), rgba(85, 246, 199, 0.95));
+  box-shadow: 0 0 10px rgba(85, 246, 199, 0.72);
+  transition: width 120ms linear;
+}
+
+.hp-gauge-low .hp-gauge-fill {
+  background: linear-gradient(90deg, #ffe46b, #ff8a4c);
+}
+
+.hp-gauge-critical .hp-gauge-fill {
+  background: linear-gradient(90deg, #ff4f68, #ff8a4c);
+  animation: hp-critical-pulse 650ms ease-in-out infinite alternate;
+}
+
+.hp-gauge-barrier .hp-text {
+  text-shadow:
+    0 2px 0 rgba(12, 78, 88, 0.95),
+    1px 0 0 rgba(12, 78, 88, 0.82),
+    -1px 0 0 rgba(12, 78, 88, 0.82),
+    0 0 8px rgba(85, 246, 199, 0.7);
+}
+
+@keyframes hp-critical-pulse {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.28); }
 }
 
 .panel {
@@ -1597,12 +1660,12 @@ h1 {
   }
 
   .hp-text {
-    min-width: 58px;
-    font-size: 0.88rem;
+    font-size: 0.76rem;
   }
 
-  .meter-shell {
-    height: 9px;
+  .hp-gauge {
+    width: 112px;
+    height: 20px;
   }
 
   .offer-section-attachments .offer-grid,
@@ -2082,12 +2145,12 @@ h1 {
   }
 
   .hp-text {
-    min-width: 54px;
-    font-size: 0.82rem;
+    font-size: 0.72rem;
   }
 
-  .meter-shell {
-    height: 8px;
+  .hp-gauge {
+    width: 104px;
+    height: 19px;
   }
 
   .offer-section-attachments .offer-grid,
@@ -2169,12 +2232,12 @@ h1 {
   }
 
   .hp-text {
-    min-width: 52px;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
   }
 
-  .meter-shell {
-    height: 7px;
+  .hp-gauge {
+    width: 102px;
+    height: 18px;
   }
 
   .stick {
