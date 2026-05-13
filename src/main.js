@@ -5,13 +5,14 @@ import { SpriteRenderer } from "./renderer.js";
 import { bindInput } from "./input.js";
 import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame } from "./game.js";
 import { openDebugPanel, setupDebug } from "./debug.js";
-import { applyPurchasedSkillTreeToActiveWeapon, continueFromSkillTree, enterUpgradeTree, renderSkillTree } from "./skillTree.js";
+import { applyPurchasedSkillTreeToActiveWeapon, continueFromSkillTree, enterDebugSkillTree, enterUpgradeTree, renderSkillTree } from "./skillTree.js";
 import { claimTreasureReward, rerollTreasureReward } from "./treasure.js";
 
 hud.restart.addEventListener("click", enterUpgradeTree);
 
 hud.pauseBtn.addEventListener("click", pauseGame);
 hud.resumeBtn.addEventListener("click", resumeGame);
+if (hud.pauseSkillDebugBtn) hud.pauseSkillDebugBtn.addEventListener("click", enterDebugSkillTree);
 if (import.meta.env.DEV && hud.pauseDebugBtn) {
   hud.pauseDebugBtn.classList.remove("hidden");
   hud.pauseDebugBtn.addEventListener("click", () => {

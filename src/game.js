@@ -20,6 +20,7 @@ import { render } from "./render.js";
 
 export function resetRun() {
   game.mode = "weaponSelect";
+  game.debugSkillTreeMode = false;
   game.wave = 1;
   game.elapsed = 0;
   game.floorElapsed = 0;

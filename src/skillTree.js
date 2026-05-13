@@ -139,6 +139,7 @@ export function initSkillProgress() {
 }
 
 export function enterUpgradeTree() {
+  game.debugSkillTreeMode = false;
   game.mode = "upgradeTree";
   selectedSkillNodes.weapon = null;
   game.enemies = [];
@@ -152,26 +153,44 @@ export function enterUpgradeTree() {
   updateHud();
 }
 
+export function enterDebugSkillTree() {
+  if (!game.player?.gear?.weapons?.length) return;
+  game.debugSkillTreeMode = true;
+  game.mode = "debugSkillTree";
+  selectedSkillNodes.weapon = null;
+  hud.pauseMenu?.classList.add("hidden");
+  renderSkillTree();
+  hud.skillTree?.classList.remove("hidden");
+  updateHud();
+}
+
 export function renderSkillTree() {
   if (!hud.skillTree || !hud.skillTreeWeaponNodes) return;
   const weapon = getActiveWeapon();
   hud.skillTreeWeaponName.textContent = weapon?.name || "武器未選択";
   hud.skillTreeWeaponMeta.textContent = weapon ? `${weaponMetaLabel(weapon)} / ${weaponStatusLabel(weapon)}` : "";
-  hud.skillTreeGold.textContent = String(game.totalSkillPoints || 0);
-  hud.skillTreeWave.textContent = "ラン外成長";
-  hud.skillTreeFree.textContent = freeCreditText();
+  hud.skillTreeGold.textContent = game.debugSkillTreeMode ? "∞" : String(game.totalSkillPoints || 0);
+  hud.skillTreeWave.textContent = game.debugSkillTreeMode ? "DEBUG" : "ラン外成長";
+  hud.skillTreeFree.textContent = game.debugSkillTreeMode ? "無制限ON/OFF" : freeCreditText();
   const fullscreenPreferred = isMobileSkillTreeFullscreenPreferred();
   setMobileSkillTreeFullscreen(fullscreenPreferred);
   const currentSkillPoints = game.totalSkillPoints || 0;
   const title = hud.skillTree.querySelector(".panel-head h1");
   if (title) {
-    title.textContent = fullscreenPreferred
-      ? `スキルツリー（所持${currentSkillPoints}SP）`
-      : "SPで武器を恒久強化";
+    title.textContent = game.debugSkillTreeMode
+      ? "DEBUG：スキルツリー無制限ON/OFF"
+      : fullscreenPreferred
+        ? `スキルツリー（所持${currentSkillPoints}SP）`
+        : "SPで武器を恒久強化";
   }
   const footerHint = hud.skillTree.querySelector(".skill-tree-footer p");
   if (footerHint) {
-    footerHint.textContent = "スマホ側と同じノードマップです。ドラッグで移動し、タップ／クリックで詳細を確認できます。";
+    footerHint.textContent = game.debugSkillTreeMode
+      ? "DEBUG中はSPと前提条件を無視して、取得状態を何度でもON/OFFできます。"
+      : "スマホ側と同じノードマップです。ドラッグで移動し、タップ／クリックで詳細を確認できます。";
+  }
+  if (hud.skillTreeContinue) {
+    hud.skillTreeContinue.textContent = game.debugSkillTreeMode ? "一時停止へ戻る" : "再挑戦へ";
   }
   hud.skillTreeWeaponNodes.replaceChildren(renderNodeMap(treeForWeapon(weapon), weapon));
 }
@@ -890,8 +909,8 @@ function renderNodeDetail(node, scope, { detailedRequirements = false } = {}) {
   const status = nodeStatus(node);
   const cost = nodeCost(node);
   const free = freeCredits(scope) > 0;
-  const canPurchase = status === "available" || (status === "costly" && free);
-  const usesFreeCredit = free && canPurchase;
+  const canPurchase = game.debugSkillTreeMode || status === "available" || (status === "costly" && free);
+  const usesFreeCredit = !game.debugSkillTreeMode && free && canPurchase;
   const requireText = requirementText(node, detailedRequirements);
   panel.innerHTML = `
     <div class="skill-node-detail-head">
@@ -903,17 +922,20 @@ function renderNodeDetail(node, scope, { detailedRequirements = false } = {}) {
     </div>
     <p>${node.text}</p>
     <dl>
-      <div><dt>コスト</dt><dd>${usesFreeCredit ? "無料解放を使用" : `${cost}SP`}</dd></div>
-      <div><dt>条件</dt><dd>${requireText}</dd></div>
+      <div><dt>コスト</dt><dd>${game.debugSkillTreeMode ? "DEBUG無制限" : usesFreeCredit ? "無料解放を使用" : `${cost}SP`}</dd></div>
+      <div><dt>条件</dt><dd>${game.debugSkillTreeMode ? "DEBUG中は無視" : requireText}</dd></div>
     </dl>
   `;
 
   const unlock = document.createElement("button");
   unlock.type = "button";
   unlock.className = "primary skill-node-unlock";
-  unlock.textContent = unlockButtonLabel(status, free);
+  unlock.textContent = game.debugSkillTreeMode ? debugToggleButtonLabel(status) : unlockButtonLabel(status, free);
   unlock.disabled = !canPurchase;
-  unlock.addEventListener("click", () => purchaseNode(node.id, scope));
+  unlock.addEventListener("click", () => {
+    if (game.debugSkillTreeMode) toggleDebugSkillNode(node.id, scope);
+    else purchaseNode(node.id, scope);
+  });
   panel.appendChild(unlock);
   return panel;
 }
@@ -940,6 +962,10 @@ function statusLabel(status) {
   }[status] || "確認";
 }
 
+function debugToggleButtonLabel(status) {
+  return status === "owned" ? "OFFにする" : "ONにする";
+}
+
 function unlockButtonLabel(status, free) {
   if (status === "owned") return "取得済み";
   if (status === "locked") return "条件未達成";
@@ -963,6 +989,7 @@ function nodeIcon(node, weapon) {
 
 function nodeStatus(node) {
   if (isPurchased(node.id, node.scope)) return "owned";
+  if (game.debugSkillTreeMode) return "available";
   if (!isUnlocked(node)) return "locked";
   return (game.totalSkillPoints || 0) >= nodeCost(node) || freeCredits(node.scope) > 0 ? "available" : "costly";
 }
@@ -1011,6 +1038,50 @@ export function purchaseNode(id, scope = "weapon") {
   renderSkillTree();
   updateHud();
   return true;
+}
+
+
+export function toggleDebugSkillNode(id, scope = "weapon") {
+  if (scope !== "weapon") return false;
+  const node = treeForWeapon().find((candidate) => candidate.id === id);
+  if (!node) return false;
+  if (!game.treePurchases) game.treePurchases = { weapon: {} };
+  if (!game.treePurchases[scope]) game.treePurchases[scope] = {};
+  if (isPurchased(id, scope)) {
+    delete game.treePurchases[scope][id];
+  } else {
+    game.treePurchases[scope][id] = true;
+  }
+  selectedSkillNodes[scope] = id;
+  reapplyDebugSkillTreeEffects();
+  renderSkillTree();
+  updateHud();
+  return true;
+}
+
+function reapplyDebugSkillTreeEffects() {
+  const weapon = getActiveWeapon();
+  if (!weapon) return;
+  weapon.attachments = (weapon.attachments || []).filter((attachment) => attachment.source !== "skillNode");
+  resetSkillNodeSideEffects(weapon);
+  recomputeAllAttachments();
+  const nodes = treeForWeapon(weapon).filter((node) => isPurchased(node.id, "weapon"));
+  for (const node of nodes) {
+    if (node.attachment) addAttachmentNode(weapon, node.attachment, node.id);
+  }
+  recomputeAllAttachments();
+  resetSkillNodeSideEffects(weapon);
+  for (const node of nodes) {
+    if (!node.evolveTo && node.custom) node.custom(weapon);
+  }
+}
+
+function resetSkillNodeSideEffects(weapon) {
+  weapon.bulletSprite = null;
+  weapon.elasticGrowth = null;
+  weapon.orbitPushOut = 0;
+  weapon.stoneVisual = { form: "normal", sizeScale: 1, trail: "none", hitEffect: "normal" };
+  weapon.stoneFlags = {};
 }
 
 function nextAvailableNodeAfterPurchase(purchasedNode, scope) {
@@ -1094,6 +1165,13 @@ export function hideSkillTree() {
 }
 
 export function continueFromSkillTree() {
+  const wasDebugMode = game.debugSkillTreeMode;
   hideSkillTree();
+  if (wasDebugMode) {
+    game.debugSkillTreeMode = false;
+    game.mode = "pause";
+    hud.pauseMenu?.classList.remove("hidden");
+    return;
+  }
   window.dispatchEvent(new CustomEvent("skill-tree-continue"));
 }
