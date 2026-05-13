@@ -536,11 +536,12 @@ function isEvolutionNode(node) {
 function layoutSkillNodes(nodes) {
   return buildGridSkillLayout(nodes, {
     cellSize: 126,
-    padding: 190,
-    minMapSize: 1080,
     hubSize: 70,
   });
 }
+
+const SKILL_GRID_SIZE = 5;
+const SKILL_GRID_RADIUS = Math.floor(SKILL_GRID_SIZE / 2);
 
 const GRID_DIRECTIONS = [
   { x: 0, y: -1, name: "north" },
@@ -566,6 +567,7 @@ function buildGridSkillLayout(nodes, options = {}) {
 
   const roots = nodes.filter((node) => !(node.requires || []).length);
   roots.forEach((node, index) => branchById.set(node.id, index % GRID_DIRECTIONS.length));
+  const branchPaths = buildFixedGridBranchPaths();
 
   for (let tier = 1; tier <= maxTier; tier += 1) {
     const group = [...(tierGroups.get(tier) || [])];
@@ -578,28 +580,18 @@ function buildGridSkillLayout(nodes, options = {}) {
       if (!branchById.has(node.id)) branchById.set(node.id, inheritedBranchIndex(node, branchById, nodes));
       const branchIndex = branchById.get(node.id) || 0;
       const parent = primaryGridParent(node, gridById) || { x: 0, y: 0 };
-      const grid = claimAdjacentGridCell(parent, branchIndex, occupied);
+      const grid = claimAdjacentGridCell(parent, branchIndex, occupied, branchPaths[branchIndex] || []);
       gridById.set(node.id, grid);
       occupied.add(gridKey(grid.x, grid.y));
     }
   }
 
-  const cells = [{ x: 0, y: 0 }, ...gridById.values()];
-  const minX = Math.min(...cells.map((cell) => cell.x));
-  const maxX = Math.max(...cells.map((cell) => cell.x));
-  const minY = Math.min(...cells.map((cell) => cell.y));
-  const maxY = Math.max(...cells.map((cell) => cell.y));
   const cellSize = options.cellSize || 126;
-  const padding = options.padding || 180;
-  const contentWidth = (maxX - minX) * cellSize + padding * 2;
-  const contentHeight = (maxY - minY) * cellSize + padding * 2;
-  const mapWidth = Math.max(options.minMapSize || 1080, contentWidth);
-  const mapHeight = Math.max(options.minMapSize || 1080, contentHeight);
-  const offsetX = (mapWidth - contentWidth) / 2;
-  const offsetY = (mapHeight - contentHeight) / 2;
+  const mapWidth = SKILL_GRID_SIZE * cellSize;
+  const mapHeight = SKILL_GRID_SIZE * cellSize;
   const toPixel = (grid) => ({
-    x: Math.round(offsetX + padding + (grid.x - minX) * cellSize),
-    y: Math.round(offsetY + padding + (grid.y - minY) * cellSize),
+    x: Math.round((grid.x + SKILL_GRID_RADIUS + 0.5) * cellSize),
+    y: Math.round((grid.y + SKILL_GRID_RADIUS + 0.5) * cellSize),
   });
   const hubPoint = toPixel({ x: 0, y: 0 });
   const hub = { ...hubPoint, gridX: 0, gridY: 0, tier: 0, row: 0, unit: "px", nodeWidth: options.hubSize, nodeHeight: options.hubSize };
@@ -623,19 +615,30 @@ function buildGridSkillLayout(nodes, options = {}) {
 
   layout.gridMeta = {
     tiers: maxTier,
-    rows: Math.max(1, maxY - minY + 1),
-    lanes: Math.max(1, maxX - minX + 1),
+    rows: SKILL_GRID_SIZE,
+    lanes: SKILL_GRID_SIZE,
     unit: "px",
     cellSize,
     mapWidth,
     mapHeight,
-    minX,
-    maxX,
-    minY,
-    maxY,
+    minX: -SKILL_GRID_RADIUS,
+    maxX: SKILL_GRID_RADIUS,
+    minY: -SKILL_GRID_RADIUS,
+    maxY: SKILL_GRID_RADIUS,
+    gridSize: SKILL_GRID_SIZE,
+    gridRadius: SKILL_GRID_RADIUS,
     hub,
   };
   return layout;
+}
+
+function buildFixedGridBranchPaths() {
+  return [
+    [{ x: 0, y: -1 }, { x: 1, y: -1 }, { x: 2, y: -1 }, { x: 2, y: 0 }, { x: 2, y: 1 }, { x: 2, y: 2 }],
+    [{ x: 1, y: 0 }, { x: 1, y: 1 }, { x: 1, y: 2 }, { x: 0, y: 2 }, { x: -1, y: 2 }, { x: -2, y: 2 }],
+    [{ x: 0, y: 1 }, { x: -1, y: 1 }, { x: -2, y: 1 }, { x: -2, y: 0 }, { x: -2, y: -1 }, { x: -2, y: -2 }],
+    [{ x: -1, y: 0 }, { x: -1, y: -1 }, { x: -1, y: -2 }, { x: 0, y: -2 }, { x: 1, y: -2 }, { x: 2, y: -2 }],
+  ];
 }
 
 function primaryGridParent(node, gridById) {
@@ -646,7 +649,7 @@ function primaryGridParent(node, gridById) {
   return null;
 }
 
-function claimAdjacentGridCell(parent, branchIndex, occupied) {
+function claimAdjacentGridCell(parent, branchIndex, occupied, branchPath = []) {
   const preferred = GRID_DIRECTIONS[branchIndex % GRID_DIRECTIONS.length];
   const orderedDirections = [
     preferred,
@@ -654,19 +657,27 @@ function claimAdjacentGridCell(parent, branchIndex, occupied) {
     GRID_DIRECTIONS[(branchIndex + GRID_DIRECTIONS.length - 1) % GRID_DIRECTIONS.length],
     GRID_DIRECTIONS[(branchIndex + 2) % GRID_DIRECTIONS.length],
   ];
-  for (const direction of orderedDirections) {
-    const candidate = { x: parent.x + direction.x, y: parent.y + direction.y };
-    if (!occupied.has(gridKey(candidate.x, candidate.y))) return candidate;
-  }
+  const candidates = orderedDirections
+    .map((direction) => ({ x: parent.x + direction.x, y: parent.y + direction.y }))
+    .filter((candidate) => isInsideFixedSkillGrid(candidate) && !occupied.has(gridKey(candidate.x, candidate.y)));
 
-  for (let distance = 2; distance <= 8; distance += 1) {
-    const outward = { x: parent.x + preferred.x * distance, y: parent.y + preferred.y * distance };
-    for (const direction of orderedDirections) {
-      const candidate = { x: outward.x + direction.x, y: outward.y + direction.y };
-      if (!occupied.has(gridKey(candidate.x, candidate.y))) return candidate;
+  const pathCandidate = branchPath.find((cell) => candidates.some((candidate) => candidate.x === cell.x && candidate.y === cell.y));
+  if (pathCandidate) return { ...pathCandidate };
+  if (candidates.length) return candidates[0];
+
+  const fallback = branchPath.find((cell) => isInsideFixedSkillGrid(cell) && !occupied.has(gridKey(cell.x, cell.y)));
+  if (fallback) return { ...fallback };
+
+  for (let y = -SKILL_GRID_RADIUS; y <= SKILL_GRID_RADIUS; y += 1) {
+    for (let x = -SKILL_GRID_RADIUS; x <= SKILL_GRID_RADIUS; x += 1) {
+      if (!occupied.has(gridKey(x, y))) return { x, y };
     }
   }
-  return { x: parent.x + preferred.x, y: parent.y + preferred.y };
+  return { x: clamp(parent.x + preferred.x, -SKILL_GRID_RADIUS, SKILL_GRID_RADIUS), y: clamp(parent.y + preferred.y, -SKILL_GRID_RADIUS, SKILL_GRID_RADIUS) };
+}
+
+function isInsideFixedSkillGrid(cell) {
+  return Math.abs(cell.x) <= SKILL_GRID_RADIUS && Math.abs(cell.y) <= SKILL_GRID_RADIUS;
 }
 
 function gridKey(x, y) {
@@ -681,7 +692,7 @@ function inheritedBranchIndex(node, branchById, nodes) {
   return nodes.indexOf(node) % 4;
 }
 
-function renderSkillGridLabels({ tiers, ringStep, unit, cellSize = 126, mapWidth = 1080, mapHeight = 1080, hub = { x: 540, y: 540 } }) {
+function renderSkillGridLabels({ tiers, ringStep, unit, cellSize = 126, mapWidth = 1080, mapHeight = 1080, hub = { x: 540, y: 540 }, gridRadius = tiers }) {
   const layer = document.createElement("div");
   layer.className = "skill-grid-labels";
   layer.setAttribute("aria-hidden", "true");
@@ -696,7 +707,8 @@ function renderSkillGridLabels({ tiers, ringStep, unit, cellSize = 126, mapWidth
   vertical.style.setProperty("--axis-x", unit === "px" ? `${hub.x}px` : "50%");
   layer.appendChild(vertical);
 
-  for (let tier = 1; tier <= tiers; tier += 1) {
+  const visibleRings = unit === "px" ? Math.min(tiers, gridRadius) : tiers;
+  for (let tier = 1; tier <= visibleRings; tier += 1) {
     const ring = document.createElement("span");
     ring.className = `skill-grid-ring${unit === "px" ? " skill-grid-square-ring" : ""}`;
     if (unit === "px") {
