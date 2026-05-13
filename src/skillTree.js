@@ -237,14 +237,17 @@ function setMobileSkillTreeFullscreen(enabled) {
 
 function layoutMobileSkillNodes(nodes) {
   const viewportWidth = typeof window === "undefined" ? 400 : window.innerWidth || 400;
+  const viewportHeight = typeof window === "undefined" ? 700 : window.innerHeight || 700;
   const columnGap = viewportWidth <= 370 ? 118 : 132;
   const rowGap = viewportWidth <= 370 ? 92 : 98;
   const nodeSize = viewportWidth <= 370 ? 38 : 42;
+  const bottomPanelClearance = Math.round(clamp(viewportHeight * 0.34, 210, 300));
   return buildColumnSkillLayout(nodes, {
     columnGap,
     rowGap,
     paddingX: Math.max(72, Math.round(columnGap * 0.64)),
     paddingY: 58,
+    paddingBottom: bottomPanelClearance,
     nodeWidth: nodeSize,
     nodeHeight: nodeSize,
     hubSize: nodeSize + 6,
@@ -596,8 +599,9 @@ function buildColumnSkillLayout(nodes, options = {}) {
   const rowGap = options.rowGap || 116;
   const paddingX = options.paddingX || 92;
   const paddingY = options.paddingY || 76;
+  const paddingBottom = options.paddingBottom ?? paddingY;
   const mapWidth = paddingX * 2 + (SKILL_TREE_COLUMNS - 1) * columnGap;
-  const mapHeight = paddingY * 2 + Math.max(1, nextRow) * rowGap;
+  const mapHeight = paddingY + paddingBottom + Math.max(1, nextRow) * rowGap;
   const toPixel = (column, row) => ({
     x: Math.round(paddingX + column * columnGap),
     y: Math.round(paddingY + row * rowGap),
@@ -632,6 +636,7 @@ function buildColumnSkillLayout(nodes, options = {}) {
     rowGap,
     paddingX,
     paddingY,
+    paddingBottom,
     mapWidth,
     mapHeight,
     tierStartRows,
