@@ -146,8 +146,13 @@ export function renderSkillTree() {
   hud.skillTreeFree.textContent = freeCreditText();
   const fullscreenPreferred = isMobileSkillTreeFullscreenPreferred();
   setMobileSkillTreeFullscreen(fullscreenPreferred);
+  const currentSkillPoints = game.totalSkillPoints || 0;
   const title = hud.skillTree.querySelector(".panel-head h1");
-  if (title) title.textContent = fullscreenPreferred ? "スキルツリー" : "SPで武器を恒久強化";
+  if (title) {
+    title.textContent = fullscreenPreferred
+      ? `スキルツリー（所持${currentSkillPoints}SP）`
+      : "SPで武器を恒久強化";
+  }
   const footerHint = hud.skillTree.querySelector(".skill-tree-footer p");
   if (footerHint) {
     footerHint.textContent = "スマホ側と同じノードマップです。ドラッグで移動し、タップ／クリックで詳細を確認できます。";

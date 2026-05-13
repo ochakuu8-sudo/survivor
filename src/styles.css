@@ -3403,7 +3403,44 @@ h1 {
   }
 
   body.mobile-skill-tree-open #skillTree .skill-tree-summary {
+    position: fixed;
+    top: max(58px, calc(env(safe-area-inset-top) + 58px));
+    right: max(8px, env(safe-area-inset-right));
+    z-index: 35;
+    display: block;
+    width: min(142px, calc(100dvw - 16px));
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    pointer-events: none;
+  }
+
+  body.mobile-skill-tree-open #skillTree .skill-tree-summary > div:first-child {
     display: none;
+  }
+
+  body.mobile-skill-tree-open #skillTree .skill-tree-summary > div:last-child {
+    gap: 1px;
+    padding: 7px 10px 8px;
+    border-color: rgba(255, 228, 107, 0.72);
+    border-radius: 14px;
+    background: rgba(15, 18, 55, 0.82);
+    box-shadow: 0 6px 18px rgba(10, 8, 32, 0.26), inset 0 1px 0 rgba(255, 249, 242, 0.16);
+  }
+
+  body.mobile-skill-tree-open #skillTree .skill-tree-summary strong {
+    color: #ffe46b;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  body.mobile-skill-tree-open #skillTree .skill-tree-summary small {
+    overflow: hidden;
+    color: rgba(217, 247, 255, 0.78);
+    font-size: 0.58rem;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   body.mobile-skill-tree-open #skillTree .skill-tree-layout,
