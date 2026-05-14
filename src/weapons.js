@@ -1307,6 +1307,8 @@ function fireSword(weapon, angle) {
 
   weapon.swingCount = (weapon.swingCount || 0) + 1;
   const swingDir = weapon.swingCount % 2 === 0 ? 1 : -1;
+  const baseTint = weapon.effectTint || [1, 0.78, 0.36];
+  const glow = weapon.effectGlow || "glowAmber";
   addEffect({
     type: "slash",
     x: originX,
@@ -1315,80 +1317,36 @@ function fireSword(weapon, angle) {
     range: weapon.range,
     cone: weapon.cone,
     swingDir,
-    life: 0.2,
-    maxLife: 0.2,
-    glow: weapon.effectGlow || "glowAmber",
-    tint: weapon.effectTint || [0.95, 0.9, 0.78],
+    life: 0.24,
+    maxLife: 0.24,
+    glow,
+    tint: baseTint,
   });
 
-  const cone = weapon.cone;
-  const baseTint = weapon.effectTint || [0.74, 0.96, 1];
-  const glow = weapon.effectGlow || "glowCyan";
-  const segments = 8;
-
-  const drawArc = (radius, width, life, tint, glowName, lifeStagger = 0) => {
-    for (let i = 0; i < segments; i += 1) {
-      const tA = i / segments - 0.5;
-      const tB = (i + 1) / segments - 0.5;
-      const arcA = angle + tA * cone * 2;
-      const arcB = angle + tB * cone * 2;
-      const lead = swingDir > 0 ? i : segments - 1 - i;
-      addEffect({
-        type: "line",
-        x1: originX + Math.cos(arcA) * radius,
-        y1: originY + Math.sin(arcA) * radius,
-        x2: originX + Math.cos(arcB) * radius,
-        y2: originY + Math.sin(arcB) * radius,
-        width,
-        life: life + lead * lifeStagger,
-        maxLife: life + lead * lifeStagger,
-        glow: glowName || glow,
-        tint,
-      });
-    }
-  };
-
-  drawArc(weapon.range * 0.94, 10, 0.14, [baseTint[0] * 0.78, baseTint[1] * 0.9, baseTint[2]], glow, 0.004);
-  drawArc(weapon.range * 0.78, 4, 0.1, [0.96, 1, 1], "glowCyan", 0.004);
-
-  const leadingT = swingDir > 0 ? 0.5 : -0.5;
-  const leadingAngle = angle + leadingT * cone * 2;
-  const tipX = originX + Math.cos(leadingAngle) * weapon.range;
-  const tipY = originY + Math.sin(leadingAngle) * weapon.range;
-
-  addEffect({
-    type: "line",
-    x1: originX,
-    y1: originY,
-    x2: tipX,
-    y2: tipY,
-    width: 5,
-    life: 0.1,
-    maxLife: 0.1,
-    glow: "glowCyan",
-    tint: [1, 1, 1],
-  });
+  const edgeAngle = angle + swingDir * weapon.cone * 0.72;
+  const tipX = originX + Math.cos(edgeAngle) * weapon.range;
+  const tipY = originY + Math.sin(edgeAngle) * weapon.range;
   addEffect({
     type: "burst",
     x: tipX,
     y: tipY,
-    radius: 22,
-    life: 0.18,
-    maxLife: 0.18,
+    radius: 18,
+    life: 0.14,
+    maxLife: 0.14,
     glow,
     tint: baseTint,
   });
   addEffect({
     type: "burst",
-    x: originX,
-    y: originY,
-    radius: 18,
-    life: 0.12,
-    maxLife: 0.12,
-    glow: "glowCyan",
-    tint: [1, 1, 1],
+    x: originX + Math.cos(angle) * weapon.range * 0.34,
+    y: originY + Math.sin(angle) * weapon.range * 0.34,
+    radius: 14,
+    life: 0.1,
+    maxLife: 0.1,
+    glow: "glowAmber",
+    tint: [1, 0.88, 0.52],
   });
-  addSparks(tipX, tipY, 4, 140);
+  addSparks(tipX, tipY, 5, 150);
 }
 
 function fireChain(weapon, target) {
