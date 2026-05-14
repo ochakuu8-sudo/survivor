@@ -62,70 +62,56 @@ function drawPixelMachineGunBullet(ctx, w, h) {
 }
 
 function drawPixelSwordSlash(ctx, w, h) {
-  const cy = h / 2;
+  const cx = w * 0.48;
+  const cy = h * 0.5;
+  const outer = Math.min(w * 0.52, h * 0.9);
+  const inner = outer * 0.68;
+  const start = -1.18;
+  const end = 1.18;
+
   ctx.save();
-  ctx.translate(0, cy);
+  ctx.translate(cx, cy);
 
-  ctx.fillStyle = "rgba(24, 18, 48, 0.34)";
+  ctx.fillStyle = "rgba(24, 18, 48, 0.36)";
   ctx.beginPath();
-  ctx.moveTo(5, 7);
-  ctx.lineTo(w * 0.58, -h * 0.3);
-  ctx.lineTo(w - 4, -4);
-  ctx.lineTo(w * 0.58, h * 0.3);
-  ctx.lineTo(5, -7);
+  ctx.arc(0, 0, outer + 5, start, end, false);
+  ctx.arc(outer * 0.42, 0, inner + 4, end, start, true);
   ctx.closePath();
   ctx.fill();
 
-  ctx.fillStyle = "rgba(255, 162, 58, 0.58)";
+  const glow = ctx.createRadialGradient(outer * 0.38, 0, 3, outer * 0.38, 0, outer * 1.08);
+  glow.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+  glow.addColorStop(0.34, "rgba(255, 246, 190, 0.92)");
+  glow.addColorStop(0.72, "rgba(255, 162, 58, 0.74)");
+  glow.addColorStop(1, "rgba(255, 126, 39, 0.22)");
+  ctx.fillStyle = glow;
   ctx.beginPath();
-  ctx.moveTo(10, 1);
-  ctx.lineTo(w * 0.42, -h * 0.36);
-  ctx.lineTo(w - 8, -9);
-  ctx.lineTo(w * 0.54, 1);
-  ctx.lineTo(w - 8, 9);
-  ctx.lineTo(w * 0.42, h * 0.36);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "rgba(255, 246, 190, 0.95)";
-  ctx.beginPath();
-  ctx.moveTo(14, 0);
-  ctx.lineTo(w * 0.48, -h * 0.21);
-  ctx.lineTo(w - 11, -3);
-  ctx.lineTo(w * 0.48, h * 0.21);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "rgba(255, 126, 39, 0.88)";
-  ctx.beginPath();
-  ctx.moveTo(w * 0.18, 4);
-  ctx.lineTo(w * 0.52, h * 0.25);
-  ctx.lineTo(w * 0.82, 9);
-  ctx.lineTo(w * 0.5, 0);
+  ctx.arc(0, 0, outer, start, end, false);
+  ctx.arc(outer * 0.42, 0, inner, end, start, true);
   ctx.closePath();
   ctx.fill();
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
-  px(ctx, w * 0.46, -3, w * 0.28, 5, "rgba(255, 255, 255, 0.98)");
-  px(ctx, w * 0.78, -2, 13, 4, "rgba(255, 255, 255, 0.9)");
-
-  ctx.fillStyle = "rgba(42, 30, 70, 0.44)";
   ctx.beginPath();
-  ctx.moveTo(w * 0.28, -h * 0.18);
-  ctx.lineTo(w * 0.36, -h * 0.09);
-  ctx.lineTo(w * 0.26, -h * 0.04);
-  ctx.closePath();
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(w * 0.62, h * 0.18);
-  ctx.lineTo(w * 0.72, h * 0.09);
-  ctx.lineTo(w * 0.58, h * 0.04);
+  ctx.arc(outer * 0.06, 0, outer * 0.78, -0.86, 0.86, false);
+  ctx.arc(outer * 0.43, 0, inner * 0.92, 0.78, -0.78, true);
   ctx.closePath();
   ctx.fill();
 
-  px(ctx, w * 0.16, -h * 0.34, 5, 5, "rgba(255, 208, 86, 0.82)");
-  px(ctx, w * 0.28, h * 0.34, 4, 4, "rgba(255, 242, 170, 0.9)");
-  px(ctx, w * 0.9, h * 0.18, 4, 4, "rgba(255, 162, 58, 0.8)");
+  ctx.fillStyle = "rgba(255, 186, 72, 0.78)";
+  ctx.beginPath();
+  ctx.arc(-outer * 0.03, 0, outer * 0.96, 0.72, 1.1, false);
+  ctx.arc(outer * 0.45, 0, inner * 1.02, 1.04, 0.62, true);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+  px(ctx, outer * 0.42, -3, outer * 0.34, 5, "rgba(255, 255, 255, 0.9)");
+  px(ctx, outer * 0.64, -outer * 0.18, 5, 5, "rgba(255, 246, 190, 0.82)");
+  px(ctx, outer * 0.62, outer * 0.16, 4, 4, "rgba(255, 186, 72, 0.82)");
+  px(ctx, outer * 0.2, -outer * 0.48, 4, 4, "rgba(255, 225, 130, 0.72)");
+  px(ctx, outer * 0.22, outer * 0.48, 4, 4, "rgba(255, 225, 130, 0.72)");
+
   ctx.restore();
 }
 

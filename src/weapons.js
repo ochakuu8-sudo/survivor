@@ -508,7 +508,7 @@ export function expandWeaponArea(weapon, power) {
   }
 }
 
-const TARGETLESS_KINDS = new Set(["flame", "sword", "mine"]);
+const TARGETLESS_KINDS = new Set(["flame", "sword", "mine", "timedBomb"]);
 
 export function autoShoot() {
   const p = game.player;
@@ -1057,16 +1057,15 @@ function fireSustainedLaser(weapon, angle) {
 
 function fireTimedBomb(weapon, angle) {
   const p = game.player;
-  const speed = weapon.bulletSpeed || 460;
   const fuse = Math.max(0.45, weapon.fuse || weapon.life || 0.85);
-  const placeX = p.x + Math.cos(angle) * 18;
-  const placeY = p.y + Math.sin(angle) * 18;
+  const placeX = p.x;
+  const placeY = p.y;
   game.bullets.push({
     kind: "timedBomb",
     x: placeX,
     y: placeY,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed,
+    vx: 0,
+    vy: 0,
     angle,
     radius: weapon.radius,
     damage: weapon.damage + p.weaponPowerBonus,
@@ -1088,8 +1087,8 @@ function fireTimedBomb(weapon, angle) {
     effectGlow: weapon.effectGlow,
     bulletSprite: weapon.bulletSprite || "bomb",
     spinSeed: Math.random() * TAU,
-    spinRate: 3.2,
-    collides: true,
+    spinRate: 0,
+    collides: false,
     hitIds: new Set(),
   });
   addSparks(placeX, placeY, 2, 70);
