@@ -100,6 +100,8 @@ export function resetRun() {
   game.effects = [];
   game.offers = [];
   game.pendingAttachmentChoice = null;
+  game.pendingAttachmentReward = null;
+  game.modeBeforeAttachmentReward = null;
   game.pendingMod = null;
   game.modding = { rerollBaseCost: 10 };
   game.shopTab = "shop";
@@ -150,6 +152,8 @@ export function startArenaWithSelectedWeapon() {
   game.goldDrops = [];
   game.effects = [];
   game.treasureReward = null;
+  game.pendingAttachmentReward = null;
+  game.modeBeforeAttachmentReward = null;
   game.dungeon = generateDungeon(game.wave);
   game.player.x = game.dungeon.start.x;
   game.player.y = game.dungeon.start.y;

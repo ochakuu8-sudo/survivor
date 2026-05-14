@@ -1,183 +1,246 @@
-import { MAX_ATTACHMENTS, MAX_WEAPON_LEVEL, getWeaponMaxAttachments } from "./constants.js";
+import { getWeaponMaxAttachments } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { recomputeAllAttachments, starsLabel, attachmentCategoryLabel, findAttachmentDefinition } from "./attachments.js";
+import {
+  attachmentCategoryLabel,
+  canAttachToWeapon,
+  createAttachmentInstance,
+  findAttachmentDefinition,
+  recomputeAllAttachments,
+  starsLabel,
+} from "./attachments.js";
 import { rollAttachmentForWeapon } from "./attachmentRolls.js";
-import { tryEvolveWeapon } from "./evolution.js";
 import { updateHud } from "./hud.js";
 import { findWeapon, getActiveWeapon } from "./weapons.js";
-
-const REROLL_COSTS = [0, 10, 20, 35, 55];
 
 export function maxAttachmentSlotsForWeapon(weapon) {
   return getWeaponMaxAttachments(weapon);
 }
 
-function firstEquippedSlotWithinLevel(weapon) {
-  const maxSlots = maxAttachmentSlotsForWeapon(weapon);
-  for (let index = 0; index < maxSlots; index += 1) {
-    if (weapon.attachments[index]) return index;
-  }
-  return -1;
+function modeAfterReward() {
+  return game.modeBeforeAttachmentReward || game.modeBeforeTreasure || game.modeBeforeWorkbench || "arena";
 }
 
-export function levelUpWeapon(weapon = getActiveWeapon()) {
-  if (!weapon || weapon.level >= MAX_WEAPON_LEVEL) return false;
-  weapon.level += 1;
-  const slotIndex = weapon.level - 2;
-  const attachment = rollAttachmentForWeapon(weapon, { weaponLevel: weapon.level });
-  if (!attachment) return false;
-  weapon.attachments[slotIndex] = attachment;
-  recomputeAllAttachments();
-  game.pendingMod = { weaponId: weapon.id, slotIndex, attachment, previousAttachment: null, rerollsUsed: 0, freeRerolls: 1, source: "weaponLevelUp" };
-  game.mode = "modding";
-  renderModdingPanel();
-  updateHud();
-  return true;
-}
-
-export function getModRerollCost(pending = game.pendingMod) {
-  if (!pending || (pending.freeRerolls || 0) > 0) return 0;
-  const paidIndex = Math.max(1, pending.rerollsUsed || 0);
-  return REROLL_COSTS[Math.min(paidIndex, REROLL_COSTS.length - 1)];
-}
-
-export function selectPendingAttachmentSlot(slotIndex) {
-  const pending = game.pendingMod;
-  if (!pending) return;
-  const weapon = findWeapon(pending.weaponId);
-  if (!weapon) return;
-  const maxSlots = maxAttachmentSlotsForWeapon(weapon);
-  if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= maxSlots || !weapon.attachments[slotIndex]) return;
-  pending.slotIndex = slotIndex;
-  pending.attachment = weapon.attachments[slotIndex];
-  renderModdingPanel();
-}
-
-export function rerollPendingAttachment(slotIndex = game.pendingMod?.slotIndex) {
-  const pending = game.pendingMod;
-  if (!pending) return;
-  const weapon = findWeapon(pending.weaponId);
-  if (!weapon) return;
-  if (Number.isInteger(slotIndex)) selectPendingAttachmentSlot(slotIndex);
-  const selectedIndex = pending.slotIndex;
-  if (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex >= maxAttachmentSlotsForWeapon(weapon)) return;
-  if (!weapon.attachments[selectedIndex] || weapon.attachments[selectedIndex]?.locked) return;
-  const cost = getModRerollCost(pending);
-  if (cost > 0 && (game.gold || 0) < cost) return;
-  if (cost > 0) game.gold -= cost;
-  else pending.freeRerolls = Math.max(0, (pending.freeRerolls || 0) - 1);
-  pending.rerollsUsed += 1;
-  const next = rollAttachmentForWeapon(weapon, { weaponLevel: weapon.level, excludeKey: weapon.attachments[selectedIndex]?.key });
-  if (!next) return;
-  weapon.attachments[selectedIndex] = next;
-  pending.attachment = next;
-  recomputeAllAttachments();
-  renderModdingPanel();
-  updateHud();
-}
-
-export function claimPendingAttachment() {
-  const pending = game.pendingMod;
-  if (!pending) return;
-  const weapon = findWeapon(pending.weaponId);
-  game.pendingMod = null;
-  hideModdingPanel();
-  if (weapon?.level >= MAX_WEAPON_LEVEL) tryEvolveWeapon(weapon);
-  game.mode = "arena";
-  updateHud();
-}
-
-function moddingAttachmentIcon(category, stars = 1) {
+function attachmentIcon(category, stars = 1) {
   const categoryIcons = {
     stat: "◆",
     elemental: "✦",
     behavior: "↯",
+    special: "↯",
     support: "✚",
+    unique: "◈",
     utility: "◈",
   };
   return `${categoryIcons[category] || "★"}${Math.max(1, stars)}`;
 }
 
-function createSlotButton(weapon, pending, index, cost) {
-  const owned = weapon.attachments[index];
-  const definition = findAttachmentDefinition(owned?.key) || owned || {};
-  const stars = owned?.stars || definition.stars || 1;
-  const category = owned?.category || definition.category;
-  const item = document.createElement("li");
-  item.className = `mod-slot${index === pending.slotIndex ? " active" : ""}${owned?.locked ? " locked" : ""}`;
+function normalizePendingAttachment(raw) {
+  const definition = raw?.definition || findAttachmentDefinition(raw?.key) || raw;
+  if (!definition?.key) return null;
+  return createAttachmentInstance(definition, raw) || null;
+}
 
-  const selectButton = document.createElement("button");
-  selectButton.type = "button";
-  selectButton.className = "mod-slot-select";
-  selectButton.setAttribute("aria-pressed", index === pending.slotIndex ? "true" : "false");
-  selectButton.addEventListener("click", () => selectPendingAttachmentSlot(index));
+export function beginAttachmentReward(rawAttachment, { source = "reward", allowDiscard = true } = {}) {
+  const attachment = normalizePendingAttachment(rawAttachment);
+  if (!attachment) return false;
+  game.pendingAttachmentReward = {
+    attachment,
+    source,
+    rerollsUsed: 0,
+    allowDiscard,
+  };
+  game.pendingMod = null;
+  game.modeBeforeAttachmentReward = game.mode === "attachmentReward" ? modeAfterReward() : game.mode;
+  game.mode = "attachmentReward";
+  renderModdingPanel();
+  updateHud();
+  return true;
+}
+
+export function levelUpWeapon(weapon = getActiveWeapon()) {
+  if (!weapon) return false;
+  const attachment = rollAttachmentForWeapon(weapon, { weaponLevel: Math.max(2, weapon.level + 1) });
+  if (!attachment) return false;
+  return beginAttachmentReward(attachment, { source: "debugLevelUp", allowDiscard: true });
+}
+
+export function getModRerollCost() {
+  return 0;
+}
+
+export function selectPendingAttachmentSlot() {
+  // Slot selection now happens by directly pressing a weapon slot in the reward panel.
+}
+
+export function rerollPendingAttachment() {
+  // MVP: reward rerolls are intentionally disabled so the pickup decision stays immediate.
+}
+
+function finishAttachmentReward() {
+  game.pendingAttachmentReward = null;
+  game.pendingMod = null;
+  game.treasureReward = null;
+  hideModdingPanel();
+  hud.treasureReward?.classList.add("hidden");
+  hud.workbenchPanel?.classList.add("hidden");
+  game.mode = modeAfterReward();
+  game.modeBeforeAttachmentReward = null;
+  game.modeBeforeTreasure = null;
+  game.modeBeforeWorkbench = null;
+  updateHud();
+}
+
+export function claimPendingAttachment() {
+  discardPendingAttachment();
+}
+
+export function discardPendingAttachment() {
+  if (!game.pendingAttachmentReward) return;
+  finishAttachmentReward();
+}
+
+export function applyPendingAttachmentToSlot(weaponId, slotIndex) {
+  const pending = game.pendingAttachmentReward;
+  if (!pending?.attachment) return false;
+  const weapon = findWeapon(weaponId);
+  if (!weapon) return false;
+  const maxSlots = maxAttachmentSlotsForWeapon(weapon);
+  if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= maxSlots) return false;
+
+  const definition = findAttachmentDefinition(pending.attachment.key) || pending.attachment;
+  if (!canAttachToWeapon(definition, weapon)) return false;
+
+  const current = weapon.attachments[slotIndex] || null;
+  if (current?.locked) return false;
+  if (current && typeof window !== "undefined" && typeof window.confirm === "function") {
+    const ok = window.confirm(`「${current.name}」を「${pending.attachment.name}」で上書きしますか？\n上書きされたアタッチメントは消えます。`);
+    if (!ok) return false;
+  }
+
+  weapon.attachments[slotIndex] = createAttachmentInstance(definition, pending.attachment);
+  recomputeAllAttachments();
+  finishAttachmentReward();
+  return true;
+}
+
+function sourceLabel(source) {
+  const labels = {
+    chest: "宝箱",
+    workbench: "作業台",
+    debugLevelUp: "デバッグ強化",
+    reward: "報酬",
+  };
+  return labels[source] || "報酬";
+}
+
+function renderRewardSlot(weapon, weaponIndex, slotIndex, pendingAttachment) {
+  const current = weapon.attachments[slotIndex] || null;
+  const currentDefinition = findAttachmentDefinition(current?.key) || current || {};
+  const currentStars = current?.stars || currentDefinition.stars || 1;
+  const currentCategory = current?.category || currentDefinition.category;
+  const pendingDefinition = findAttachmentDefinition(pendingAttachment?.key) || pendingAttachment;
+  const compatible = canAttachToWeapon(pendingDefinition, weapon);
+  const locked = !!current?.locked;
+
+  const item = document.createElement("li");
+  item.className = `mod-slot${current ? " filled" : " empty"}${locked ? " locked" : ""}`;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "mod-slot-select";
+  button.disabled = locked || !compatible;
+  button.addEventListener("click", () => applyPendingAttachmentToSlot(weapon.id, slotIndex));
 
   const icon = document.createElement("span");
-  icon.className = `mod-slot-icon attach-stars-${stars}`;
-  icon.textContent = moddingAttachmentIcon(category, stars);
+  icon.className = `mod-slot-icon attach-stars-${currentStars}`;
+  icon.textContent = current ? attachmentIcon(currentCategory, currentStars) : "+";
 
   const copy = document.createElement("span");
   copy.className = "mod-slot-copy";
 
   const name = document.createElement("strong");
-  name.textContent = owned ? owned.name || definition.name || "アタッチメント" : "空き枠";
+  name.textContent = current ? current.name || currentDefinition.name || "アタッチメント" : "空きスロット";
 
   const meta = document.createElement("small");
-  meta.textContent = owned
-    ? `${starsLabel(stars)} / ${attachmentCategoryLabel(category)}${owned.locked ? " / ロック" : ""}`
-    : "未装着";
+  if (locked) meta.textContent = "上書き不可";
+  else if (!compatible) meta.textContent = "この武器には装着不可";
+  else if (current) meta.textContent = `${starsLabel(currentStars)} / ${attachmentCategoryLabel(currentCategory)} → 上書き`;
+  else meta.textContent = `武器${weaponIndex + 1}へ装着`;
 
   copy.append(name, meta);
-  selectButton.append(icon, copy);
-
-  const rerollButton = document.createElement("button");
-  rerollButton.type = "button";
-  rerollButton.className = "mod-slot-reroll";
-  rerollButton.textContent = cost === 0 ? "⟳無料" : `⟳${cost}G`;
-  rerollButton.disabled = !owned || !!owned.locked || (cost > 0 && (game.gold || 0) < cost);
-  rerollButton.setAttribute("aria-label", `${owned?.name || index + 1 + "枠目"}をリロール`);
-  rerollButton.addEventListener("click", () => rerollPendingAttachment(index));
-
-  item.append(selectButton, rerollButton);
+  button.append(icon, copy);
+  item.append(button);
   return item;
+}
+
+function renderRewardWeaponGroup(weapon, weaponIndex, pendingAttachment) {
+  const group = document.createElement("li");
+  group.className = "mod-weapon-group";
+
+  const heading = document.createElement("div");
+  heading.className = "mod-weapon-heading";
+  const active = game.player?.gear?.activeWeaponIndex === weaponIndex ? " / 使用中" : " / 控え";
+  heading.innerHTML = `<strong>武器${weaponIndex + 1}: ${weapon.name}${active}</strong><small>スロット ${getFilledSlotCount(weapon)}/${maxAttachmentSlotsForWeapon(weapon)}</small>`;
+
+  const slots = document.createElement("ol");
+  slots.className = "modding-slots modding-slots-nested";
+  const maxSlots = maxAttachmentSlotsForWeapon(weapon);
+  for (let slotIndex = 0; slotIndex < maxSlots; slotIndex += 1) {
+    slots.append(renderRewardSlot(weapon, weaponIndex, slotIndex, pendingAttachment));
+  }
+
+  group.append(heading, slots);
+  return group;
+}
+
+function getFilledSlotCount(weapon) {
+  const maxSlots = maxAttachmentSlotsForWeapon(weapon);
+  let count = 0;
+  for (let index = 0; index < maxSlots; index += 1) {
+    if (weapon.attachments[index]) count += 1;
+  }
+  return count;
 }
 
 export function renderModdingPanel() {
   if (!hud.moddingPanel) return;
-  const pending = game.pendingMod;
-  const weapon = pending ? findWeapon(pending.weaponId) : null;
-  if (!pending || !weapon) {
+  const pending = game.pendingAttachmentReward;
+  if (!pending?.attachment) {
     hideModdingPanel();
     return;
   }
-  const maxSlots = maxAttachmentSlotsForWeapon(weapon);
-  if (pending.slotIndex >= maxSlots || !weapon.attachments[pending.slotIndex]) {
-    pending.slotIndex = firstEquippedSlotWithinLevel(weapon);
-  }
-  const attachment = weapon.attachments[pending.slotIndex] || pending.attachment;
-  const definition = findAttachmentDefinition(attachment?.key) || attachment || {};
-  const stars = attachment?.stars || definition.stars || 1;
-  const category = attachment?.category || definition.category;
-  hud.moddingWeaponName.textContent = weapon.name;
-  hud.moddingWeaponLevel.textContent = `Lv ${weapon.level}/${MAX_WEAPON_LEVEL}・装着枠 ${maxSlots}/${MAX_ATTACHMENTS}`;
-  hud.moddingGold.textContent = `${game.gold || 0}G`;
+
+  const attachment = pending.attachment;
+  const definition = findAttachmentDefinition(attachment.key) || attachment;
+  const stars = attachment.stars || definition.stars || 1;
+  const category = attachment.category || definition.category;
+
+  const kicker = hud.moddingPanel.querySelector(".panel-kicker");
+  const heading = hud.moddingPanel.querySelector("h1");
+  if (kicker) kicker.textContent = sourceLabel(pending.source);
+  if (heading) heading.textContent = "今つけるか、捨てるか";
+
+  hud.moddingWeaponName.textContent = "新アタッチメント";
+  hud.moddingWeaponLevel.textContent = "装着しなければ消えます";
+  hud.moddingGold.textContent = "非所持";
   const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
   if (treasureIcon) {
     treasureIcon.className = `treasure-icon modding-main-icon attach-stars-${stars}`;
-    treasureIcon.textContent = moddingAttachmentIcon(category, stars);
+    treasureIcon.textContent = attachmentIcon(category, stars);
   }
-  hud.moddingAttachmentName.textContent = attachment?.name || definition.name || "アタッチメント";
+  hud.moddingAttachmentName.textContent = attachment.name || definition.name || "アタッチメント";
   hud.moddingAttachmentMeta.textContent = `${starsLabel(stars)} / ${attachmentCategoryLabel(category)}`;
-  hud.moddingAttachmentText.textContent = definition.text || "このラン中だけ武器性能に反映されます。";
+  hud.moddingAttachmentText.textContent = definition.text || "選んだ武器スロットへ即時装着。既存枠は上書きされ、古いアタッチメントは消えます。";
+
   hud.moddingSlots.replaceChildren();
-  const cost = getModRerollCost(pending);
-  for (let index = 0; index < maxSlots; index += 1) {
-    hud.moddingSlots.append(createSlotButton(weapon, pending, index, cost));
-  }
-  hud.moddingReroll.textContent = cost === 0 ? "選択中を無料リロール" : `選択中をリロール ${cost}G`;
-  hud.moddingReroll.disabled = !attachment || !!attachment?.locked || (cost > 0 && (game.gold || 0) < cost);
-  hud.moddingTake.disabled = false;
+  (game.player?.gear?.weapons || []).forEach((weapon, weaponIndex) => {
+    hud.moddingSlots.append(renderRewardWeaponGroup(weapon, weaponIndex, attachment));
+  });
+
+  hud.moddingReroll.textContent = "リロールなし";
+  hud.moddingReroll.disabled = true;
+  hud.moddingTake.textContent = pending.allowDiscard === false ? "装着先を選択" : "捨てる";
+  hud.moddingTake.disabled = pending.allowDiscard === false;
   hud.moddingPanel.classList.remove("hidden");
 }
 
