@@ -620,28 +620,30 @@ function drawEffects(view, camX, camY, zoom, frameStats) {
       if (!isVisibleWorld(pos.x, pos.y, range, view, camX, camY, zoom, 128)) continue;
       frameStats.visibleEffects += 1;
       const progress = clamp(1 - alpha, 0, 1);
-      const reach = range * (0.46 + progress * 0.1);
+      const swing = effect.swingDir || 1;
+      const reach = range * (0.44 + progress * 0.18);
       const centerX = pos.x + Math.cos(effect.angle) * reach;
       const centerY = pos.y + Math.sin(effect.angle) * reach;
       const screen = worldToScreen(centerX, centerY, view, camX, camY, zoom);
-      const sweepScale = 0.92 + progress * 0.18;
-      const width = range * 1.36 * sweepScale * zoom;
-      const height = range * (0.58 + (effect.cone || 0.72) * 0.36) * sweepScale * zoom;
-      const rotation = effect.angle + (effect.swingDir || 1) * (0.16 - progress * 0.1);
-      state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, width * 1.1, height * 1.24, {
-        tint: effect.tint || [0.95, 0.9, 0.78],
-        alpha: alpha * 0.28,
+      const carve = Math.sin(progress * Math.PI);
+      const width = range * (1.08 + carve * 0.34) * zoom;
+      const height = range * (0.62 + (effect.cone || 0.72) * 0.22 + carve * 0.08) * zoom;
+      const rotation = effect.angle + swing * (-0.32 + progress * 0.64);
+      const tint = effect.tint || [1, 0.78, 0.36];
+      state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, width * 1.2, height * 1.2, {
+        tint,
+        alpha: alpha * (0.16 + carve * 0.18),
         rotation,
       });
-      state.renderer.draw("slashCrescent", screen.x, screen.y, width, height, {
+      state.renderer.draw("swordSlash", screen.x, screen.y, width, height, {
         rotation,
-        tint: effect.tint || [0.95, 0.9, 0.78],
-        alpha: alpha * 0.95,
+        tint,
+        alpha: alpha * 0.96,
       });
-      state.renderer.draw("slashCrescent", screen.x + Math.cos(effect.angle) * 10 * zoom, screen.y + Math.sin(effect.angle) * 10 * zoom, width * 0.72, height * 0.52, {
-        rotation,
+      state.renderer.draw("swordSlash", screen.x - Math.cos(effect.angle) * 8 * zoom, screen.y - Math.sin(effect.angle) * 8 * zoom, width * 0.54, height * 0.38, {
+        rotation: rotation - swing * 0.1,
         tint: [1, 1, 1],
-        alpha: alpha * 0.55,
+        alpha: alpha * 0.34,
       });
     } else if (effect.type === "burst") {
       const pos = visiblePositionForDraw(effect, camX, camY);

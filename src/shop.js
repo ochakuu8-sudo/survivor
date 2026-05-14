@@ -54,7 +54,7 @@ export const WEAPON_POOL = [
       bulletTint: [1, 0.82, 0.42],
       bulletGlow: "glowAmber",
       bulletSprite: "machineGunBullet",
-      stoneVisual: { form: "miniBullet", trail: "white", hitEffect: "normal" },
+      stoneVisual: { form: "miniBullet", trail: "none", hitEffect: "normal" },
     },
   },
   {

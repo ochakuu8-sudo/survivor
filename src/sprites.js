@@ -53,45 +53,80 @@ function drawPixelBullet(ctx) {
 
 function drawPixelMachineGunBullet(ctx, w, h) {
   const cy = Math.floor(h / 2);
-  px(ctx, 1, cy - 2, 5, 4, "rgba(255, 237, 170, 0.24)");
-  px(ctx, 5, cy - 3, 11, 6, "#d99a28");
-  px(ctx, 7, cy - 4, 8, 2, "#ffd56a");
+  px(ctx, 2, cy - 3, 14, 6, "#d99a28");
+  px(ctx, 4, cy - 4, 10, 2, "#ffd56a");
   px(ctx, 16, cy - 2, 5, 4, "#f4e0a0");
   px(ctx, 20, cy - 1, 3, 2, "#fff6cf");
-  px(ctx, 6, cy + 2, 10, 1, "#8f5517");
+  px(ctx, 3, cy + 2, 12, 1, "#8f5517");
+  px(ctx, 1, cy - 1, 2, 2, "#7a4314");
 }
 
-function drawPixelSlashCrescent(ctx, w, h) {
+function drawPixelSwordSlash(ctx, w, h) {
+  const cy = h / 2;
   ctx.save();
-  ctx.translate(2, h / 2);
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
-  ctx.lineWidth = 22;
-  ctx.beginPath();
-  ctx.arc(0, 0, w * 0.92, -0.36, 0.36);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.46)";
-  ctx.lineWidth = 14;
-  ctx.beginPath();
-  ctx.arc(0, 0, w * 0.9, -0.33, 0.33);
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.arc(0, 0, w * 0.88, -0.29, 0.29);
-  ctx.stroke();
-  ctx.restore();
+  ctx.translate(0, cy);
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.fillStyle = "rgba(24, 18, 48, 0.34)";
   ctx.beginPath();
-  ctx.moveTo(w - 13, h / 2 - 10);
-  ctx.lineTo(w - 2, h / 2);
-  ctx.lineTo(w - 13, h / 2 + 10);
+  ctx.moveTo(5, 7);
+  ctx.lineTo(w * 0.58, -h * 0.3);
+  ctx.lineTo(w - 4, -4);
+  ctx.lineTo(w * 0.58, h * 0.3);
+  ctx.lineTo(5, -7);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
-  ctx.fillRect(Math.floor(w * 0.5), Math.floor(h * 0.5) - 2, Math.floor(w * 0.28), 4);
+
+  ctx.fillStyle = "rgba(255, 162, 58, 0.58)";
+  ctx.beginPath();
+  ctx.moveTo(10, 1);
+  ctx.lineTo(w * 0.42, -h * 0.36);
+  ctx.lineTo(w - 8, -9);
+  ctx.lineTo(w * 0.54, 1);
+  ctx.lineTo(w - 8, 9);
+  ctx.lineTo(w * 0.42, h * 0.36);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255, 246, 190, 0.95)";
+  ctx.beginPath();
+  ctx.moveTo(14, 0);
+  ctx.lineTo(w * 0.48, -h * 0.21);
+  ctx.lineTo(w - 11, -3);
+  ctx.lineTo(w * 0.48, h * 0.21);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255, 126, 39, 0.88)";
+  ctx.beginPath();
+  ctx.moveTo(w * 0.18, 4);
+  ctx.lineTo(w * 0.52, h * 0.25);
+  ctx.lineTo(w * 0.82, 9);
+  ctx.lineTo(w * 0.5, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
+  px(ctx, w * 0.46, -3, w * 0.28, 5, "rgba(255, 255, 255, 0.98)");
+  px(ctx, w * 0.78, -2, 13, 4, "rgba(255, 255, 255, 0.9)");
+
+  ctx.fillStyle = "rgba(42, 30, 70, 0.44)";
+  ctx.beginPath();
+  ctx.moveTo(w * 0.28, -h * 0.18);
+  ctx.lineTo(w * 0.36, -h * 0.09);
+  ctx.lineTo(w * 0.26, -h * 0.04);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(w * 0.62, h * 0.18);
+  ctx.lineTo(w * 0.72, h * 0.09);
+  ctx.lineTo(w * 0.58, h * 0.04);
+  ctx.closePath();
+  ctx.fill();
+
+  px(ctx, w * 0.16, -h * 0.34, 5, 5, "rgba(255, 208, 86, 0.82)");
+  px(ctx, w * 0.28, h * 0.34, 4, 4, "rgba(255, 242, 170, 0.9)");
+  px(ctx, w * 0.9, h * 0.18, 4, 4, "rgba(255, 162, 58, 0.8)");
+  ctx.restore();
 }
 
 function drawPixelStone(ctx, w, h) {
@@ -835,8 +870,8 @@ export function buildAtlas() {
   add("machineGunBullet", 24, 10, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelMachineGunBullet, 1, "rgba(17, 12, 43, 0.42)");
   });
-  add("slashCrescent", 104, 70, (ctx, w, h) => {
-    drawPixelSlashCrescent(ctx, w, h);
+  add("swordSlash", 112, 76, (ctx, w, h) => {
+    drawPixelSwordSlash(ctx, w, h);
   });
   add("stone", 32, 22, (ctx, w, h) => {
     drawPixelStone(ctx, w, h);
