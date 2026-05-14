@@ -84,7 +84,7 @@ export function renderWorkbenchPanel() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `workbench-storage-item${selectedStorageIndex === index ? " selected" : ""}`;
-    button.innerHTML = `<strong>${attachment.name}</strong><small>${starsLabel(attachment.stars)} / ${attachmentCategoryLabel(attachment.category)}</small><span>${definition.text || "装着で効果発動"}</span>`;
+    button.innerHTML = `<strong>${attachment.cursed ? "☠ " : ""}${attachment.name}</strong><small>${starsLabel(attachment.stars)} / ${attachmentCategoryLabel(attachment.category)}</small><span>${definition.text || "装着で効果発動"}</span>`;
     button.addEventListener("click", () => {
       selectedStorageIndex = selectedStorageIndex === index ? null : index;
       statusText = selectedStorageIndex === null ? "選択解除しました。" : `${attachment.name} を選択中。空きスロットを押してください。`;
@@ -93,7 +93,7 @@ export function renderWorkbenchPanel() {
     storageRoot.append(button);
   });
 
-  hud.workbenchStorageCount.textContent = `${(gear.storageAttachments || []).length}/${MAX_STORED_ATTACHMENTS}`;
+  hud.workbenchStorageCount.textContent = `${(gear.storageAttachments || []).length}/${gear.storageAttachmentsMax || MAX_STORED_ATTACHMENTS}`;
 }
 
 function renderWeaponWorkbenchCard(weapon, weaponIndex) {
@@ -120,7 +120,7 @@ function renderSlotButton(weapon, slotIndex) {
   button.type = "button";
   button.className = `workbench-slot${attachment ? " filled" : " empty"}`;
   if (attachment) {
-    button.innerHTML = `<strong>${attachment.locked ? "🔒 " : ""}${attachment.name}</strong><small>${starsLabel(attachment.stars)} / ${attachmentCategoryLabel(attachment.category)}</small>`;
+    button.innerHTML = `<strong>${attachment.locked ? "🔒 " : ""}${attachment.cursed ? "☠ " : ""}${attachment.name}</strong><small>${starsLabel(attachment.stars)} / ${attachmentCategoryLabel(attachment.category)}</small>`;
     button.addEventListener("click", () => detachWeaponAttachment(weapon.id, slotIndex));
   } else {
     button.innerHTML = `<strong>空き</strong><small>クリックで装着</small>`;
@@ -173,12 +173,12 @@ export function detachWeaponAttachment(weaponId, slotIndex) {
   if (!gear || !weapon) return false;
   const attachment = weapon.attachments[slotIndex];
   if (!attachment) return false;
-  if (attachment.locked) {
-    statusText = "このアタッチメントは外せません。";
+  if (attachment.locked || attachment.cursed) {
+    statusText = attachment.cursed ? "呪い付きアタッチメントは外せません。" : "このアタッチメントは外せません。";
     renderWorkbenchPanel();
     return false;
   }
-  if ((gear.storageAttachments || []).length >= MAX_STORED_ATTACHMENTS) {
+  if ((gear.storageAttachments || []).length >= (gear.storageAttachmentsMax || MAX_STORED_ATTACHMENTS)) {
     statusText = "所持欄が満杯で外せません。";
     renderWorkbenchPanel();
     return false;

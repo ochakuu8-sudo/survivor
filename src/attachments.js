@@ -1043,6 +1043,7 @@ export function createAttachmentInstance(definition, overrides = {}) {
     stars: overrides.stars || definition.stars || 1,
     category: definition.category || "stat",
     locked: !!(overrides.locked ?? definition.locked),
+    cursed: !!(overrides.cursed ?? definition.cursed),
     tags: overrides.tags || tagsForAttachment(definition),
   };
 }
@@ -1050,7 +1051,7 @@ export function createAttachmentInstance(definition, overrides = {}) {
 export function canStoreAttachment(gear = game.player?.gear) {
   if (!gear) return false;
   if (!Array.isArray(gear.storageAttachments)) gear.storageAttachments = [];
-  return gear.storageAttachments.length < MAX_STORED_ATTACHMENTS;
+  return gear.storageAttachments.length < (gear.storageAttachmentsMax || MAX_STORED_ATTACHMENTS);
 }
 
 export function addAttachmentToStorage(attachment, gear = game.player?.gear) {
