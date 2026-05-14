@@ -5,19 +5,80 @@ import { buildEnemyGrid, damageEnemy, explodeBullet, removeDeadEnemies } from ".
 import { addEffect, addSparks } from "./effects.js";
 import { shortestDungeonDelta, shortestDungeonDistanceSq, wrapDungeonPoint } from "./dungeon.js";
 
+function addPoisonPool(bullet) {
+  addEffect({
+    type: "poisonPool",
+    x: bullet.x,
+    y: bullet.y,
+    radius: bullet.areaRadius || 96,
+    damage: bullet.poolDamage || bullet.damage || 1,
+    tickRate: bullet.tickRate || 3,
+    tickTimer: 0,
+    critChance: bullet.critChance || 0,
+    critMultiplier: bullet.critMultiplier || 1.75,
+    freezeChance: bullet.freezeChance || 0,
+    freezeSlow: bullet.freezeSlow || 0.82,
+    freezeDuration: bullet.freezeDuration || 0.65,
+    lifeStealPerKill: bullet.lifeStealPerKill || 0,
+    life: bullet.duration || 4,
+    maxLife: bullet.duration || 4,
+    glow: bullet.effectGlow || "glowCyan",
+    tint: bullet.effectTint || [0.38, 1, 0.42],
+  });
+  addSparks(bullet.x, bullet.y, 5, 90, "spark");
+}
+
 export function updateBullets(dt) {
   const enemyGrid = buildEnemyGrid();
   const next = [];
   const spawnCounts = new Map();
   for (const bullet of game.bullets) {
+    const previousLife = bullet.life;
     bullet.life -= dt;
+    bullet.age = (bullet.age || 0) + dt;
+    if (bullet.kind === "boomerang" && bullet.age >= (bullet.returnTime || 0.9)) {
+      const dx = game.player.x - bullet.x;
+      const dy = game.player.y - bullet.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const speed = Math.hypot(bullet.vx, bullet.vy) || 520;
+      bullet.vx = (dx / len) * speed;
+      bullet.vy = (dy / len) * speed;
+      bullet.angle = Math.atan2(dy, dx);
+      if (len <= game.player.radius + bullet.radius + 8 && previousLife < (bullet.maxLife || 1) - 0.12) continue;
+    }
     bullet.x += bullet.vx * dt;
     bullet.y += bullet.vy * dt;
+    if (bullet.kind === "timedBomb") {
+      bullet.vx *= Math.pow(0.08, dt);
+      bullet.vy *= Math.pow(0.08, dt);
+    }
     addBulletTrail(bullet, dt);
     wrapDungeonPoint(game.dungeon, bullet);
     if (bullet.life <= 0) {
       if (bullet.kind === "pulseBomb") continue;
-      if (bullet.explosionRadius > 0) explodeBullet(bullet);
+      if (bullet.kind === "poisonBottle") addPoisonPool(bullet);
+      else if (bullet.explosionRadius > 0) explodeBullet(bullet);
+      continue;
+    }
+    if (bullet.kind === "mine") {
+      const armed = (bullet.maxLife || 0) - bullet.life >= (bullet.armingTime || 0.35);
+      let triggered = false;
+      if (armed) {
+        const triggerRadius = bullet.radius + 18;
+        for (const enemy of game.enemies) {
+          if (enemy.dead) continue;
+          const range = enemy.radius + triggerRadius;
+          if (shortestDungeonDistanceSq(game.dungeon, bullet.x, bullet.y, enemy.x, enemy.y) <= range * range) {
+            triggered = true;
+            break;
+          }
+        }
+      }
+      if (triggered) {
+        explodeBullet(bullet);
+        continue;
+      }
+      next.push(bullet);
       continue;
     }
     if (bullet.kind === "pulseBomb") {
@@ -47,7 +108,8 @@ export function updateBullets(dt) {
 
         for (const enemy of cell) {
           if (enemy.dead) continue;
-          if (enemy.id === bullet.lastHitId) continue;
+          if (enemy.id === bullet.lastHitId && bullet.kind !== "boomerang") continue;
+          if (bullet.kind === "boomerang" && bullet.hitCooldowns?.has(enemy.id)) continue;
           const range = enemy.radius + bullet.radius;
           if (distSq(bullet.x, bullet.y, enemy.x, enemy.y) > range * range) continue;
 
@@ -62,6 +124,18 @@ export function updateBullets(dt) {
           }
 
           // 貫通が先、跳弾が後。貫通が残っている間は跳弾しない。
+          if (bullet.kind === "poisonBottle") {
+            addPoisonPool(bullet);
+            keep = false;
+            break nearbyCells;
+          }
+
+          if (bullet.kind === "boomerang") {
+            bullet.hitCooldowns.set(enemy.id, 0.28);
+            keep = true;
+            break nearbyCells;
+          }
+
           if ((bullet.pierce || 0) > 0) {
             bullet.pierce -= 1;
             bullet.lastHitId = enemy.id;
@@ -102,6 +176,13 @@ export function updateBullets(dt) {
           keep = false;
           break nearbyCells;
         }
+      }
+    }
+    if (bullet.kind === "boomerang" && bullet.hitCooldowns) {
+      for (const [id, cd] of bullet.hitCooldowns) {
+        const nextCd = cd - dt;
+        if (nextCd <= 0) bullet.hitCooldowns.delete(id);
+        else bullet.hitCooldowns.set(id, nextCd);
       }
     }
     if (keep) next.push(bullet);

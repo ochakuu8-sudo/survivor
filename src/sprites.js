@@ -136,6 +136,110 @@ function drawPixelStoneMaster(ctx, w, h) {
   px(ctx, cx - 2, cy - 11, 4, 24, "rgba(255,255,255,0.55)");
 }
 
+function drawPixelKnifeBlade(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 15, cy + 5, 28, 4, "rgba(17, 12, 43, 0.3)");
+  px(ctx, cx - 12, cy - 3, 22, 6, "#b8c3d0");
+  px(ctx, cx - 7, cy - 5, 18, 4, "#eef6ff");
+  px(ctx, cx + 9, cy - 2, 6, 4, "#6b4b2a");
+  px(ctx, cx + 14, cy - 1, 5, 3, "#2f2418");
+}
+
+function drawPixelBoomerang(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 14, cy + 10, 28, 4, "rgba(17, 12, 43, 0.3)");
+  px(ctx, cx - 13, cy - 8, 10, 24, "#8a5a2a");
+  px(ctx, cx - 9, cy - 8, 24, 9, "#b77835");
+  px(ctx, cx - 8, cy + 4, 20, 8, "#6e431f");
+  px(ctx, cx + 7, cy - 6, 9, 7, "#d49a4d");
+  px(ctx, cx - 10, cy + 10, 8, 7, "#c98c43");
+}
+
+function drawPixelArrow(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 18, cy - 1, 30, 3, "#d8b26a");
+  px(ctx, cx + 11, cy - 5, 11, 11, "#dfe8f2");
+  px(ctx, cx + 15, cy - 2, 8, 5, "#ffffff");
+  px(ctx, cx - 20, cy - 5, 8, 4, "#7cc7ff");
+  px(ctx, cx - 20, cy + 2, 8, 4, "#7cc7ff");
+}
+
+function drawPixelBomb(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 12, cy + 11, 24, 4, "rgba(17, 12, 43, 0.34)");
+  px(ctx, cx - 10, cy - 6, 20, 19, "#171923");
+  px(ctx, cx - 12, cy - 3, 24, 13, "#252a36");
+  px(ctx, cx - 3, cy - 11, 8, 7, "#6b4b2a");
+  px(ctx, cx + 4, cy - 16, 5, 7, "#ff4d2e");
+  px(ctx, cx + 7, cy - 18, 4, 4, "#ffe46b");
+  px(ctx, cx - 6, cy - 3, 6, 4, "#53606d");
+}
+
+function drawPixelPoisonBottle(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 10, cy + 11, 20, 4, "rgba(17, 12, 43, 0.3)");
+  px(ctx, cx - 5, cy - 14, 10, 8, "#c9f7ff");
+  px(ctx, cx - 9, cy - 7, 18, 20, "#7ed968");
+  px(ctx, cx - 7, cy - 3, 14, 12, "#3fae48");
+  px(ctx, cx + 2, cy - 5, 4, 13, "#b8ff8a");
+  px(ctx, cx - 3, cy - 17, 7, 4, "#65411e");
+}
+
+function drawPixelIceShard(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 14, cy + 8, 28, 4, "rgba(17, 12, 43, 0.22)");
+  px(ctx, cx - 12, cy - 3, 25, 7, "#8ae7ff");
+  px(ctx, cx - 6, cy - 8, 15, 16, "#c9f7ff");
+  px(ctx, cx + 9, cy - 2, 7, 5, "#ffffff");
+  px(ctx, cx - 2, cy - 5, 4, 10, "#5bbdff");
+}
+
+function drawPixelMine(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 13, cy + 8, 26, 5, "rgba(17, 12, 43, 0.34)");
+  px(ctx, cx - 12, cy - 4, 24, 14, "#252a36");
+  px(ctx, cx - 9, cy - 7, 18, 5, "#586070");
+  px(ctx, cx - 3, cy - 10, 6, 5, "#d7dee8");
+  px(ctx, cx - 2, cy - 1, 4, 4, "#ff4d2e");
+}
+
+function drawPixelDrone(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 16, cy + 10, 32, 4, "rgba(17, 12, 43, 0.25)");
+  px(ctx, cx - 10, cy - 6, 20, 14, "#64758a");
+  px(ctx, cx - 5, cy - 3, 10, 8, "#9ef6ff");
+  px(ctx, cx - 20, cy - 9, 12, 5, "#c9d4e2");
+  px(ctx, cx + 8, cy - 9, 12, 5, "#c9d4e2");
+  px(ctx, cx - 21, cy + 6, 12, 5, "#c9d4e2");
+  px(ctx, cx + 9, cy + 6, 12, 5, "#c9d4e2");
+}
+
+function drawPixelLightningStaff(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 3, cy - 12, 6, 29, "#7b5126");
+  px(ctx, cx - 9, cy - 16, 18, 8, "#73e8ff");
+  px(ctx, cx - 2, cy - 21, 5, 16, "#fff270");
+  px(ctx, cx + 2, cy - 13, 9, 4, "#ffffff");
+}
+
+function drawPixelSwordIcon(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 3, cy - 17, 6, 27, "#e8f5ff");
+  px(ctx, cx - 6, cy - 10, 12, 16, "#b7c7d8");
+  px(ctx, cx - 12, cy + 8, 24, 5, "#d6ad65");
+  px(ctx, cx - 4, cy + 12, 8, 10, "#4b2d1b");
+}
+
 function drawPixelGoldCoin(ctx, w, h) {
   const cx = Math.floor(w / 2);
   const cy = Math.floor(h / 2);
@@ -709,6 +813,19 @@ export function buildAtlas() {
   add("stoneMaster", 42, 24, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelStoneMaster, 1, "rgba(17, 12, 43, 0.4)");
   });
+
+
+  add("knifeBlade", 42, 24, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelKnifeBlade, 1, "rgba(17, 12, 43, 0.48)"); });
+  add("boomerang", 44, 36, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelBoomerang, 1, "rgba(17, 12, 43, 0.55)"); });
+  add("arrow", 50, 20, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelArrow, 1, "rgba(17, 12, 43, 0.45)"); });
+  add("bomb", 34, 34, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelBomb, 1, "rgba(17, 12, 43, 0.62)"); });
+  add("poisonBottle", 34, 40, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelPoisonBottle, 1, "rgba(17, 12, 43, 0.52)"); });
+  add("iceShard", 40, 30, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelIceShard, 1, "rgba(17, 12, 43, 0.42)"); });
+  add("mine", 34, 28, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelMine, 1, "rgba(17, 12, 43, 0.56)"); });
+  add("drone", 48, 36, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelDrone, 1, "rgba(17, 12, 43, 0.5)"); });
+  add("droneShot", 24, 14, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelBullet, 1, "rgba(17, 12, 43, 0.45)"); });
+  add("lightningStaff", 32, 48, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelLightningStaff, 1, "rgba(17, 12, 43, 0.5)"); });
+  add("swordIcon", 34, 52, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelSwordIcon, 1, "rgba(17, 12, 43, 0.52)"); });
 
   add("goldCoin", 34, 34, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelGoldCoin, 1, "rgba(93, 58, 16, 0.5)");

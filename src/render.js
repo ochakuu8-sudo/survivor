@@ -372,6 +372,7 @@ function drawWorld(view, camX, camY, zoom) {
   }
 
   drawOrbitWeapons(view, camX, camY, zoom);
+  drawDroneWeapons(view, camX, camY, zoom);
   drawEffects(view, camX, camY, zoom, frameStats);
 
   for (const bullet of game.bullets) {
@@ -380,7 +381,16 @@ function drawWorld(view, camX, camY, zoom) {
     if (!isVisibleWorld(pos.x, pos.y, radius, view, camX, camY, zoom, 128)) continue;
     frameStats.visibleBullets += 1;
     const screen = worldToScreen(pos.x, pos.y, view, camX, camY, zoom);
-    if (bullet.kind === "timedBomb" || bullet.kind === "pulseBomb") {
+    if (bullet.kind === "mine") {
+      const armed = (bullet.maxLife || 0) - bullet.life >= (bullet.armingTime || 0.35);
+      const blink = armed ? 0.55 + Math.sin(game.elapsed * 10) * 0.35 : 0.35;
+      state.renderer.draw(bullet.bulletGlow || "glowRed", screen.x, screen.y, 48 * zoom, 48 * zoom, { alpha: armed ? 0.28 : 0.12 });
+      state.renderer.draw("shadow", screen.x, screen.y + 8 * zoom, 32 * zoom, 12 * zoom, { alpha: 0.62 });
+      state.renderer.draw(bullet.bulletSprite || "mine", screen.x, screen.y, 28 * zoom, 22 * zoom, {
+        tint: armed ? [1, 1, 1] : [0.52, 0.55, 0.58],
+      });
+      state.renderer.draw("white", screen.x, screen.y - 3 * zoom, 5 * zoom, 5 * zoom, { tint: [1, 0.18, 0.12], alpha: blink });
+    } else if (bullet.kind === "timedBomb" || bullet.kind === "pulseBomb") {
       let fuseAlpha;
       if (bullet.kind === "pulseBomb") {
         const interval = bullet.pulseInterval || 1;
@@ -391,8 +401,9 @@ function drawWorld(view, camX, camY, zoom) {
       const blink = Math.sin(game.elapsed * (10 + (1 - fuseAlpha) * 18)) > 0 ? 1 : 0.45;
       state.renderer.draw(bullet.bulletGlow || "glowRed", screen.x, screen.y, 52 * zoom, 52 * zoom, { alpha: 0.22 + (1 - fuseAlpha) * 0.22 });
       state.renderer.draw("shadow", screen.x, screen.y + 11 * zoom, 34 * zoom, 13 * zoom, { alpha: 0.58 });
-      state.renderer.draw("white", screen.x, screen.y, bullet.radius * 2.2 * zoom, bullet.radius * 2.2 * zoom, {
-        rotation: game.elapsed * 0.7,
+      const bombSprite = bullet.bulletSprite && state.atlas.sprites[bullet.bulletSprite] ? bullet.bulletSprite : "white";
+      state.renderer.draw(bombSprite, screen.x, screen.y, bullet.radius * 2.8 * zoom, bullet.radius * 2.4 * zoom, {
+        rotation: (bullet.spinSeed || 0) + game.elapsed * (bullet.spinRate || 0.7),
         tint: bullet.bulletTint || [1, 0.75, 0.35],
         alpha: 0.92,
       });
@@ -438,6 +449,33 @@ function drawWorld(view, camX, camY, zoom) {
   game.renderStats = frameStats;
 }
 
+
+function drawDroneWeapons(view, camX, camY, zoom) {
+  const player = game.player;
+  if (!player?.gear) return;
+  const activeIndex = Math.min(
+    Math.max(player.gear.activeWeaponIndex || 0, 0),
+    Math.max(0, player.gear.weapons.length - 1),
+  );
+  const weapon = player.gear.weapons[activeIndex];
+  if (!weapon || weapon.kind !== "drone") return;
+  const count = Math.max(1, Math.round(weapon.droneCount || 1));
+  const radius = weapon.orbitRadius || 96;
+  const speed = weapon.orbitSpeed || 2.6;
+  for (let i = 0; i < count; i += 1) {
+    const phase = (i / count) * TAU;
+    const spin = game.elapsed * speed + weapon.id * 1.31 + phase;
+    const x = player.x + Math.cos(spin) * radius;
+    const y = player.y + Math.sin(spin) * radius;
+    const screen = worldToScreen(x, y, view, camX, camY, zoom);
+    state.renderer.draw("shadow", screen.x, screen.y + 13 * zoom, 30 * zoom, 11 * zoom, { alpha: 0.45 });
+    state.renderer.draw(weapon.effectGlow || "glowCyan", screen.x, screen.y, 46 * zoom, 46 * zoom, { alpha: 0.18 });
+    state.renderer.draw("drone", screen.x, screen.y + Math.sin(game.elapsed * 5 + i) * 2 * zoom, 34 * zoom, 26 * zoom, {
+      rotation: Math.sin(game.elapsed * 2 + i) * 0.14,
+      tint: weapon.effectTint || [0.7, 0.95, 1],
+    });
+  }
+}
 
 function drawDungeonExit(view, camX, camY, zoom) {
   const exit = game.dungeon?.exit;
@@ -547,6 +585,22 @@ function drawEffects(view, camX, camY, zoom, frameStats) {
       drawWorldLine(effect.x1, effect.y1, effect.x2, effect.y2, effect.width * pulse, view, camX, camY, zoom, {
         tint: effect.tint || [1, 1, 1],
         alpha: alpha * 0.9,
+      });
+    } else if (effect.type === "poisonPool") {
+      const pos = visiblePositionForDraw(effect, camX, camY);
+      const pulse = 1 + Math.sin(game.elapsed * 5) * 0.04;
+      const radius = effect.radius * pulse;
+      if (!isVisibleWorld(pos.x, pos.y, radius, view, camX, camY, zoom, 128)) continue;
+      frameStats.visibleEffects += 1;
+      const screen = worldToScreen(pos.x, pos.y, view, camX, camY, zoom);
+      const size = effect.radius * 2 * pulse * zoom;
+      state.renderer.draw(effect.glow || "glowCyan", screen.x, screen.y, size, size * 0.72, {
+        tint: effect.tint || [0.38, 1, 0.42],
+        alpha: alpha * 0.38,
+      });
+      state.renderer.draw("white", screen.x, screen.y, size * 0.82, size * 0.42, {
+        tint: effect.tint || [0.38, 1, 0.42],
+        alpha: alpha * 0.18,
       });
     } else if (effect.type === "burst") {
       const pos = visiblePositionForDraw(effect, camX, camY);
