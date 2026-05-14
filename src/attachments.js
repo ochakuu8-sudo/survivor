@@ -1,5 +1,5 @@
 import { game } from "./state.js";
-import { getWeaponMaxAttachments } from "./constants.js";
+import { MAX_STORED_ATTACHMENTS, getWeaponMaxAttachments } from "./constants.js";
 import {
   addWeaponBasePercent,
   addWeaponPierce,
@@ -1034,6 +1034,40 @@ function pickAttachmentByStars(stars) {
   return { definition, stars };
 }
 
+
+export function createAttachmentInstance(definition, overrides = {}) {
+  if (!definition?.key) return null;
+  return {
+    key: definition.key,
+    name: definition.name,
+    stars: overrides.stars || definition.stars || 1,
+    category: definition.category || "stat",
+    locked: !!(overrides.locked ?? definition.locked),
+    tags: overrides.tags || tagsForAttachment(definition),
+  };
+}
+
+export function canStoreAttachment(gear = game.player?.gear) {
+  if (!gear) return false;
+  if (!Array.isArray(gear.storageAttachments)) gear.storageAttachments = [];
+  return gear.storageAttachments.length < MAX_STORED_ATTACHMENTS;
+}
+
+export function addAttachmentToStorage(attachment, gear = game.player?.gear) {
+  if (!gear || !attachment || !canStoreAttachment(gear)) return false;
+  const definition = attachment.definition || findAttachmentDefinition(attachment.key) || attachment;
+  const instance = createAttachmentInstance(definition, attachment);
+  if (!instance) return false;
+  gear.storageAttachments.push(instance);
+  return true;
+}
+
+export function removeAttachmentFromStorage(index, gear = game.player?.gear) {
+  if (!gear || !Array.isArray(gear.storageAttachments)) return null;
+  if (!Number.isInteger(index) || index < 0 || index >= gear.storageAttachments.length) return null;
+  return gear.storageAttachments.splice(index, 1)[0] || null;
+}
+
 export function canAttachToWeapon(definition, weapon) {
   if (!definition || !weapon) return false;
   const weaponName = weapon.baseName || weapon.name;
@@ -1065,14 +1099,7 @@ export function addAttachmentToWeapon(weapon, attachment) {
     return false;
   }
   const stars = attachment.stars || definition.stars || 1;
-  weapon.attachments.push({
-    key: definition.key,
-    name: definition.name,
-    stars,
-    category: definition.category || "stat",
-    locked: false,
-    tags: tagsForAttachment(definition),
-  });
+  weapon.attachments.push(createAttachmentInstance(definition, { ...attachment, stars }));
   recomputeAllAttachments();
   if (definition.barrierGain > 0) {
     const barrierGain = definition.barrierGain;

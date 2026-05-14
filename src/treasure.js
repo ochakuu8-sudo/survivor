@@ -1,9 +1,11 @@
-import { INTERACTION_HOLD_SECONDS } from "./constants.js";
+import { INTERACTION_HOLD_SECONDS, MAX_STORED_ATTACHMENTS, MAX_WEAPONS } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
-import { renderSkillTree } from "./skillTree.js";
 import { updateHud } from "./hud.js";
+import { addAttachmentToStorage, pickShopAttachment, starsLabel } from "./attachments.js";
+import { createWeapon } from "./weapons.js";
+import { WEAPON_POOL } from "./shop.js";
 
 export function treasureRerollPrice() {
   const used = game.treasureReward?.rerollsUsed || 0;
@@ -76,16 +78,31 @@ export function claimTreasureReward() {
   if (!treasure) return;
   applyTreasureReward(treasure.reward);
   game.treasureReward = null;
-  game.mode = game.modeBeforeTreasure === "arena" ? "arena" : "upgradeTree";
+  game.mode = "arena";
   game.modeBeforeTreasure = null;
   hud.treasureReward.classList.add("hidden");
-  renderSkillTree();
   updateHud();
 }
 
 function applyTreasureReward(reward) {
   const p = game.player;
-  if (reward.type === "points") {
+  if (!reward) return;
+  if (reward.type === "attachment") {
+    const stored = addAttachmentToStorage(reward.attachment);
+    if (!stored) {
+      game.treasureRewardMessage = `所持上限 ${MAX_STORED_ATTACHMENTS} 個のため取得できませんでした`;
+    }
+  } else if (reward.type === "weapon") {
+    const weapon = createWeapon({ name: reward.template.name, ...reward.template.weapon }, { rollVariant: true, floor: game.wave });
+    if ((p.gear.weapons?.length || 0) < MAX_WEAPONS) {
+      p.gear.weapons.push(weapon);
+    } else {
+      p.gear.storageWeapons.push(weapon);
+    }
+  } else if (reward.type === "slotUnlock") {
+    const weapon = p.gear.weapons[reward.weaponIndex];
+    if (weapon) weapon.unlockedSlots = Math.max(weapon.unlockedSlots || 2, reward.slots);
+  } else if (reward.type === "points") {
     game.runPoints = (game.runPoints || 0) + reward.amount;
     game.gold = (game.gold || 0) + reward.amount;
   } else if (reward.type === "damageBuff") {
@@ -118,67 +135,70 @@ function renderTreasureReward() {
 }
 
 function chooseTreasureReward(excludeType = "") {
-  const rewards = [
-    {
-      type: "points",
-      name: "+20pt",
-      text: "このラン中の回収ポイントと所持ゴールドを20増やす。ラン終了時に強さはリセットされる。",
-      meta: "ポイント報酬",
-      icon: "P",
-      amount: 20,
-      weight: 24,
-    },
-    {
-      type: "damageBuff",
-      name: "攻撃力 +20%相当",
-      text: "このラン中だけ基礎ダメージを底上げする。",
-      meta: "ラン中限定",
-      icon: "⚔",
-      amount: Math.max(3, Math.round((game.player?.gear?.weapons?.[0]?.damage || 15) * 0.2)),
-      weight: 22,
-    },
-    {
-      type: "speedBuff",
-      name: "移動速度 +15%",
-      text: "このラン中だけ移動速度が上がる。",
-      meta: "ラン中限定",
-      icon: "➤",
-      multiplier: 1.15,
-      weight: 18,
-    },
-    {
-      type: "pickupBuff",
-      name: "吸引範囲 +50",
-      text: "このラン中だけポイント欠片を集めやすくなる。",
-      meta: "ラン中限定",
-      icon: "◎",
-      amount: 50,
-      weight: 16,
-    },
-    {
-      type: "hpBuff",
-      name: "最大HP +10",
-      text: "このラン中だけ最大HPと現在HPが増える。",
-      meta: "ラン中限定",
+  const p = game.player;
+  const gear = p?.gear;
+  const rewards = [];
+
+  const attachmentRoll = pickShopAttachment(game.wave || 1);
+  if (attachmentRoll?.definition) {
+    const def = attachmentRoll.definition;
+    rewards.push({
+      type: "attachment",
+      name: def.name,
+      text: def.text || "作業台で武器に装着できる。",
+      meta: `所持品に追加 / ${starsLabel(attachmentRoll.stars || def.stars || 1)} / ${(def.category || "stat")}`,
+      icon: "★",
+      attachment: { definition: def, stars: attachmentRoll.stars || def.stars || 1 },
+      weight: 70,
+    });
+  }
+
+  const template = WEAPON_POOL[Math.floor(Math.random() * WEAPON_POOL.length)];
+  if (template) {
+    const goesTo = (gear?.weapons?.length || 0) < MAX_WEAPONS ? "装備枠" : "倉庫";
+    rewards.push({
+      type: "weapon",
+      name: template.name,
+      text: template.text || "新しい武器。2本目として切り替え可能。",
+      meta: `武器 / ${goesTo}へ追加`,
+      icon: "W",
+      template,
+      weight: 15,
+    });
+  }
+
+  const slotTargets = (gear?.weapons || []).map((weapon, index) => ({ weapon, index })).filter(({ weapon }) => (weapon.unlockedSlots || 2) < 3);
+  if (slotTargets.length > 0) {
+    const target = slotTargets[Math.floor(Math.random() * slotTargets.length)];
+    rewards.push({
+      type: "slotUnlock",
+      name: `${target.weapon.name} スロット+1`,
+      text: "この武器のアタッチメント枠を3つに増やす。",
+      meta: `武器${target.index + 1} / 最大3枠`,
       icon: "+",
-      amount: 10,
-      weight: 14,
-    },
-    {
-      type: "pointBoost",
-      name: "ポイント取得量 +50%",
-      text: "このラン中、ポイント欠片の取得量が増える。",
-      meta: "ラン中限定",
-      icon: "✦",
-      amount: 0.5,
-      weight: 12,
-    },
-  ].filter((reward) => reward.type !== excludeType);
-  const total = rewards.reduce((sum, reward) => sum + reward.weight, 0);
+      weaponIndex: target.index,
+      slots: 3,
+      weight: 10,
+    });
+  }
+
+  rewards.push({
+    type: "points",
+    name: "+20pt",
+    text: "探索中の予備ポイントを20増やす。",
+    meta: "低確率の補給",
+    icon: "P",
+    amount: 20,
+    weight: 5,
+  });
+
+  const filtered = rewards.filter((reward) => reward.type !== excludeType);
+  const pool = filtered.length > 0 ? filtered : rewards;
+  const total = pool.reduce((sum, reward) => sum + reward.weight, 0);
   let roll = Math.random() * total;
-  for (const reward of rewards) {
+  for (const reward of pool) {
     roll -= reward.weight;
     if (roll <= 0) return reward;
   }
-  return rewards[0];
+  return pool[0];
 }

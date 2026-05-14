@@ -91,11 +91,13 @@ export function generateDungeon(wave) {
     exit: tileCenter(width, height, exitRoom.cx, exitRoom.cy),
     obstacles: [],
     chests: [],
+    facilities: [],
   };
 
   setDungeonTile(dungeon, exitRoom.cx, exitRoom.cy, DUNGEON_EXIT);
   dungeon.obstacles = generateObstacles(dungeon, rng, startRoom, exitRoom);
   dungeon.chests = generateChests(dungeon, rng, startRoom, exitRoom, wave);
+  dungeon.facilities = generateFacilities(dungeon, rng, startRoom, exitRoom, wave);
   return dungeon;
 }
 
@@ -121,11 +123,34 @@ export function generateArenaDungeon(wave) {
     exit: null,
     obstacles: [],
     chests: [],
+    facilities: [],
     arena: true,
     wrapEdges: true,
   };
   dungeon.obstacles = generateArenaObstacles(dungeon, rng);
   return dungeon;
+}
+
+
+function generateFacilities(dungeon, rng, startRoom, exitRoom, wave) {
+  const facilities = [];
+  const candidates = dungeon.rooms.filter((room) => room !== startRoom && room !== exitRoom);
+  const count = clamp(1 + Math.floor((wave || 1) / 3), 1, 3);
+  const shuffled = [...candidates].sort(() => rng() - 0.5);
+  for (const room of shuffled) {
+    if (facilities.length >= count) break;
+    const point = dungeonTileWorldCenter(dungeon, room.cx, room.cy);
+    if (dungeon.chests?.some((chest) => distanceSq(point.x, point.y, chest.x, chest.y) < TILE_SIZE * TILE_SIZE)) continue;
+    facilities.push({
+      type: "workbench",
+      x: point.x,
+      y: point.y,
+      radius: 30,
+      used: false,
+      holdTimer: 0,
+    });
+  }
+  return facilities;
 }
 
 function generateArenaObstacles(dungeon, rng) {

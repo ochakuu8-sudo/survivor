@@ -1,6 +1,6 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { MAX_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, RUN_DURATION_SECONDS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
+import { MAX_ATTACHMENTS, MAX_STORED_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, RUN_DURATION_SECONDS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
 import { resetEnemySpawnTimer, spawnOpeningEnemies } from "./enemies.js";
 import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponMetaLabel } from "./weapons.js";
 import {
@@ -437,8 +437,19 @@ export function chooseLevelAttachment(index) {
   updateHud();
 }
 
-export function detachAttachment() {
-  return false;
+export function detachAttachment(weaponId, slotIndex) {
+  const gear = ensureGearStorage();
+  const weapon = findWeapon(weaponId);
+  if (!gear || !weapon) return false;
+  const attachment = weapon.attachments[slotIndex];
+  if (!attachment || attachment.locked) return false;
+  if ((gear.storageAttachments || []).length >= MAX_STORED_ATTACHMENTS) return false;
+  weapon.attachments.splice(slotIndex, 1);
+  gear.storageAttachments.push(attachment);
+  recomputeAllAttachments();
+  renderShop();
+  updateHud();
+  return true;
 }
 
 export function equipStoredAttachment(storageIndex, weaponId) {
@@ -1013,7 +1024,7 @@ export function renderStarterPick() {
   const kicker = hud.starterPick.querySelector(".panel-kicker");
   const heading = hud.starterPick.querySelector("h1");
   if (kicker) kicker.textContent = "最初の武器";
-  if (heading) heading.textContent = "1つを選び、5分サバイバルへ";
+  if (heading) heading.textContent = "1つを選び、ダンジョン探索へ";
   game.starterChoices.forEach((template, index) => {
     const card = document.createElement("article");
     card.className = "starter-card offer-weapon";

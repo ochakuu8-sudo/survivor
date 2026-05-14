@@ -1,4 +1,4 @@
-import { TAU, WEAPON_STAT_KEYS, getWeaponMaxLevel } from "./constants.js";
+import { TAU, INITIAL_WEAPON_ATTACHMENT_SLOTS, MAX_ATTACHMENTS, WEAPON_STAT_KEYS, getWeaponMaxLevel } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
 import { distanceToSegmentSq, distSq } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -310,6 +310,7 @@ export function createWeapon(template, options = {}) {
     throwCounter: template.throwCounter || 0,
     shootTimer: template.shootTimer ?? 0.45,
     attachments: [],
+    unlockedSlots: Math.min(MAX_ATTACHMENTS, Math.max(1, template.unlockedSlots || INITIAL_WEAPON_ATTACHMENT_SLOTS)),
     rarity: rarityKey,
     rarityLabel,
     variantSummary: template.variantSummary || "",

@@ -1,4 +1,4 @@
-import { MAX_ATTACHMENTS, MAX_WEAPON_LEVEL } from "./constants.js";
+import { MAX_ATTACHMENTS, MAX_WEAPON_LEVEL, getWeaponMaxAttachments } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { recomputeAllAttachments, starsLabel, attachmentCategoryLabel, findAttachmentDefinition } from "./attachments.js";
@@ -10,7 +10,7 @@ import { findWeapon, getActiveWeapon } from "./weapons.js";
 const REROLL_COSTS = [0, 10, 20, 35, 55];
 
 export function maxAttachmentSlotsForWeapon(weapon) {
-  return Math.min(MAX_ATTACHMENTS, Math.max(0, (weapon?.level || 1) - 1));
+  return getWeaponMaxAttachments(weapon);
 }
 
 function firstEquippedSlotWithinLevel(weapon) {
