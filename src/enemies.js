@@ -20,13 +20,7 @@ function runProgress(elapsed = game.floorElapsed || 0) {
 }
 
 export function enemyRunSpeedMultiplier(elapsed = game.floorElapsed || 0) {
-  const p = runProgress(elapsed);
-  return 0.8 + p * 0.9 + p * p * 0.7;
-}
-
-export function enemyRunSpawnPressure(elapsed = game.floorElapsed || 0) {
-  const p = runProgress(elapsed);
-  return 1.0 + p * 2.2 + p * p * 1.4;
+  return 1 + runProgress(elapsed);
 }
 
 function pickEnemyTypeByTime(elapsed) {
@@ -83,8 +77,8 @@ export function spawnEnemies(dt) {
   game.spawnClock -= dt;
   if (game.spawnClock > 0) return;
 
-  game.spawnBatchSize = Math.ceil(SPAWN_BATCH_SIZE * enemyRunSpawnPressure());
-  const spawnCount = Math.min(game.spawnBatchSize, SAFETY_ENEMY_CAP - game.enemies.length);
+  game.spawnBatchSize = SPAWN_BATCH_SIZE;
+  const spawnCount = Math.min(SPAWN_BATCH_SIZE, SAFETY_ENEMY_CAP - game.enemies.length);
   for (let i = 0; i < spawnCount; i += 1) {
     spawnEnemy(undefined, { offscreen: true });
   }
