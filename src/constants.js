@@ -25,14 +25,15 @@ export const OFFER_TYPE_LABELS = {
 export const MAX_WEAPONS = 2;
 export const MAX_WEAPON_LEVEL = 9;
 export const INITIAL_WEAPON_ATTACHMENT_SLOTS = 2;
-export const MAX_ATTACHMENTS = 3;
+export const MAX_ATTACHMENTS_PER_WEAPON = 3;
+export const MAX_ATTACHMENTS = MAX_ATTACHMENTS_PER_WEAPON;
 export const MAX_STORED_ATTACHMENTS = 12;
-export const DEFAULT_WEAPON_LIMITS = { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS };
+export const DEFAULT_WEAPON_LIMITS = { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS_PER_WEAPON };
 export const WEAPON_RARITY_LIMITS = {
-  normal: { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS },
-  rare: { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS },
-  epic: { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS },
-  legend: { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS },
+  normal: { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS_PER_WEAPON },
+  rare: { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS_PER_WEAPON },
+  epic: { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS_PER_WEAPON },
+  legend: { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS_PER_WEAPON },
 };
 export const PLAYER_INVULNERABLE_SECONDS = 0.5;
 
@@ -46,7 +47,7 @@ export function getWeaponMaxLevel(weapon) {
 
 export function getWeaponMaxAttachments(weapon) {
   const unlocked = Number.isFinite(weapon?.unlockedSlots) ? weapon.unlockedSlots : INITIAL_WEAPON_ATTACHMENT_SLOTS;
-  return Math.min(MAX_ATTACHMENTS, Math.max(0, unlocked));
+  return Math.min(MAX_ATTACHMENTS_PER_WEAPON, Math.max(0, unlocked));
 }
 export const WEAPON_STAT_KEYS = [
   "damage",
