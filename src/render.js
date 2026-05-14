@@ -324,6 +324,18 @@ function drawWorld(view, camX, camY, zoom) {
     });
   }
 
+  for (const facility of game.dungeon?.facilities || []) {
+    const pos = visiblePositionForDraw(facility, camX, camY);
+    if (!isVisibleWorld(pos.x, pos.y, facility.radius * 2.4, view, camX, camY, zoom)) continue;
+    actors.push({
+      kind: "facility",
+      y: pos.y + facility.radius * 0.55,
+      item: facility,
+      drawX: pos.x,
+      drawY: pos.y,
+    });
+  }
+
   const visibleEnemies = [];
   for (const enemy of game.enemies) {
     const pos = visiblePositionForDraw(enemy, camX, camY);
@@ -355,6 +367,7 @@ function drawWorld(view, camX, camY, zoom) {
     if (actor.kind === "player") drawPlayer(actor.item, view, camX, camY, zoom);
     else if (actor.kind === "obstacle") drawSceneryObstacle(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
     else if (actor.kind === "chest") drawTreasureChest(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
+    else if (actor.kind === "facility") drawFacility(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
     else drawEnemy(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
   }
 
@@ -666,6 +679,18 @@ function drawTreasureChest(chest, view, camX, camY, zoom, drawX = chest.x, drawY
     drawHoldProgress(screen.x, screen.y + 44 * zoom, chest.holdTimer / INTERACTION_HOLD_SECONDS, 56 * zoom, zoom, [1, 0.86, 0.28]);
   }
   state.renderer.draw(spriteName, screen.x, screen.y + bob, width, height);
+}
+
+function drawFacility(facility, view, camX, camY, zoom, drawX = facility.x, drawY = facility.y) {
+  const screen = worldToScreen(drawX, drawY, view, camX, camY, zoom);
+  const bob = Math.sin(game.elapsed * 2.5 + (facility.x + facility.y) * 0.01) * 1.2 * zoom;
+  state.renderer.draw("shadow", screen.x, screen.y + 17 * zoom, 64 * zoom, 18 * zoom, { alpha: 0.55 });
+  state.renderer.draw("glowCyan", screen.x, screen.y + bob, 92 * zoom, 72 * zoom, { alpha: 0.17 });
+  state.renderer.draw("white", screen.x, screen.y + bob, 64 * zoom, 34 * zoom, { tint: [0.34, 0.22, 0.12], alpha: 0.96 });
+  state.renderer.draw("white", screen.x, screen.y - 12 * zoom + bob, 48 * zoom, 12 * zoom, { tint: [0.72, 0.46, 0.24], alpha: 0.98 });
+  state.renderer.draw("white", screen.x - 20 * zoom, screen.y + 16 * zoom + bob, 10 * zoom, 28 * zoom, { tint: [0.2, 0.14, 0.1], alpha: 0.96 });
+  state.renderer.draw("white", screen.x + 20 * zoom, screen.y + 16 * zoom + bob, 10 * zoom, 28 * zoom, { tint: [0.2, 0.14, 0.1], alpha: 0.96 });
+  drawHoldProgress(screen.x, screen.y + 46 * zoom, facility.holdTimer / INTERACTION_HOLD_SECONDS, 64 * zoom, zoom, [0.36, 0.92, 1]);
 }
 
 function drawHoldProgress(x, y, progress, width, zoom, tint) {

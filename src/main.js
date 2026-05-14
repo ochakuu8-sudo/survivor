@@ -5,15 +5,22 @@ import { SpriteRenderer } from "./renderer.js";
 import { bindInput } from "./input.js";
 import { frame, pauseGame, prepareCanvas, resetRun, resize, resumeGame } from "./game.js";
 import { openDebugPanel, setupDebug } from "./debug.js";
-import { continueFromSkillTree, enterDebugSkillTree, renderSkillTree } from "./skillTree.js";
+import { continueFromSkillTree, enterDebugSkillTree } from "./skillTree.js";
 import { claimPendingAttachment, rerollPendingAttachment } from "./modding.js";
 import { claimTreasureReward, rerollTreasureReward } from "./treasure.js";
+import { cycleActiveWeapon } from "./weapons.js";
+import { updateHud } from "./hud.js";
+import { closeWorkbench } from "./workbench.js";
 
 hud.restart.addEventListener("click", resetRun);
 
 hud.pauseBtn.addEventListener("click", pauseGame);
 hud.resumeBtn.addEventListener("click", resumeGame);
-if (hud.pauseSkillDebugBtn) hud.pauseSkillDebugBtn.addEventListener("click", enterDebugSkillTree);
+if (import.meta.env.DEV && hud.pauseSkillDebugBtn) {
+  hud.pauseSkillDebugBtn.addEventListener("click", enterDebugSkillTree);
+} else if (hud.pauseSkillDebugBtn) {
+  hud.pauseSkillDebugBtn.classList.add("hidden");
+}
 if (import.meta.env.DEV && hud.pauseDebugBtn) {
   hud.pauseDebugBtn.classList.remove("hidden");
   hud.pauseDebugBtn.addEventListener("click", () => {
@@ -30,10 +37,13 @@ if (hud.moddingReroll) hud.moddingReroll.addEventListener("click", rerollPending
 if (hud.moddingTake) hud.moddingTake.addEventListener("click", claimPendingAttachment);
 if (hud.treasureReroll) hud.treasureReroll.addEventListener("click", rerollTreasureReward);
 if (hud.treasureTake) hud.treasureTake.addEventListener("click", claimTreasureReward);
+if (hud.workbenchClose) hud.workbenchClose.addEventListener("click", closeWorkbench);
 if (hud.weaponSwitch) {
   hud.weaponSwitch.addEventListener("click", (event) => {
     event.preventDefault();
-    renderSkillTree();
+    if (game.mode !== "arena") return;
+    cycleActiveWeapon();
+    updateHud();
   });
 }
 

@@ -22,9 +22,11 @@ export const OFFER_TYPE_LABELS = {
   relic: "レリック",
 };
 
-export const MAX_WEAPONS = 1;
+export const MAX_WEAPONS = 2;
 export const MAX_WEAPON_LEVEL = 9;
-export const MAX_ATTACHMENTS = 8;
+export const INITIAL_WEAPON_ATTACHMENT_SLOTS = 2;
+export const MAX_ATTACHMENTS = 3;
+export const MAX_STORED_ATTACHMENTS = 12;
 export const DEFAULT_WEAPON_LIMITS = { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS };
 export const WEAPON_RARITY_LIMITS = {
   normal: { maxLevel: MAX_WEAPON_LEVEL, maxAttachments: MAX_ATTACHMENTS },
@@ -43,7 +45,8 @@ export function getWeaponMaxLevel(weapon) {
 }
 
 export function getWeaponMaxAttachments(weapon) {
-  return getWeaponRarityLimits(weapon).maxAttachments;
+  const unlocked = Number.isFinite(weapon?.unlockedSlots) ? weapon.unlockedSlots : INITIAL_WEAPON_ATTACHMENT_SLOTS;
+  return Math.min(MAX_ATTACHMENTS, Math.max(0, unlocked));
 }
 export const WEAPON_STAT_KEYS = [
   "damage",

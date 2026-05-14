@@ -1,12 +1,12 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { MAX_FRAME_DELTA_SECONDS, RUN_DURATION_SECONDS, TARGET_FRAME_SECONDS } from "./constants.js";
+import { INTERACTION_HOLD_SECONDS, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, RUN_DURATION_SECONDS, TARGET_FRAME_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, getActiveWeapon, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
 import { resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
-import { generateArenaDungeon, shortestDungeonDelta, wrapDungeonPoint } from "./dungeon.js";
+import { generateDungeon, hasReachedDungeonExit, shortestDungeonDelta, wrapDungeonPoint } from "./dungeon.js";
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
@@ -17,7 +17,8 @@ import { prepareStarterPick, renderStarterPick } from "./shop.js";
 import { enterUpgradeTree, hideSkillTree, initSkillProgress } from "./skillTree.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
-import { hideModdingPanel, levelUpWeapon } from "./modding.js";
+import { hideModdingPanel } from "./modding.js";
+import { updateFacilities } from "./workbench.js";
 
 export function resetRun() {
   game.mode = "weaponSelect";
@@ -82,9 +83,10 @@ export function resetRun() {
       attachments: [],
       storageWeapons: [],
       storageAttachments: [],
+      storageAttachmentsMax: MAX_STORED_ATTACHMENTS,
     },
   };
-  game.dungeon = generateArenaDungeon(game.wave);
+  game.dungeon = generateDungeon(game.wave);
   game.player.x = game.dungeon.start.x;
   game.player.y = game.dungeon.start.y;
   game.player.invulnerableTimer = 0;
@@ -109,6 +111,7 @@ export function resetRun() {
   hud.shop?.classList.add("hidden");
   hideSkillTree();
   hud.treasureReward.classList.add("hidden");
+  hud.workbenchPanel?.classList.add("hidden");
   hideModdingPanel();
   hud.restart.textContent = "もう一度プレイ";
   hud.gameOver.classList.add("hidden");
@@ -147,7 +150,7 @@ export function startArenaWithSelectedWeapon() {
   game.goldDrops = [];
   game.effects = [];
   game.treasureReward = null;
-  game.dungeon = generateArenaDungeon(game.wave);
+  game.dungeon = generateDungeon(game.wave);
   game.player.x = game.dungeon.start.x;
   game.player.y = game.dungeon.start.y;
   game.camera.x = game.player.x;
@@ -156,6 +159,7 @@ export function startArenaWithSelectedWeapon() {
   hideSkillTree();
   hud.shop?.classList.add("hidden");
   hud.treasureReward.classList.add("hidden");
+  hud.workbenchPanel?.classList.add("hidden");
   spawnOpeningEnemies();
   resetEnemySpawnTimer();
   updateHud();
@@ -276,6 +280,8 @@ function update(dt) {
 
   updateMovement(dt);
   updateTreasureChests(dt);
+  updateFacilities(dt);
+  updateDungeonExit(dt);
   updateWeaponTimers(p, dt);
 
   spawnEnemies(dt);
@@ -299,6 +305,20 @@ function update(dt) {
   updateHud();
 }
 
+function updateDungeonExit(dt) {
+  const p = game.player;
+  if (!p || !game.dungeon?.exit) return;
+  if (!hasReachedDungeonExit(p)) {
+    game.exitHoldTimer = 0;
+    return;
+  }
+  game.exitHoldTimer = Math.min(INTERACTION_HOLD_SECONDS, (game.exitHoldTimer || 0) + dt);
+  if (game.exitHoldTimer >= INTERACTION_HOLD_SECONDS) {
+    game.exitHoldTimer = 0;
+    startNextWave();
+  }
+}
+
 function updateRunEvents() {
   const t = game.floorElapsed || 0;
   const m = game.spawnedMilestones || (game.spawnedMilestones = { elite90: false, elite180: false, boss270: false });
@@ -311,24 +331,6 @@ function updateRunEvents() {
   if (!m.elite180 && t >= 180) {
     m.elite180 = true;
     spawnEnemy("orc", { elite: true });
-  }
-
-  const levelMilestones = [
-    ["weaponLv2", 30],
-    ["weaponLv3", 60],
-    ["weaponLv4", 90],
-    ["weaponLv5", 120],
-    ["weaponLv6", 160],
-    ["weaponLv7", 200],
-    ["weaponLv8", 240],
-    ["weaponLv9", 270],
-  ];
-  for (const [key, seconds] of levelMilestones) {
-    if (!m[key] && t >= seconds) {
-      m[key] = true;
-      levelUpWeapon(getActiveWeapon());
-      break;
-    }
   }
 
   if (!m.boss270 && t >= 270) {

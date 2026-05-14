@@ -2,7 +2,7 @@ import { RUN_DURATION_SECONDS } from "./constants.js";
 import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
 import { resetVirtualMove } from "./input.js";
-import { getActiveWeapon, weaponStatusLabel } from "./weapons.js";
+import { getActiveWeapon } from "./weapons.js";
 
 export function updateHud() {
   hud.wave.textContent = "Run";
@@ -22,6 +22,7 @@ function objectiveText() {
   if (game.mode === "upgradeTree") return "スキルツリー";
   if (game.mode === "treasure") return "宝箱報酬";
   if (game.mode === "modding") return "武器改造";
+  if (game.mode === "workbench") return "作業台";
   if (game.mode === "pause") return "一時停止";
   if (game.mode === "result") return game.runResult?.result === "clear" ? "クリア" : "ラン終了";
   if (game.mode === "over") return "ラン終了";
@@ -30,8 +31,8 @@ function objectiveText() {
     const m = Math.floor(left / 60);
     const sec = String(left % 60).padStart(2, "0");
     const weapon = getActiveWeapon();
-    const level = weapon ? ` Lv${weapon.level || 1}` : "";
-    return `${m}:${sec} / ${weapon?.name || "武器"}${level}`;
+    const floor = game.wave || 1;
+    return `B${floor}F 出口を探す / ${m}:${sec} / ${weapon?.name || "武器"}`;
   }
   return "準備中";
 }
@@ -61,13 +62,22 @@ function renderHpGauge() {
 
 function renderWeaponSwitch() {
   if (!hud.weaponSwitch) return;
+  const gear = game.player?.gear;
   const weapon = getActiveWeapon();
   const isArena = game.mode === "arena";
   hud.weaponSwitch.classList.toggle("hidden", !isArena || !weapon);
-  hud.weaponSwitch.disabled = true;
-  hud.weaponSwitch.title = "1ラン1武器制";
-  hud.weaponSwitch.setAttribute("aria-label", "現在武器");
-  hud.weaponSwitch.textContent = weapon ? `${weapon.name} / ${weaponStatusLabel(weapon)}` : "武器";
+  hud.weaponSwitch.disabled = !isArena || !gear || (gear.weapons?.length || 0) < 2;
+  hud.weaponSwitch.title = "Q / Tab で武器切り替え";
+  hud.weaponSwitch.setAttribute("aria-label", "武器切り替え");
+  if (!weapon || !gear) {
+    hud.weaponSwitch.textContent = "武器";
+    return;
+  }
+  const labels = (gear.weapons || []).map((item, index) => {
+    const active = index === (gear.activeWeaponIndex || 0) ? "▶" : "";
+    return `${active}${index === 0 ? "A" : "B"}:${item.name}(${item.attachments?.length || 0}/${item.unlockedSlots || 2})`;
+  });
+  hud.weaponSwitch.textContent = labels.join(" | ");
 }
 
 

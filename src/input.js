@@ -2,10 +2,17 @@ import { game, keys, pointer } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, normalize } from "./utils/math.js";
 import { continueFromSkillTree } from "./skillTree.js";
+import { cycleActiveWeapon } from "./weapons.js";
+import { updateHud } from "./hud.js";
 
 export function bindInput() {
   window.addEventListener("keydown", (event) => {
     keys.add(event.code);
+    if ((event.code === "KeyQ" || event.code === "Tab") && game.mode === "arena") {
+      event.preventDefault();
+      cycleActiveWeapon();
+      updateHud();
+    }
     if ((event.code === "Space" || event.code === "Enter") && game.mode === "upgradeTree") {
       continueFromSkillTree();
     }
