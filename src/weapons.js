@@ -380,7 +380,7 @@ export function weaponKindLabel(weapon) {
     projectile: "投射",
     flame: "火炎",
     laser: "レーザー",
-    sustainedLaser: "設置レーザー",
+    sustainedLaser: "持続レーザー",
     bomb: "爆発",
     timedBomb: "時限爆弾",
     chain: "電撃",
