@@ -60,6 +60,8 @@ export const game = {
   effects: [],
   offers: [],
   pendingAttachmentChoice: null,
+  pendingAttachmentReward: null,
+  modeBeforeAttachmentReward: null,
   pendingMod: null,
   modding: {
     rerollBaseCost: 10,

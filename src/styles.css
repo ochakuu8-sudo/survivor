@@ -3757,3 +3757,42 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+.mod-weapon-group {
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.85rem;
+  background: rgba(7, 18, 30, 0.54);
+}
+
+.mod-weapon-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.mod-weapon-heading strong {
+  color: #fff9f2;
+  font-size: 0.82rem;
+}
+
+.mod-weapon-heading small {
+  color: rgba(255, 249, 242, 0.64);
+  font-size: 0.68rem;
+}
+
+.modding-slots-nested {
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+.mod-slot.empty {
+  border-color: rgba(111, 232, 161, 0.42);
+}
+
+.mod-slot.filled:not(.locked) {
+  border-color: rgba(255, 215, 106, 0.42);
+}
