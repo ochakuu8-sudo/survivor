@@ -385,7 +385,7 @@ export function weaponKindLabel(weapon) {
     timedBomb: "時限爆弾",
     chain: "電撃",
     orbit: "回転",
-    sword: "斬撃",
+    sword: "ソード",
     boomerang: "往復",
     mine: "設置",
     poisonBottle: "毒",
@@ -1305,12 +1305,26 @@ function fireSword(weapon, angle) {
   const originY = p.y + Math.sin(angle) * 14;
   damageEnemiesInCone(originX, originY, angle, weapon.range, weapon.cone, weapon.damage + p.weaponPowerBonus, weapon);
 
+  weapon.swingCount = (weapon.swingCount || 0) + 1;
+  const swingDir = weapon.swingCount % 2 === 0 ? 1 : -1;
+  addEffect({
+    type: "slash",
+    x: originX,
+    y: originY,
+    angle,
+    range: weapon.range,
+    cone: weapon.cone,
+    swingDir,
+    life: 0.2,
+    maxLife: 0.2,
+    glow: weapon.effectGlow || "glowAmber",
+    tint: weapon.effectTint || [0.95, 0.9, 0.78],
+  });
+
   const cone = weapon.cone;
   const baseTint = weapon.effectTint || [0.74, 0.96, 1];
   const glow = weapon.effectGlow || "glowCyan";
-  const segments = 10;
-  weapon.swingCount = (weapon.swingCount || 0) + 1;
-  const swingDir = weapon.swingCount % 2 === 0 ? 1 : -1;
+  const segments = 8;
 
   const drawArc = (radius, width, life, tint, glowName, lifeStagger = 0) => {
     for (let i = 0; i < segments; i += 1) {
@@ -1334,9 +1348,8 @@ function fireSword(weapon, angle) {
     }
   };
 
-  drawArc(weapon.range * 0.96, 20, 0.18, [baseTint[0] * 0.7, baseTint[1] * 0.85, baseTint[2] * 0.95], glow, 0.005);
-  drawArc(weapon.range * 0.84, 11, 0.16, baseTint, glow, 0.006);
-  drawArc(weapon.range * 0.72, 4, 0.12, [0.96, 1, 1], "glowCyan", 0.006);
+  drawArc(weapon.range * 0.94, 10, 0.14, [baseTint[0] * 0.78, baseTint[1] * 0.9, baseTint[2]], glow, 0.004);
+  drawArc(weapon.range * 0.78, 4, 0.1, [0.96, 1, 1], "glowCyan", 0.004);
 
   const leadingT = swingDir > 0 ? 0.5 : -0.5;
   const leadingAngle = angle + leadingT * cone * 2;

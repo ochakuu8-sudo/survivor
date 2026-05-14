@@ -411,6 +411,18 @@ function drawWorld(view, camX, camY, zoom) {
         tint: [1, 0.22, 0.16],
         alpha: blink,
       });
+    } else if (bullet.visualForm === "miniBullet") {
+      const bulletW = Math.max(18, bullet.radius * 4.8) * zoom;
+      const bulletH = Math.max(7, bullet.radius * 1.85) * zoom;
+      state.renderer.draw(bullet.bulletGlow || "glowAmber", screen.x, screen.y, bulletW * 1.8, bulletH * 2.6, {
+        tint: bullet.bulletTint || [1, 0.82, 0.42],
+        alpha: 0.18,
+        rotation: bullet.angle,
+      });
+      state.renderer.draw(bullet.bulletSprite || "machineGunBullet", screen.x, screen.y, bulletW, bulletH, {
+        rotation: bullet.angle,
+        tint: bullet.bulletTint || [1, 0.82, 0.42],
+      });
     } else if (bullet.bulletSprite) {
       const stoneSize = bullet.radius * 2.4 * zoom;
       const lifeFrac = bullet.maxLife ? clamp(bullet.life / bullet.maxLife, 0, 1) : 1;
@@ -601,6 +613,35 @@ function drawEffects(view, camX, camY, zoom, frameStats) {
       state.renderer.draw("white", screen.x, screen.y, size * 0.82, size * 0.42, {
         tint: effect.tint || [0.38, 1, 0.42],
         alpha: alpha * 0.18,
+      });
+    } else if (effect.type === "slash") {
+      const pos = visiblePositionForDraw(effect, camX, camY);
+      const range = effect.range || 140;
+      if (!isVisibleWorld(pos.x, pos.y, range, view, camX, camY, zoom, 128)) continue;
+      frameStats.visibleEffects += 1;
+      const progress = clamp(1 - alpha, 0, 1);
+      const reach = range * (0.46 + progress * 0.1);
+      const centerX = pos.x + Math.cos(effect.angle) * reach;
+      const centerY = pos.y + Math.sin(effect.angle) * reach;
+      const screen = worldToScreen(centerX, centerY, view, camX, camY, zoom);
+      const sweepScale = 0.92 + progress * 0.18;
+      const width = range * 1.36 * sweepScale * zoom;
+      const height = range * (0.58 + (effect.cone || 0.72) * 0.36) * sweepScale * zoom;
+      const rotation = effect.angle + (effect.swingDir || 1) * (0.16 - progress * 0.1);
+      state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, width * 1.1, height * 1.24, {
+        tint: effect.tint || [0.95, 0.9, 0.78],
+        alpha: alpha * 0.28,
+        rotation,
+      });
+      state.renderer.draw("slashCrescent", screen.x, screen.y, width, height, {
+        rotation,
+        tint: effect.tint || [0.95, 0.9, 0.78],
+        alpha: alpha * 0.95,
+      });
+      state.renderer.draw("slashCrescent", screen.x + Math.cos(effect.angle) * 10 * zoom, screen.y + Math.sin(effect.angle) * 10 * zoom, width * 0.72, height * 0.52, {
+        rotation,
+        tint: [1, 1, 1],
+        alpha: alpha * 0.55,
       });
     } else if (effect.type === "burst") {
       const pos = visiblePositionForDraw(effect, camX, camY);
