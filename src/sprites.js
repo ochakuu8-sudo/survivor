@@ -51,6 +51,49 @@ function drawPixelBullet(ctx) {
   ctx.fillRect(42, 8, 4, 4);
 }
 
+function drawPixelMachineGunBullet(ctx, w, h) {
+  const cy = Math.floor(h / 2);
+  px(ctx, 1, cy - 2, 5, 4, "rgba(255, 237, 170, 0.24)");
+  px(ctx, 5, cy - 3, 11, 6, "#d99a28");
+  px(ctx, 7, cy - 4, 8, 2, "#ffd56a");
+  px(ctx, 16, cy - 2, 5, 4, "#f4e0a0");
+  px(ctx, 20, cy - 1, 3, 2, "#fff6cf");
+  px(ctx, 6, cy + 2, 10, 1, "#8f5517");
+}
+
+function drawPixelSlashCrescent(ctx, w, h) {
+  ctx.save();
+  ctx.translate(2, h / 2);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.18)";
+  ctx.lineWidth = 22;
+  ctx.beginPath();
+  ctx.arc(0, 0, w * 0.92, -0.36, 0.36);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.46)";
+  ctx.lineWidth = 14;
+  ctx.beginPath();
+  ctx.arc(0, 0, w * 0.9, -0.33, 0.33);
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.92)";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.arc(0, 0, w * 0.88, -0.29, 0.29);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.beginPath();
+  ctx.moveTo(w - 13, h / 2 - 10);
+  ctx.lineTo(w - 2, h / 2);
+  ctx.lineTo(w - 13, h / 2 + 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+  ctx.fillRect(Math.floor(w * 0.5), Math.floor(h * 0.5) - 2, Math.floor(w * 0.28), 4);
+}
+
 function drawPixelStone(ctx, w, h) {
   const cx = Math.floor(w / 2);
   const cy = Math.floor(h / 2);
@@ -788,6 +831,12 @@ export function buildAtlas() {
   });
   add("bulletReadable", 48, 20, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelBullet, 1, "rgba(17, 12, 43, 0.48)");
+  });
+  add("machineGunBullet", 24, 10, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelMachineGunBullet, 1, "rgba(17, 12, 43, 0.42)");
+  });
+  add("slashCrescent", 104, 70, (ctx, w, h) => {
+    drawPixelSlashCrescent(ctx, w, h);
   });
   add("stone", 32, 22, (ctx, w, h) => {
     drawPixelStone(ctx, w, h);
