@@ -3,7 +3,7 @@ import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { INTERACTION_HOLD_SECONDS, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, RUN_DURATION_SECONDS, TARGET_FRAME_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
-import { autoShoot, getActiveWeapon, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
+import { autoShoot, getActiveWeapon, updateDroneWeapons, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
 import { resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
 import { generateDungeon, hasReachedDungeonExit, shortestDungeonDelta, wrapDungeonPoint } from "./dungeon.js";
@@ -298,6 +298,7 @@ function update(dt) {
   updateEffects(dt);
   autoShoot();
   updateOrbitWeapons(dt);
+  updateDroneWeapons(dt);
   updateCamera(dt);
 
   if (p.hp <= 0) {

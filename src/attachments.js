@@ -607,6 +607,11 @@ export const ACTIVE_ATTACHMENTS = [
         weapon.orbitCount = (weapon.orbitCount || 1) + 1;
         weapon.areaRadius += 6;
         weapon.orbitSpeed *= 1.1;
+      } else if (weapon.kind === "drone") {
+        weapon.droneCount = (weapon.droneCount || 1) + 1;
+      } else if (weapon.kind === "mine") {
+        weapon.projectiles = (weapon.projectiles || 1) + 1;
+        weapon.maxMines = (weapon.maxMines || 8) + 2;
       } else {
         weapon.projectiles += 1;
       }
@@ -624,7 +629,8 @@ export const ACTIVE_ATTACHMENTS = [
       if (weapon.kind === "flame" || weapon.kind === "sustainedLaser") {
         addWeaponBasePercent(weapon, "fireRate", 0.08, { min: 0.15 });
       }
-      if (weapon.kind === "orbit") addWeaponBasePercent(weapon, "orbitRadius", 0.1, { min: 0 });
+      if (weapon.kind === "orbit" || weapon.kind === "drone") addWeaponBasePercent(weapon, "orbitRadius", 0.1, { min: 0 });
+      if (weapon.kind === "mine" || weapon.kind === "poisonBottle") addWeaponBasePercent(weapon, "life", 0.2, { min: 0.05 });
     },
   },
   {
@@ -737,6 +743,11 @@ export const ACTIVE_ATTACHMENTS = [
       } else if (weapon.kind === "orbit") {
         weapon.orbitCount = (weapon.orbitCount || 1) + 2;
         weapon.areaRadius += 8;
+      } else if (weapon.kind === "drone") {
+        weapon.droneCount = (weapon.droneCount || 1) + 2;
+      } else if (weapon.kind === "mine") {
+        weapon.projectiles = (weapon.projectiles || 1) + 2;
+        weapon.maxMines = (weapon.maxMines || 8) + 4;
       } else {
         weapon.projectiles += 2;
       }

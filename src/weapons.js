@@ -181,7 +181,7 @@ function roundWeaponStats(weapon) {
   WEAPON_STAT_KEYS.forEach((key) => {
     const value = weapon[key];
     if (typeof value !== "number") return;
-    const integers = new Set(["projectiles", "pierce", "chainCount", "orbitCount"]);
+    const integers = new Set(["projectiles", "pierce", "chainCount", "orbitCount", "droneCount", "maxMines"]);
     weapon[key] = integers.has(key)
       ? Math.max(0, Math.round(value))
       : Math.round(value * 100) / 100;
@@ -293,6 +293,10 @@ export function createWeapon(template, options = {}) {
     masterStoneEliteBossBonus: template.masterStoneEliteBossBonus || 0,
     radialFlame: !!template.radialFlame,
     orbitCount: template.orbitCount || 1,
+    droneCount: template.droneCount || 1,
+    maxMines: template.maxMines || 0,
+    armingTime: template.armingTime || 0,
+    returnTime: template.returnTime || 0,
     orbitPushOut: template.orbitPushOut || 0,
     bulletTint: template.bulletTint ? [...template.bulletTint] : [1, 1, 1],
     bulletGlow: template.bulletGlow || "glowAmber",
@@ -382,6 +386,10 @@ export function weaponKindLabel(weapon) {
     chain: "電撃",
     orbit: "回転",
     sword: "斬撃",
+    boomerang: "往復",
+    mine: "設置",
+    poisonBottle: "毒",
+    drone: "自律",
   };
   return labels[weapon.kind] || "武器";
 }
@@ -463,6 +471,7 @@ export function extendWeaponReach(weapon, multiplier) {
     addWeaponBasePercent(weapon, "orbitRadius", percent * 0.65, { min: 0 });
   }
   if (weapon.kind === "chain") addWeaponBasePercent(weapon, "chainRange", percent * 0.7, { min: 0 });
+  if (weapon.kind === "drone") addWeaponBasePercent(weapon, "orbitRadius", percent * 0.5, { min: 0 });
 }
 
 export function addWeaponPierce(weapon, amount = 1) {
@@ -473,6 +482,8 @@ export function addWeaponPierce(weapon, amount = 1) {
   if (weapon.kind === "flame") weapon.cone = Math.min(1.05, weapon.cone + 0.06 + rounded * 0.015);
   if (weapon.kind === "sword") weapon.cone = Math.min(1.05, weapon.cone + 0.06 + rounded * 0.015);
   if (weapon.kind === "chain") weapon.chainCount += rounded;
+  if (weapon.kind === "drone") weapon.droneCount = (weapon.droneCount || 1) + rounded;
+  if (weapon.kind === "mine") weapon.maxMines = (weapon.maxMines || 8) + rounded;
   if (weapon.explosionRadius > 0) weapon.explosionRadius += 12 + rounded * 6;
   if (weapon.areaRadius > 0) weapon.areaRadius += 8 + rounded * 4;
   if (weapon.kind === "projectile") weapon.radius += Math.max(1, Math.round(rounded * 0.65));
@@ -497,13 +508,13 @@ export function expandWeaponArea(weapon, power) {
   }
 }
 
-const TARGETLESS_KINDS = new Set(["flame", "sword"]);
+const TARGETLESS_KINDS = new Set(["flame", "sword", "mine"]);
 
 export function autoShoot() {
   const p = game.player;
   const weapon = getActiveWeapon(p);
 
-  if (!weapon || weapon.kind === "orbit") return;
+  if (!weapon || weapon.kind === "orbit" || weapon.kind === "drone") return;
   fireMasterStoneIfReady(weapon);
   if (weapon.shootTimer > 0) return;
   let target = null;
@@ -518,6 +529,78 @@ export function autoShoot() {
   fireWeapon(weapon, target);
   weapon.shootTimer = 1 / weapon.fireRate;
   game.shake = Math.max(game.shake, weapon.kick);
+}
+
+export function updateDroneWeapons(dt) {
+  const p = game.player;
+  if (!p?.gear) return;
+  const weapon = getActiveWeapon(p);
+  if (!weapon || weapon.kind !== "drone") return;
+
+  weapon.droneShootTimer = Math.max(0, (weapon.droneShootTimer || 0) - dt);
+  const count = Math.max(1, Math.round(weapon.droneCount || 1));
+  const orbitRadius = weapon.orbitRadius || 96;
+  const orbitSpeed = weapon.orbitSpeed || 2.6;
+  if (weapon.droneShootTimer <= 0 && game.enemies.length > 0) {
+    for (let i = 0; i < count; i += 1) {
+      const phase = (i / count) * TAU;
+      const spin = game.elapsed * orbitSpeed + weapon.id * 1.31 + phase;
+      const x = p.x + Math.cos(spin) * orbitRadius;
+      const y = p.y + Math.sin(spin) * orbitRadius;
+      const target = findNearestEnemyFrom(x, y, weapon.range || 420);
+      if (!target) continue;
+      const angle = targetAngle({ x, y }, target);
+      const speed = weapon.bulletSpeed || 620;
+      game.bullets.push({
+        kind: "projectile",
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        angle,
+        radius: weapon.radius || 5,
+        damage: weapon.damage + p.weaponPowerBonus,
+        life: weapon.life || 0.72,
+        maxLife: weapon.life || 0.72,
+        pierce: weapon.pierce || 0,
+        knockback: weapon.knockback || 0,
+        explosionRadius: 0,
+        explosionDamage: weapon.explosionDamage + p.weaponPowerBonus,
+        critChance: weapon.critChance || 0,
+        critMultiplier: weapon.critMultiplier || 1.75,
+        freezeChance: weapon.freezeChance || 0,
+        freezeSlow: weapon.freezeSlow || 0.62,
+        freezeDuration: weapon.freezeDuration || 1.6,
+        lifeStealPerKill: weapon.lifeStealPerKill || 0,
+        ricochetCount: weapon.ricochetCount || 0,
+        ricochetRange: weapon.ricochetRange || 220,
+        ricochetSplitCount: weapon.ricochetSplitCount || 1,
+        ricochetSpeedScale: weapon.ricochetSpeedScale || 1,
+        splitShardCount: weapon.splitShardCount || 0,
+        hitShardCount: weapon.hitShardCount || 0,
+        elasticGrowth: null,
+        splitSpawnLimit: weapon.splitSpawnLimit || 10,
+        chainShatterChance: 0,
+        chainShatterRadiusScale: 0.6,
+        chainShatterDamageScale: 0.45,
+        originId: `${weapon.id}:drone:${i}:${game.elapsed.toFixed(3)}`,
+        spawnedFromOrigin: 1,
+        lastHitId: null,
+        bulletTint: weapon.bulletTint,
+        bulletGlow: weapon.bulletGlow,
+        bulletSprite: "droneShot",
+        trail: "white",
+        hitEffect: "normal",
+        effectTint: weapon.effectTint,
+        effectGlow: weapon.effectGlow,
+        spinSeed: 0,
+        spinRate: 0,
+        hitIds: new Set(),
+      });
+      addEffect({ type: "line", x1: x, y1: y, x2: x + Math.cos(angle) * 28, y2: y + Math.sin(angle) * 28, width: 5, life: 0.08, maxLife: 0.08, glow: weapon.effectGlow, tint: weapon.effectTint });
+    }
+    weapon.droneShootTimer = 1 / Math.max(0.15, weapon.fireRate || 2.2);
+  }
 }
 
 export function updateOrbitWeapons(dt) {
@@ -652,6 +735,18 @@ function fireWeapon(weapon, target) {
   }
   if (weapon.kind === "timedBomb") {
     fireTimedBomb(weapon, angle);
+    return;
+  }
+  if (weapon.kind === "boomerang") {
+    fireBoomerang(weapon, angle);
+    return;
+  }
+  if (weapon.kind === "mine") {
+    fireMine(weapon, angle);
+    return;
+  }
+  if (weapon.kind === "poisonBottle") {
+    firePoisonBottle(weapon, angle);
     return;
   }
   if (weapon.kind === "pulseBomb") {
@@ -962,21 +1057,23 @@ function fireSustainedLaser(weapon, angle) {
 
 function fireTimedBomb(weapon, angle) {
   const p = game.player;
+  const speed = weapon.bulletSpeed || 460;
+  const fuse = Math.max(0.45, weapon.fuse || weapon.life || 0.85);
   const placeX = p.x + Math.cos(angle) * 18;
   const placeY = p.y + Math.sin(angle) * 18;
-  const fuse = Math.max(0.45, weapon.fuse || weapon.life || 2);
   game.bullets.push({
     kind: "timedBomb",
     x: placeX,
     y: placeY,
-    vx: 0,
-    vy: 0,
-    angle: game.elapsed,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    angle,
     radius: weapon.radius,
-    damage: 0,
+    damage: weapon.damage + p.weaponPowerBonus,
     life: fuse,
     maxLife: fuse,
     pierce: 0,
+    knockback: weapon.knockback || 0,
     explosionRadius: weapon.explosionRadius,
     explosionDamage: weapon.explosionDamage + p.weaponPowerBonus,
     critChance: weapon.critChance || 0,
@@ -989,20 +1086,148 @@ function fireTimedBomb(weapon, angle) {
     bulletGlow: weapon.bulletGlow,
     effectTint: weapon.effectTint,
     effectGlow: weapon.effectGlow,
-    collides: false,
+    bulletSprite: weapon.bulletSprite || "bomb",
+    spinSeed: Math.random() * TAU,
+    spinRate: 3.2,
+    collides: true,
     hitIds: new Set(),
   });
-  addEffect({
-    type: "burst",
-    x: placeX,
-    y: placeY,
-    radius: 24,
-    life: 0.18,
-    maxLife: 0.18,
-    glow: weapon.effectGlow,
-    tint: weapon.effectTint,
+  addSparks(placeX, placeY, 2, 70);
+}
+
+function fireBoomerang(weapon, angle) {
+  const p = game.player;
+  const speed = weapon.bulletSpeed || 540;
+  const life = weapon.life || 2.1;
+  game.bullets.push({
+    kind: "boomerang",
+    x: p.x + Math.cos(angle) * 24,
+    y: p.y + Math.sin(angle) * 24,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    angle,
+    radius: weapon.radius,
+    damage: weapon.damage + p.weaponPowerBonus,
+    life,
+    maxLife: life,
+    returnTime: weapon.returnTime || life * 0.45,
+    age: 0,
+    pierce: 999,
+    knockback: weapon.knockback || 0,
+    explosionRadius: 0,
+    explosionDamage: weapon.explosionDamage + p.weaponPowerBonus,
+    critChance: weapon.critChance || 0,
+    critMultiplier: weapon.critMultiplier || 1.75,
+    freezeChance: weapon.freezeChance || 0,
+    freezeSlow: weapon.freezeSlow || 0.62,
+    freezeDuration: weapon.freezeDuration || 1.6,
+    lifeStealPerKill: weapon.lifeStealPerKill || 0,
+    bulletTint: weapon.bulletTint,
+    bulletGlow: weapon.bulletGlow,
+    bulletSprite: weapon.bulletSprite || "boomerang",
+    trail: "orange",
+    hitEffect: "normal",
+    effectTint: weapon.effectTint,
+    effectGlow: weapon.effectGlow,
+    spinSeed: Math.random() * TAU,
+    spinRate: 11,
+    hitIds: new Set(),
+    hitCooldowns: new Map(),
   });
 }
+
+function fireMine(weapon, angle) {
+  const p = game.player;
+  const count = Math.max(1, Math.round(weapon.projectiles || 1));
+  const maxMines = Math.max(count, Math.round(weapon.maxMines || 8));
+  const existing = game.bullets.filter((bullet) => bullet.kind === "mine" && bullet.weaponId === weapon.id);
+  const overflow = existing.length + count - maxMines;
+  if (overflow > 0) {
+    let removed = 0;
+    game.bullets = game.bullets.filter((bullet) => {
+      if (removed < overflow && bullet.kind === "mine" && bullet.weaponId === weapon.id) {
+        removed += 1;
+        return false;
+      }
+      return true;
+    });
+  }
+  const backAngle = Math.atan2(-(p.facingY ?? Math.sin(angle)), -(p.facingX ?? Math.cos(angle)));
+  for (let i = 0; i < count; i += 1) {
+    const offset = (i - (count - 1) / 2) * 26;
+    const side = backAngle + Math.PI / 2;
+    const x = p.x + Math.cos(backAngle) * 42 + Math.cos(side) * offset;
+    const y = p.y + Math.sin(backAngle) * 42 + Math.sin(side) * offset;
+    game.bullets.push({
+      kind: "mine",
+      weaponId: weapon.id,
+      x,
+      y,
+      vx: 0,
+      vy: 0,
+      angle: game.elapsed,
+      radius: weapon.radius,
+      damage: 0,
+      life: weapon.life || 10,
+      maxLife: weapon.life || 10,
+      armingTime: weapon.armingTime || 0.35,
+      explosionRadius: weapon.explosionRadius,
+      explosionDamage: weapon.explosionDamage + p.weaponPowerBonus,
+      critChance: weapon.critChance || 0,
+      critMultiplier: weapon.critMultiplier || 1.75,
+      freezeChance: weapon.freezeChance || 0,
+      freezeSlow: weapon.freezeSlow || 0.62,
+      freezeDuration: weapon.freezeDuration || 1.6,
+      lifeStealPerKill: weapon.lifeStealPerKill || 0,
+      bulletTint: weapon.bulletTint,
+      bulletGlow: weapon.bulletGlow,
+      effectTint: weapon.effectTint,
+      effectGlow: weapon.effectGlow,
+      bulletSprite: weapon.bulletSprite || "mine",
+      collides: false,
+      hitIds: new Set(),
+    });
+  }
+}
+
+function firePoisonBottle(weapon, angle) {
+  const p = game.player;
+  const speed = weapon.bulletSpeed || 480;
+  const life = weapon.life || Math.max(0.55, (weapon.range || 520) / speed);
+  game.bullets.push({
+    kind: "poisonBottle",
+    x: p.x + Math.cos(angle) * 20,
+    y: p.y + Math.sin(angle) * 20,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    angle,
+    radius: weapon.radius || 8,
+    damage: 0,
+    life,
+    maxLife: life,
+    pierce: 0,
+    areaRadius: weapon.areaRadius || 100,
+    duration: weapon.duration || 4.2,
+    tickRate: weapon.tickRate || 3.5,
+    poolDamage: weapon.damage + p.weaponPowerBonus,
+    critChance: weapon.critChance || 0,
+    critMultiplier: weapon.critMultiplier || 1.75,
+    freezeChance: Math.max(weapon.freezeChance || 0, 1),
+    freezeSlow: weapon.freezeSlow || 0.82,
+    freezeDuration: weapon.freezeDuration || 0.65,
+    lifeStealPerKill: weapon.lifeStealPerKill || 0,
+    bulletTint: weapon.bulletTint,
+    bulletGlow: weapon.bulletGlow,
+    effectTint: weapon.effectTint,
+    effectGlow: weapon.effectGlow,
+    bulletSprite: weapon.bulletSprite || "poisonBottle",
+    spinSeed: Math.random() * TAU,
+    spinRate: 5,
+    collides: true,
+    hitIds: new Set(),
+  });
+}
+
 
 function firePulseBomb(weapon) {
   const p = game.player;

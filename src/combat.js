@@ -260,6 +260,21 @@ export function updateEffects(dt) {
         );
         effect.tickTimer += tickInterval;
       }
+    } else if (effect.type === "poisonPool" && effect.life > 0) {
+      const tickRate = effect.tickRate || 3;
+      const tickInterval = 1 / tickRate;
+      effect.tickTimer = (effect.tickTimer ?? 0) - dt;
+      while (effect.tickTimer <= 0) {
+        damageEnemiesInRadius(
+          effect.x,
+          effect.y,
+          effect.radius || 90,
+          (effect.damage || 1) / tickRate,
+          0.82,
+          effect,
+        );
+        effect.tickTimer += tickInterval;
+      }
     }
     if (effect.life > 0) kept.push(effect);
   }
