@@ -65,25 +65,32 @@ function drawPixelSwordSlash(ctx, w, h) {
   const cx = w * 0.47;
   const cy = h * 0.5;
   const outer = Math.min(w * 0.5, h * 0.88);
-  const inner = outer * 0.72;
+  const inner = outer * 0.68;
   const start = -1.08;
   const end = 1.08;
 
   ctx.save();
   ctx.translate(cx, cy);
 
-  ctx.fillStyle = "rgba(24, 18, 48, 0.3)";
+  ctx.fillStyle = "rgba(24, 18, 48, 0.58)";
   ctx.beginPath();
-  ctx.arc(0, 0, outer + 4, start, end, false);
-  ctx.arc(outer * 0.35, 0, inner + 3, end, start, true);
+  ctx.arc(0, 0, outer + 5, start, end, false);
+  ctx.arc(outer * 0.35, 0, inner + 4, end, start, true);
   ctx.closePath();
   ctx.fill();
 
+  ctx.strokeStyle = "rgba(255, 132, 24, 0.9)";
+  ctx.lineWidth = Math.max(3, outer * 0.09);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(0, 0, outer + 1, start + 0.03, end - 0.03, false);
+  ctx.stroke();
+
   const blade = ctx.createLinearGradient(-outer * 0.32, 0, outer * 0.9, 0);
-  blade.addColorStop(0, "rgba(255, 255, 255, 0.08)");
-  blade.addColorStop(0.4, "rgba(255, 246, 196, 0.86)");
-  blade.addColorStop(0.76, "rgba(255, 255, 255, 0.98)");
-  blade.addColorStop(1, "rgba(255, 190, 76, 0.58)");
+  blade.addColorStop(0, "rgba(255, 190, 76, 0.22)");
+  blade.addColorStop(0.3, "rgba(255, 206, 72, 0.96)");
+  blade.addColorStop(0.65, "rgba(255, 255, 255, 1)");
+  blade.addColorStop(1, "rgba(255, 132, 24, 0.86)");
   ctx.fillStyle = blade;
   ctx.beginPath();
   ctx.arc(0, 0, outer, start, end, false);
@@ -91,11 +98,62 @@ function drawPixelSwordSlash(ctx, w, h) {
   ctx.closePath();
   ctx.fill();
 
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.88)";
-  ctx.lineWidth = Math.max(2, outer * 0.07);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.96)";
+  ctx.lineWidth = Math.max(2, outer * 0.08);
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.arc(outer * 0.02, 0, outer * 0.86, -0.82, 0.82, false);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawPixelSwordSlashRange(ctx, w, h) {
+  const tipX = Math.max(3, Math.floor(w * 0.05));
+  const cy = h * 0.5;
+  const endX = w - Math.max(4, Math.floor(w * 0.04));
+  const halfH = h * 0.42;
+  const ctrlX = w * 0.72;
+
+  ctx.save();
+
+  ctx.fillStyle = "rgba(24, 18, 48, 0.36)";
+  ctx.beginPath();
+  ctx.moveTo(tipX, cy);
+  ctx.quadraticCurveTo(ctrlX, cy - halfH - 4, endX, cy - halfH);
+  ctx.quadraticCurveTo(w * 0.94, cy, endX, cy + halfH);
+  ctx.quadraticCurveTo(ctrlX, cy + halfH + 4, tipX, cy);
+  ctx.closePath();
+  ctx.fill();
+
+  const fill = ctx.createLinearGradient(tipX, cy, endX, cy);
+  fill.addColorStop(0, "rgba(255, 166, 38, 0.12)");
+  fill.addColorStop(0.58, "rgba(255, 196, 54, 0.34)");
+  fill.addColorStop(1, "rgba(255, 94, 24, 0.18)");
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.moveTo(tipX, cy);
+  ctx.quadraticCurveTo(ctrlX, cy - halfH, endX, cy - halfH);
+  ctx.quadraticCurveTo(w * 0.92, cy, endX, cy + halfH);
+  ctx.quadraticCurveTo(ctrlX, cy + halfH, tipX, cy);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(255, 229, 94, 0.9)";
+  ctx.lineWidth = Math.max(2, h * 0.055);
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(tipX, cy);
+  ctx.quadraticCurveTo(ctrlX, cy - halfH, endX, cy - halfH);
+  ctx.quadraticCurveTo(w * 0.92, cy, endX, cy + halfH);
+  ctx.quadraticCurveTo(ctrlX, cy + halfH, tipX, cy);
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.52)";
+  ctx.lineWidth = Math.max(1, h * 0.025);
+  ctx.beginPath();
+  ctx.moveTo(tipX + w * 0.22, cy);
+  ctx.quadraticCurveTo(ctrlX, cy - halfH * 0.52, endX - w * 0.08, cy - halfH * 0.52);
   ctx.stroke();
 
   ctx.restore();
@@ -867,6 +925,9 @@ export function buildAtlas() {
   });
   add("machineGunBullet", 24, 10, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelMachineGunBullet, 1, "rgba(17, 12, 43, 0.42)");
+  });
+  add("swordSlashRange", 128, 96, (ctx, w, h) => {
+    drawPixelSwordSlashRange(ctx, w, h);
   });
   add("swordSlash", 112, 76, (ctx, w, h) => {
     drawPixelSwordSlash(ctx, w, h);

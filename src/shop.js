@@ -187,7 +187,7 @@ export const WEAPON_POOL = [
       radius: 10,
       knockback: 14,
       kick: 2.1,
-      effectTint: [0.95, 0.9, 0.78],
+      effectTint: [1, 0.62, 0.18],
       effectGlow: "glowAmber",
       bulletSprite: "swordIcon",
     },
