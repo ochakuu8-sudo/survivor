@@ -1,4 +1,3 @@
-import { RUN_DURATION_SECONDS } from "./constants.js";
 import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
 import { resetVirtualMove } from "./input.js";
@@ -27,12 +26,12 @@ function objectiveText() {
   if (game.mode === "result") return game.runResult?.result === "clear" ? "クリア" : "ラン終了";
   if (game.mode === "over") return "ラン終了";
   if (game.mode === "arena") {
-    const left = Math.max(0, Math.ceil(RUN_DURATION_SECONDS - (game.floorElapsed || 0)));
-    const m = Math.floor(left / 60);
-    const sec = String(left % 60).padStart(2, "0");
+    const elapsed = Math.max(0, Math.floor(game.floorElapsed || 0));
+    const m = Math.floor(elapsed / 60);
+    const sec = String(elapsed % 60).padStart(2, "0");
     const weapon = getActiveWeapon();
     const floor = game.wave || 1;
-    return `B${floor}F 出口を探す / ${m}:${sec} / ${weapon?.name || "武器"}`;
+    return `B${floor}F 出口を探す / 滞在 ${m}:${sec} / ${weapon?.name || "武器"}`;
   }
   return "準備中";
 }

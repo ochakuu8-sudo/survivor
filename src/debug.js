@@ -41,7 +41,7 @@ export function setupDebug() {
   });
   hud.dbgNextWave.addEventListener("click", () => {
     if (!game.player?.gear?.weapons?.length) return;
-    game.floorElapsed = Math.min(299, (game.floorElapsed || 0) + 60);
+    game.floorElapsed = (game.floorElapsed || 0) + 60;
     game.runPoints = (game.runPoints || 0) + 20;
     updateHud();
   });

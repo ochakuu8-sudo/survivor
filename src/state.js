@@ -1,5 +1,3 @@
-import { RUN_DURATION_SECONDS } from "./constants.js";
-
 export const keys = new Set();
 
 export const pointer = {
@@ -22,7 +20,6 @@ export const game = {
   wave: 1,
   elapsed: 0,
   floorElapsed: 0,
-  waveTimeLeft: RUN_DURATION_SECONDS,
   waveClearCount: 0,
   eliteSpawned: false,
   selectedWeapon: null,
