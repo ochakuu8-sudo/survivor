@@ -1,6 +1,6 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { MAX_ATTACHMENTS, MAX_STORED_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
+import { INITIAL_WEAPON_ONLY_RUN, MAX_ATTACHMENTS, MAX_STORED_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, STARTER_WEAPON_NAME, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
 import { resetEnemySpawnTimer, spawnOpeningEnemies } from "./enemies.js";
 import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponMetaLabel } from "./weapons.js";
 import {
@@ -880,6 +880,12 @@ function buildWeaponSlot(weapon, index) {
 }
 
 export function prepareStarterPick() {
+  if (INITIAL_WEAPON_ONLY_RUN) {
+    const fixedStarter = WEAPON_POOL.find((template) => template.name === STARTER_WEAPON_NAME) || WEAPON_POOL[0];
+    game.starterChoices = fixedStarter ? [fixedStarter] : [];
+    return;
+  }
+
   const normalWeapons = WEAPON_POOL.filter((template) => (template.rarity || template.weapon?.rarity) === "normal");
   const starterPool = normalWeapons.length > 0 ? normalWeapons : WEAPON_POOL;
   game.starterChoices = shuffle(starterPool).slice(0, 3);
@@ -889,10 +895,7 @@ export function pickStarterWeapon(index) {
   const template = game.starterChoices[index];
   if (!template) return;
   const weapon = createWeapon({ name: template.name, ...template.weapon });
-  const backupTemplate = WEAPON_POOL.find((candidate) => candidate !== template && (candidate.rarity || candidate.weapon?.rarity) === "normal")
-    || WEAPON_POOL.find((candidate) => candidate !== template);
-  const backupWeapon = backupTemplate ? createWeapon({ name: backupTemplate.name, ...backupTemplate.weapon }) : null;
-  game.player.gear.weapons = backupWeapon ? [weapon, backupWeapon] : [weapon];
+  game.player.gear.weapons = [weapon];
   game.player.gear.activeWeaponIndex = 0;
   game.selectedWeapon = weapon.baseName || weapon.name;
   game.starterChoices = [];
@@ -912,7 +915,11 @@ export function renderStarterPick() {
   const kicker = hud.starterPick.querySelector(".panel-kicker");
   const heading = hud.starterPick.querySelector("h1");
   if (kicker) kicker.textContent = "最初の武器";
-  if (heading) heading.textContent = "メインを選び、武器A/Bでダンジョン探索へ";
+  if (heading) {
+    heading.textContent = INITIAL_WEAPON_ONLY_RUN
+      ? `${STARTER_WEAPON_NAME}で探索開始`
+      : "メインを選び、武器A/Bでダンジョン探索へ";
+  }
   game.starterChoices.forEach((template, index) => {
     const card = document.createElement("article");
     card.className = "starter-card offer-weapon";
@@ -930,7 +937,7 @@ export function renderStarterPick() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "starter-card-pick";
-    button.textContent = "これを武器Aにする";
+    button.textContent = INITIAL_WEAPON_ONLY_RUN ? "探索を開始" : "これを武器Aにする";
     button.addEventListener("click", () => pickStarterWeapon(index));
 
     card.append(tag, title, text, button);

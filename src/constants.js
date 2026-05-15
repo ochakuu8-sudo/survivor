@@ -23,7 +23,9 @@ export const OFFER_TYPE_LABELS = {
   relic: "レリック",
 };
 
-export const MAX_WEAPONS = 2;
+export const INITIAL_WEAPON_ONLY_RUN = true;
+export const STARTER_WEAPON_NAME = "石ころ";
+export const MAX_WEAPONS = INITIAL_WEAPON_ONLY_RUN ? 1 : 2;
 export const MAX_WEAPON_LEVEL = 9;
 export const INITIAL_WEAPON_ATTACHMENT_SLOTS = 2;
 export const MAX_ATTACHMENTS_PER_WEAPON = 3;
