@@ -15,7 +15,7 @@ const OBSTACLE_TYPES = [
   { sprite: "fieldFence", radius: 18, clearance: 34, scale: 1 },
   { sprite: "fieldFlowers", radius: 0, clearance: 24, scale: 1 },
 ];
-const EXIT_INTERACTION_RADIUS_SCALE = 2;
+const EXIT_INTERACTION_RADIUS = TILE_SIZE * 0.42;
 const DUNGEON_WIDTH_BASE = 48;
 const DUNGEON_WIDTH_PER_WAVE = 2.4;
 const DUNGEON_WIDTH_MAX = 84;
@@ -88,7 +88,7 @@ export function generateDungeon(wave) {
     offsetX: -width * TILE_SIZE * 0.5,
     offsetY: -height * TILE_SIZE * 0.5,
     start: tileCenter(width, height, startRoom.cx, startRoom.cy),
-    exit: tileCenter(width, height, exitRoom.cx, exitRoom.cy),
+    exit: { ...tileCenter(width, height, exitRoom.cx, exitRoom.cy), tx: exitRoom.cx, ty: exitRoom.cy },
     obstacles: [],
     chests: [],
     facilities: [],
@@ -288,7 +288,7 @@ export function createTreasureChestAt(x, y, label = "改造宝箱") {
 export function hasReachedDungeonExit(actor) {
   const exit = game.dungeon?.exit;
   if (!exit || !actor) return false;
-  return Math.hypot(actor.x - exit.x, actor.y - exit.y) <= (actor.radius + TILE_SIZE * 0.34) * EXIT_INTERACTION_RADIUS_SCALE;
+  return Math.hypot(actor.x - exit.x, actor.y - exit.y) <= (actor.radius || 0) + EXIT_INTERACTION_RADIUS;
 }
 
 export function getDungeonTile(dungeon, tx, ty) {

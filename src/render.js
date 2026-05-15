@@ -1,5 +1,6 @@
 import {
   BACKGROUND_CACHE_LIMIT,
+  EXIT_HOLD_SECONDS,
   INTERACTION_HOLD_SECONDS,
   MOBILE_CAMERA_ZOOM,
   TAU,
@@ -278,7 +279,7 @@ function isVisibleLineWorld(x1, y1, x2, y2, width, view, camX, camY, zoom, margi
 function drawWorld(view, camX, camY, zoom) {
   const frameStats = createFrameRenderStats();
 
-  if (!game.dungeon?.arena) drawDungeonExit(view, camX, camY, zoom);
+  if (!game.dungeon?.arena) drawDungeonStairs(view, camX, camY, zoom);
 
   for (const particle of game.particles) {
     const alpha = clamp(particle.life / particle.maxLife, 0, 1);
@@ -489,26 +490,15 @@ function drawDroneWeapons(view, camX, camY, zoom) {
   }
 }
 
-function drawDungeonExit(view, camX, camY, zoom) {
+function drawDungeonStairs(view, camX, camY, zoom) {
   const exit = game.dungeon?.exit;
   if (!exit) return;
   const screen = worldToScreen(exit.x, exit.y, view, camX, camY, zoom);
   const pulse = 1 + Math.sin(game.elapsed * 4) * 0.08;
-  state.renderer.draw("glowAmber", screen.x, screen.y, 190 * pulse * zoom, 190 * pulse * zoom, { alpha: 0.34 });
-  state.renderer.draw("white", screen.x, screen.y, 70 * zoom, 70 * zoom, {
-    tint: [0.96, 0.76, 0.26],
-    alpha: 0.88,
-    rotation: Math.PI / 4,
-  });
-  state.renderer.draw("white", screen.x, screen.y, 42 * zoom, 42 * zoom, {
-    tint: [0.92, 1, 0.62],
-    alpha: 0.88,
-  });
-  state.renderer.draw("white", screen.x, screen.y - 4 * zoom, 18 * zoom, 54 * zoom, {
-    tint: [0.3, 0.18, 0.08],
-    alpha: 0.85,
-  });
-  drawHoldProgress(screen.x, screen.y + 50 * zoom, game.exitHoldTimer / INTERACTION_HOLD_SECONDS, 72 * zoom, zoom, [0.92, 1, 0.62]);
+  state.renderer.draw("glowAmber", screen.x, screen.y, 150 * pulse * zoom, 118 * pulse * zoom, { alpha: 0.24 });
+  state.renderer.draw("shadow", screen.x, screen.y + 18 * zoom, 82 * zoom, 24 * zoom, { alpha: 0.56 });
+  state.renderer.draw("stairsDown", screen.x, screen.y, 76 * zoom, 58 * zoom);
+  drawHoldProgress(screen.x, screen.y + 48 * zoom, game.exitHoldTimer / EXIT_HOLD_SECONDS, 72 * zoom, zoom, [0.92, 1, 0.62]);
 }
 
 function drawOrbitWeapons(view, camX, camY, zoom) {

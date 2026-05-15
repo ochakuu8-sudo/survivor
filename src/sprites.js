@@ -653,6 +653,28 @@ function drawPixelSkeleton(ctx, w, h) {
   ctx.restore();
 }
 
+function drawPixelStairsDown(ctx, w, h) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 34, cy + 21, 68, 7, "rgba(35, 25, 76, 0.34)");
+  px(ctx, cx - 31, cy + 14, 62, 12, "#2b2118");
+  px(ctx, cx - 27, cy + 7, 54, 11, "#3a2a1d");
+  px(ctx, cx - 23, cy, 46, 10, "#4b3421");
+  px(ctx, cx - 19, cy - 7, 38, 9, "#5d3f26");
+  px(ctx, cx - 15, cy - 13, 30, 8, "#7a522d");
+  px(ctx, cx - 11, cy - 18, 22, 7, "#9b6a36");
+  px(ctx, cx - 31, cy + 13, 62, 3, "#c7944e");
+  px(ctx, cx - 27, cy + 6, 54, 3, "#d5a55d");
+  px(ctx, cx - 23, cy - 1, 46, 3, "#e2b56e");
+  px(ctx, cx - 19, cy - 8, 38, 3, "#edc47d");
+  px(ctx, cx - 15, cy - 14, 30, 3, "#ffdd91");
+  px(ctx, cx - 11, cy - 19, 22, 3, "#fff0b7");
+  px(ctx, cx - 35, cy + 11, 5, 14, "#1d1510");
+  px(ctx, cx + 30, cy + 11, 5, 14, "#1d1510");
+  px(ctx, cx - 29, cy - 17, 5, 37, "rgba(255, 236, 170, 0.16)");
+  px(ctx, cx + 24, cy - 17, 5, 37, "rgba(255, 236, 170, 0.13)");
+}
+
 export function buildAtlas() {
   const specs = [];
   const add = (name, width, height, draw) => specs.push({ name, width, height, draw });
@@ -788,6 +810,10 @@ export function buildAtlas() {
 
   add("fieldTree", 96, 112, (ctx, w, h) => {
     drawPixelFieldTree(ctx, w, h);
+  });
+
+  add("stairsDown", 80, 64, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, drawPixelStairsDown, 1, "rgba(17, 12, 43, 0.58)");
   });
 
   add("treasureChest", 64, 58, (ctx, w, h) => {

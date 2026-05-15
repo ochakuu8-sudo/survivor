@@ -31,7 +31,7 @@ function objectiveText() {
     const sec = String(elapsed % 60).padStart(2, "0");
     const weapon = getActiveWeapon();
     const floor = game.wave || 1;
-    return `B${floor}F 出口を探す / 滞在 ${m}:${sec} / ${weapon?.name || "武器"}`;
+    return `B${floor}F 階段を探す / 滞在 ${m}:${sec} / ${weapon?.name || "武器"}`;
   }
   return "準備中";
 }

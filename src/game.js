@@ -1,7 +1,7 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { INTERACTION_HOLD_SECONDS, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS } from "./constants.js";
+import { EXIT_HOLD_SECONDS, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, getActiveWeapon, updateDroneWeapons, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
@@ -312,8 +312,8 @@ function updateDungeonExit(dt) {
     game.exitHoldTimer = 0;
     return;
   }
-  game.exitHoldTimer = Math.min(INTERACTION_HOLD_SECONDS, (game.exitHoldTimer || 0) + dt);
-  if (game.exitHoldTimer >= INTERACTION_HOLD_SECONDS) {
+  game.exitHoldTimer = Math.min(EXIT_HOLD_SECONDS, (game.exitHoldTimer || 0) + dt);
+  if (game.exitHoldTimer >= EXIT_HOLD_SECONDS) {
     game.exitHoldTimer = 0;
     startNextWave();
   }
