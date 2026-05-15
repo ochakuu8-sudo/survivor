@@ -365,6 +365,7 @@ export function setActiveWeaponIndex(index) {
 export function cycleActiveWeapon() {
   const gear = game.player?.gear;
   if (!gear?.weapons?.length) return null;
+  if (gear.weapons.length < 2) return getActiveWeapon(game.player);
   gear.activeWeaponIndex = (clampActiveWeaponIndex(gear) + 1) % gear.weapons.length;
   game.shake = Math.max(game.shake, 1.2);
   return getActiveWeapon(game.player);

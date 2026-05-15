@@ -64,8 +64,9 @@ function renderWeaponSwitch() {
   const gear = game.player?.gear;
   const weapon = getActiveWeapon();
   const isArena = game.mode === "arena";
-  hud.weaponSwitch.classList.toggle("hidden", !isArena || !weapon);
-  hud.weaponSwitch.disabled = !isArena || !gear || (gear.weapons?.length || 0) < 2;
+  const canSwitch = isArena && !!weapon && (gear?.weapons?.length || 0) >= 2;
+  hud.weaponSwitch.classList.toggle("hidden", !canSwitch);
+  hud.weaponSwitch.disabled = !canSwitch;
   hud.weaponSwitch.title = "Q / Tab で武器切り替え";
   hud.weaponSwitch.setAttribute("aria-label", "武器切り替え");
   if (!weapon || !gear) {

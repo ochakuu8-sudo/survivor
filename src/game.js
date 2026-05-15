@@ -1,7 +1,7 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { EXIT_HOLD_SECONDS, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS } from "./constants.js";
+import { EXIT_HOLD_SECONDS, INITIAL_WEAPON_ONLY_RUN, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, getActiveWeapon, updateDroneWeapons, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
@@ -13,7 +13,7 @@ import { updateEffects, updateEnemyProjectiles } from "./combat.js";
 import { updateGoldDrops } from "./gold.js";
 import { updateTreasureChests } from "./treasure.js";
 import { updateMovement } from "./player.js";
-import { prepareStarterPick, renderStarterPick } from "./shop.js";
+import { pickStarterWeapon, prepareStarterPick, renderStarterPick } from "./shop.js";
 import { enterUpgradeTree, hideSkillTree, initSkillProgress } from "./skillTree.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
@@ -119,8 +119,12 @@ export function resetRun() {
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel?.classList.add("hidden");
   prepareStarterPick();
-  renderStarterPick();
-  updateHud();
+  if (INITIAL_WEAPON_ONLY_RUN) {
+    pickStarterWeapon(0);
+  } else {
+    renderStarterPick();
+    updateHud();
+  }
 }
 
 export function startArenaWithSelectedWeapon() {
