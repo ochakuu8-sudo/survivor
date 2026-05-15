@@ -1,6 +1,6 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { MAX_ATTACHMENTS, MAX_STORED_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, RUN_DURATION_SECONDS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
+import { MAX_ATTACHMENTS, MAX_STORED_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
 import { resetEnemySpawnTimer, spawnOpeningEnemies } from "./enemies.js";
 import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponMetaLabel } from "./weapons.js";
 import {
@@ -898,7 +898,6 @@ export function pickStarterWeapon(index) {
   game.starterChoices = [];
   game.mode = "arena";
   game.floorElapsed = 0;
-  game.waveTimeLeft = RUN_DURATION_SECONDS;
   game.spawnClock = 0;
   game.spawnBatchSize = 0;
   window.dispatchEvent(new CustomEvent("starter-weapon-picked"));

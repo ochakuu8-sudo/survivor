@@ -1,4 +1,4 @@
-import { COLLISION_CELL_SIZE, RUN_DURATION_SECONDS, TAU } from "./constants.js";
+import { COLLISION_CELL_SIZE, ENEMY_SPEED_RAMP_SECONDS, TAU } from "./constants.js";
 import { enemyCollisionGrid, game, nextEnemyId } from "./state.js";
 import { distanceToSegmentSq, gridKey, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
@@ -16,7 +16,7 @@ const ENEMY_PUSH_STRENGTH = 0.42;
 const ENEMY_PUSH_MAX_STEP = 5.5;
 
 function runProgress(elapsed = game.floorElapsed || 0) {
-  return Math.min(1, Math.max(0, elapsed / RUN_DURATION_SECONDS));
+  return Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
 }
 
 export function enemyRunSpeedMultiplier(elapsed = game.floorElapsed || 0) {
@@ -141,7 +141,7 @@ export function spawnEnemy(forceType, options = {}) {
 
   const elapsed = game.floorElapsed || 0;
   let type = forceType || pickEnemyTypeByTime(elapsed);
-  const progress = Math.min(1, Math.max(0, elapsed / RUN_DURATION_SECONDS));
+  const progress = Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
 
   const baseHp = Math.round((28 + progress * 34) * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
   const enemy = {

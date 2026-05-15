@@ -1,7 +1,7 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { INTERACTION_HOLD_SECONDS, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, RUN_DURATION_SECONDS, TARGET_FRAME_SECONDS } from "./constants.js";
+import { INTERACTION_HOLD_SECONDS, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, getActiveWeapon, updateDroneWeapons, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
@@ -26,7 +26,6 @@ export function resetRun() {
   game.wave = 1;
   game.elapsed = 0;
   game.floorElapsed = 0;
-  game.waveTimeLeft = RUN_DURATION_SECONDS;
   game.waveClearCount = 0;
   game.eliteSpawned = false;
   game.selectedWeapon = null;
@@ -127,7 +126,6 @@ export function resetRun() {
 export function startArenaWithSelectedWeapon() {
   game.mode = "arena";
   game.floorElapsed = 0;
-  game.waveTimeLeft = RUN_DURATION_SECONDS;
   game.waveKills = 0;
   game.spawnClock = 0;
   game.spawnBatchSize = 0;
@@ -209,7 +207,7 @@ export function formatTime(seconds) {
 
 export function finishRun(result) {
   if (game.mode === "result") return;
-  const survivalTime = Math.min(game.floorElapsed || 0, RUN_DURATION_SECONDS);
+  const survivalTime = game.floorElapsed || 0;
   const bonusPoints = calculateRunBonus(result);
   const totalEarnedPoints = (game.runPoints || 0) + bonusPoints;
 
@@ -240,8 +238,8 @@ function showRunResult() {
   const time = formatTime(r?.survivalTime || 0);
   const best = formatTime(game.bestSurvivalTime || 0);
   hud.result.textContent =
-    `${r?.result === "clear" ? "5分生存クリア！" : "探索はここまで"}\n` +
-    `到達時間 ${time} / 最高 ${best}\n` +
+    `${r?.result === "clear" ? "探索クリア！" : "探索はここまで"}\n` +
+    `探索時間 ${time} / 最高 ${best}\n` +
     `撃破数 ${r?.kills || 0}\n` +
     `回収 ${r?.runPoints || 0}pt / ボーナス ${r?.bonusPoints || 0}pt\n` +
     `ラン中ビルドはリセットされます`;
@@ -278,7 +276,6 @@ function update(dt) {
   }
 
   game.floorElapsed += dt;
-  game.waveTimeLeft = Math.max(0, RUN_DURATION_SECONDS - game.floorElapsed);
   const p = game.player;
   p.invulnerableTimer = Math.max(0, (p.invulnerableTimer || 0) - dt);
 
@@ -303,8 +300,6 @@ function update(dt) {
 
   if (p.hp <= 0) {
     finishRun("dead");
-  } else if (game.floorElapsed >= RUN_DURATION_SECONDS) {
-    finishRun("clear");
   }
 
   updateHud();
