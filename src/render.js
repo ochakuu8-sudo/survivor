@@ -621,29 +621,31 @@ function drawEffects(view, camX, camY, zoom, frameStats) {
       frameStats.visibleEffects += 1;
       const progress = clamp(1 - alpha, 0, 1);
       const swing = effect.swingDir || 1;
-      const reach = range * (0.44 + progress * 0.18);
-      const centerX = pos.x + Math.cos(effect.angle) * reach;
-      const centerY = pos.y + Math.sin(effect.angle) * reach;
-      const screen = worldToScreen(centerX, centerY, view, camX, camY, zoom);
       const carve = Math.sin(progress * Math.PI);
-      const width = range * (1.08 + carve * 0.34) * zoom;
-      const height = range * (0.62 + (effect.cone || 0.72) * 0.22 + carve * 0.08) * zoom;
-      const rotation = effect.angle + swing * (-0.32 + progress * 0.64);
+      const sweepAngle = effect.angle + swing * (0.46 - progress * 0.92);
+      const reach = range * (0.48 + progress * 0.2);
+      const centerX = pos.x + Math.cos(sweepAngle) * reach;
+      const centerY = pos.y + Math.sin(sweepAngle) * reach;
+      const screen = worldToScreen(centerX, centerY, view, camX, camY, zoom);
+      const width = range * (0.88 + carve * 0.24) * zoom;
+      const height = range * (0.48 + (effect.cone || 0.72) * 0.16 + carve * 0.05) * zoom;
+      const rotation = sweepAngle - swing * 0.16;
       const tint = effect.tint || [1, 0.78, 0.36];
-      state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, width * 1.2, height * 1.2, {
+      state.renderer.draw(effect.glow || "glowAmber", screen.x, screen.y, width * 1.06, height * 1.08, {
         tint,
-        alpha: alpha * (0.16 + carve * 0.18),
+        alpha: alpha * (0.1 + carve * 0.16),
         rotation,
       });
       state.renderer.draw("swordSlash", screen.x, screen.y, width, height, {
         rotation,
         tint,
-        alpha: alpha * 0.96,
+        alpha: alpha * (0.76 + carve * 0.2),
       });
-      state.renderer.draw("swordSlash", screen.x - Math.cos(effect.angle) * 8 * zoom, screen.y - Math.sin(effect.angle) * 8 * zoom, width * 0.54, height * 0.38, {
-        rotation: rotation - swing * 0.1,
+      const edgeX = screen.x + Math.cos(sweepAngle) * width * 0.18;
+      const edgeY = screen.y + Math.sin(sweepAngle) * height * 0.18;
+      state.renderer.draw("white", edgeX, edgeY, width * 0.12, height * 0.12, {
         tint: [1, 1, 1],
-        alpha: alpha * 0.34,
+        alpha: alpha * carve * 0.55,
       });
     } else if (effect.type === "burst") {
       const pos = visiblePositionForDraw(effect, camX, camY);

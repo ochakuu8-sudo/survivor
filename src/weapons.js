@@ -1316,8 +1316,8 @@ function fireSword(weapon, angle) {
     range: weapon.range,
     cone: weapon.cone,
     swingDir,
-    life: 0.24,
-    maxLife: 0.24,
+    life: 0.2,
+    maxLife: 0.2,
     glow,
     tint: baseTint,
   });
@@ -1335,17 +1335,7 @@ function fireSword(weapon, angle) {
     glow,
     tint: baseTint,
   });
-  addEffect({
-    type: "burst",
-    x: originX + Math.cos(angle) * weapon.range * 0.34,
-    y: originY + Math.sin(angle) * weapon.range * 0.34,
-    radius: 14,
-    life: 0.1,
-    maxLife: 0.1,
-    glow: "glowAmber",
-    tint: [1, 0.88, 0.52],
-  });
-  addSparks(tipX, tipY, 5, 150);
+  addSparks(tipX, tipY, 3, 120);
 }
 
 function fireChain(weapon, target) {

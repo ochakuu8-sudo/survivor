@@ -44,7 +44,7 @@ export const WEAPON_POOL = [
       variantSummary: "低威力だが高頻度・低速連射",
       kind: "projectile",
       damage: 10,
-      fireRate: 11.5,
+      fireRate: 10.2,
       bulletSpeed: 440,
       life: 1.18,
       range: 520,

@@ -62,55 +62,41 @@ function drawPixelMachineGunBullet(ctx, w, h) {
 }
 
 function drawPixelSwordSlash(ctx, w, h) {
-  const cx = w * 0.48;
+  const cx = w * 0.47;
   const cy = h * 0.5;
-  const outer = Math.min(w * 0.52, h * 0.9);
-  const inner = outer * 0.68;
-  const start = -1.18;
-  const end = 1.18;
+  const outer = Math.min(w * 0.5, h * 0.88);
+  const inner = outer * 0.72;
+  const start = -1.08;
+  const end = 1.08;
 
   ctx.save();
   ctx.translate(cx, cy);
 
-  ctx.fillStyle = "rgba(24, 18, 48, 0.36)";
+  ctx.fillStyle = "rgba(24, 18, 48, 0.3)";
   ctx.beginPath();
-  ctx.arc(0, 0, outer + 5, start, end, false);
-  ctx.arc(outer * 0.42, 0, inner + 4, end, start, true);
+  ctx.arc(0, 0, outer + 4, start, end, false);
+  ctx.arc(outer * 0.35, 0, inner + 3, end, start, true);
   ctx.closePath();
   ctx.fill();
 
-  const glow = ctx.createRadialGradient(outer * 0.38, 0, 3, outer * 0.38, 0, outer * 1.08);
-  glow.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-  glow.addColorStop(0.34, "rgba(255, 246, 190, 0.92)");
-  glow.addColorStop(0.72, "rgba(255, 162, 58, 0.74)");
-  glow.addColorStop(1, "rgba(255, 126, 39, 0.22)");
-  ctx.fillStyle = glow;
+  const blade = ctx.createLinearGradient(-outer * 0.32, 0, outer * 0.9, 0);
+  blade.addColorStop(0, "rgba(255, 255, 255, 0.08)");
+  blade.addColorStop(0.4, "rgba(255, 246, 196, 0.86)");
+  blade.addColorStop(0.76, "rgba(255, 255, 255, 0.98)");
+  blade.addColorStop(1, "rgba(255, 190, 76, 0.58)");
+  ctx.fillStyle = blade;
   ctx.beginPath();
   ctx.arc(0, 0, outer, start, end, false);
-  ctx.arc(outer * 0.42, 0, inner, end, start, true);
+  ctx.arc(outer * 0.35, 0, inner, end, start, true);
   ctx.closePath();
   ctx.fill();
 
-  ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.88)";
+  ctx.lineWidth = Math.max(2, outer * 0.07);
+  ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.arc(outer * 0.06, 0, outer * 0.78, -0.86, 0.86, false);
-  ctx.arc(outer * 0.43, 0, inner * 0.92, 0.78, -0.78, true);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "rgba(255, 186, 72, 0.78)";
-  ctx.beginPath();
-  ctx.arc(-outer * 0.03, 0, outer * 0.96, 0.72, 1.1, false);
-  ctx.arc(outer * 0.45, 0, inner * 1.02, 1.04, 0.62, true);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-  px(ctx, outer * 0.42, -3, outer * 0.34, 5, "rgba(255, 255, 255, 0.9)");
-  px(ctx, outer * 0.64, -outer * 0.18, 5, 5, "rgba(255, 246, 190, 0.82)");
-  px(ctx, outer * 0.62, outer * 0.16, 4, 4, "rgba(255, 186, 72, 0.82)");
-  px(ctx, outer * 0.2, -outer * 0.48, 4, 4, "rgba(255, 225, 130, 0.72)");
-  px(ctx, outer * 0.22, outer * 0.48, 4, 4, "rgba(255, 225, 130, 0.72)");
+  ctx.arc(outer * 0.02, 0, outer * 0.86, -0.82, 0.82, false);
+  ctx.stroke();
 
   ctx.restore();
 }
