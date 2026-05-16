@@ -41,37 +41,33 @@ function mobileScreenWorldSize(view, zoom) {
   };
 }
 
-function pickEnemyTypeByTime(elapsed) {
-  const roll = Math.random();
+const ENEMY_TYPE_UNLOCKS = [
+  { wave: 1, type: "walker", weight: 1 },
+  { wave: 2, type: "runner", weight: 0.28 },
+  { wave: 3, type: "archer", weight: 0.22 },
+  { wave: 4, type: "orc", weight: 0.16 },
+];
 
-  if (elapsed < 30) return "walker";
+function unlockedEnemyTypesForWave(wave = game.wave || 1) {
+  return ENEMY_TYPE_UNLOCKS.filter((entry) => wave >= entry.wave);
+}
 
-  if (elapsed < 60) return roll < 0.25 ? "runner" : "walker";
+function pickEnemyTypeByWave(wave = game.wave || 1) {
+  const unlockedTypes = unlockedEnemyTypesForWave(wave);
+  const totalWeight = unlockedTypes.reduce((sum, entry) => sum + entry.weight, 0);
+  let roll = Math.random() * totalWeight;
 
-  if (elapsed < 105) {
-    if (roll < 0.22) return "runner";
-    if (roll < 0.38) return "archer";
-    return "walker";
+  for (const entry of unlockedTypes) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.type;
   }
 
-  if (elapsed < 180) {
-    if (roll < 0.24) return "runner";
-    if (roll < 0.42) return "archer";
-    if (roll < 0.52) return "orc";
-    return "walker";
-  }
-
-  if (elapsed < 255) {
-    if (roll < 0.28) return "runner";
-    if (roll < 0.48) return "archer";
-    if (roll < 0.62) return "orc";
-    return "walker";
-  }
-
-  if (roll < 0.35) return "runner";
-  if (roll < 0.55) return "archer";
-  if (roll < 0.72) return "orc";
   return "walker";
+}
+
+export function pickStrongestEnemyTypeForCurrentWave() {
+  const unlockedTypes = unlockedEnemyTypesForWave();
+  return unlockedTypes[unlockedTypes.length - 1]?.type || "walker";
 }
 
 function enemySpawnRamp(elapsed = game.floorElapsed || 0) {
@@ -97,7 +93,7 @@ export function spawnOpeningEnemies() {
   const positions = pickDistributedOpeningSpawnPoints(openingEnemyCount());
 
   for (const position of positions) {
-    spawnEnemy("walker", { position, offscreen: false });
+    spawnEnemy(undefined, { position, offscreen: false });
   }
 }
 
@@ -327,9 +323,7 @@ function enemySpawnStandRadius(type, options = {}) {
 export function spawnEnemy(forceType, options = {}) {
   if (game.enemies.length >= SAFETY_ENEMY_CAP) return null;
 
-  const elapsed = game.floorElapsed || 0;
-  const type = forceType || pickEnemyTypeByTime(elapsed);
-  const progress = Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
+  const type = forceType || pickEnemyTypeByWave();
   const spawnStandRadius = enemySpawnStandRadius(type, options);
   const view = viewSize();
   const zoom = cameraZoom(view);
@@ -355,7 +349,7 @@ export function spawnEnemy(forceType, options = {}) {
     y = spawnPoint.y;
   }
 
-  const baseHp = Math.round((28 + progress * 34) * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
+  const baseHp = Math.round(28 * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
   const enemy = {
     id: nextEnemyId(),
     kind: "melee",
@@ -364,9 +358,9 @@ export function spawnEnemy(forceType, options = {}) {
     radius: 18,
     hp: baseHp,
     maxHp: baseHp,
-    speed: 78 + progress * 16,
-    attackDamage: Math.round(9 + progress * 4),
-    attackCooldown: Math.max(0.74, 1.08 - progress * 0.18),
+    speed: 78,
+    attackDamage: 9,
+    attackCooldown: 1.08,
     attackTimer: 0,
     sprite: "zombieA",
     readableSprite: "zombieAReadable",
@@ -378,9 +372,9 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.radius = 16;
     enemy.hp = Math.round(baseHp * 0.72);
     enemy.maxHp = enemy.hp;
-    enemy.speed = 122 + progress * 26;
-    enemy.attackDamage = Math.round(7 + progress * 3);
-    enemy.attackCooldown = Math.max(0.52, 0.76 - progress * 0.12);
+    enemy.speed = 122;
+    enemy.attackDamage = 7;
+    enemy.attackCooldown = 0.76;
     enemy.sprite = "zombieB";
     enemy.readableSprite = "zombieBReadable";
   } else if (type === "orc") {
@@ -388,14 +382,14 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.radius = 27;
     enemy.hp = Math.round(baseHp * 2.85);
     enemy.maxHp = enemy.hp;
-    enemy.speed = 58 + progress * 14;
+    enemy.speed = 58;
     enemy.attackDamage = 0;
     enemy.attackCooldown = 9999;
     enemy.sprite = "orc";
     enemy.readableSprite = "orcReadable";
     enemy.orcState = "idle";
     enemy.chargeTimer = 0;
-    enemy.chargeDuration = Math.max(0.7, 0.95 - progress * 0.22);
+    enemy.chargeDuration = 0.95;
     enemy.chargeCooldown = 1.6;
     enemy.chargeCooldownLeft = 0.6 + Math.random() * 0.6;
     enemy.attackRange = 130;
@@ -403,20 +397,20 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.swingWidth = 110;
     enemy.swingTargetX = 0;
     enemy.swingTargetY = 0;
-    enemy.slamDamage = Math.round(28 + progress * 8);
+    enemy.slamDamage = 28;
   } else if (type === "archer") {
     enemy.kind = "archer";
     enemy.radius = 17;
     enemy.hp = Math.round(baseHp * 0.85);
     enemy.maxHp = enemy.hp;
-    enemy.speed = 92 + progress * 18;
+    enemy.speed = 92;
     enemy.attackDamage = 0;
     enemy.attackCooldown = 9999;
     enemy.sprite = "skeletonArcher";
     enemy.readableSprite = "skeletonArcherReadable";
     enemy.shotCooldown = 0.6 + Math.random() * 0.6;
-    enemy.shotInterval = Math.max(1.4, 2.4 - progress * 0.75);
-    enemy.shotDamage = Math.round(16 + progress * 5);
+    enemy.shotInterval = 2.4;
+    enemy.shotDamage = 16;
     enemy.shootRange = 320;
     enemy.preferredDistance = 220;
   }

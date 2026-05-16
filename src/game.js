@@ -5,7 +5,7 @@ import { EXIT_HOLD_SECONDS, INITIAL_WEAPON_ONLY_RUN, MAX_FRAME_DELTA_SECONDS, MA
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, getActiveWeapon, updateDroneWeapons, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
-import { resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
+import { pickStrongestEnemyTypeForCurrentWave, resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
 import { generateDungeon, hasReachedDungeonExit, shortestDungeonDelta, wrapDungeonPoint } from "./dungeon.js";
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
@@ -327,20 +327,21 @@ function updateDungeonExit(dt) {
 function updateRunEvents() {
   const t = game.floorElapsed || 0;
   const m = game.spawnedMilestones || (game.spawnedMilestones = { elite90: false, elite180: false, boss270: false });
+  const eliteType = pickStrongestEnemyTypeForCurrentWave();
 
   if (!m.elite90 && t >= 90) {
     m.elite90 = true;
-    spawnEnemy("orc", { elite: true });
+    spawnEnemy(eliteType, { elite: true });
   }
 
   if (!m.elite180 && t >= 180) {
     m.elite180 = true;
-    spawnEnemy("orc", { elite: true });
+    spawnEnemy(eliteType, { elite: true });
   }
 
   if (!m.boss270 && t >= 270) {
     m.boss270 = true;
-    spawnEnemy("orc", { elite: true, boss: true });
+    spawnEnemy(eliteType, { elite: true, boss: true });
   }
 }
 
