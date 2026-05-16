@@ -2,7 +2,8 @@ import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
 import { resetVirtualMove } from "./input.js";
 import { getActiveWeapon } from "./weapons.js";
-import { countItemsByKey, formatStoneItemSummary, stoneEvolutionProgress } from "./stoneItems.js";
+import { countItemsByKey, ensureStoneMaterialInventory, formatStoneItemSummary, stoneEvolutionProgress } from "./stoneItems.js";
+import { STONE_MATERIALS } from "./data/stoneItems.js";
 
 export function updateHud() {
   hud.wave.textContent = "Run";
@@ -68,7 +69,9 @@ function renderPauseStoneItems() {
   const progress = stoneEvolutionProgress(counts)
     .map((evolution) => `${evolution.name}: ${evolution.requirements.map((req) => `${req.name} ${Math.min(req.count, req.need)}/${req.need}`).join(" + ")}`)
     .join("<br>");
-  hud.pauseStoneItems.innerHTML = `<strong>所持アイテム</strong><p>${formatStoneItemSummary(weapon)}</p><strong>進化進捗</strong><p>${progress}</p>`;
+  const materials = ensureStoneMaterialInventory();
+  const materialText = STONE_MATERIALS.map((item) => `${item.shortName || item.name}×${materials[item.key] || 0}`).join(" / ");
+  hud.pauseStoneItems.innerHTML = `<strong>所持素材</strong><p>${materialText}</p><strong>装備中アイテム</strong><p>${formatStoneItemSummary(weapon)}</p><strong>進化進捗</strong><p>${progress}</p>`;
 }
 
 function renderWeaponSwitch() {

@@ -26,6 +26,7 @@ export const game = {
   treePurchases: { weapon: {}, common: {} },
   freeNodeCredits: { weapon: 0, common: 0 },
   evolutionMaterials: 0,
+  stoneMaterials: {},
   nextWaveBuff: null,
   goldGainBonus: 0,
   waveStartHealBonus: 0,

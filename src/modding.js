@@ -13,6 +13,7 @@ import { updateHud } from "./hud.js";
 import { findWeapon, getActiveWeapon } from "./weapons.js";
 import {
   addStoneItemToWeapon,
+  addStoneMaterial,
   countItemsByKey,
   ensureStoneItemSlots,
   formatStoneItemSummary,
@@ -21,7 +22,7 @@ import {
   stoneItemCapacity,
   pickStoneItemChoices,
 } from "./stoneItems.js";
-import { findStoneItem } from "./data/stoneItems.js";
+import { findStoneItem, findStoneMaterial } from "./data/stoneItems.js";
 
 export function maxAttachmentSlotsForWeapon(weapon) {
   return getWeaponMaxAttachments(weapon);
@@ -136,13 +137,15 @@ export function rerollPendingAttachment() {
 }
 
 function finishAttachmentReward() {
+  const pendingSource = game.pendingAttachmentReward?.source;
+  const nextMode = pendingSource === "workbench" ? (game.modeBeforeWorkbench || "arena") : modeAfterReward();
   game.pendingAttachmentReward = null;
   game.pendingMod = null;
   game.treasureReward = null;
   hideModdingPanel();
   hud.treasureReward?.classList.add("hidden");
   hud.workbenchPanel?.classList.add("hidden");
-  game.mode = modeAfterReward();
+  game.mode = nextMode;
   game.modeBeforeAttachmentReward = null;
   game.modeBeforeTreasure = null;
   game.modeBeforeWorkbench = null;
@@ -261,7 +264,7 @@ function renderStoneItemRewardSlots(weapon) {
 
   const heading = document.createElement("div");
   heading.className = "mod-weapon-heading";
-  heading.innerHTML = `<strong>アタッチメントを選んで装備</strong><small>${weapon.name}: ${weapon.items.length}/${stoneItemCapacity(weapon)}<br>${formatStoneItemSummary(weapon)}<br>${progress}</small>`;
+  heading.innerHTML = `<strong>特殊アイテムを選んで装備</strong><small>${weapon.name}: ${weapon.items.length}/${stoneItemCapacity(weapon)}<br>${formatStoneItemSummary(weapon)}<br>${progress}</small>`;
 
   const slots = document.createElement("ol");
   slots.className = "modding-slots modding-slots-nested";
@@ -397,6 +400,11 @@ function choosePendingStoneItem(index) {
   const pending = game.pendingAttachmentReward;
   const item = pending?.stoneChoices?.[index];
   if (!item) return;
+  if (findStoneMaterial(item.key)) {
+    addStoneMaterial(item.key, 1);
+    finishAttachmentReward();
+    return;
+  }
   game.pendingAttachmentReward = {
     stoneItem: item,
     source: pending.source,
@@ -415,22 +423,23 @@ function renderStoneItemChoicePanel(pending) {
   if (kicker) kicker.textContent = sourceLabel(pending.source);
   if (heading) heading.textContent = "アイテムを選ぶ";
 
-  hud.moddingWeaponName.textContent = "3択報酬";
-  hud.moddingWeaponLevel.textContent = "1つ選ぶと装着先を指定できます";
+  hud.moddingWeaponName.textContent = "素材3択報酬";
+  hud.moddingWeaponLevel.textContent = "素材は所持欄へ、レア特殊アイテムは装備先を指定";
   hud.moddingGold.textContent = "選択待ち";
   const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
   if (treasureIcon) {
     treasureIcon.className = "treasure-icon modding-main-icon";
     treasureIcon.textContent = "●";
   }
-  hud.moddingAttachmentName.textContent = "ただの石ころを強化";
-  hud.moddingAttachmentMeta.textContent = "カテゴリ・Rankなし";
-  hud.moddingAttachmentText.textContent = "同じアイテムも複数装着でき、所持数ぶん効果が積み上がります。";
+  hud.moddingAttachmentName.textContent = "素材を集めて作業台で合成";
+  hud.moddingAttachmentMeta.textContent = "初期素材 / クラフト用";
+  hud.moddingAttachmentText.textContent = "初期素材は作業台で特殊アイテムへ合成します。レア特殊アイテムを引いた場合だけ、その場で石ころに装備できます。";
 
   hud.moddingSlots.replaceChildren();
   pending.stoneChoices.forEach((item, index) => {
     const definition = findStoneItem(item.key) || item;
-    const owned = counts[item.key] || 0;
+    const material = findStoneMaterial(item.key);
+    const owned = material ? (game.stoneMaterials?.[item.key] || 0) : (counts[item.key] || 0);
     const card = document.createElement("li");
     card.className = "mod-slot active stone-choice-button";
     const button = document.createElement("button");
@@ -445,7 +454,7 @@ function renderStoneItemChoicePanel(pending) {
     const name = document.createElement("strong");
     name.textContent = definition.name;
     const meta = document.createElement("small");
-    meta.textContent = `${definition.description} / 所持 ${owned}→${owned + 1}`;
+    meta.textContent = material ? `${definition.description} / 素材所持 ${owned}→${owned + 1} / 用途: ${(definition.uses || []).slice(0, 3).join("・")}` : `${definition.description} / 装備数 ${owned}→${owned + 1}`;
     copy.append(name, meta);
     button.append(icon, copy);
     card.append(button);
@@ -470,7 +479,7 @@ function renderStoneItemPanel(pending) {
   const kicker = hud.moddingPanel.querySelector(".panel-kicker");
   const heading = hud.moddingPanel.querySelector("h1");
   if (kicker) kicker.textContent = sourceLabel(pending.source);
-  if (heading) heading.textContent = "アタッチメントを選んで装備";
+  if (heading) heading.textContent = "特殊アイテムを選んで装備";
 
   hud.moddingWeaponName.textContent = "選択したアイテム";
   hud.moddingWeaponLevel.textContent = "装備先を選んでください";

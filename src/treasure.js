@@ -89,9 +89,9 @@ function chooseTreasureReward() {
   if (choices.length > 0) {
     return {
       type: "stoneItemChoice",
-      name: "石ころアイテム",
-      text: "3つから1つ選んで石ころに装着する。",
-      meta: "石ころアイテム / 3択",
+      name: "石ころ素材",
+      text: "3つから1つ選び、作業台クラフト用の初期素材として入手する。",
+      meta: "初期素材中心 / 3択（まれに特殊アイテム）",
       icon: "●",
       stoneChoices: choices,
     };

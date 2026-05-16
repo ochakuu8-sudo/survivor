@@ -107,6 +107,7 @@ export function resetRun() {
   game.shopRerollsUsed = 0;
   game.starterChoices = [];
   game.treasureReward = null;
+  game.stoneMaterials = {};
   initSkillProgress();
   game.player.baseStats = snapshotPlayerBaseStats(game.player);
   hud.shop?.classList.add("hidden");
