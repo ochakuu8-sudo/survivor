@@ -4,7 +4,7 @@ import { distanceToSegmentSq, gridKey, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
 import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
-import { canStandAt, dungeonTileWorldCenter, isWalkableTile, moveActorWithDungeonCollision, pickDungeonSpawnPoint, shortestDungeonDelta } from "./dungeon.js";
+import { canStandAt, dungeonTileWorldCenter, isWalkableTile, moveActorWithDungeonCollision, shortestDungeonDelta, worldToDungeonTile } from "./dungeon.js";
 
 const SPAWN_BATCH_INTERVAL_MIN = 2.4;
 const SPAWN_BATCH_INTERVAL_MAX = 5.2;
@@ -19,6 +19,7 @@ const ENEMY_AGGRO_RANGE = TILE_SIZE * 9;
 const MOBILE_SCREEN_ASPECT = 9 / 16;
 const OFFSCREEN_SPAWN_MARGIN = 72;
 const OFFSCREEN_SPAWN_NEAR_BAND = 360;
+const OFFSCREEN_SPAWN_ATTEMPTS = 96;
 const SAFETY_ENEMY_CAP = 3000;
 const ENEMY_PUSH_RADIUS_SCALE = 1.0;
 const ENEMY_PUSH_STRENGTH = 0.42;
@@ -93,16 +94,10 @@ export function resetEnemySpawnTimer() {
 }
 
 export function spawnOpeningEnemies() {
-  const count = openingEnemyCount();
-  const positions = pickDistributedOpeningSpawnPoints(count);
-  let spawned = 0;
+  const positions = pickDistributedOpeningSpawnPoints(openingEnemyCount());
 
   for (const position of positions) {
-    if (spawnEnemy("walker", { position, offscreen: false })) spawned += 1;
-  }
-
-  for (let attempts = 0; spawned < count && attempts < count * 6; attempts += 1) {
-    if (spawnEnemy("walker", { offscreen: true })) spawned += 1;
+    spawnEnemy("walker", { position, offscreen: false });
   }
 }
 
@@ -128,9 +123,7 @@ function pickDistributedOpeningSpawnPoints(count) {
   if (!dungeon || count <= 0) return [];
 
   const candidates = collectOpeningSpawnCandidates(dungeon);
-  const chosen = pickOneSpawnPerArea(candidates, count);
-  fillRemainingOpeningSpawns(chosen, candidates, count);
-  return chosen;
+  return pickDensityBalancedOpeningSpawns(candidates, count);
 }
 
 function collectOpeningSpawnCandidates(dungeon) {
@@ -151,7 +144,9 @@ function collectOpeningSpawnCandidates(dungeon) {
   return candidates;
 }
 
-function pickOneSpawnPerArea(candidates, count) {
+function pickDensityBalancedOpeningSpawns(candidates, count) {
+  if (candidates.length <= count) return shuffle(candidates);
+
   const cells = new Map();
   for (const point of candidates) {
     const cellX = Math.floor(point.x / OPENING_SPAWN_GRID_SIZE);
@@ -159,65 +154,56 @@ function pickOneSpawnPerArea(candidates, count) {
     const key = gridKey(cellX, cellY);
     let cell = cells.get(key);
     if (!cell) {
-      cell = { points: [], centerX: 0, centerY: 0 };
+      cell = { points: [], quota: 0, remainder: 0 };
       cells.set(key, cell);
     }
     cell.points.push(point);
-    cell.centerX += point.x;
-    cell.centerY += point.y;
-  }
-
-  const remainingCells = [...cells.values()];
-  for (const cell of remainingCells) {
-    cell.centerX /= cell.points.length;
-    cell.centerY /= cell.points.length;
   }
 
   const chosen = [];
-  while (chosen.length < count && remainingCells.length > 0) {
-    let bestIndex = 0;
-    let bestScore = -Infinity;
-    for (let i = 0; i < remainingCells.length; i += 1) {
-      const cell = remainingCells[i];
-      const playerDistance = Math.hypot(cell.centerX - game.player.x, cell.centerY - game.player.y);
-      const nearestChosenDistance = chosen.length
-        ? Math.min(...chosen.map((other) => Math.hypot(cell.centerX - other.x, cell.centerY - other.y)))
-        : playerDistance;
-      const score = nearestChosenDistance + playerDistance * 0.08 + Math.random();
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = i;
-      }
-    }
-
-    const cell = remainingCells.splice(bestIndex, 1)[0];
-    chosen.push(cell.points[Math.floor(Math.random() * cell.points.length)]);
+  const cellList = [...cells.values()];
+  for (const cell of cellList) {
+    shuffleInPlace(cell.points);
+    const exactQuota = (cell.points.length / candidates.length) * count;
+    cell.quota = Math.floor(exactQuota);
+    cell.remainder = exactQuota - cell.quota;
+    appendCellSpawns(chosen, cell, cell.quota, count);
   }
-  return chosen;
+
+  cellList.sort((a, b) => b.remainder - a.remainder || Math.random() - 0.5);
+  for (const cell of cellList) {
+    if (chosen.length >= count) break;
+    appendCellSpawns(chosen, cell, 1, count);
+  }
+
+  while (chosen.length < count) {
+    const cell = cellList.find((entry) => entry.points.length > 0);
+    if (!cell) break;
+    appendCellSpawns(chosen, cell, 1, count);
+  }
+
+  return shuffle(chosen);
 }
 
-function fillRemainingOpeningSpawns(chosen, candidates, count) {
-  while (chosen.length < count && candidates.length > 0) {
-    let bestIndex = -1;
-    let bestScore = -Infinity;
-    for (let i = 0; i < candidates.length; i += 1) {
-      const point = candidates[i];
-      if (chosen.includes(point)) continue;
-      const playerDistance = Math.hypot(point.x - game.player.x, point.y - game.player.y);
-      const nearestChosenDistance = chosen.length
-        ? Math.min(...chosen.map((other) => Math.hypot(point.x - other.x, point.y - other.y)))
-        : playerDistance;
-      const score = nearestChosenDistance + playerDistance * 0.08;
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = i;
-      }
-    }
-    if (bestIndex < 0) break;
-    chosen.push(candidates[bestIndex]);
+function appendCellSpawns(chosen, cell, amount, count) {
+  for (let i = 0; i < amount && chosen.length < count && cell.points.length > 0; i += 1) {
+    chosen.push(cell.points.pop());
   }
 }
 
+function shuffle(points) {
+  const shuffled = [...points];
+  shuffleInPlace(shuffled);
+  return shuffled;
+}
+
+function shuffleInPlace(points) {
+  for (let i = points.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [points[i], points[j]] = [points[j], points[i]];
+  }
+  return points;
+}
 
 export function spawnEnemies(dt) {
   if (game.enemies.length >= SAFETY_ENEMY_CAP) {
@@ -239,64 +225,135 @@ export function spawnEnemies(dt) {
   if (game.spawnClock <= 0) game.spawnClock = plan.interval;
 }
 
+function pickOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin, standRadius) {
+  if (game.dungeon) return pickDungeonOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin, standRadius);
+  return pickWorldOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin);
+}
+
+function pickWorldOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin) {
+  const side = Math.floor(Math.random() * 4);
+  return pointOnOffscreenSide(side, camX, camY, visibleW, visibleH, margin, OFFSCREEN_SPAWN_NEAR_BAND);
+}
+
+function pickDungeonOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin, standRadius) {
+  for (let i = 0; i < OFFSCREEN_SPAWN_ATTEMPTS; i += 1) {
+    const side = Math.floor(Math.random() * 4);
+    const point = pointOnOffscreenSide(side, camX, camY, visibleW, visibleH, margin, OFFSCREEN_SPAWN_NEAR_BAND);
+    if (isDungeonSpawnPointValid(point, true, camX, camY, visibleW, visibleH, margin, standRadius)) return point;
+  }
+
+  return findNearestDungeonOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin, standRadius);
+}
+
+function pointOnOffscreenSide(side, camX, camY, visibleW, visibleH, margin, band) {
+  const left = camX - visibleW / 2;
+  const right = camX + visibleW / 2;
+  const top = camY - visibleH / 2;
+  const bottom = camY + visibleH / 2;
+  const distance = margin + Math.random() * band;
+
+  if (side === 0) {
+    return { x: left - margin + Math.random() * (visibleW + margin * 2), y: top - distance };
+  }
+  if (side === 1) {
+    return { x: right + distance, y: top - margin + Math.random() * (visibleH + margin * 2) };
+  }
+  if (side === 2) {
+    return { x: left - margin + Math.random() * (visibleW + margin * 2), y: bottom + distance };
+  }
+  return { x: left - distance, y: top - margin + Math.random() * (visibleH + margin * 2) };
+}
+
+function isDungeonSpawnPointValid(point, requireOffscreen, camX, camY, visibleW, visibleH, margin, standRadius = 22) {
+  const dungeon = game.dungeon;
+  if (!dungeon) return true;
+  if (requireOffscreen && !isPointOffscreen(point, camX, camY, visibleW, visibleH, margin)) return false;
+  const { tx, ty } = worldToDungeonTile(dungeon, point.x, point.y);
+  return isWalkableTile(dungeon, tx, ty) && canStandAt(dungeon, point.x, point.y, standRadius);
+}
+
+function isPointOffscreen(point, camX, camY, visibleW, visibleH, margin) {
+  return point.x < camX - visibleW / 2 - margin ||
+    point.x > camX + visibleW / 2 + margin ||
+    point.y < camY - visibleH / 2 - margin ||
+    point.y > camY + visibleH / 2 + margin;
+}
+
+function findNearestDungeonOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin, standRadius) {
+  const dungeon = game.dungeon;
+  if (!dungeon) return null;
+
+  let best = null;
+  let bestDistance = Infinity;
+  for (let ty = 0; ty < dungeon.height; ty += 1) {
+    for (let tx = 0; tx < dungeon.width; tx += 1) {
+      if (!isWalkableTile(dungeon, tx, ty)) continue;
+      const point = dungeonTileWorldCenter(dungeon, tx, ty);
+      if (!isDungeonSpawnPointValid(point, true, camX, camY, visibleW, visibleH, margin, standRadius)) continue;
+      const distance = distanceToViewportEdge(point, camX, camY, visibleW, visibleH);
+      if (distance < bestDistance) {
+        best = point;
+        bestDistance = distance;
+      }
+    }
+  }
+  return best;
+}
+
+function distanceToViewportEdge(point, camX, camY, visibleW, visibleH) {
+  const dx = Math.max(Math.abs(point.x - camX) - visibleW / 2, 0);
+  const dy = Math.max(Math.abs(point.y - camY) - visibleH / 2, 0);
+  return Math.hypot(dx, dy);
+}
+
+function pickAnyDungeonSpawnPoint(standRadius = 22) {
+  const dungeon = game.dungeon;
+  if (!dungeon) return null;
+  const candidates = collectOpeningSpawnCandidates(dungeon).filter((point) =>
+    canStandAt(dungeon, point.x, point.y, standRadius));
+  return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : null;
+}
+
+function enemySpawnStandRadius(type, options = {}) {
+  let radius = 18;
+  if (type === "runner") radius = 16;
+  else if (type === "archer") radius = 17;
+  else if (type === "orc") radius = 27;
+  if (options.boss) return radius * 1.35;
+  if (options.elite) return radius * 1.18;
+  return radius;
+}
+
 export function spawnEnemy(forceType, options = {}) {
   if (game.enemies.length >= SAFETY_ENEMY_CAP) return null;
 
+  const elapsed = game.floorElapsed || 0;
+  const type = forceType || pickEnemyTypeByTime(elapsed);
+  const progress = Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
+  const spawnStandRadius = enemySpawnStandRadius(type, options);
   const view = viewSize();
   const zoom = cameraZoom(view);
   const spawnScreen = mobileScreenWorldSize(view, zoom);
   const visibleW = spawnScreen.w;
   const visibleH = spawnScreen.h;
   const margin = OFFSCREEN_SPAWN_MARGIN;
-  const nearMaxDistance = Math.hypot(visibleW, visibleH) * 0.5 + OFFSCREEN_SPAWN_NEAR_BAND;
   const camX = game.camera?.x ?? game.player.x;
   const camY = game.camera?.y ?? game.player.y;
   const requireOffscreen = options.offscreen !== false && !options.position;
-  const isOffscreen = (point) =>
-    point.x < camX - visibleW / 2 - margin ||
-    point.x > camX + visibleW / 2 + margin ||
-    point.y < camY - visibleH / 2 - margin ||
-    point.y > camY + visibleH / 2 + margin;
 
   let x = options.position?.x ?? game.player.x;
   let y = options.position?.y ?? game.player.y;
-  const dungeonSpawn = options.position ? null : pickDungeonSpawnPoint(
-    camX,
-    camY,
-    requireOffscreen ? Math.min(visibleW, visibleH) * 0.5 : 0,
-    requireOffscreen ? nearMaxDistance : Infinity,
-    {
-      fallbackToBest: true,
-      fallbackMode: requireOffscreen ? "nearest" : "farthest",
-      predicate: requireOffscreen ? isOffscreen : null,
-    },
-  );
-  if (dungeonSpawn) {
-    x = dungeonSpawn.x;
-    y = dungeonSpawn.y;
-  } else if (game.dungeon && requireOffscreen) {
-    return null;
-  } else {
-    const side = Math.floor(Math.random() * 4);
-
-    if (side === 0) {
-      x = camX + (Math.random() - 0.5) * (visibleW + margin * 2);
-      y = camY - visibleH / 2 - margin;
-    } else if (side === 1) {
-      x = camX + visibleW / 2 + margin;
-      y = camY + (Math.random() - 0.5) * (visibleH + margin * 2);
-    } else if (side === 2) {
-      x = camX + (Math.random() - 0.5) * (visibleW + margin * 2);
-      y = camY + visibleH / 2 + margin;
-    } else {
-      x = camX - visibleW / 2 - margin;
-      y = camY + (Math.random() - 0.5) * (visibleH + margin * 2);
-    }
+  if (!options.position && requireOffscreen) {
+    const spawnPoint = pickOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin, spawnStandRadius);
+    if (!spawnPoint) return null;
+    x = spawnPoint.x;
+    y = spawnPoint.y;
+  } else if (!options.position && game.dungeon) {
+    const spawnPoint = pickAnyDungeonSpawnPoint(spawnStandRadius);
+    if (!spawnPoint) return null;
+    x = spawnPoint.x;
+    y = spawnPoint.y;
   }
-
-  const elapsed = game.floorElapsed || 0;
-  let type = forceType || pickEnemyTypeByTime(elapsed);
-  const progress = Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
 
   const baseHp = Math.round((28 + progress * 34) * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
   const enemy = {
