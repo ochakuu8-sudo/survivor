@@ -9,9 +9,19 @@ import {
   recomputeAllAttachments,
   starsLabel,
 } from "./attachments.js";
-import { rollAttachmentForWeapon } from "./attachmentRolls.js";
 import { updateHud } from "./hud.js";
 import { findWeapon, getActiveWeapon } from "./weapons.js";
+import {
+  addStoneItemToWeapon,
+  countItemsByKey,
+  ensureStoneItemSlots,
+  formatStoneItemSummary,
+  isStoneWeapon,
+  stoneEvolutionProgress,
+  stoneItemCapacity,
+  pickStoneItemChoices,
+} from "./stoneItems.js";
+import { findStoneItem } from "./data/stoneItems.js";
 
 export function maxAttachmentSlotsForWeapon(weapon) {
   return getWeaponMaxAttachments(weapon);
@@ -40,6 +50,12 @@ function normalizePendingAttachment(raw) {
   return createAttachmentInstance(definition, raw) || null;
 }
 
+function normalizePendingStoneItem(raw) {
+  const definition = findStoneItem(raw?.key) || raw;
+  if (!definition?.key) return null;
+  return { key: definition.key, name: definition.name, description: definition.description };
+}
+
 export function beginAttachmentReward(rawAttachment, { source = "reward", allowDiscard = true } = {}) {
   const attachment = normalizePendingAttachment(rawAttachment);
   if (!attachment) return false;
@@ -57,11 +73,45 @@ export function beginAttachmentReward(rawAttachment, { source = "reward", allowD
   return true;
 }
 
+export function beginStoneItemChoiceReward(rawChoices, { source = "reward", allowDiscard = true } = {}) {
+  const choices = (rawChoices || []).map(normalizePendingStoneItem).filter(Boolean);
+  if (choices.length === 0) return false;
+  game.pendingAttachmentReward = {
+    stoneChoices: choices,
+    source,
+    rerollsUsed: 0,
+    allowDiscard,
+  };
+  game.pendingMod = null;
+  game.modeBeforeAttachmentReward = game.mode === "attachmentReward" ? modeAfterReward() : game.mode;
+  game.mode = "attachmentReward";
+  renderModdingPanel();
+  updateHud();
+  return true;
+}
+
+export function beginStoneItemReward(rawItem, { source = "reward", allowDiscard = true } = {}) {
+  const item = normalizePendingStoneItem(rawItem);
+  if (!item) return false;
+  game.pendingAttachmentReward = {
+    stoneItem: item,
+    source,
+    rerollsUsed: 0,
+    allowDiscard,
+  };
+  game.pendingMod = null;
+  game.modeBeforeAttachmentReward = game.mode === "attachmentReward" ? modeAfterReward() : game.mode;
+  game.mode = "attachmentReward";
+  renderModdingPanel();
+  updateHud();
+  return true;
+}
+
 export function levelUpWeapon(weapon = getActiveWeapon()) {
   if (!weapon) return false;
-  const attachment = rollAttachmentForWeapon(weapon, { weaponLevel: Math.max(2, weapon.level + 1) });
-  if (!attachment) return false;
-  return beginAttachmentReward(attachment, { source: "debugLevelUp", allowDiscard: true });
+  const item = pickStoneItemChoices(1)[0];
+  if (!item) return false;
+  return beginStoneItemReward(item, { source: "debugLevelUp", allowDiscard: true });
 }
 
 export function getModRerollCost() {
@@ -99,6 +149,26 @@ export function discardPendingAttachment() {
   finishAttachmentReward();
 }
 
+export function applyPendingStoneItemToSlot(weaponId, slotIndex) {
+  const pending = game.pendingAttachmentReward;
+  if (!pending?.stoneItem) return false;
+  const weapon = findWeapon(weaponId);
+  if (!weapon || !isStoneWeapon(weapon)) return false;
+  ensureStoneItemSlots(weapon);
+  const maxSlots = stoneItemCapacity(weapon);
+  if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= maxSlots) return false;
+  const current = weapon.items[slotIndex] || null;
+  const currentDefinition = findStoneItem(current?.key) || current;
+  if (currentDefinition && typeof window !== "undefined" && typeof window.confirm === "function") {
+    const ok = window.confirm(`「${currentDefinition.name}」を「${pending.stoneItem.name}」で入れ替えますか？
+外したアイテムは破棄されます。`);
+    if (!ok) return false;
+  }
+  addStoneItemToWeapon(weapon, pending.stoneItem.key, slotIndex);
+  finishAttachmentReward();
+  return true;
+}
+
 export function applyPendingAttachmentToSlot(weaponId, slotIndex) {
   const pending = game.pendingAttachmentReward;
   if (!pending?.attachment) return false;
@@ -131,6 +201,61 @@ function sourceLabel(source) {
     reward: "報酬",
   };
   return labels[source] || "報酬";
+}
+
+function renderStoneItemSlot(weapon, slotIndex) {
+  ensureStoneItemSlots(weapon);
+  const current = weapon.items[slotIndex] || null;
+  const definition = findStoneItem(current?.key) || current;
+
+  const item = document.createElement("li");
+  item.className = `mod-slot${current ? " filled" : " empty"}`;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "mod-slot-select";
+  button.addEventListener("click", () => applyPendingStoneItemToSlot(weapon.id, slotIndex));
+
+  const icon = document.createElement("span");
+  icon.className = "mod-slot-icon";
+  icon.textContent = current ? "●" : "+";
+
+  const copy = document.createElement("span");
+  copy.className = "mod-slot-copy";
+
+  const name = document.createElement("strong");
+  name.textContent = definition?.name || "空きスロット";
+
+  const meta = document.createElement("small");
+  meta.textContent = current ? `${definition?.description || "効果"} → 入れ替え` : "取得アイテムを装着";
+
+  copy.append(name, meta);
+  button.append(icon, copy);
+  item.append(button);
+  return item;
+}
+
+function renderStoneItemRewardSlots(weapon) {
+  const group = document.createElement("li");
+  group.className = "mod-weapon-group";
+
+  const counts = countItemsByKey(weapon.items || []);
+  const progress = stoneEvolutionProgress(counts)
+    .map((evolution) => `${evolution.name}: ${evolution.requirements.map((req) => `${req.name} ${Math.min(req.count, req.need)}/${req.need}`).join(" + ")}`)
+    .join(" / ");
+
+  const heading = document.createElement("div");
+  heading.className = "mod-weapon-heading";
+  heading.innerHTML = `<strong>${weapon.name}: アイテム ${weapon.items.length}/${stoneItemCapacity(weapon)}</strong><small>${formatStoneItemSummary(weapon)}<br>${progress}</small>`;
+
+  const slots = document.createElement("ol");
+  slots.className = "modding-slots modding-slots-nested";
+  for (let slotIndex = 0; slotIndex < stoneItemCapacity(weapon); slotIndex += 1) {
+    slots.append(renderStoneItemSlot(weapon, slotIndex));
+  }
+
+  group.append(heading, slots);
+  return group;
 }
 
 function renderRewardSlot(weapon, weaponIndex, slotIndex, pendingAttachment) {
@@ -205,6 +330,14 @@ function getFilledSlotCount(weapon) {
 export function renderModdingPanel() {
   if (!hud.moddingPanel) return;
   const pending = game.pendingAttachmentReward;
+  if (pending?.stoneChoices) {
+    renderStoneItemChoicePanel(pending);
+    return;
+  }
+  if (pending?.stoneItem) {
+    renderStoneItemPanel(pending);
+    return;
+  }
   if (!pending?.attachment) {
     hideModdingPanel();
     return;
@@ -240,6 +373,106 @@ export function renderModdingPanel() {
   hud.moddingReroll.textContent = "リロールなし";
   hud.moddingReroll.disabled = true;
   hud.moddingTake.textContent = pending.allowDiscard === false ? "装着先を選択" : "捨てる";
+  hud.moddingTake.disabled = pending.allowDiscard === false;
+  hud.moddingPanel.classList.remove("hidden");
+}
+
+function choosePendingStoneItem(index) {
+  const pending = game.pendingAttachmentReward;
+  const item = pending?.stoneChoices?.[index];
+  if (!item) return;
+  game.pendingAttachmentReward = {
+    stoneItem: item,
+    source: pending.source,
+    rerollsUsed: pending.rerollsUsed || 0,
+    allowDiscard: pending.allowDiscard,
+  };
+  renderModdingPanel();
+}
+
+function renderStoneItemChoicePanel(pending) {
+  const weapon = getActiveWeapon();
+  const counts = countItemsByKey(weapon?.items || []);
+  const kicker = hud.moddingPanel.querySelector(".panel-kicker");
+  const heading = hud.moddingPanel.querySelector("h1");
+  if (kicker) kicker.textContent = sourceLabel(pending.source);
+  if (heading) heading.textContent = "石ころアイテムを選ぶ";
+
+  hud.moddingWeaponName.textContent = "3択報酬";
+  hud.moddingWeaponLevel.textContent = "1つ選ぶと装着先を指定できます";
+  hud.moddingGold.textContent = "選択待ち";
+  const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
+  if (treasureIcon) {
+    treasureIcon.className = "treasure-icon modding-main-icon";
+    treasureIcon.textContent = "●";
+  }
+  hud.moddingAttachmentName.textContent = "ただの石ころを強化";
+  hud.moddingAttachmentMeta.textContent = "カテゴリ・Rankなし";
+  hud.moddingAttachmentText.textContent = "同じアイテムも複数装着でき、所持数ぶん効果が積み上がります。";
+
+  hud.moddingSlots.replaceChildren();
+  pending.stoneChoices.forEach((item, index) => {
+    const definition = findStoneItem(item.key) || item;
+    const owned = counts[item.key] || 0;
+    const card = document.createElement("li");
+    card.className = "mod-slot active";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "mod-slot-select";
+    button.addEventListener("click", () => choosePendingStoneItem(index));
+    const icon = document.createElement("span");
+    icon.className = "mod-slot-icon";
+    icon.textContent = "●";
+    const copy = document.createElement("span");
+    copy.className = "mod-slot-copy";
+    const name = document.createElement("strong");
+    name.textContent = definition.name;
+    const meta = document.createElement("small");
+    meta.textContent = `${definition.description} / 所持: ${owned} → ${owned + 1}`;
+    copy.append(name, meta);
+    button.append(icon, copy);
+    card.append(button);
+    hud.moddingSlots.append(card);
+  });
+
+  hud.moddingReroll.textContent = "リロールなし";
+  hud.moddingReroll.disabled = true;
+  hud.moddingTake.textContent = pending.allowDiscard === false ? "アイテムを選択" : "破棄";
+  hud.moddingTake.disabled = pending.allowDiscard === false;
+  hud.moddingPanel.classList.remove("hidden");
+}
+
+function renderStoneItemPanel(pending) {
+  const item = pending.stoneItem;
+  const definition = findStoneItem(item.key) || item;
+  const weapon = getActiveWeapon();
+  const counts = countItemsByKey(weapon?.items || []);
+  const owned = counts[item.key] || 0;
+
+  const kicker = hud.moddingPanel.querySelector(".panel-kicker");
+  const heading = hud.moddingPanel.querySelector("h1");
+  if (kicker) kicker.textContent = sourceLabel(pending.source);
+  if (heading) heading.textContent = "石ころに装着する";
+
+  hud.moddingWeaponName.textContent = "新アイテム";
+  hud.moddingWeaponLevel.textContent = "空き枠がなければ入れ替え";
+  hud.moddingGold.textContent = `所持 ${owned} → ${owned + 1}`;
+  const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
+  if (treasureIcon) {
+    treasureIcon.className = "treasure-icon modding-main-icon";
+    treasureIcon.textContent = "●";
+  }
+  hud.moddingAttachmentName.textContent = definition.name || "石ころアイテム";
+  hud.moddingAttachmentMeta.textContent = `所持: ${owned} → ${owned + 1}`;
+  hud.moddingAttachmentText.textContent = definition.description || "石ころを強化する。";
+
+  hud.moddingSlots.replaceChildren();
+  const stoneWeapon = (game.player?.gear?.weapons || []).find((candidate) => isStoneWeapon(candidate));
+  if (stoneWeapon) hud.moddingSlots.append(renderStoneItemRewardSlots(stoneWeapon));
+
+  hud.moddingReroll.textContent = "リロールなし";
+  hud.moddingReroll.disabled = true;
+  hud.moddingTake.textContent = pending.allowDiscard === false ? "装着先を選択" : "破棄";
   hud.moddingTake.disabled = pending.allowDiscard === false;
   hud.moddingPanel.classList.remove("hidden");
 }

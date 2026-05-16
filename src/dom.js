@@ -64,6 +64,7 @@ export const hud = {
   weaponSwitch: document.querySelector("#weaponSwitchBtn"),
   pauseBtn: document.querySelector("#pauseBtn"),
   pauseMenu: document.querySelector("#pauseMenu"),
+  pauseStoneItems: document.querySelector("#pauseStoneItems"),
   resumeBtn: document.querySelector("#resumeBtn"),
   pauseSkillDebugBtn: document.querySelector("#pauseSkillDebugBtn"),
   pauseDebugBtn: document.querySelector("#pauseDebugBtn"),
