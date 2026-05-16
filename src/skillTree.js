@@ -6,14 +6,11 @@ import {
   addWeaponBasePercent,
   addWeaponPierce,
   boostWeaponImpactPercent,
-  createWeapon,
-  expandWeaponArea,
-  extendWeaponReach,
   getActiveWeapon,
   weaponStatusLabel,
   weaponMetaLabel,
 } from "./weapons.js";
-import { WEAPON_POOL } from "./shop.js";
+import { applyStoneEvolutionByName } from "./stoneItems.js";
 import { updateHud } from "./hud.js";
 
 const selectedSkillNodes = { weapon: null };
@@ -49,56 +46,6 @@ export const WEAPON_SKILL_TREES = {
     weaponNode("stone_critical_throw", 3, "会心投げ", "4投に1回、白く光る巨大な確定会心石を投げる。", 220, ["stone_piercing"], { custom: (weapon) => { weapon.criticalThrowEvery = 4; weapon.criticalThrowDamageScale = 1.5; weapon.criticalThrowSizeScale = 1.35; weapon.critChance += 0.1; setStoneVisual(weapon, { form: "sharp", trail: "white", hitEffect: "critical" }); setStoneFlag(weapon, "criticalThrow"); } }),
     weaponNode("stone_boulder", 4, "巨岩投げ", "岩サイズの石で敵を押し潰す。さらに大きく強いが遅くなる。", 360, ["stone_critical_throw"], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.3, { min: 2 }); boostWeaponImpactPercent(weapon, 0.35); weapon.knockback += 15; addWeaponBasePercent(weapon, "bulletSpeed", -0.08, { min: 1 }); addWeaponBasePercent(weapon, "fireRate", -0.08, { min: 0.15 }); setStoneVisual(weapon, { form: "heavy", hitEffect: "heavy", sizeScale: 1.3 }); weapon.bulletSprite = "stoneHeavy"; } }),
     weaponNode("stone_evolve_master", 5, "進化：名人の一石", "2.5秒ごとに最もHPの高い敵へ、白く光る巨大な精密投石を放つ。", 600, ["stone_boulder"], { evolveTo: "名人の一石" }),
-  ],
-  火炎放射器: [
-    weaponNode("flame_power", 1, "高温燃焼", "ダメージ +15%。", 24, [], { attachment: "powerCore" }),
-    weaponNode("flame_pressure", 1, "高圧タンク", "攻撃頻度 +12%。", 24, [], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.12, { min: 0.15 }) }),
-    weaponNode("flame_range", 1, "加圧ノズル", "射程 +15%。", 26, [], { custom: (weapon) => extendWeaponReach(weapon, 1.15) }),
-    weaponNode("flame_cone", 1, "ワイドコーン", "コーン範囲 +20%。", 30, [], { custom: (weapon) => addWeaponBasePercent(weapon, "cone", 0.2, { min: 0.1, max: 1.4 }) }),
-    weaponNode("flame_stability", 2, "圧力安定", "射程 +12%。", 42, ["flame_pressure"], { custom: (weapon) => extendWeaponReach(weapon, 1.12) }),
-    weaponNode("flame_slow", 2, "粘着炎", "炎に鈍足効果を付与。", 46, ["flame_range"], { custom: (weapon) => { weapon.freezeChance += 0.28; weapon.freezeSlow = Math.min(weapon.freezeSlow || 0.62, 0.55); weapon.freezeDuration = Math.max(weapon.freezeDuration || 1.6, 1.8); } }),
-    weaponNode("flame_focus", 2, "狭角高火力", "範囲を絞ってダメージ +35%。", 58, ["flame_power"], { custom: (weapon) => { boostWeaponImpactPercent(weapon, 0.35); weapon.cone = Math.max(0.28, weapon.cone * 0.78); } }),
-    weaponNode("flame_wall", 2, "火炎壁", "範囲と持続感を強化。", 56, ["flame_cone"], { custom: (weapon) => expandWeaponArea(weapon, 2) }),
-    weaponNode("flame_fuel", 3, "増設燃料槽", "持続感と射程 +10%。", 52, ["flame_stability", "flame_range"], { custom: (weapon) => { addWeaponBasePercent(weapon, "duration", 0.1, { min: 0 }); extendWeaponReach(weapon, 1.1); } }),
-    weaponNode("flame_ignition", 3, "点火予熱", "攻撃頻度 +18%。", 62, ["flame_pressure", "flame_focus"], { custom: (weapon) => addWeaponBasePercent(weapon, "fireRate", 0.18, { min: 0.15 }) }),
-    weaponNode("flame_tar", 3, "タール噴射", "鈍足時間 +45%、ノックバック +4。", 60, ["flame_slow"], { custom: (weapon) => { weapon.freezeDuration += 0.7; weapon.knockback += 4; } }),
-    weaponNode("flame_sweep", 3, "扇状掃射", "コーン範囲 +18%、射程 +6%。", 58, ["flame_wall"], { custom: (weapon) => { addWeaponBasePercent(weapon, "cone", 0.18, { min: 0.1, max: 1.4 }); extendWeaponReach(weapon, 1.06); } }),
-    weaponNode("flame_blue", 4, "青炎化", "ダメージ +24%、鈍足率 +10%。", 76, ["flame_focus", "flame_tar"], { custom: (weapon) => { boostWeaponImpactPercent(weapon, 0.24); weapon.freezeChance += 0.1; } }),
-    weaponNode("flame_pulse", 4, "脈動噴射", "攻撃頻度 +16%、ノックバック +5。", 72, ["flame_ignition"], { custom: (weapon) => { addWeaponBasePercent(weapon, "fireRate", 0.16, { min: 0.15 }); weapon.knockback += 5; } }),
-    weaponNode("flame_perimeter", 4, "防火帯", "コーン範囲 +22%、攻撃範囲 +12%。", 76, ["flame_sweep", "flame_fuel"], { custom: (weapon) => { addWeaponBasePercent(weapon, "cone", 0.22, { min: 0.1, max: 1.4 }); expandWeaponArea(weapon, 1.5); } }),
-    weaponNode("flame_drill", 4, "貫炎ドリル", "射程 +18%、炎の芯の威力 +12%。", 80, ["flame_stability", "flame_blue"], { custom: (weapon) => { extendWeaponReach(weapon, 1.18); boostWeaponImpactPercent(weapon, 0.12); } }),
-    weaponNode("flame_overheat", 5, "安全弁解除", "ダメージ +30%、攻撃頻度 -7%。", 92, ["flame_blue", "flame_pulse"], { custom: (weapon) => { boostWeaponImpactPercent(weapon, 0.3); addWeaponBasePercent(weapon, "fireRate", -0.07, { min: 0.15 }); } }),
-    weaponNode("flame_ring", 5, "旋回ノズル", "範囲 +18%、全周攻撃への布石。", 88, ["flame_perimeter"], { custom: (weapon) => expandWeaponArea(weapon, 2.25) }),
-    weaponNode("flame_afterburn", 5, "残り火", "持続時間 +18%、鈍足率 +8%。", 82, ["flame_tar", "flame_fuel"], { custom: (weapon) => { addWeaponBasePercent(weapon, "duration", 0.18, { min: 0 }); weapon.freezeChance += 0.08; } }),
-    weaponNode("flame_dual", 5, "二連バルブ", "攻撃頻度 +22%、コーン範囲 +8%。", 96, ["flame_pulse", "flame_sweep"], { custom: (weapon) => { addWeaponBasePercent(weapon, "fireRate", 0.22, { min: 0.15 }); addWeaponBasePercent(weapon, "cone", 0.08, { min: 0.1, max: 1.4 }); } }),
-    weaponNode("flame_inferno", 6, "業火炉心", "ダメージ +26%、射程 +16%。", 112, ["flame_overheat", "flame_drill"], { custom: (weapon) => { boostWeaponImpactPercent(weapon, 0.26); extendWeaponReach(weapon, 1.16); } }),
-    weaponNode("flame_whiteout", 6, "白熱地帯", "攻撃頻度 +16%、範囲 +16%。", 108, ["flame_ring", "flame_dual", "flame_afterburn"], { custom: (weapon) => { addWeaponBasePercent(weapon, "fireRate", 0.16, { min: 0.15 }); expandWeaponArea(weapon, 2); } }),
-    weaponNode("flame_evolve", 7, "進化：フレア", "全方位に炎を放つ。", 130, ["flame_inferno", "flame_whiteout"], { evolveTo: "フレア" }),
-  ],
-  モーニングスター: [
-    weaponNode("star_power", 1, "重い星", "ダメージ +15%。", 24, [], { attachment: "powerCore" }),
-    weaponNode("star_radius", 1, "長い鎖", "回転半径 +15%。", 24, [], { custom: (weapon) => addWeaponBasePercent(weapon, "orbitRadius", 0.15, { min: 0 }) }),
-    weaponNode("star_area", 1, "大きな棘", "攻撃範囲 +10%。", 26, [], { custom: (weapon) => addWeaponBasePercent(weapon, "radius", 0.1, { min: 2 }) }),
-    weaponNode("star_speed", 1, "高速回転", "回転速度 +15%。", 26, [], { custom: (weapon) => addWeaponBasePercent(weapon, "orbitSpeed", 0.15, { min: 0.1 }) }),
-    weaponNode("star_count", 2, "二連星", "回転数 +1。", 52, ["star_speed", "star_radius"], { custom: (weapon) => { weapon.orbitCount += 1; } }),
-    weaponNode("star_knock", 2, "吹き飛ばし", "ノックバック +12。", 42, ["star_power"], { custom: (weapon) => { weapon.knockback += 12; } }),
-    weaponNode("star_chain", 2, "鎖延長", "回転半径 +14%、射程 +8%。", 40, ["star_radius"], { custom: (weapon) => { addWeaponBasePercent(weapon, "orbitRadius", 0.14, { min: 0 }); extendWeaponReach(weapon, 1.08); } }),
-    weaponNode("star_barbs", 2, "返し棘", "攻撃範囲 +14%、威力 +8%。", 42, ["star_area"], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.14, { min: 2 }); boostWeaponImpactPercent(weapon, 0.08); } }),
-    weaponNode("star_push", 3, "敵押し出し", "接触した敵を強く押し戻す。", 56, ["star_knock"], { custom: (weapon) => { weapon.orbitPushOut += 22; } }),
-    weaponNode("star_grinder", 3, "粉砕回転", "攻撃頻度と範囲をさらに強化。", 60, ["star_area", "star_count"], { custom: (weapon) => { addWeaponBasePercent(weapon, "fireRate", 0.18, { min: 0.15 }); addWeaponBasePercent(weapon, "radius", 0.16, { min: 2 }); } }),
-    weaponNode("star_anchor", 3, "重錨スイング", "威力 +20%、回転速度 -5%。", 58, ["star_power", "star_chain"], { custom: (weapon) => { boostWeaponImpactPercent(weapon, 0.2); addWeaponBasePercent(weapon, "orbitSpeed", -0.05, { min: 0.1 }); } }),
-    weaponNode("star_whirl", 3, "旋風ステップ", "回転速度 +20%、攻撃頻度 +8%。", 62, ["star_speed", "star_barbs"], { custom: (weapon) => { addWeaponBasePercent(weapon, "orbitSpeed", 0.2, { min: 0.1 }); addWeaponBasePercent(weapon, "fireRate", 0.08, { min: 0.15 }); } }),
-    weaponNode("star_outer", 4, "外周制圧", "回転半径 +18%、押し出し +10。", 72, ["star_chain", "star_push"], { custom: (weapon) => { addWeaponBasePercent(weapon, "orbitRadius", 0.18, { min: 0 }); weapon.orbitPushOut += 10; } }),
-    weaponNode("star_crush", 4, "粉砕点", "威力 +24%、ノックバック +8。", 76, ["star_anchor", "star_knock"], { custom: (weapon) => { boostWeaponImpactPercent(weapon, 0.24); weapon.knockback += 8; } }),
-    weaponNode("star_satellite", 4, "衛星軌道", "回転数 +1、範囲少し低下。", 86, ["star_count", "star_whirl"], { custom: (weapon) => { weapon.orbitCount += 1; addWeaponBasePercent(weapon, "radius", -0.04, { min: 2 }); } }),
-    weaponNode("star_saw", 4, "鋸刃化", "攻撃範囲 +18%、攻撃頻度 +12%。", 74, ["star_grinder", "star_barbs"], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.18, { min: 2 }); addWeaponBasePercent(weapon, "fireRate", 0.12, { min: 0.15 }); } }),
-    weaponNode("star_bulwark", 5, "鉄壁回転", "押し出し +18、回転半径 +10%。", 88, ["star_outer", "star_crush"], { custom: (weapon) => { weapon.orbitPushOut += 18; addWeaponBasePercent(weapon, "orbitRadius", 0.1, { min: 0 }); } }),
-    weaponNode("star_cyclone", 5, "大旋風", "回転速度 +22%、攻撃範囲 +12%。", 92, ["star_whirl", "star_saw"], { custom: (weapon) => { addWeaponBasePercent(weapon, "orbitSpeed", 0.22, { min: 0.1 }); addWeaponBasePercent(weapon, "radius", 0.12, { min: 2 }); } }),
-    weaponNode("star_triple", 5, "三連軌道", "回転数 +1。", 102, ["star_satellite"], { custom: (weapon) => { weapon.orbitCount += 1; } }),
-    weaponNode("star_execution", 5, "処刑棘", "クリティカル率 +12%、威力 +12%。", 88, ["star_crush", "star_saw"], { custom: (weapon) => { weapon.critChance += 0.12; boostWeaponImpactPercent(weapon, 0.12); } }),
-    weaponNode("star_singularity", 6, "重力鎖", "押し出し +24、回転半径 +16%。", 112, ["star_bulwark", "star_triple"], { custom: (weapon) => { weapon.orbitPushOut += 24; addWeaponBasePercent(weapon, "orbitRadius", 0.16, { min: 0 }); } }),
-    weaponNode("star_blender", 6, "星砕き", "攻撃頻度 +24%、威力 +20%。", 112, ["star_cyclone", "star_execution"], { custom: (weapon) => { addWeaponBasePercent(weapon, "fireRate", 0.24, { min: 0.15 }); boostWeaponImpactPercent(weapon, 0.2); } }),
-    weaponNode("star_evolve", 7, "進化：3つ星", "3つの星が高速回転する。", 130, ["star_singularity", "star_blender"], { evolveTo: "3つ星" }),
   ],
 };
 
@@ -973,10 +920,9 @@ function unlockButtonLabel(status, free) {
   return free ? "無料で開放" : "開放";
 }
 
-function nodeIcon(node, weapon) {
+function nodeIcon(node) {
   if (node.evolveTo || node.title.includes("進化")) return "🦋";
   const text = `${node.id} ${node.title} ${node.text}`;
-  if (text.includes("炎") || weapon?.baseName === "火炎放射器") return "🔥";
   if (text.includes("範囲") || text.includes("爆発") || text.includes("破片")) return "💥";
   if (text.includes("速") || text.includes("頻度") || text.includes("連射")) return "⚡";
   if (text.includes("貫通")) return "🪡";
@@ -1131,16 +1077,10 @@ function addAttachmentNode(weapon, attachmentKey, nodeId) {
   });
 }
 
-function evolveWeapon(templateName) {
-  const template = WEAPON_POOL.find((candidate) => candidate.name === templateName);
-  const gear = game.player.gear;
-  if (!template || !gear?.weapons?.length) return;
-  const oldWeapon = getActiveWeapon();
-  const evolved = createWeapon({ name: template.name, ...template.weapon });
-  evolved.attachments = [...(oldWeapon.attachments || [])];
-  gear.weapons = [evolved];
-  gear.activeWeaponIndex = 0;
-  game.selectedWeapon = evolved.baseName || evolved.name;
+function evolveWeapon(evolutionName) {
+  const weapon = getActiveWeapon();
+  if (!applyStoneEvolutionByName(weapon, evolutionName)) return;
+  game.selectedWeapon = weapon.baseName || weapon.name;
 }
 
 export function grantFreeNode(scope = "weapon", count = 1) {
