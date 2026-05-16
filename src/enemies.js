@@ -10,8 +10,11 @@ const SPAWN_BATCH_INTERVAL_MIN = 2.4;
 const SPAWN_BATCH_INTERVAL_MAX = 5.2;
 const SPAWN_BATCH_SIZE_MIN = 2;
 const SPAWN_BATCH_SIZE_MAX = 32;
-const OPENING_ENEMY_COUNT = 10;
+const OPENING_ENEMY_DENSITY_TILES = 18;
+const OPENING_ENEMY_MIN_COUNT = 36;
+const OPENING_ENEMY_MAX_COUNT = 160;
 const OPENING_SPAWN_SAFE_RADIUS = TILE_SIZE * 3.2;
+const OPENING_SPAWN_GRID_SIZE = TILE_SIZE * 4;
 const ENEMY_AGGRO_RANGE = TILE_SIZE * 9;
 const MOBILE_SCREEN_ASPECT = 9 / 16;
 const OFFSCREEN_SPAWN_MARGIN = 72;
@@ -90,7 +93,7 @@ export function resetEnemySpawnTimer() {
 }
 
 export function spawnOpeningEnemies() {
-  const count = OPENING_ENEMY_COUNT;
+  const count = openingEnemyCount();
   const positions = pickDistributedOpeningSpawnPoints(count);
   let spawned = 0;
 
@@ -103,48 +106,118 @@ export function spawnOpeningEnemies() {
   }
 }
 
+function openingEnemyCount() {
+  const dungeon = game.dungeon;
+  if (!dungeon) return OPENING_ENEMY_MIN_COUNT;
+
+  let walkableTiles = 0;
+  for (let ty = 0; ty < dungeon.height; ty += 1) {
+    for (let tx = 0; tx < dungeon.width; tx += 1) {
+      if (isWalkableTile(dungeon, tx, ty)) walkableTiles += 1;
+    }
+  }
+
+  return Math.min(
+    OPENING_ENEMY_MAX_COUNT,
+    Math.max(OPENING_ENEMY_MIN_COUNT, Math.round(walkableTiles / OPENING_ENEMY_DENSITY_TILES)),
+  );
+}
+
 function pickDistributedOpeningSpawnPoints(count) {
   const dungeon = game.dungeon;
   if (!dungeon || count <= 0) return [];
 
+  const candidates = collectOpeningSpawnCandidates(dungeon);
+  const chosen = pickOneSpawnPerArea(candidates, count);
+  fillRemainingOpeningSpawns(chosen, candidates, count);
+  return chosen;
+}
+
+function collectOpeningSpawnCandidates(dungeon) {
   const candidates = [];
-  for (const room of dungeon.rooms || []) {
-    for (let ty = room.y + 1; ty <= room.y + room.h - 2; ty += 1) {
-      for (let tx = room.x + 1; tx <= room.x + room.w - 2; tx += 1) {
-        if (!isWalkableTile(dungeon, tx, ty)) continue;
-        const point = dungeonTileWorldCenter(dungeon, tx, ty);
-        const jitter = TILE_SIZE * 0.28;
-        point.x += (Math.random() - 0.5) * jitter;
-        point.y += (Math.random() - 0.5) * jitter;
-        if (!canStandAt(dungeon, point.x, point.y, 22)) continue;
-        const playerDistance = Math.hypot(point.x - game.player.x, point.y - game.player.y);
-        if (playerDistance < OPENING_SPAWN_SAFE_RADIUS) continue;
-        candidates.push(point);
-      }
+  for (let ty = 0; ty < dungeon.height; ty += 1) {
+    for (let tx = 0; tx < dungeon.width; tx += 1) {
+      if (!isWalkableTile(dungeon, tx, ty)) continue;
+      const point = dungeonTileWorldCenter(dungeon, tx, ty);
+      const jitter = TILE_SIZE * 0.28;
+      point.x += (Math.random() - 0.5) * jitter;
+      point.y += (Math.random() - 0.5) * jitter;
+      if (!canStandAt(dungeon, point.x, point.y, 22)) continue;
+      const playerDistance = Math.hypot(point.x - game.player.x, point.y - game.player.y);
+      if (playerDistance < OPENING_SPAWN_SAFE_RADIUS) continue;
+      candidates.push(point);
     }
+  }
+  return candidates;
+}
+
+function pickOneSpawnPerArea(candidates, count) {
+  const cells = new Map();
+  for (const point of candidates) {
+    const cellX = Math.floor(point.x / OPENING_SPAWN_GRID_SIZE);
+    const cellY = Math.floor(point.y / OPENING_SPAWN_GRID_SIZE);
+    const key = gridKey(cellX, cellY);
+    let cell = cells.get(key);
+    if (!cell) {
+      cell = { points: [], centerX: 0, centerY: 0 };
+      cells.set(key, cell);
+    }
+    cell.points.push(point);
+    cell.centerX += point.x;
+    cell.centerY += point.y;
+  }
+
+  const remainingCells = [...cells.values()];
+  for (const cell of remainingCells) {
+    cell.centerX /= cell.points.length;
+    cell.centerY /= cell.points.length;
   }
 
   const chosen = [];
-  while (chosen.length < count && candidates.length > 0) {
+  while (chosen.length < count && remainingCells.length > 0) {
     let bestIndex = 0;
     let bestScore = -Infinity;
-    for (let i = 0; i < candidates.length; i += 1) {
-      const point = candidates[i];
-      const playerDistance = Math.hypot(point.x - game.player.x, point.y - game.player.y);
+    for (let i = 0; i < remainingCells.length; i += 1) {
+      const cell = remainingCells[i];
+      const playerDistance = Math.hypot(cell.centerX - game.player.x, cell.centerY - game.player.y);
       const nearestChosenDistance = chosen.length
-        ? Math.min(...chosen.map((other) => Math.hypot(point.x - other.x, point.y - other.y)))
+        ? Math.min(...chosen.map((other) => Math.hypot(cell.centerX - other.x, cell.centerY - other.y)))
         : playerDistance;
-      const score = nearestChosenDistance + playerDistance * 0.18;
+      const score = nearestChosenDistance + playerDistance * 0.08 + Math.random();
       if (score > bestScore) {
         bestScore = score;
         bestIndex = i;
       }
     }
-    chosen.push(candidates.splice(bestIndex, 1)[0]);
-  }
 
+    const cell = remainingCells.splice(bestIndex, 1)[0];
+    chosen.push(cell.points[Math.floor(Math.random() * cell.points.length)]);
+  }
   return chosen;
 }
+
+function fillRemainingOpeningSpawns(chosen, candidates, count) {
+  while (chosen.length < count && candidates.length > 0) {
+    let bestIndex = -1;
+    let bestScore = -Infinity;
+    for (let i = 0; i < candidates.length; i += 1) {
+      const point = candidates[i];
+      if (chosen.includes(point)) continue;
+      const playerDistance = Math.hypot(point.x - game.player.x, point.y - game.player.y);
+      const nearestChosenDistance = chosen.length
+        ? Math.min(...chosen.map((other) => Math.hypot(point.x - other.x, point.y - other.y)))
+        : playerDistance;
+      const score = nearestChosenDistance + playerDistance * 0.08;
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = i;
+      }
+    }
+    if (bestIndex < 0) break;
+    chosen.push(candidates[bestIndex]);
+  }
+}
+
 
 export function spawnEnemies(dt) {
   if (game.enemies.length >= SAFETY_ENEMY_CAP) {
