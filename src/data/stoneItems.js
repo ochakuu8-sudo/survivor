@@ -7,7 +7,6 @@ export const STONE_ITEMS = [
   { key: "heavyStone", name: "重石", description: "ノックバック上昇", effect: "knockback", value: 8, category: "stat", tags: ["knockback", "basic"] },
   { key: "multiThrow", name: "多投石", description: "同時投石数上昇", effect: "projectileCount", value: 1, category: "throwStyle", tags: ["multi", "projectileCount"], weight: 0.55 },
   { key: "bounceStone", name: "跳ね石", description: "跳弾回数上昇", effect: "ricochetCount", value: 1, category: "trajectory", tags: ["ricochet", "targeting"], weight: 0.55 },
-  { key: "pierceStone", name: "貫き石", description: "貫通数上昇", effect: "pierceCount", value: 1, category: "stat", tags: ["pierce", "damage"], weight: 0.55 },
   { key: "explosiveStone", name: "爆ぜ石", description: "爆発ダメージ追加", effect: "explosionDamage", value: 0.35, category: "shatter", tags: ["explosion", "area"], weight: 0.55 },
   { key: "lavaStone", name: "溶岩石", description: "燃焼ダメージ追加", effect: "burnDamage", value: 0.2, category: "element", tags: ["fire", "dot"] },
   { key: "frostStone", name: "凍て石", description: "鈍足効果追加", effect: "slow", value: 0.12, category: "element", tags: ["ice", "slow"] },
