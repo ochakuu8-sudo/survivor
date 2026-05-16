@@ -185,6 +185,17 @@ export function checkStoneEvolution(weapon, counts = countItemsByKey(weapon?.ite
   return true;
 }
 
+export function applyStoneEvolutionByName(weapon, evolutionName) {
+  if (!weapon || !evolutionName) return false;
+  const evolution = STONE_EVOLUTIONS.find((candidate) => candidate.name === evolutionName);
+  if (!evolution) return false;
+  weapon.evolvedStoneKey = evolution.key;
+  weapon.evolvedStoneName = evolution.name;
+  evolution.apply(weapon);
+  return true;
+}
+
+
 export function stoneEvolutionProgress(counts) {
   return STONE_EVOLUTIONS.map((evolution) => ({
     name: evolution.name,
