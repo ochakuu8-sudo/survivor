@@ -203,6 +203,12 @@ function sourceLabel(source) {
   return labels[source] || "報酬";
 }
 
+function setModdingPanelVariant(variant = "default") {
+  if (!hud.moddingPanel) return;
+  hud.moddingPanel.classList.toggle("stone-choice-only", variant === "stoneChoice");
+  hud.moddingPanel.classList.toggle("stone-equip-simple", variant === "stoneEquip");
+}
+
 function renderStoneItemSlot(weapon, slotIndex) {
   ensureStoneItemSlots(weapon);
   const current = weapon.items[slotIndex] || null;
@@ -227,7 +233,7 @@ function renderStoneItemSlot(weapon, slotIndex) {
   name.textContent = definition?.name || "空きスロット";
 
   const meta = document.createElement("small");
-  meta.textContent = current ? `${definition?.description || "効果"} → 入れ替え` : "取得アイテムを装着";
+  meta.textContent = current ? `${definition?.description || "効果"} → 入れ替え` : "ここに装備";
 
   copy.append(name, meta);
   button.append(icon, copy);
@@ -246,7 +252,7 @@ function renderStoneItemRewardSlots(weapon) {
 
   const heading = document.createElement("div");
   heading.className = "mod-weapon-heading";
-  heading.innerHTML = `<strong>${weapon.name}: アイテム ${weapon.items.length}/${stoneItemCapacity(weapon)}</strong><small>${formatStoneItemSummary(weapon)}<br>${progress}</small>`;
+  heading.innerHTML = `<strong>アタッチメントを選んで装備</strong><small>${weapon.name}: ${weapon.items.length}/${stoneItemCapacity(weapon)}<br>${formatStoneItemSummary(weapon)}<br>${progress}</small>`;
 
   const slots = document.createElement("ol");
   slots.className = "modding-slots modding-slots-nested";
@@ -338,6 +344,7 @@ export function renderModdingPanel() {
     renderStoneItemPanel(pending);
     return;
   }
+  setModdingPanelVariant();
   if (!pending?.attachment) {
     hideModdingPanel();
     return;
@@ -391,12 +398,13 @@ function choosePendingStoneItem(index) {
 }
 
 function renderStoneItemChoicePanel(pending) {
+  setModdingPanelVariant("stoneChoice");
   const weapon = getActiveWeapon();
   const counts = countItemsByKey(weapon?.items || []);
   const kicker = hud.moddingPanel.querySelector(".panel-kicker");
   const heading = hud.moddingPanel.querySelector("h1");
   if (kicker) kicker.textContent = sourceLabel(pending.source);
-  if (heading) heading.textContent = "石ころアイテムを選ぶ";
+  if (heading) heading.textContent = "アイテムを選ぶ";
 
   hud.moddingWeaponName.textContent = "3択報酬";
   hud.moddingWeaponLevel.textContent = "1つ選ぶと装着先を指定できます";
@@ -415,7 +423,7 @@ function renderStoneItemChoicePanel(pending) {
     const definition = findStoneItem(item.key) || item;
     const owned = counts[item.key] || 0;
     const card = document.createElement("li");
-    card.className = "mod-slot active";
+    card.className = "mod-slot active stone-choice-button";
     const button = document.createElement("button");
     button.type = "button";
     button.className = "mod-slot-select";
@@ -428,7 +436,7 @@ function renderStoneItemChoicePanel(pending) {
     const name = document.createElement("strong");
     name.textContent = definition.name;
     const meta = document.createElement("small");
-    meta.textContent = `${definition.description} / 所持: ${owned} → ${owned + 1}`;
+    meta.textContent = `${definition.description} / 所持 ${owned}→${owned + 1}`;
     copy.append(name, meta);
     button.append(icon, copy);
     card.append(button);
@@ -443,6 +451,7 @@ function renderStoneItemChoicePanel(pending) {
 }
 
 function renderStoneItemPanel(pending) {
+  setModdingPanelVariant("stoneEquip");
   const item = pending.stoneItem;
   const definition = findStoneItem(item.key) || item;
   const weapon = getActiveWeapon();
@@ -452,10 +461,10 @@ function renderStoneItemPanel(pending) {
   const kicker = hud.moddingPanel.querySelector(".panel-kicker");
   const heading = hud.moddingPanel.querySelector("h1");
   if (kicker) kicker.textContent = sourceLabel(pending.source);
-  if (heading) heading.textContent = "石ころに装着する";
+  if (heading) heading.textContent = "アタッチメントを選んで装備";
 
-  hud.moddingWeaponName.textContent = "新アイテム";
-  hud.moddingWeaponLevel.textContent = "空き枠がなければ入れ替え";
+  hud.moddingWeaponName.textContent = "選択したアイテム";
+  hud.moddingWeaponLevel.textContent = "装備先を選んでください";
   hud.moddingGold.textContent = `所持 ${owned} → ${owned + 1}`;
   const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
   if (treasureIcon) {
@@ -478,5 +487,6 @@ function renderStoneItemPanel(pending) {
 }
 
 export function hideModdingPanel() {
+  setModdingPanelVariant();
   hud.moddingPanel?.classList.add("hidden");
 }
