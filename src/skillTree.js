@@ -4,7 +4,6 @@ import { hud } from "./dom.js";
 import { ACTIVE_ATTACHMENTS, findAttachmentDefinition, recomputeAllAttachments } from "./attachments.js";
 import {
   addWeaponBasePercent,
-  addWeaponPierce,
   boostWeaponImpactPercent,
   getActiveWeapon,
   weaponStatusLabel,
@@ -42,8 +41,7 @@ export const WEAPON_SKILL_TREES = {
     weaponNode("stone_evolve_meteor", 5, "進化：隕石核", "黒赤い隕石核化。大爆発と6個の破片を放つが攻撃頻度は少し低下。", 600, ["stone_chain_shatter"], { evolveTo: "隕石核" }),
 
     weaponNode("stone_heavy", 1, "重石", "大きく重い石。威力とノックバックが上がるが投げ間隔は少し長い。", 50, [], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.2, { min: 2 }); boostWeaponImpactPercent(weapon, 0.25); weapon.knockback += 8; addWeaponBasePercent(weapon, "fireRate", -0.05, { min: 0.15 }); setStoneVisual(weapon, { form: "heavy", hitEffect: "heavy", sizeScale: 1.2 }); weapon.bulletSprite = "stoneHeavy"; } }),
-    weaponNode("stone_piercing", 2, "貫き石", "貫通 +1。ばらつきが減り、鋭い石がまっすぐ速く飛ぶ。", 110, ["stone_heavy"], { custom: (weapon) => { addWeaponPierce(weapon, 1); weapon.spread = Math.max(0.03, weapon.spread * 0.7); addWeaponBasePercent(weapon, "bulletSpeed", 0.15, { min: 1 }); boostWeaponImpactPercent(weapon, 0.1); addWeaponBasePercent(weapon, "radius", 0.1, { min: 2 }); setStoneVisual(weapon, { form: "sharp", trail: "white", hitEffect: "pierce", sizeScale: 1.1 }); weapon.bulletSprite = "stoneSharp"; } }),
-    weaponNode("stone_critical_throw", 3, "会心投げ", "4投に1回、白く光る巨大な確定会心石を投げる。", 220, ["stone_piercing"], { custom: (weapon) => { weapon.criticalThrowEvery = 4; weapon.criticalThrowDamageScale = 1.5; weapon.criticalThrowSizeScale = 1.35; weapon.critChance += 0.1; setStoneVisual(weapon, { form: "sharp", trail: "white", hitEffect: "critical" }); setStoneFlag(weapon, "criticalThrow"); } }),
+    weaponNode("stone_critical_throw", 3, "会心投げ", "4投に1回、白く光る巨大な確定会心石を投げる。", 220, ["stone_heavy"], { custom: (weapon) => { weapon.criticalThrowEvery = 4; weapon.criticalThrowDamageScale = 1.5; weapon.criticalThrowSizeScale = 1.35; weapon.critChance += 0.1; setStoneVisual(weapon, { form: "sharp", trail: "white", hitEffect: "critical" }); setStoneFlag(weapon, "criticalThrow"); } }),
     weaponNode("stone_boulder", 4, "巨岩投げ", "岩サイズの石で敵を押し潰す。さらに大きく強いが遅くなる。", 360, ["stone_critical_throw"], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.3, { min: 2 }); boostWeaponImpactPercent(weapon, 0.35); weapon.knockback += 15; addWeaponBasePercent(weapon, "bulletSpeed", -0.08, { min: 1 }); addWeaponBasePercent(weapon, "fireRate", -0.08, { min: 0.15 }); setStoneVisual(weapon, { form: "heavy", hitEffect: "heavy", sizeScale: 1.3 }); weapon.bulletSprite = "stoneHeavy"; } }),
     weaponNode("stone_evolve_master", 5, "進化：名人の一石", "2.5秒ごとに最もHPの高い敵へ、白く光る巨大な精密投石を放つ。", 600, ["stone_boulder"], { evolveTo: "名人の一石" }),
   ],

@@ -147,7 +147,6 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
   weapon.knockback += 8 * (counts.heavyStone || 0);
   weapon.projectiles = Math.min(7, weapon.projectiles + (counts.multiThrow || 0));
   weapon.ricochetCount = Math.min(8, weapon.ricochetCount + (counts.bounceStone || 0));
-  weapon.pierce = Math.min(8, weapon.pierce + (counts.pierceStone || 0));
   if ((counts.explosiveStone || 0) > 0) {
     weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 58);
     weapon.explosionDamage = weapon.damage * 0.35 * counts.explosiveStone;
