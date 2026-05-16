@@ -3526,6 +3526,42 @@ h1 {
   z-index: 45;
 }
 
+#moddingPanel.stone-choice-only {
+  display: grid;
+  place-items: center;
+  width: min(560px, calc(100vw - 28px));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#moddingPanel.stone-choice-only .panel-head,
+#moddingPanel.stone-choice-only .modding-card,
+#moddingPanel.stone-choice-only .treasure-actions {
+  display: none;
+}
+
+#moddingPanel.stone-choice-only .modding-slots {
+  width: min(520px, calc(100vw - 40px));
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+  margin: 0;
+}
+
+#moddingPanel.stone-equip-simple .panel-head {
+  margin-bottom: 0.65rem;
+}
+
+#moddingPanel.stone-equip-simple .modding-gold,
+#moddingPanel.stone-equip-simple .treasure-actions {
+  display: none;
+}
+
+#moddingPanel.panel.hidden {
+  display: none;
+}
+
 .modding-gold {
   color: #ffd76a;
   font-size: 1rem;
@@ -3583,6 +3619,36 @@ h1 {
   color: #fff5cf;
   background: rgba(255, 196, 65, 0.16);
   box-shadow: 0 0 18px rgba(255, 196, 65, 0.16);
+}
+
+.stone-choice-button {
+  min-height: 76px;
+  padding: 0.5rem;
+  border-width: 2px;
+  background:
+    linear-gradient(135deg, rgba(255, 228, 107, 0.28), rgba(85, 246, 199, 0.14)),
+    rgba(9, 20, 32, 0.78);
+}
+
+.stone-choice-button .mod-slot-select {
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.stone-choice-button .mod-slot-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.75rem;
+}
+
+.stone-choice-button .mod-slot-copy strong {
+  font-size: 0.96rem;
+}
+
+.stone-choice-button .mod-slot-copy small {
+  font-size: 0.72rem;
+  line-height: 1.15;
+  white-space: normal;
 }
 
 .mod-slot.locked {
