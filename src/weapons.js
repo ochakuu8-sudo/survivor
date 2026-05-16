@@ -795,6 +795,7 @@ function fireProjectileWeapon(weapon, angle) {
 
 function fireBullet(angle, weapon, options = {}) {
   const p = game.player;
+  const satellite = !options.master ? weapon.satelliteStone : null;
   const speed = options.master ? Math.max(weapon.bulletSpeed * 1.25, 620) : weapon.bulletSpeed;
   const bonus = p.weaponPowerBonus;
   const isCriticalThrow = !options.master && weapon.criticalThrowEvery > 0 && weapon.throwCounter % weapon.criticalThrowEvery === 0;
@@ -804,16 +805,17 @@ function fireBullet(angle, weapon, options = {}) {
   const originId = `${weapon.id}:${game.elapsed.toFixed(3)}:${Math.random().toString(36).slice(2, 8)}`;
   const tumbles = !!(options.master ? "stoneMaster" : weapon.bulletSprite);
   game.bullets.push({
-    kind: "projectile",
-    x: p.x + Math.cos(angle) * 25,
-    y: p.y + Math.sin(angle) * 25,
+    kind: satellite ? "satelliteStone" : (weapon.rollingStone && !options.master ? "rollingStone" : (weapon.returningStone && !options.master ? "boomerang" : "projectile")),
+    x: p.x + Math.cos(angle) * (satellite?.orbitRadius || 25),
+    y: p.y + Math.sin(angle) * (satellite?.orbitRadius || 25),
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
     angle,
     radius: weapon.radius * sizeScale,
-    damage: (weapon.damage + bonus) * damageScale,
-    life: weapon.life,
-    maxLife: weapon.life,
+    damage: (weapon.damage + bonus) * damageScale * (satellite?.damageScale || 1),
+    baseDamage: (weapon.damage + bonus) * damageScale * (satellite?.damageScale || 1),
+    life: satellite?.duration || (weapon.returningStone && !options.master ? weapon.life * (weapon.returnLifeScale || 1.75) : weapon.life),
+    maxLife: satellite?.duration || (weapon.returningStone && !options.master ? weapon.life * (weapon.returnLifeScale || 1.75) : weapon.life),
     pierce: options.master ? (weapon.pierce || 0) + 3 : weapon.pierce,
     knockback: weapon.knockback || 0,
     explosionRadius: options.master ? 0 : weapon.explosionRadius,
@@ -826,7 +828,20 @@ function fireBullet(angle, weapon, options = {}) {
     lifeStealPerKill: weapon.lifeStealPerKill || 0,
     burnDamage: weapon.burnDamage || 0,
     pullStrength: weapon.pullStrength || 0,
-    eliteBossBonus: weapon.eliteBossBonus || 0,
+    deployStoneHazard: weapon.deployStoneHazard ? { ...weapon.deployStoneHazard } : null,
+    stuckStone: weapon.stuckStone ? { ...weapon.stuckStone } : null,
+    damageTrail: weapon.damageTrail ? { ...weapon.damageTrail } : null,
+    flightGrowth: weapon.flightGrowth ? { ...weapon.flightGrowth } : null,
+    wallBounceCount: weapon.wallBounceCount || 0,
+    wallBounceSpeedScale: weapon.wallBounceSpeedScale || 1,
+    returnTime: weapon.returningStone && !options.master ? weapon.life * (weapon.returnTimeScale || 0.58) : undefined,
+    rollingPush: weapon.rollingStone ? 1 : 0,
+    satelliteOrbit: satellite ? {
+      radius: satellite.orbitRadius || 64,
+      speed: 5.2 + (satellite.count || 1) * 0.35,
+      phase: angle,
+    } : null,
+    hitCooldowns: satellite || weapon.rollingStone || (weapon.returningStone && !options.master) ? new Map() : null,
     ricochetCount: weapon.ricochetCount || 0,
     ricochetRange: weapon.ricochetRange || 220,
     ricochetSplitCount: weapon.ricochetSplitCount || 1,
@@ -840,7 +855,7 @@ function fireBullet(angle, weapon, options = {}) {
     chainShatterDamageScale: weapon.chainShatterDamageScale || 0.45,
     isCriticalStone: isCriticalThrow,
     isMasterStone: !!options.master,
-    eliteBossBonus: options.master ? (weapon.masterStoneEliteBossBonus || 0) : 0,
+    eliteBossBonus: options.master ? (weapon.masterStoneEliteBossBonus || 0) : (weapon.eliteBossBonus || 0),
     originId,
     spawnedFromOrigin: 1,
     lastHitId: null,

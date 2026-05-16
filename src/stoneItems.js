@@ -156,8 +156,10 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
   weapon.freezeChance = Math.min(1, weapon.freezeChance + 0.12 * (counts.frostStone || 0));
   weapon.critChance = Math.min(1, weapon.critChance + 0.1 * (counts.critStone || 0));
   weapon.eliteBossBonus = (weapon.eliteBossBonus || 0) + 0.2 * (counts.sniperStone || 0);
-  weapon.pullStrength = Math.min(6, (weapon.pullStrength || 0) + (counts.gravityStone || 0));
+  weapon.pullStrength = Math.min(8, (weapon.pullStrength || 0) + (counts.gravityStone || 0));
   weapon.lifeStealPerKill += counts.drainStone || 0;
+
+  applyStoneBehaviorItems(weapon, counts);
 
   player.maxHp += 10 * (counts.lifeStone || 0);
   player.barrierMax += counts.barrierStone || 0;
@@ -168,6 +170,97 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
   player.barrier = Math.min(player.barrier || 0, player.barrierMax || 0);
 
   checkStoneEvolution(weapon, counts);
+}
+
+function applyStoneBehaviorItems(weapon, counts) {
+  const returning = counts.returningStone || 0;
+  if (returning > 0) {
+    weapon.returningStone = returning;
+    weapon.returnTimeScale = Math.max(0.42, 0.58 - returning * 0.06);
+    weapon.returnLifeScale = Math.min(2.35, 1.75 + returning * 0.22);
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), trail: "white", hitEffect: "pierce" };
+  }
+
+  const echo = counts.echoStone || 0;
+  if (echo > 0) {
+    weapon.wallBounceCount = Math.min(5, (weapon.wallBounceCount || 0) + echo);
+    weapon.wallBounceSpeedScale = Math.max(weapon.wallBounceSpeedScale || 1, 1.04 + echo * 0.04);
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), trail: "orange", hitEffect: "bounce" };
+  }
+
+  const placed = counts.placedStone || 0;
+  if (placed > 0) {
+    weapon.deployStoneHazard = {
+      duration: Math.min(4.2, 2.2 + placed * 0.55),
+      radiusScale: Math.min(2.6, 1.45 + placed * 0.24),
+      damageScale: Math.min(0.42, 0.18 + placed * 0.05),
+      maxActive: 14,
+    };
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), hitEffect: "heavy" };
+  }
+
+  const stuck = counts.stuckStone || 0;
+  if (stuck > 0) {
+    weapon.stuckStone = {
+      delay: Math.max(0.75, 1.85 - stuck * 0.18),
+      damageScale: Math.min(1.15, 0.42 + stuck * 0.16),
+    };
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "sharp", hitEffect: "pierce" };
+    weapon.bulletSprite = weapon.bulletSprite || "stoneSharp";
+  }
+
+  const rolling = counts.rollingStone || 0;
+  if (rolling > 0) {
+    weapon.rollingStone = rolling;
+    weapon.bulletSpeed *= Math.max(0.42, 0.62 - rolling * 0.04);
+    weapon.life *= Math.min(2.4, 1.55 + rolling * 0.2);
+    weapon.knockback += 10 + rolling * 4;
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "heavy", trail: "none", hitEffect: "heavy" };
+    weapon.bulletSprite = "stoneHeavy";
+  }
+
+  const shatter = counts.shatterStone || 0;
+  if (shatter > 0) {
+    weapon.hitShardCount = Math.min(8, (weapon.hitShardCount || 0) + shatter * 3);
+    weapon.splitSpawnLimit = Math.max(weapon.splitSpawnLimit || 10, 10 + shatter * 3);
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "cracked", trail: "yellow", hitEffect: "shatter" };
+    weapon.bulletSprite = weapon.bulletSprite || "stoneCracked";
+  }
+
+  const satellite = counts.satelliteStone || 0;
+  if (satellite > 0) {
+    weapon.satelliteStone = {
+      count: Math.min(3, satellite),
+      duration: Math.min(4.6, 2.4 + satellite * 0.55),
+      orbitRadius: Math.min(92, 54 + satellite * 10),
+      damageScale: Math.max(0.44, 0.62 - satellite * 0.04),
+    };
+    weapon.fireRate = Math.min(5.5, weapon.fireRate * 1.08);
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), trail: "white", hitEffect: "heavy" };
+  }
+
+  const accelerating = counts.acceleratingStone || 0;
+  if (accelerating > 0) {
+    weapon.flightGrowth = {
+      speedPerSecond: 0.42 + accelerating * 0.08,
+      damagePerSecond: 0.28 + accelerating * 0.06,
+      maxScale: Math.min(2.4, 1.55 + accelerating * 0.22),
+    };
+    weapon.life *= 1 + accelerating * 0.12;
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), trail: "orange" };
+  }
+
+  const fuse = counts.fuseStone || 0;
+  if (fuse > 0) {
+    weapon.damageTrail = {
+      duration: Math.min(0.65, 0.28 + fuse * 0.08),
+      damageScale: Math.min(0.42, 0.14 + fuse * 0.05),
+      widthScale: Math.min(0.9, 0.45 + fuse * 0.08),
+    };
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), trail: "red" };
+    weapon.effectTint = [1, 0.38, 0.12];
+    weapon.effectGlow = "glowRed";
+  }
 }
 
 export function checkStoneEvolution(weapon, counts = countItemsByKey(weapon?.items || [])) {
@@ -208,8 +301,25 @@ export function stoneEvolutionProgress(counts) {
   }));
 }
 
+function stoneItemCategoryIcon(category) {
+  const icons = {
+    stat: "◆",
+    trajectory: "↻",
+    deploy: "▣",
+    shatter: "✹",
+    element: "✦",
+    control: "◎",
+    delayed: "⌛",
+    defense: "✚",
+    growth: "▲",
+    throwStyle: "⇉",
+    special: "★",
+  };
+  return icons[category] || "◆";
+}
+
 export function formatStoneItemSummary(weapon) {
   const counts = countItemsByKey(weapon?.items || []);
-  const entries = STONE_ITEMS.filter((item) => counts[item.key] > 0).map((item) => `${item.name} x${counts[item.key]}`);
+  const entries = STONE_ITEMS.filter((item) => counts[item.key] > 0).map((item) => `${stoneItemCategoryIcon(item.category)}${item.name} x${counts[item.key]}`);
   return entries.length ? entries.join(" / ") : "アイテムなし";
 }
