@@ -27,10 +27,6 @@ export function enemyRunSpeedMultiplier(elapsed = game.floorElapsed || 0) {
   return 1 + runProgress(elapsed);
 }
 
-function enemyResidentSeconds(enemy) {
-  return Math.max(0, (game.floorElapsed || 0) - (enemy.spawnedAt ?? game.floorElapsed ?? 0));
-}
-
 function mobileScreenWorldSize(view, zoom) {
   const visibleH = view.h / zoom;
   return {
@@ -195,7 +191,6 @@ export function spawnEnemy(forceType, options = {}) {
     readableSprite: "zombieAReadable",
     hit: 0,
     wobble: Math.random() * TAU,
-    spawnedAt: elapsed,
   };
 
   if (type === "runner") {
@@ -257,13 +252,14 @@ export function spawnEnemy(forceType, options = {}) {
 
   enemy.baseMaxHp = enemy.maxHp;
   enemy.baseSpeed = enemy.baseSpeed || enemy.speed;
-  enemy.speed = enemy.baseSpeed * enemyRunSpeedMultiplier(0);
+  enemy.speed = enemy.baseSpeed * enemyRunSpeedMultiplier();
   game.enemies.push(enemy);
   return enemy;
 }
 
 export function updateEnemies(dt) {
   const p = game.player;
+  const floorSpeed = enemyRunSpeedMultiplier();
   for (const enemy of game.enemies) {
     if (enemy.baseSpeed == null) enemy.baseSpeed = enemy.speed;
     if ((enemy.slowTimer || 0) > 0) {
@@ -271,7 +267,7 @@ export function updateEnemies(dt) {
     } else {
       enemy.slowMultiplier = 1;
     }
-    enemy.speed = enemy.baseSpeed * enemyRunSpeedMultiplier(enemyResidentSeconds(enemy)) * (enemy.slowMultiplier || 1);
+    enemy.speed = enemy.baseSpeed * floorSpeed * (enemy.slowMultiplier || 1);
     enemy.hit = Math.max(0, enemy.hit - dt * 5);
     if (enemy.kind === "archer") {
       updateArcher(enemy, p, dt);
