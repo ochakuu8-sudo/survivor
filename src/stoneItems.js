@@ -1,6 +1,6 @@
 import { INITIAL_STONE_ITEM_SLOTS } from "./constants.js";
 import { game } from "./state.js";
-import { STONE_ITEMS, findStoneItem } from "./data/stoneItems.js";
+import { STONE_ITEMS, STONE_MATERIALS, STONE_SPECIAL_ITEMS, findStoneItem, findStoneMaterial, findStoneSpecialItem } from "./data/stoneItems.js";
 import { restoreWeaponBaseStats } from "./weapons.js";
 
 const PLAYER_BASE_STAT_KEYS = ["maxHp", "speed", "pickup", "armor", "barrierMax", "weaponPowerBonus"];
@@ -54,10 +54,54 @@ const STONE_EVOLUTIONS = [
       weapon.bulletSprite = "stoneMaster";
     },
   },
+  {
+    key: "rollingBoulder",
+    name: "転がる巨岩",
+    progress: [{ key: "rollingStone", need: 2 }, { key: "heavyStone", need: 2 }],
+    when: (counts) => (counts.rollingStone || 0) >= 2 && (counts.heavyStone || 0) >= 2,
+    apply: (weapon) => {
+      weapon.name = "転がる巨岩";
+      weapon.rollingStone = Math.max(weapon.rollingStone || 0, 2);
+      weapon.radius *= 1.18;
+      weapon.knockback += 18;
+      weapon.splitSpawnLimit = Math.max(weapon.splitSpawnLimit || 10, 12);
+      weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "heavy", trail: "none", hitEffect: "heavy" };
+      weapon.bulletSprite = "stoneHeavy";
+    },
+  },
+  {
+    key: "gravityCore",
+    name: "引力核",
+    progress: [{ key: "gravityStone", need: 2 }, { key: "explosiveStone", need: 1 }],
+    when: (counts) => (counts.gravityStone || 0) >= 2 && (counts.explosiveStone || 0) >= 1,
+    apply: (weapon) => {
+      weapon.name = "引力核";
+      weapon.pullStrength = Math.max(weapon.pullStrength || 0, 4);
+      weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 82);
+      weapon.chainShatterChance = Math.max(weapon.chainShatterChance || 0, 0.18);
+      weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "meteor", trail: "orange", hitEffect: "heavy" };
+      weapon.effectTint = [0.7, 0.45, 1];
+      weapon.effectGlow = "glowCyan";
+    },
+  },
+  {
+    key: "returningSpear",
+    name: "帰還石槍",
+    progress: [{ key: "returningStone", need: 2 }, { key: "piercingStone", need: 2 }],
+    when: (counts) => (counts.returningStone || 0) >= 2 && (counts.piercingStone || 0) >= 2,
+    apply: (weapon) => {
+      weapon.name = "帰還石槍";
+      weapon.returningStone = Math.max(weapon.returningStone || 0, 2);
+      weapon.pierce = Math.max(weapon.pierce || 0, 4);
+      weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "sharp", trail: "white", hitEffect: "pierce" };
+      weapon.bulletSprite = "stoneSharp";
+    },
+  },
+
 ];
 
 export function isStoneWeapon(weapon) {
-  return (weapon?.baseName || weapon?.name) === "石" || ["石ころ", "ゴムボール", "隕石核", "名人の一石"].includes(weapon?.name);
+  return (weapon?.baseName || weapon?.name) === "石" || ["石ころ", "ゴムボール", "隕石核", "名人の一石", "転がる巨岩", "引力核", "帰還石槍"].includes(weapon?.name);
 }
 
 export function ensureStoneItemSlots(weapon) {
@@ -115,8 +159,8 @@ export function addStoneItemToWeapon(weapon, key, slotIndex = null) {
   return true;
 }
 
-export function pickStoneItemChoices(count = 3) {
-  const pool = [...STONE_ITEMS];
+export function pickStoneItemChoices(count = 3, { includeRareSpecial = true } = {}) {
+  const pool = includeRareSpecial && Math.random() < 0.08 ? [...STONE_MATERIALS, ...STONE_SPECIAL_ITEMS] : [...STONE_MATERIALS];
   const choices = [];
   while (pool.length > 0 && choices.length < count) {
     const total = pool.reduce((sum, item) => sum + (item.weight ?? 1), 0);
@@ -130,6 +174,77 @@ export function pickStoneItemChoices(count = 3) {
   return choices;
 }
 
+export function ensureStoneMaterialInventory() {
+  if (!game.stoneMaterials || typeof game.stoneMaterials !== "object") game.stoneMaterials = {};
+  STONE_MATERIALS.forEach((material) => {
+    if (!Number.isFinite(game.stoneMaterials[material.key])) game.stoneMaterials[material.key] = 0;
+  });
+  return game.stoneMaterials;
+}
+
+export function addStoneMaterial(key, amount = 1) {
+  const material = findStoneMaterial(key);
+  if (!material) return false;
+  const inventory = ensureStoneMaterialInventory();
+  inventory[key] = Math.max(0, (inventory[key] || 0) + amount);
+  return true;
+}
+
+export function canCraftStoneSpecial(key) {
+  const special = findStoneSpecialItem(key);
+  if (!special?.recipe?.length) return false;
+  const inventory = ensureStoneMaterialInventory();
+  const needs = recipeCounts(special.recipe);
+  return Object.entries(needs).every(([materialKey, need]) => (inventory[materialKey] || 0) >= need);
+}
+
+export function craftStoneSpecial(key) {
+  const special = findStoneSpecialItem(key);
+  if (!special || !canCraftStoneSpecial(key)) return null;
+  const inventory = ensureStoneMaterialInventory();
+  Object.entries(recipeCounts(special.recipe)).forEach(([materialKey, need]) => {
+    inventory[materialKey] = Math.max(0, (inventory[materialKey] || 0) - need);
+  });
+  return special;
+}
+
+export function recipeCounts(recipe = []) {
+  return recipe.reduce((counts, key) => {
+    counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+export function recipeShortText(recipe = []) {
+  return Object.entries(recipeCounts(recipe))
+    .map(([key, count]) => `${findStoneItem(key)?.shortName || findStoneItem(key)?.name || key}${count > 1 ? `×${count}` : ""}`)
+    .join(" + ");
+}
+
+export function missingRecipeText(recipe = []) {
+  const inventory = ensureStoneMaterialInventory();
+  const missing = Object.entries(recipeCounts(recipe))
+    .filter(([key, need]) => (inventory[key] || 0) < need)
+    .map(([key, need]) => `${findStoneItem(key)?.shortName || key} ${inventory[key] || 0}/${need}`);
+  return missing.length ? missing.join("、") : "作成可能";
+}
+
+function applyStatBonus(weapon, player, statBonus = {}) {
+  Object.entries(statBonus || {}).forEach(([stat, value]) => {
+    const amount = Number(value) || 0;
+    if (stat === "damage") weapon.damage *= 1 + amount;
+    else if (stat === "fireRate") weapon.fireRate = Math.min(5.5, weapon.fireRate * (1 + amount));
+    else if (stat === "range") weapon.range *= 1 + amount;
+    else if (stat === "life") weapon.life *= 1 + amount;
+    else if (stat === "bulletSpeed") weapon.bulletSpeed *= 1 + amount;
+    else if (stat === "radius") weapon.radius *= 1 + amount;
+    else if (stat === "knockbackFlat") weapon.knockback += amount;
+    else if (stat === "explosionRadius") weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, (weapon.explosionRadius || 0) + amount);
+    else if (stat === "maxHpFlat") player.maxHp += amount;
+    else if (stat === "pickupFlat") player.pickup += amount;
+  });
+}
+
 export function recomputeStoneItems(weapon, player = game.player, { gainedKey = null } = {}) {
   if (!weapon || !player) return;
   ensureStoneItemSlots(weapon);
@@ -138,32 +253,13 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
   restorePlayerBaseStats();
   const counts = countItemsByKey(weapon.items);
 
-  weapon.damage *= 1 + 0.15 * (counts.sharpEdge || 0);
-  weapon.fireRate = Math.min(5.5, weapon.fireRate * (1 + 0.08 * (counts.quickThrow || 0)));
-  weapon.range *= 1 + 0.12 * (counts.longThrow || 0);
-  weapon.life *= 1 + 0.12 * (counts.longThrow || 0);
-  weapon.bulletSpeed *= 1 + 0.12 * (counts.strongArm || 0);
-  weapon.radius *= 1 + 0.1 * (counts.bigStone || 0);
-  weapon.knockback += 8 * (counts.heavyStone || 0);
-  weapon.projectiles = Math.min(7, weapon.projectiles + (counts.multiThrow || 0));
-  weapon.ricochetCount = Math.min(8, weapon.ricochetCount + (counts.bounceStone || 0));
-  if ((counts.explosiveStone || 0) > 0) {
-    weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 58);
-    weapon.explosionDamage = weapon.damage * 0.35 * counts.explosiveStone;
-  }
-  weapon.burnDamage = weapon.damage * 0.2 * (counts.lavaStone || 0);
-  weapon.freezeChance = Math.min(1, weapon.freezeChance + 0.12 * (counts.frostStone || 0));
-  weapon.critChance = Math.min(1, weapon.critChance + 0.1 * (counts.critStone || 0));
-  weapon.eliteBossBonus = (weapon.eliteBossBonus || 0) + 0.2 * (counts.sniperStone || 0);
-  weapon.pullStrength = Math.min(8, (weapon.pullStrength || 0) + (counts.gravityStone || 0));
-  weapon.lifeStealPerKill += counts.drainStone || 0;
+  weapon.items.forEach((item) => {
+    const definition = findStoneItem(item?.key);
+    if (definition?.statBonus) applyStatBonus(weapon, player, definition.statBonus);
+  });
 
   applyStoneBehaviorItems(weapon, counts);
 
-  player.maxHp += 10 * (counts.lifeStone || 0);
-  player.barrierMax += counts.barrierStone || 0;
-  player.pickup += 35 * (counts.magnetPowder || 0);
-  player.speed += 20 * (counts.lightPowder || 0);
   if (gainedKey === "barrierStone") player.barrier = (player.barrier || 0) + 1;
   player.hp = Math.min(player.hp, player.maxHp);
   player.barrier = Math.min(player.barrier || 0, player.barrierMax || 0);
@@ -172,6 +268,27 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
 }
 
 function applyStoneBehaviorItems(weapon, counts) {
+  weapon.projectiles = Math.min(7, weapon.projectiles + (counts.multiThrow || 0));
+  weapon.pierce = Math.min(8, (weapon.pierce || 0) + (counts.piercingStone || 0));
+  weapon.ricochetCount = Math.min(8, weapon.ricochetCount + (counts.bounceStone || 0));
+  if ((counts.explosiveStone || 0) > 0) {
+    weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 58 + 8 * ((counts.explosiveStone || 0) - 1));
+    weapon.explosionDamage = weapon.damage * 0.35 * counts.explosiveStone;
+  }
+  weapon.burnDamage = weapon.damage * 0.2 * (counts.lavaStone || 0);
+  weapon.freezeChance = Math.min(1, weapon.freezeChance + 0.12 * (counts.frostStone || 0));
+  weapon.critChance = Math.min(1, weapon.critChance + 0.1 * (counts.critStone || 0));
+  weapon.eliteBossBonus = (weapon.eliteBossBonus || 0) + 0.2 * (counts.sniperStone || 0);
+  weapon.pullStrength = Math.min(8, (weapon.pullStrength || 0) + (counts.gravityStone || 0));
+  weapon.lifeStealPerKill += counts.drainStone || 0;
+  weapon.knockback += 6 * (counts.heavyStone || 0);
+  if ((counts.heavyStone || 0) > 0) {
+    weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "heavy", hitEffect: "heavy" };
+    weapon.bulletSprite = weapon.bulletSprite || "stoneHeavy";
+  }
+  if ((counts.barrierStone || 0) > 0) {
+    game.player.barrierMax += counts.barrierStone || 0;
+  }
   const returning = counts.returningStone || 0;
   if (returning > 0) {
     weapon.returningStone = returning;
