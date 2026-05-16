@@ -248,9 +248,9 @@ function wrapValue(value, min, size) {
 export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance, options = {}) {
   const dungeon = game.dungeon;
   if (!dungeon) return null;
-  const { fallbackToBest = true, predicate = null } = options;
+  const { fallbackToBest = true, fallbackMode = "farthest", predicate = null } = options;
   let best = null;
-  let bestDistance = 0;
+  let bestDistance = fallbackMode === "nearest" ? Infinity : 0;
   for (let i = 0; i < 120; i += 1) {
     const room = dungeon.rooms[Math.floor(Math.random() * dungeon.rooms.length)];
     const tx = randInt(Math.random, room.x + 1, room.x + room.w - 2);
@@ -261,7 +261,12 @@ export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance
     if (predicate && !predicate(point)) continue;
     const distance = Math.hypot(point.x - originX, point.y - originY);
     if (distance >= minDistance && distance <= maxDistance) return point;
-    if (distance > bestDistance) {
+    if (fallbackMode === "nearest") {
+      if (distance < bestDistance) {
+        best = point;
+        bestDistance = distance;
+      }
+    } else if (distance > bestDistance) {
       best = point;
       bestDistance = distance;
     }
