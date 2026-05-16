@@ -463,40 +463,63 @@ function pickObstacleType(rng) {
 function generateChests(dungeon, rng, startRoom, exitRoom, wave) {
   const chests = [];
   dungeon.chests = chests;
-  const count = clamp(1 + Math.floor((wave - 1) / 3), 1, 3);
+  const count = clamp(3 + Math.floor((wave - 1) / 3), 3, 5);
   const candidateRooms = dungeon.rooms
     .filter((room) => room !== startRoom && !(room.cx === exitRoom.cx && room.cy === exitRoom.cy))
     .sort((a, b) => distanceSq(b.cx, b.cy, startRoom.cx, startRoom.cy) - distanceSq(a.cx, a.cy, startRoom.cx, startRoom.cy));
 
-  for (let i = 0; i < candidateRooms.length && chests.length < count; i += 1) {
-    const room = candidateRooms[(i + Math.floor(rng() * Math.max(1, candidateRooms.length))) % candidateRooms.length];
-    for (let attempt = 0; attempt < 24; attempt += 1) {
-      const tx = randInt(rng, room.x + 1, room.x + room.w - 2);
-      const ty = randInt(rng, room.y + 1, room.y + room.h - 2);
-      if (!isWalkableTile(dungeon, tx, ty) || getDungeonTile(dungeon, tx, ty) === DUNGEON_EXIT) continue;
-      const point = dungeonTileWorldCenter(dungeon, tx, ty);
-      const x = point.x + (rng() - 0.5) * TILE_SIZE * 0.28;
-      const y = point.y + (rng() - 0.5) * TILE_SIZE * 0.22;
-      const startSafe = TILE_SIZE * 2.5;
-      const exitSafe = TILE_SIZE * 1.7;
-      if (distanceSq(x, y, dungeon.start.x, dungeon.start.y) < startSafe * startSafe) continue;
-      if (distanceSq(x, y, dungeon.exit.x, dungeon.exit.y) < exitSafe * exitSafe) continue;
-      if (!canStandAt(dungeon, x, y, 42)) continue;
+  const shuffledRooms = shuffleWithRng([...candidateRooms], rng);
+  for (const room of shuffledRooms) {
+    if (chests.length >= count) break;
+    tryPlaceChestInRoom(dungeon, rng, room);
+  }
 
-      chests.push({
-        x,
-        y,
-        radius: 21,
-        opened: false,
-        holdTimer: 0,
-        rewardName: "",
-        bob: rng() * Math.PI * 2,
-      });
-      break;
+  // If random room picks could not satisfy the floor minimum, retry across all
+  // eligible rooms with more attempts so each dungeon reliably has 3+ chests.
+  for (let pass = 0; pass < 4 && chests.length < count; pass += 1) {
+    for (const room of shuffleWithRng([...candidateRooms], rng)) {
+      if (chests.length >= count) break;
+      tryPlaceChestInRoom(dungeon, rng, room, 48);
     }
   }
 
   return chests;
+}
+
+function tryPlaceChestInRoom(dungeon, rng, room, maxAttempts = 24) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const tx = randInt(rng, room.x + 1, room.x + room.w - 2);
+    const ty = randInt(rng, room.y + 1, room.y + room.h - 2);
+    if (!isWalkableTile(dungeon, tx, ty) || getDungeonTile(dungeon, tx, ty) === DUNGEON_EXIT) continue;
+    const point = dungeonTileWorldCenter(dungeon, tx, ty);
+    const x = point.x + (rng() - 0.5) * TILE_SIZE * 0.28;
+    const y = point.y + (rng() - 0.5) * TILE_SIZE * 0.22;
+    const startSafe = TILE_SIZE * 2.5;
+    const exitSafe = TILE_SIZE * 1.7;
+    if (distanceSq(x, y, dungeon.start.x, dungeon.start.y) < startSafe * startSafe) continue;
+    if (distanceSq(x, y, dungeon.exit.x, dungeon.exit.y) < exitSafe * exitSafe) continue;
+    if (!canStandAt(dungeon, x, y, 42)) continue;
+
+    dungeon.chests.push({
+      x,
+      y,
+      radius: 21,
+      opened: false,
+      holdTimer: 0,
+      rewardName: "",
+      bob: rng() * Math.PI * 2,
+    });
+    return true;
+  }
+  return false;
+}
+
+function shuffleWithRng(items, rng) {
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
 }
 
 function circleOverlapsTile(dungeon, x, y, radius, tx, ty) {

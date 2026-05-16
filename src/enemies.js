@@ -6,9 +6,11 @@ import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 import { moveActorWithDungeonCollision, pickDungeonSpawnPoint, shortestDungeonDelta } from "./dungeon.js";
 
-const SPAWN_BATCH_INTERVAL = 4.0;
-const SPAWN_BATCH_SIZE = 18;
-const OPENING_ENEMY_COUNT = 48;
+const SPAWN_BATCH_INTERVAL_MIN = 3.0;
+const SPAWN_BATCH_INTERVAL_MAX = 5.2;
+const SPAWN_BATCH_SIZE_MIN = 6;
+const SPAWN_BATCH_SIZE_MAX = 26;
+const OPENING_ENEMY_COUNT = 10;
 const OFFSCREEN_SPAWN_MARGIN = 120;
 const SAFETY_ENEMY_CAP = 3000;
 const ENEMY_PUSH_RADIUS_SCALE = 1.0;
@@ -56,9 +58,22 @@ function pickEnemyTypeByTime(elapsed) {
   return "walker";
 }
 
+function enemySpawnRamp(elapsed = game.floorElapsed || 0) {
+  return Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
+}
+
+function currentSpawnPlan(elapsed = game.floorElapsed || 0) {
+  const ramp = enemySpawnRamp(elapsed);
+  return {
+    interval: SPAWN_BATCH_INTERVAL_MAX - (SPAWN_BATCH_INTERVAL_MAX - SPAWN_BATCH_INTERVAL_MIN) * ramp,
+    batchSize: Math.round(SPAWN_BATCH_SIZE_MIN + (SPAWN_BATCH_SIZE_MAX - SPAWN_BATCH_SIZE_MIN) * ramp),
+  };
+}
+
 export function resetEnemySpawnTimer() {
-  game.spawnClock = SPAWN_BATCH_INTERVAL;
-  game.spawnBatchSize = SPAWN_BATCH_SIZE;
+  const plan = currentSpawnPlan();
+  game.spawnClock = plan.interval;
+  game.spawnBatchSize = plan.batchSize;
 }
 
 export function spawnOpeningEnemies() {
@@ -70,21 +85,22 @@ export function spawnOpeningEnemies() {
 
 export function spawnEnemies(dt) {
   if (game.enemies.length >= SAFETY_ENEMY_CAP) {
-    game.spawnClock = Math.min(game.spawnClock, SPAWN_BATCH_INTERVAL * 0.5);
+    game.spawnClock = Math.min(game.spawnClock, currentSpawnPlan().interval * 0.5);
     return;
   }
 
   game.spawnClock -= dt;
   if (game.spawnClock > 0) return;
 
-  game.spawnBatchSize = SPAWN_BATCH_SIZE;
-  const spawnCount = Math.min(SPAWN_BATCH_SIZE, SAFETY_ENEMY_CAP - game.enemies.length);
+  const plan = currentSpawnPlan();
+  game.spawnBatchSize = plan.batchSize;
+  const spawnCount = Math.min(plan.batchSize, SAFETY_ENEMY_CAP - game.enemies.length);
   for (let i = 0; i < spawnCount; i += 1) {
     spawnEnemy(undefined, { offscreen: true });
   }
 
-  game.spawnClock += SPAWN_BATCH_INTERVAL;
-  if (game.spawnClock <= 0) game.spawnClock = SPAWN_BATCH_INTERVAL;
+  game.spawnClock += plan.interval;
+  if (game.spawnClock <= 0) game.spawnClock = plan.interval;
 }
 
 export function spawnEnemy(forceType, options = {}) {
