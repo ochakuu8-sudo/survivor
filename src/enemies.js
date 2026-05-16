@@ -6,12 +6,14 @@ import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
 import { moveActorWithDungeonCollision, pickDungeonSpawnPoint, shortestDungeonDelta } from "./dungeon.js";
 
-const SPAWN_BATCH_INTERVAL_MIN = 3.0;
+const SPAWN_BATCH_INTERVAL_MIN = 2.4;
 const SPAWN_BATCH_INTERVAL_MAX = 5.2;
-const SPAWN_BATCH_SIZE_MIN = 6;
-const SPAWN_BATCH_SIZE_MAX = 26;
+const SPAWN_BATCH_SIZE_MIN = 2;
+const SPAWN_BATCH_SIZE_MAX = 32;
 const OPENING_ENEMY_COUNT = 10;
-const OFFSCREEN_SPAWN_MARGIN = 120;
+const MOBILE_SCREEN_ASPECT = 9 / 16;
+const OFFSCREEN_SPAWN_MARGIN = 72;
+const OFFSCREEN_SPAWN_NEAR_BAND = 360;
 const SAFETY_ENEMY_CAP = 3000;
 const ENEMY_PUSH_RADIUS_SCALE = 1.0;
 const ENEMY_PUSH_STRENGTH = 0.42;
@@ -23,6 +25,18 @@ function runProgress(elapsed = game.floorElapsed || 0) {
 
 export function enemyRunSpeedMultiplier(elapsed = game.floorElapsed || 0) {
   return 1 + runProgress(elapsed);
+}
+
+function enemyResidentSeconds(enemy) {
+  return Math.max(0, (game.floorElapsed || 0) - (enemy.spawnedAt ?? game.floorElapsed ?? 0));
+}
+
+function mobileScreenWorldSize(view, zoom) {
+  const visibleH = view.h / zoom;
+  return {
+    w: visibleH * MOBILE_SCREEN_ASPECT,
+    h: visibleH,
+  };
 }
 
 function pickEnemyTypeByTime(elapsed) {
@@ -64,9 +78,10 @@ function enemySpawnRamp(elapsed = game.floorElapsed || 0) {
 
 function currentSpawnPlan(elapsed = game.floorElapsed || 0) {
   const ramp = enemySpawnRamp(elapsed);
+  const pressure = Math.pow(ramp, 1.35);
   return {
-    interval: SPAWN_BATCH_INTERVAL_MAX - (SPAWN_BATCH_INTERVAL_MAX - SPAWN_BATCH_INTERVAL_MIN) * ramp,
-    batchSize: Math.round(SPAWN_BATCH_SIZE_MIN + (SPAWN_BATCH_SIZE_MAX - SPAWN_BATCH_SIZE_MIN) * ramp),
+    interval: SPAWN_BATCH_INTERVAL_MAX - (SPAWN_BATCH_INTERVAL_MAX - SPAWN_BATCH_INTERVAL_MIN) * pressure,
+    batchSize: Math.round(SPAWN_BATCH_SIZE_MIN + (SPAWN_BATCH_SIZE_MAX - SPAWN_BATCH_SIZE_MIN) * pressure),
   };
 }
 
@@ -78,8 +93,9 @@ export function resetEnemySpawnTimer() {
 
 export function spawnOpeningEnemies() {
   const count = OPENING_ENEMY_COUNT;
-  for (let i = 0; i < count; i += 1) {
-    spawnEnemy("walker", { offscreen: true });
+  let spawned = 0;
+  for (let attempts = 0; spawned < count && attempts < count * 6; attempts += 1) {
+    if (spawnEnemy("walker", { offscreen: true })) spawned += 1;
   }
 }
 
@@ -108,9 +124,11 @@ export function spawnEnemy(forceType, options = {}) {
 
   const view = viewSize();
   const zoom = cameraZoom(view);
-  const visibleW = view.w / zoom;
-  const visibleH = view.h / zoom;
+  const spawnScreen = mobileScreenWorldSize(view, zoom);
+  const visibleW = spawnScreen.w;
+  const visibleH = spawnScreen.h;
   const margin = OFFSCREEN_SPAWN_MARGIN;
+  const nearMaxDistance = Math.hypot(visibleW, visibleH) * 0.5 + OFFSCREEN_SPAWN_NEAR_BAND;
   const camX = game.camera?.x ?? game.player.x;
   const camY = game.camera?.y ?? game.player.y;
   const requireOffscreen = options.offscreen !== false;
@@ -126,9 +144,10 @@ export function spawnEnemy(forceType, options = {}) {
     camX,
     camY,
     requireOffscreen ? Math.min(visibleW, visibleH) * 0.5 : 0,
-    Infinity,
+    requireOffscreen ? nearMaxDistance : Infinity,
     {
-      fallbackToBest: !requireOffscreen,
+      fallbackToBest: true,
+      fallbackMode: requireOffscreen ? "nearest" : "farthest",
       predicate: requireOffscreen ? isOffscreen : null,
     },
   );
@@ -176,6 +195,7 @@ export function spawnEnemy(forceType, options = {}) {
     readableSprite: "zombieAReadable",
     hit: 0,
     wobble: Math.random() * TAU,
+    spawnedAt: elapsed,
   };
 
   if (type === "runner") {
@@ -237,14 +257,13 @@ export function spawnEnemy(forceType, options = {}) {
 
   enemy.baseMaxHp = enemy.maxHp;
   enemy.baseSpeed = enemy.baseSpeed || enemy.speed;
-  enemy.speed = enemy.baseSpeed * enemyRunSpeedMultiplier();
+  enemy.speed = enemy.baseSpeed * enemyRunSpeedMultiplier(0);
   game.enemies.push(enemy);
   return enemy;
 }
 
 export function updateEnemies(dt) {
   const p = game.player;
-  const floorSpeed = enemyRunSpeedMultiplier();
   for (const enemy of game.enemies) {
     if (enemy.baseSpeed == null) enemy.baseSpeed = enemy.speed;
     if ((enemy.slowTimer || 0) > 0) {
@@ -252,7 +271,7 @@ export function updateEnemies(dt) {
     } else {
       enemy.slowMultiplier = 1;
     }
-    enemy.speed = enemy.baseSpeed * floorSpeed * (enemy.slowMultiplier || 1);
+    enemy.speed = enemy.baseSpeed * enemyRunSpeedMultiplier(enemyResidentSeconds(enemy)) * (enemy.slowMultiplier || 1);
     enemy.hit = Math.max(0, enemy.hit - dt * 5);
     if (enemy.kind === "archer") {
       updateArcher(enemy, p, dt);
