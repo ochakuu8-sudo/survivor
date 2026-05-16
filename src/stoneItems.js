@@ -139,22 +139,14 @@ export function stoneItemCapacity(weapon) {
 }
 
 export function hasStoneItemSpace(weapon) {
-  ensureStoneItemSlots(weapon);
-  return (weapon.items?.length || 0) < stoneItemCapacity(weapon);
+  return !!weapon;
 }
 
-export function addStoneItemToWeapon(weapon, key, slotIndex = null) {
+export function addStoneItemToWeapon(weapon, key) {
   const definition = findStoneItem(key);
   if (!weapon || !definition) return false;
   ensureStoneItemSlots(weapon);
-  const item = { key: definition.key };
-  if (Number.isInteger(slotIndex) && slotIndex >= 0 && slotIndex < stoneItemCapacity(weapon)) {
-    weapon.items[slotIndex] = item;
-  } else if (hasStoneItemSpace(weapon)) {
-    weapon.items.push(item);
-  } else {
-    return false;
-  }
+  weapon.items.push({ key: definition.key });
   recomputeStoneItems(weapon, game.player, { gainedKey: key });
   return true;
 }

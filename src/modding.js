@@ -15,11 +15,7 @@ import {
   addStoneItemToWeapon,
   addStoneMaterial,
   countItemsByKey,
-  ensureStoneItemSlots,
-  formatStoneItemSummary,
   isStoneWeapon,
-  stoneEvolutionProgress,
-  stoneItemCapacity,
   pickStoneItemChoices,
 } from "./stoneItems.js";
 import { findStoneItem, findStoneMaterial } from "./data/stoneItems.js";
@@ -66,6 +62,10 @@ function normalizePendingStoneItem(raw) {
   return { key: definition.key, name: definition.name, description: definition.description };
 }
 
+function getStoneWeapon() {
+  return (game.player?.gear?.weapons || []).find((weapon) => isStoneWeapon(weapon)) || null;
+}
+
 export function beginAttachmentReward(rawAttachment, { source = "reward", allowDiscard = true } = {}) {
   const attachment = normalizePendingAttachment(rawAttachment);
   if (!attachment) return false;
@@ -100,19 +100,11 @@ export function beginStoneItemChoiceReward(rawChoices, { source = "reward", allo
   return true;
 }
 
-export function beginStoneItemReward(rawItem, { source = "reward", allowDiscard = true } = {}) {
+export function beginStoneItemReward(rawItem) {
   const item = normalizePendingStoneItem(rawItem);
-  if (!item) return false;
-  game.pendingAttachmentReward = {
-    stoneItem: item,
-    source,
-    rerollsUsed: 0,
-    allowDiscard,
-  };
-  game.pendingMod = null;
-  game.modeBeforeAttachmentReward = game.mode === "attachmentReward" ? modeAfterReward() : game.mode;
-  game.mode = "attachmentReward";
-  renderModdingPanel();
+  const stoneWeapon = getStoneWeapon();
+  if (!item || !stoneWeapon) return false;
+  addStoneItemToWeapon(stoneWeapon, item.key);
   updateHud();
   return true;
 }
@@ -161,26 +153,6 @@ export function discardPendingAttachment() {
   finishAttachmentReward();
 }
 
-export function applyPendingStoneItemToSlot(weaponId, slotIndex) {
-  const pending = game.pendingAttachmentReward;
-  if (!pending?.stoneItem) return false;
-  const weapon = findWeapon(weaponId);
-  if (!weapon || !isStoneWeapon(weapon)) return false;
-  ensureStoneItemSlots(weapon);
-  const maxSlots = stoneItemCapacity(weapon);
-  if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= maxSlots) return false;
-  const current = weapon.items[slotIndex] || null;
-  const currentDefinition = findStoneItem(current?.key) || current;
-  if (currentDefinition && typeof window !== "undefined" && typeof window.confirm === "function") {
-    const ok = window.confirm(`「${currentDefinition.name}」を「${pending.stoneItem.name}」で入れ替えますか？
-外したアイテムは破棄されます。`);
-    if (!ok) return false;
-  }
-  addStoneItemToWeapon(weapon, pending.stoneItem.key, slotIndex);
-  finishAttachmentReward();
-  return true;
-}
-
 export function applyPendingAttachmentToSlot(weaponId, slotIndex) {
   const pending = game.pendingAttachmentReward;
   if (!pending?.attachment) return false;
@@ -218,62 +190,7 @@ function sourceLabel(source) {
 function setModdingPanelVariant(variant = "default") {
   if (!hud.moddingPanel) return;
   hud.moddingPanel.classList.toggle("stone-choice-only", variant === "stoneChoice");
-  hud.moddingPanel.classList.toggle("stone-equip-simple", variant === "stoneEquip");
-}
-
-function renderStoneItemSlot(weapon, slotIndex) {
-  ensureStoneItemSlots(weapon);
-  const current = weapon.items[slotIndex] || null;
-  const definition = findStoneItem(current?.key) || current;
-
-  const item = document.createElement("li");
-  item.className = `mod-slot${current ? " filled" : " empty"}`;
-
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "mod-slot-select";
-  button.addEventListener("click", () => applyPendingStoneItemToSlot(weapon.id, slotIndex));
-
-  const icon = document.createElement("span");
-  icon.className = "mod-slot-icon";
-  icon.textContent = current ? "●" : "+";
-
-  const copy = document.createElement("span");
-  copy.className = "mod-slot-copy";
-
-  const name = document.createElement("strong");
-  name.textContent = definition?.name || "空きスロット";
-
-  const meta = document.createElement("small");
-  meta.textContent = current ? `${definition?.description || "効果"} → 入れ替え` : "ここに装備";
-
-  copy.append(name, meta);
-  button.append(icon, copy);
-  item.append(button);
-  return item;
-}
-
-function renderStoneItemRewardSlots(weapon) {
-  const group = document.createElement("li");
-  group.className = "mod-weapon-group";
-
-  const counts = countItemsByKey(weapon.items || []);
-  const progress = stoneEvolutionProgress(counts)
-    .map((evolution) => `${evolution.name}: ${evolution.requirements.map((req) => `${req.name} ${Math.min(req.count, req.need)}/${req.need}`).join(" + ")}`)
-    .join(" / ");
-
-  const heading = document.createElement("div");
-  heading.className = "mod-weapon-heading";
-  heading.innerHTML = `<strong>特殊アイテムを選んで装備</strong><small>${weapon.name}: ${weapon.items.length}/${stoneItemCapacity(weapon)}<br>${formatStoneItemSummary(weapon)}<br>${progress}</small>`;
-
-  const slots = document.createElement("ol");
-  slots.className = "modding-slots modding-slots-nested";
-  for (let slotIndex = 0; slotIndex < stoneItemCapacity(weapon); slotIndex += 1) {
-    slots.append(renderStoneItemSlot(weapon, slotIndex));
-  }
-
-  group.append(heading, slots);
-  return group;
+  hud.moddingPanel.classList.toggle("stone-equip-simple", false);
 }
 
 function renderRewardSlot(weapon, weaponIndex, slotIndex, pendingAttachment) {
@@ -353,7 +270,9 @@ export function renderModdingPanel() {
     return;
   }
   if (pending?.stoneItem) {
-    renderStoneItemPanel(pending);
+    const stoneWeapon = getStoneWeapon();
+    if (stoneWeapon) addStoneItemToWeapon(stoneWeapon, pending.stoneItem.key);
+    finishAttachmentReward();
     return;
   }
   setModdingPanelVariant();
@@ -405,26 +324,23 @@ function choosePendingStoneItem(index) {
     finishAttachmentReward();
     return;
   }
-  game.pendingAttachmentReward = {
-    stoneItem: item,
-    source: pending.source,
-    rerollsUsed: pending.rerollsUsed || 0,
-    allowDiscard: pending.allowDiscard,
-  };
-  renderModdingPanel();
+  const stoneWeapon = getStoneWeapon();
+  if (!stoneWeapon) return;
+  addStoneItemToWeapon(stoneWeapon, item.key);
+  finishAttachmentReward();
 }
 
 function renderStoneItemChoicePanel(pending) {
   setModdingPanelVariant("stoneChoice");
-  const weapon = getActiveWeapon();
-  const counts = countItemsByKey(weapon?.items || []);
+  const stoneWeapon = getStoneWeapon();
+  const counts = countItemsByKey(stoneWeapon?.items || []);
   const kicker = hud.moddingPanel.querySelector(".panel-kicker");
   const heading = hud.moddingPanel.querySelector("h1");
   if (kicker) kicker.textContent = sourceLabel(pending.source);
   if (heading) heading.textContent = "アイテムを選ぶ";
 
   hud.moddingWeaponName.textContent = "素材3択報酬";
-  hud.moddingWeaponLevel.textContent = "素材は所持欄へ、レア特殊アイテムは装備先を指定";
+  hud.moddingWeaponLevel.textContent = "素材も特殊アイテムも所持欄へ追加";
   hud.moddingGold.textContent = "選択待ち";
   const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
   if (treasureIcon) {
@@ -433,7 +349,7 @@ function renderStoneItemChoicePanel(pending) {
   }
   hud.moddingAttachmentName.textContent = "素材を集めて作業台で合成";
   hud.moddingAttachmentMeta.textContent = "初期素材 / クラフト用";
-  hud.moddingAttachmentText.textContent = "初期素材は作業台で特殊アイテムへ合成します。レア特殊アイテムを引いた場合だけ、その場で石ころに装備できます。";
+  hud.moddingAttachmentText.textContent = "初期素材は作業台で特殊アイテムへ合成します。特殊アイテムは所持数として加算され、効果が自動で発動します。";
 
   hud.moddingSlots.replaceChildren();
   pending.stoneChoices.forEach((item, index) => {
@@ -454,7 +370,7 @@ function renderStoneItemChoicePanel(pending) {
     const name = document.createElement("strong");
     name.textContent = definition.name;
     const meta = document.createElement("small");
-    meta.textContent = material ? `${definition.description} / 素材所持 ${owned}→${owned + 1} / 用途: ${(definition.uses || []).slice(0, 3).join("・")}` : `${definition.description} / 装備数 ${owned}→${owned + 1}`;
+    meta.textContent = material ? `${definition.description} / 素材所持 ${owned}→${owned + 1} / 用途: ${(definition.uses || []).slice(0, 3).join("・")}` : `${definition.description} / 所持数 ${owned}→${owned + 1}`;
     copy.append(name, meta);
     button.append(icon, copy);
     card.append(button);
@@ -464,42 +380,6 @@ function renderStoneItemChoicePanel(pending) {
   hud.moddingReroll.textContent = "リロールなし";
   hud.moddingReroll.disabled = true;
   hud.moddingTake.textContent = pending.allowDiscard === false ? "アイテムを選択" : "破棄";
-  hud.moddingTake.disabled = pending.allowDiscard === false;
-  hud.moddingPanel.classList.remove("hidden");
-}
-
-function renderStoneItemPanel(pending) {
-  setModdingPanelVariant("stoneEquip");
-  const item = pending.stoneItem;
-  const definition = findStoneItem(item.key) || item;
-  const weapon = getActiveWeapon();
-  const counts = countItemsByKey(weapon?.items || []);
-  const owned = counts[item.key] || 0;
-
-  const kicker = hud.moddingPanel.querySelector(".panel-kicker");
-  const heading = hud.moddingPanel.querySelector("h1");
-  if (kicker) kicker.textContent = sourceLabel(pending.source);
-  if (heading) heading.textContent = "特殊アイテムを選んで装備";
-
-  hud.moddingWeaponName.textContent = "選択したアイテム";
-  hud.moddingWeaponLevel.textContent = "装備先を選んでください";
-  hud.moddingGold.textContent = `所持 ${owned} → ${owned + 1}`;
-  const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
-  if (treasureIcon) {
-    treasureIcon.className = "treasure-icon modding-main-icon";
-    treasureIcon.textContent = "●";
-  }
-  hud.moddingAttachmentName.textContent = definition.name || "石ころアイテム";
-  hud.moddingAttachmentMeta.textContent = `所持: ${owned} → ${owned + 1}`;
-  hud.moddingAttachmentText.textContent = definition.description || "石ころを強化する。";
-
-  hud.moddingSlots.replaceChildren();
-  const stoneWeapon = (game.player?.gear?.weapons || []).find((candidate) => isStoneWeapon(candidate));
-  if (stoneWeapon) hud.moddingSlots.append(renderStoneItemRewardSlots(stoneWeapon));
-
-  hud.moddingReroll.textContent = "リロールなし";
-  hud.moddingReroll.disabled = true;
-  hud.moddingTake.textContent = pending.allowDiscard === false ? "装着先を選択" : "破棄";
   hud.moddingTake.disabled = pending.allowDiscard === false;
   hud.moddingPanel.classList.remove("hidden");
 }

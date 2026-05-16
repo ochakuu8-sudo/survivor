@@ -2,30 +2,25 @@ import { INTERACTION_HOLD_SECONDS } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { updateHud } from "./hud.js";
-import { beginStoneItemReward } from "./modding.js";
 import {
   canCraftStoneSpecial,
-  countItemsByKey,
   craftStoneSpecial,
-  ensureStoneItemSlots,
+  addStoneItemToWeapon,
   ensureStoneMaterialInventory,
-  formatStoneItemSummary,
   isStoneWeapon,
   missingRecipeText,
   recipeShortText,
-  stoneEvolutionProgress,
-  stoneItemCapacity,
 } from "./stoneItems.js";
-import { STONE_MATERIALS, STONE_SPECIAL_ITEMS, findStoneItem } from "./data/stoneItems.js";
+import { STONE_MATERIALS, STONE_SPECIAL_ITEMS } from "./data/stoneItems.js";
 
-let statusText = "素材を確認し、作成可能な特殊アイテムを合成して石ころに装備できます。";
+let statusText = "素材を確認し、作成可能な特殊アイテムを合成できます。所持アイテムの効果は自動で発動します。";
 
 export function openWorkbench(facility = null) {
   if (!game.player?.gear) return;
   game.modeBeforeWorkbench = game.mode;
   game.mode = "workbench";
   hud.workbenchPanel?.classList.remove("hidden");
-  statusText = facility ? "作業台: 初期素材 → 特殊アイテム → 石ころ装備 → 武器進化。" : statusText;
+  statusText = facility ? "作業台: 初期素材 → 特殊アイテム。作成したアイテムは所持数として加算されます。" : statusText;
   ensureStoneMaterialInventory();
   renderWorkbenchPanel();
   updateHud();
@@ -67,7 +62,7 @@ export function renderWorkbenchPanel() {
   if (!gear || !weaponsRoot || !storageRoot) return;
 
   const heading = hud.workbenchPanel.querySelector("h1");
-  if (heading) heading.textContent = "石ころクラフト作業台";
+  if (heading) heading.textContent = "アイテムクラフト作業台";
   hud.workbenchStatus.textContent = statusText;
   weaponsRoot.replaceChildren();
   storageRoot.replaceChildren();
@@ -88,45 +83,12 @@ export function renderWorkbenchPanel() {
   materialCard.append(materialTitle, materialList);
   weaponsRoot.append(materialCard);
 
-  const stoneWeapon = (gear.weapons || []).find((weapon) => isStoneWeapon(weapon));
-  if (stoneWeapon) weaponsRoot.append(renderStoneWeaponCard(stoneWeapon));
-
   STONE_SPECIAL_ITEMS.forEach((item) => storageRoot.append(renderRecipeCard(item)));
 
   if (hud.workbenchStorageCount) {
     const craftable = STONE_SPECIAL_ITEMS.filter((item) => canCraftStoneSpecial(item.key)).length;
     hud.workbenchStorageCount.textContent = `${craftable}/${STONE_SPECIAL_ITEMS.length} 作成可能`;
   }
-}
-
-function renderStoneWeaponCard(weapon) {
-  ensureStoneItemSlots(weapon);
-  const card = document.createElement("article");
-  card.className = "workbench-weapon-card";
-  const counts = countItemsByKey(weapon.items || []);
-  const progress = stoneEvolutionProgress(counts)
-    .map((evolution) => `${evolution.complete ? "✓" : "…"} ${evolution.name}: ${evolution.requirements.map((req) => `${req.name} ${Math.min(req.count, req.need)}/${req.need}`).join(" + ")}`)
-    .join("<br>");
-  const title = document.createElement("h2");
-  title.textContent = `${weapon.name} 装備スロット`;
-  const meta = document.createElement("small");
-  meta.innerHTML = `特殊アイテム ${weapon.items.length}/${stoneItemCapacity(weapon)}<br>${formatStoneItemSummary(weapon)}<br><strong>進化候補</strong><br>${progress}`;
-  const slots = document.createElement("div");
-  slots.className = "workbench-slots";
-  for (let index = 0; index < stoneItemCapacity(weapon); index += 1) {
-    const current = weapon.items[index];
-    const definition = findStoneItem(current?.key);
-    const slot = document.createElement("button");
-    slot.type = "button";
-    slot.className = `workbench-slot${current ? " filled" : " empty"}`;
-    slot.disabled = true;
-    slot.innerHTML = current
-      ? `<strong>${definition?.name || current.key}</strong><small>${definition?.description || "効果"}</small>`
-      : `<strong>空き</strong><small>作成した特殊アイテムをここへ装備</small>`;
-    slots.append(slot);
-  }
-  card.append(title, meta, slots);
-  return card;
 }
 
 function renderRecipeCard(item) {
@@ -137,19 +99,29 @@ function renderRecipeCard(item) {
   button.type = "button";
   button.className = "workbench-craft-button";
   button.disabled = !craftable;
-  button.addEventListener("click", () => craftAndEquip(item.key));
-  button.innerHTML = `<strong>${item.name}</strong><small>レシピ: ${recipeShortText(item.recipe)}</small><span>${item.description}</span><small>${craftable ? "作成して装備先を選択" : `不足: ${missingRecipeText(item.recipe)}`}</small>`;
+  button.addEventListener("click", () => craftAndStore(item.key));
+  button.innerHTML = `<strong>${item.name}</strong><small>レシピ: ${recipeShortText(item.recipe)}</small><span>${item.description}</span><small>${craftable ? "作成して所持数に追加" : `不足: ${missingRecipeText(item.recipe)}`}</small>`;
   card.append(button);
   return card;
 }
 
-function craftAndEquip(key) {
+function craftAndStore(key) {
+  const stoneWeapon = (game.player?.gear?.weapons || []).find((weapon) => isStoneWeapon(weapon));
+  if (!stoneWeapon) {
+    statusText = "石ころ武器がないためアイテムを作成できません。";
+    renderWorkbenchPanel();
+    return;
+  }
+
   const crafted = craftStoneSpecial(key);
   if (!crafted) {
     statusText = "素材が足りません。";
     renderWorkbenchPanel();
     return;
   }
-  statusText = `「${crafted.name}」を作成しました。装備先スロットを選んでください。`;
-  beginStoneItemReward(crafted, { source: "workbench", allowDiscard: false });
+
+  addStoneItemToWeapon(stoneWeapon, crafted.key);
+  statusText = `「${crafted.name}」を作成し、所持アイテムに追加しました。`;
+  renderWorkbenchPanel();
+  updateHud();
 }

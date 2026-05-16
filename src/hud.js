@@ -71,7 +71,7 @@ function renderPauseStoneItems() {
     .join("<br>");
   const materials = ensureStoneMaterialInventory();
   const materialText = STONE_MATERIALS.map((item) => `${item.shortName || item.name}×${materials[item.key] || 0}`).join(" / ");
-  hud.pauseStoneItems.innerHTML = `<strong>所持素材</strong><p>${materialText}</p><strong>装備中アイテム</strong><p>${formatStoneItemSummary(weapon)}</p><strong>進化進捗</strong><p>${progress}</p>`;
+  hud.pauseStoneItems.innerHTML = `<strong>所持素材</strong><p>${materialText}</p><strong>所持アイテム</strong><p>${formatStoneItemSummary(weapon)}</p><strong>進化進捗</strong><p>${progress}</p>`;
 }
 
 function renderWeaponSwitch() {
