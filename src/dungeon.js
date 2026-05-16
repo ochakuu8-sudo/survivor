@@ -392,7 +392,7 @@ function torusTileDistance(a, b, size) {
   return Math.min(direct, size - direct);
 }
 
-function canStandAt(dungeon, x, y, radius) {
+export function canStandAt(dungeon, x, y, radius) {
   const min = worldToDungeonTile(dungeon, x - radius, y - radius);
   const max = worldToDungeonTile(dungeon, x + radius, y + radius);
   for (let ty = min.ty; ty <= max.ty; ty += 1) {
