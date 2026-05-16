@@ -116,6 +116,7 @@ export function updateBullets(dt) {
           bullet.hitIds.add(enemy.id);
           const killed = damageEnemy(enemy, bullet.damage, bullet.x, bullet.y, bullet.isMasterStone ? 6 : 3, bullet.isMasterStone ? 180 : 90, bullet);
           addStoneHitEffect(bullet, enemy, killed);
+          applyStoneItemHitEffects(bullet, enemy);
           spawnHitShards(bullet, enemy, next, originId, spawnCounts);
           if (bullet.knockback > 0) {
             const moveSpeed = Math.hypot(bullet.vx, bullet.vy) || 1;
@@ -250,6 +251,48 @@ function addStoneHitEffect(bullet, enemy, killed) {
       chainShatterChance: 0,
     };
     explodeBullet(chain);
+  }
+}
+
+function applyStoneItemHitEffects(bullet, enemy) {
+  if ((bullet.burnDamage || 0) > 0) {
+    addEffect({
+      type: "poisonPool",
+      x: enemy.x,
+      y: enemy.y,
+      radius: Math.max(34, enemy.radius * 1.6),
+      damage: bullet.burnDamage,
+      tickRate: 3,
+      tickTimer: 0,
+      life: 2.4,
+      maxLife: 2.4,
+      glow: "glowRed",
+      tint: [1, 0.38, 0.12],
+      lifeStealPerKill: bullet.lifeStealPerKill || 0,
+    });
+  }
+  if ((bullet.pullStrength || 0) > 0) {
+    const radius = 120;
+    const strength = Math.min(6, bullet.pullStrength) * 6;
+    for (const nearby of game.enemies) {
+      if (nearby.dead || nearby.id === enemy.id) continue;
+      const delta = shortestDungeonDelta(game.dungeon, nearby.x, nearby.y, enemy.x, enemy.y);
+      const distance = Math.hypot(delta.dx, delta.dy);
+      if (distance <= 1 || distance > radius + nearby.radius) continue;
+      const pull = Math.min(strength, Math.max(0, distance - enemy.radius - nearby.radius - 8));
+      nearby.x += (delta.dx / distance) * pull;
+      nearby.y += (delta.dy / distance) * pull;
+    }
+    addEffect({
+      type: "burst",
+      x: enemy.x,
+      y: enemy.y,
+      radius: radius * 0.45,
+      life: 0.16,
+      maxLife: 0.16,
+      glow: "glowCyan",
+      tint: [0.6, 0.9, 1],
+    });
   }
 }
 

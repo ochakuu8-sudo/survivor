@@ -10,6 +10,7 @@ import {
   restoreWeaponBaseStats,
 } from "./weapons.js";
 import { tagsForAttachment } from "./data/attachmentTags.js";
+import { isStoneWeapon, recomputeStoneItems } from "./stoneItems.js";
 
 const STAR_LABELS = { 1: "★", 2: "★★", 3: "★★★", 4: "★★★★", 5: "★★★★★" };
 
@@ -62,7 +63,7 @@ export function snapshotPlayerBaseStats(player) {
   return stats;
 }
 
-function restorePlayerBaseStats() {
+export function restorePlayerBaseStats() {
   const player = game.player;
   if (!player?.baseStats) return;
   PLAYER_BASE_STAT_KEYS.forEach((key) => {
@@ -76,6 +77,12 @@ function boostWeaponAttackSpeed(weapon, percent) {
 
 export function recomputeAllAttachments() {
   if (!game.player?.gear) return;
+  const activeStone = game.player.gear.weapons.find((weapon) => isStoneWeapon(weapon) && Array.isArray(weapon.items));
+  if (activeStone) {
+    recomputeStoneItems(activeStone, game.player);
+    syncGearAttachments();
+    return;
+  }
   restorePlayerBaseStats();
   game.player.gear.weapons.forEach((weapon) => {
     restoreWeaponBaseStats(weapon);

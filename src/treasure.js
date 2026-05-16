@@ -3,8 +3,8 @@ import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
 import { updateHud } from "./hud.js";
-import { pickShopAttachment, starsLabel } from "./attachments.js";
-import { beginAttachmentReward } from "./modding.js";
+import { beginStoneItemChoiceReward } from "./modding.js";
+import { pickStoneItemChoices } from "./stoneItems.js";
 
 export function treasureRerollPrice() {
   return 0;
@@ -47,8 +47,8 @@ function openTreasureChest(chest) {
   addSparks(chest.x, chest.y - 8, 12, 150, "goldCoin");
   game.shake = Math.max(game.shake, 2.5);
 
-  if (reward.attachment) {
-    beginAttachmentReward(reward.attachment, { source: "chest", allowDiscard: true });
+  if (reward.stoneChoices?.length) {
+    beginStoneItemChoiceReward(reward.stoneChoices, { source: "chest", allowDiscard: true });
   } else {
     game.treasureReward = { chest, reward, rerollsUsed: 0 };
     game.modeBeforeTreasure = game.mode;
@@ -85,25 +85,24 @@ function renderTreasureReward() {
 }
 
 function chooseTreasureReward() {
-  const attachmentRoll = pickShopAttachment(game.wave || 1);
-  if (attachmentRoll?.definition) {
-    const def = attachmentRoll.definition;
+  const choices = pickStoneItemChoices(3);
+  if (choices.length > 0) {
     return {
-      type: "attachment",
-      name: def.name,
-      text: def.text || "見つけた瞬間だけ装着できる。捨てると消える。",
-      meta: `入手時選択 / ${starsLabel(attachmentRoll.stars || def.stars || 1)} / ${def.category || "stat"}`,
-      icon: "★",
-      attachment: { definition: def, stars: attachmentRoll.stars || def.stars || 1 },
+      type: "stoneItemChoice",
+      name: "石ころアイテム",
+      text: "3つから1つ選んで石ころに装着する。",
+      meta: "石ころアイテム / 3択",
+      icon: "●",
+      stoneChoices: choices,
     };
   }
 
   return {
     type: "empty",
     name: "空の宝箱",
-    text: "今回は使えるアタッチメントが見つからなかった。",
+    text: "今回は使えるアイテムが見つからなかった。",
     meta: "取得なし",
     icon: "×",
-    attachment: null,
+    stoneChoices: [],
   };
 }

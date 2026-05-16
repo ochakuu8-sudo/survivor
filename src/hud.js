@@ -2,6 +2,7 @@ import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
 import { resetVirtualMove } from "./input.js";
 import { getActiveWeapon } from "./weapons.js";
+import { countItemsByKey, formatStoneItemSummary, stoneEvolutionProgress } from "./stoneItems.js";
 
 export function updateHud() {
   hud.wave.textContent = "Run";
@@ -11,6 +12,7 @@ export function updateHud() {
   hud.kills.textContent = String(game.totalKills || 0);
   renderHpGauge();
   renderWeaponSwitch();
+  renderPauseStoneItems();
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
   if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "arena");
   syncTouchControls();
@@ -57,6 +59,16 @@ function renderHpGauge() {
     hud.hpGauge.classList.toggle("hp-gauge-critical", hpRatio <= 0.15);
     hud.hpGauge.classList.toggle("hp-gauge-barrier", barrier > 0);
   }
+}
+
+function renderPauseStoneItems() {
+  if (!hud.pauseStoneItems) return;
+  const weapon = getActiveWeapon();
+  const counts = countItemsByKey(weapon?.items || []);
+  const progress = stoneEvolutionProgress(counts)
+    .map((evolution) => `${evolution.name}: ${evolution.requirements.map((req) => `${req.name} ${Math.min(req.count, req.need)}/${req.need}`).join(" + ")}`)
+    .join("<br>");
+  hud.pauseStoneItems.innerHTML = `<strong>所持アイテム</strong><p>${formatStoneItemSummary(weapon)}</p><strong>進化進捗</strong><p>${progress}</p>`;
 }
 
 function renderWeaponSwitch() {

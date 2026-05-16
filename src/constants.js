@@ -28,6 +28,7 @@ export const STARTER_WEAPON_NAME = "石ころ";
 export const MAX_WEAPONS = INITIAL_WEAPON_ONLY_RUN ? 1 : 2;
 export const MAX_WEAPON_LEVEL = 9;
 export const INITIAL_WEAPON_ATTACHMENT_SLOTS = 2;
+export const INITIAL_STONE_ITEM_SLOTS = 5;
 export const MAX_ATTACHMENTS_PER_WEAPON = 3;
 export const MAX_ATTACHMENTS = MAX_ATTACHMENTS_PER_WEAPON;
 export const MAX_STORED_ATTACHMENTS = 12;
@@ -88,6 +89,9 @@ export const WEAPON_STAT_KEYS = [
   "freezeSlow",
   "freezeDuration",
   "lifeStealPerKill",
+  "burnDamage",
+  "pullStrength",
+  "eliteBossBonus",
   "ricochetCount",
   "ricochetRange",
   "ricochetSplitCount",
