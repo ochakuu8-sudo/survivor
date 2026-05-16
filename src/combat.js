@@ -260,6 +260,25 @@ export function updateEffects(dt) {
         );
         effect.tickTimer += tickInterval;
       }
+    } else if (effect.type === "delayedStone") {
+      const target = effect.target && !effect.target.dead ? effect.target : game.enemies.find((enemy) => enemy.id === effect.targetId && !enemy.dead);
+      if (target) {
+        effect.x = target.x;
+        effect.y = target.y;
+      }
+      if (effect.life <= 0 && target) {
+        damageEnemy(target, effect.damage || 1, target.x, target.y, 5, 130, effect);
+        kept.push({
+          type: "burst",
+          x: target.x,
+          y: target.y,
+          radius: effect.radius || Math.max(24, target.radius * 1.5),
+          life: 0.22,
+          maxLife: 0.22,
+          glow: effect.glow || "glowAmber",
+          tint: effect.tint || [1, 0.86, 0.42],
+        });
+      }
     } else if (effect.type === "poisonPool" && effect.life > 0) {
       const tickRate = effect.tickRate || 3;
       const tickInterval = 1 / tickRate;

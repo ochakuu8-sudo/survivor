@@ -3,7 +3,7 @@ import { game } from "./state.js";
 import { distSq, gridKey } from "./utils/math.js";
 import { buildEnemyGrid, damageEnemy, explodeBullet, removeDeadEnemies } from "./combat.js";
 import { addEffect, addSparks } from "./effects.js";
-import { shortestDungeonDelta, shortestDungeonDistanceSq, wrapDungeonPoint } from "./dungeon.js";
+import { canStandAt, shortestDungeonDelta, shortestDungeonDistanceSq, wrapDungeonPoint } from "./dungeon.js";
 
 function addPoisonPool(bullet) {
   addEffect({
@@ -36,7 +36,15 @@ export function updateBullets(dt) {
     const previousLife = bullet.life;
     bullet.life -= dt;
     bullet.age = (bullet.age || 0) + dt;
-    if (bullet.kind === "boomerang" && bullet.age >= (bullet.returnTime || 0.9)) {
+    if (bullet.kind === "satelliteStone" && bullet.satelliteOrbit) {
+      const orbit = bullet.satelliteOrbit;
+      const orbitAngle = orbit.phase + bullet.age * orbit.speed;
+      bullet.x = game.player.x + Math.cos(orbitAngle) * orbit.radius;
+      bullet.y = game.player.y + Math.sin(orbitAngle) * orbit.radius * 0.72;
+      bullet.vx = -Math.sin(orbitAngle) * orbit.radius * orbit.speed;
+      bullet.vy = Math.cos(orbitAngle) * orbit.radius * 0.72 * orbit.speed;
+      bullet.angle = orbitAngle + Math.PI / 2;
+    } else if (bullet.kind === "boomerang" && bullet.age >= (bullet.returnTime || 0.9)) {
       const dx = game.player.x - bullet.x;
       const dy = game.player.y - bullet.y;
       const len = Math.hypot(dx, dy) || 1;
@@ -46,8 +54,17 @@ export function updateBullets(dt) {
       bullet.angle = Math.atan2(dy, dx);
       if (len <= game.player.radius + bullet.radius + 8 && previousLife < (bullet.maxLife || 1) - 0.12) continue;
     }
-    bullet.x += bullet.vx * dt;
-    bullet.y += bullet.vy * dt;
+    const previousX = bullet.x;
+    const previousY = bullet.y;
+    if (bullet.kind !== "satelliteStone") {
+      bullet.x += bullet.vx * dt;
+      bullet.y += bullet.vy * dt;
+    }
+    if (bullet.flightGrowth) applyFlightGrowth(bullet, dt);
+    if (bullet.damageTrail && bullet.kind !== "satelliteStone") addDamageTrailSegment(bullet, previousX, previousY);
+    if (game.dungeon && bullet.wallBounceCount > 0 && bullet.kind !== "satelliteStone" && !canStandAt(game.dungeon, bullet.x, bullet.y, bullet.radius * 0.55)) {
+      reflectBulletFromDungeon(bullet, previousX, previousY);
+    }
     if (bullet.kind === "timedBomb") {
       bullet.vx *= Math.pow(0.08, dt);
       bullet.vy *= Math.pow(0.08, dt);
@@ -57,7 +74,10 @@ export function updateBullets(dt) {
     if (bullet.life <= 0) {
       if (bullet.kind === "pulseBomb") continue;
       if (bullet.kind === "poisonBottle") addPoisonPool(bullet);
-      else if (bullet.explosionRadius > 0) explodeBullet(bullet);
+      else {
+        deployStoneHazard(bullet);
+        if (bullet.explosionRadius > 0) explodeBullet(bullet);
+      }
       continue;
     }
     if (bullet.kind === "mine") {
@@ -108,8 +128,8 @@ export function updateBullets(dt) {
 
         for (const enemy of cell) {
           if (enemy.dead) continue;
-          if (enemy.id === bullet.lastHitId && bullet.kind !== "boomerang") continue;
-          if (bullet.kind === "boomerang" && bullet.hitCooldowns?.has(enemy.id)) continue;
+          if (enemy.id === bullet.lastHitId && !allowsRepeatHits(bullet)) continue;
+          if (allowsRepeatHits(bullet) && bullet.hitCooldowns?.has(enemy.id)) continue;
           const range = enemy.radius + bullet.radius;
           if (distSq(bullet.x, bullet.y, enemy.x, enemy.y) > range * range) continue;
 
@@ -131,8 +151,8 @@ export function updateBullets(dt) {
             break nearbyCells;
           }
 
-          if (bullet.kind === "boomerang") {
-            bullet.hitCooldowns.set(enemy.id, 0.28);
+          if (allowsRepeatHits(bullet)) {
+            bullet.hitCooldowns.set(enemy.id, bullet.kind === "rollingStone" ? 0.22 : 0.28);
             keep = true;
             break nearbyCells;
           }
@@ -145,6 +165,7 @@ export function updateBullets(dt) {
           }
 
           if (bullet.explosionRadius > 0) {
+            deployStoneHazard(bullet);
             explodeBullet(bullet);
             keep = false;
             break nearbyCells;
@@ -174,12 +195,13 @@ export function updateBullets(dt) {
           }
 
           bullet.lastHitId = enemy.id;
+          deployStoneHazard(bullet);
           keep = false;
           break nearbyCells;
         }
       }
     }
-    if (bullet.kind === "boomerang" && bullet.hitCooldowns) {
+    if (allowsRepeatHits(bullet) && bullet.hitCooldowns) {
       for (const [id, cd] of bullet.hitCooldowns) {
         const nextCd = cd - dt;
         if (nextCd <= 0) bullet.hitCooldowns.delete(id);
@@ -210,6 +232,10 @@ function addBulletTrail(bullet, dt) {
     tint,
     glow: bullet.bulletGlow,
   });
+}
+
+function allowsRepeatHits(bullet) {
+  return bullet.kind === "boomerang" || bullet.kind === "rollingStone" || bullet.kind === "satelliteStone";
 }
 
 function addStoneHitEffect(bullet, enemy, killed) {
@@ -271,9 +297,10 @@ function applyStoneItemHitEffects(bullet, enemy) {
       lifeStealPerKill: bullet.lifeStealPerKill || 0,
     });
   }
+  if (bullet.stuckStone) addDelayedStoneDamage(bullet, enemy);
   if ((bullet.pullStrength || 0) > 0) {
-    const radius = 120;
-    const strength = Math.min(6, bullet.pullStrength) * 6;
+    const radius = 120 + Math.min(3, bullet.pullStrength) * 14;
+    const strength = Math.min(8, bullet.pullStrength) * 6;
     for (const nearby of game.enemies) {
       if (nearby.dead || nearby.id === enemy.id) continue;
       const delta = shortestDungeonDelta(game.dungeon, nearby.x, nearby.y, enemy.x, enemy.y);
@@ -282,6 +309,7 @@ function applyStoneItemHitEffects(bullet, enemy) {
       const pull = Math.min(strength, Math.max(0, distance - enemy.radius - nearby.radius - 8));
       nearby.x += (delta.dx / distance) * pull;
       nearby.y += (delta.dy / distance) * pull;
+      wrapDungeonPoint(game.dungeon, nearby);
     }
     addEffect({
       type: "burst",
@@ -294,6 +322,55 @@ function applyStoneItemHitEffects(bullet, enemy) {
       tint: [0.6, 0.9, 1],
     });
   }
+}
+
+function addDelayedStoneDamage(bullet, enemy) {
+  const config = bullet.stuckStone;
+  addEffect({
+    type: "delayedStone",
+    target: enemy,
+    targetId: enemy.id,
+    x: enemy.x,
+    y: enemy.y,
+    radius: Math.max(18, bullet.radius * 1.4),
+    damage: bullet.damage * (config.damageScale || 0.5),
+    critChance: bullet.critChance || 0,
+    critMultiplier: bullet.critMultiplier || 1.75,
+    eliteBossBonus: bullet.eliteBossBonus || 0,
+    lifeStealPerKill: bullet.lifeStealPerKill || 0,
+    life: config.delay || 1.6,
+    maxLife: config.delay || 1.6,
+    glow: bullet.bulletGlow || "glowAmber",
+    tint: bullet.bulletTint || [1, 0.86, 0.42],
+  });
+}
+
+function deployStoneHazard(bullet) {
+  const config = bullet.deployStoneHazard;
+  if (!config) return;
+  const active = game.effects.filter((effect) => effect.type === "poisonPool" && effect.stoneHazard).length;
+  if (active >= (config.maxActive || 14)) return;
+  const duration = config.duration || 2.6;
+  addEffect({
+    type: "poisonPool",
+    stoneHazard: true,
+    x: bullet.x,
+    y: bullet.y,
+    radius: Math.max(26, bullet.radius * (config.radiusScale || 1.6)),
+    damage: Math.max(1, bullet.damage * (config.damageScale || 0.22)),
+    tickRate: 4,
+    tickTimer: 0,
+    critChance: bullet.critChance || 0,
+    critMultiplier: bullet.critMultiplier || 1.75,
+    freezeChance: bullet.freezeChance || 0,
+    freezeSlow: bullet.freezeSlow || 0.72,
+    freezeDuration: bullet.freezeDuration || 1,
+    lifeStealPerKill: bullet.lifeStealPerKill || 0,
+    life: duration,
+    maxLife: duration,
+    glow: bullet.effectGlow || "glowAmber",
+    tint: bullet.effectTint || [0.78, 0.72, 0.62],
+  });
 }
 
 function spawnHitShards(bullet, enemy, next, originId, spawnCounts) {
@@ -340,6 +417,74 @@ function createShardBullet(parent, angle, justHitId, damageScale) {
     trail: "yellow",
     bulletTint: parent.meteorFragments ? [1, 0.32, 0.22] : [0.92, 0.86, 0.72],
   };
+}
+
+function applyFlightGrowth(bullet, dt) {
+  const growth = bullet.flightGrowth;
+  const previousScale = bullet.flightGrowthScale || 1;
+  const targetScale = Math.min(growth.maxScale || 1.8, 1 + (bullet.age || 0) * (growth.speedPerSecond || 0.4));
+  if (targetScale > previousScale) {
+    const ratio = targetScale / previousScale;
+    bullet.vx *= ratio;
+    bullet.vy *= ratio;
+    bullet.flightGrowthScale = targetScale;
+  }
+  const damageScale = Math.min(growth.maxScale || 1.8, 1 + (bullet.age || 0) * (growth.damagePerSecond || 0.25));
+  bullet.damage = (bullet.baseDamage || bullet.damage) * damageScale;
+}
+
+function addDamageTrailSegment(bullet, x1, y1) {
+  if (Math.hypot(bullet.x - x1, bullet.y - y1) < 10) return;
+  const config = bullet.damageTrail;
+  const life = config.duration || 0.34;
+  addEffect({
+    type: "damageLine",
+    x1,
+    y1,
+    x2: bullet.x,
+    y2: bullet.y,
+    width: Math.max(8, bullet.radius * (config.widthScale || 0.55)),
+    damage: Math.max(1, bullet.damage * (config.damageScale || 0.18)),
+    tickRate: 8,
+    tickTimer: 0,
+    maxHits: 8,
+    critChance: bullet.critChance || 0,
+    critMultiplier: bullet.critMultiplier || 1.75,
+    eliteBossBonus: bullet.eliteBossBonus || 0,
+    lifeStealPerKill: bullet.lifeStealPerKill || 0,
+    life,
+    maxLife: life,
+    tint: bullet.effectTint || [1, 0.36, 0.12],
+  });
+}
+
+function reflectBulletFromDungeon(bullet, previousX, previousY) {
+  const canMoveX = !game.dungeon || canStandAt(game.dungeon, bullet.x, previousY, bullet.radius * 0.55);
+  const canMoveY = !game.dungeon || canStandAt(game.dungeon, previousX, bullet.y, bullet.radius * 0.55);
+  bullet.x = previousX;
+  bullet.y = previousY;
+  if (canMoveX && !canMoveY) bullet.vy *= -1;
+  else if (!canMoveX && canMoveY) bullet.vx *= -1;
+  else {
+    bullet.vx *= -1;
+    bullet.vy *= -1;
+  }
+  const scale = bullet.wallBounceSpeedScale || 1;
+  bullet.vx *= scale;
+  bullet.vy *= scale;
+  bullet.angle = Math.atan2(bullet.vy, bullet.vx);
+  bullet.wallBounceCount -= 1;
+  bullet.life = Math.max(bullet.life, 0.18);
+  addEffect({
+    type: "burst",
+    x: bullet.x,
+    y: bullet.y,
+    radius: Math.max(18, bullet.radius * 1.7),
+    life: 0.14,
+    maxLife: 0.14,
+    glow: bullet.bulletGlow || "glowAmber",
+    tint: bullet.bulletTint || [1, 0.78, 0.32],
+  });
 }
 
 function applyElasticGrowth(bullet) {

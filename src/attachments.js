@@ -23,6 +23,15 @@ export function attachmentCategoryLabel(category) {
     stat: "ステータス",
     special: "特殊効果",
     support: "プレイヤー強化",
+    trajectory: "軌道変化",
+    deploy: "設置",
+    shatter: "破砕",
+    element: "属性",
+    control: "制御",
+    delayed: "遅延",
+    defense: "防御",
+    growth: "成長",
+    throwStyle: "投げ方",
     unique: "ユニーク効果",
   };
   return labels[category] || "効果";
