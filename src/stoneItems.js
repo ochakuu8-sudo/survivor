@@ -4,7 +4,7 @@ import { STONE_ITEMS, STONE_MATERIALS, STONE_SPECIAL_ITEMS, findStoneItem, findS
 import { restoreWeaponBaseStats } from "./weapons.js";
 
 const PLAYER_BASE_STAT_KEYS = ["maxHp", "speed", "pickup", "armor", "barrierMax", "weaponPowerBonus"];
-const STONE_EVOLUTIONS = [
+export const STONE_EVOLUTIONS = [
   {
     key: "rubberBall",
     name: "ゴムボール",
