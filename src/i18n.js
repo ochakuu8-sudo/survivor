@@ -1,10 +1,9 @@
 import en from "./locales/en.js";
-import ja from "./locales/ja.js";
 
-export const SUPPORTED_LOCALES = ["en", "ja"];
+export const SUPPORTED_LOCALES = ["en"];
 export const DEFAULT_LOCALE = "en";
 
-const dictionaries = { en, ja };
+const dictionaries = { en };
 let currentLocale = DEFAULT_LOCALE;
 
 function normalizeLocale(locale) {
@@ -13,30 +12,11 @@ function normalizeLocale(locale) {
   return SUPPORTED_LOCALES.includes(normalized) ? normalized : DEFAULT_LOCALE;
 }
 
-function readCrazyGamesLocale() {
-  const sdk = globalThis.CrazyGames?.SDK || globalThis.crazygames?.SDK || globalThis.CrazySDK;
-  const candidates = [
-    sdk?.user?.locale,
-    sdk?.user?.systemInfo?.locale,
-    sdk?.game?.locale,
-    globalThis.CrazyGames?.locale,
-  ];
-  for (const candidate of candidates) {
-    if (typeof candidate === "string" && candidate) return candidate;
-  }
-  return null;
-}
-
 export function resolveInitialLocale() {
-  const crazyLocale = readCrazyGamesLocale();
-  if (crazyLocale) return normalizeLocale(crazyLocale);
-  try {
-    const stored = globalThis.localStorage?.getItem("survivor_locale");
-    if (stored) return normalizeLocale(stored);
-  } catch (_error) {
-    // Storage may be unavailable in sandboxed embeds.
-  }
-  return normalizeLocale(globalThis.navigator?.language || DEFAULT_LOCALE);
+  // The game is currently published as an English-only build.  Do not infer a
+  // different language from the host page, browser, or saved values; doing so
+  // can surface untranslated/Japanese UI on English distribution pages.
+  return DEFAULT_LOCALE;
 }
 
 export function setLocale(locale) {

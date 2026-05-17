@@ -33,6 +33,7 @@ import { render } from "./render.js";
 import { beginStoneItemReward, hideModdingPanel } from "./modding.js";
 import { updateFacilities } from "./workbench.js";
 import { findStoneMaterial } from "./data/stoneItems.js";
+import { t } from "./i18n.js";
 
 export function resetRun() {
   game.mode = "weaponSelect";

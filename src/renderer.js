@@ -2,15 +2,10 @@ export class SpriteRenderer {
   constructor(targetCanvas, atlasData) {
     this.canvas = targetCanvas;
     this.atlas = atlasData;
-    this.gl = targetCanvas.getContext("webgl", {
-      alpha: false,
-      antialias: false,
-      preserveDrawingBuffer: false,
-    });
-
-    if (!this.gl) {
-      throw new Error("WebGL is not available in this browser");
-    }
+    this.gl = this.createWebGlContext(targetCanvas);
+    this.ctx = null;
+    this.tintCache = new Map();
+    this.maxTintCacheEntries = 256;
 
     this.maxQuads = 12000;
     this.stride = 8;
@@ -20,10 +15,43 @@ export class SpriteRenderer {
     this.dpr = 1;
     this.width = 0;
     this.height = 0;
-    this.program = this.createProgram();
-    this.buffer = this.gl.createBuffer();
-    this.texture = this.createTexture(atlasData.canvas);
-    this.bindState();
+
+    if (!this.gl) {
+      this.enableCanvas2dFallback();
+      return;
+    }
+
+    try {
+      this.program = this.createProgram();
+      this.buffer = this.gl.createBuffer();
+      this.texture = this.createTexture(atlasData.canvas);
+      this.bindState();
+    } catch (error) {
+      console.warn("WebGL renderer failed; using Canvas2D fallback.", error);
+      this.gl = null;
+      this.enableCanvas2dFallback();
+    }
+  }
+
+  createWebGlContext(targetCanvas) {
+    try {
+      return targetCanvas.getContext("webgl", {
+        alpha: false,
+        antialias: false,
+        preserveDrawingBuffer: false,
+      });
+    } catch (error) {
+      console.warn("WebGL context creation failed; using Canvas2D fallback.", error);
+      return null;
+    }
+  }
+
+  enableCanvas2dFallback() {
+    this.ctx = this.canvas.getContext("2d", { alpha: false });
+    if (!this.ctx) {
+      throw new Error("Neither WebGL nor Canvas2D is available in this browser");
+    }
+    this.ctx.imageSmoothingEnabled = false;
   }
 
   createProgram() {
@@ -121,14 +149,23 @@ export class SpriteRenderer {
     this.width = width;
     this.height = height;
     this.dpr = dpr;
-    this.gl.viewport(0, 0, width, height);
-    this.gl.uniform2f(this.resolutionLocation, width, height);
+    if (this.gl) {
+      this.gl.viewport(0, 0, width, height);
+      this.gl.uniform2f(this.resolutionLocation, width, height);
+    } else if (this.ctx) {
+      this.ctx.imageSmoothingEnabled = false;
+    }
   }
 
   clear() {
-    const gl = this.gl;
-    gl.clearColor(0.58, 0.78, 0.42, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    if (this.gl) {
+      const gl = this.gl;
+      gl.clearColor(0.58, 0.78, 0.42, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      return;
+    }
+    this.ctx.fillStyle = "rgb(148, 199, 107)";
+    this.ctx.fillRect(0, 0, this.width, this.height);
   }
 
   createEmptyStats() {
@@ -151,6 +188,11 @@ export class SpriteRenderer {
     const sprite = this.atlas.sprites[name];
     if (!sprite) {
       this.stats.skippedSprites += 1;
+      return;
+    }
+
+    if (!this.gl) {
+      this.drawCanvas2d(sprite, name, x, y, width, height, options);
       return;
     }
 
@@ -250,7 +292,67 @@ export class SpriteRenderer {
     this.stats.maxVertices = Math.max(this.stats.maxVertices, this.vertexCount);
   }
 
+  drawCanvas2d(sprite, name, x, y, width, height, options = {}) {
+    const ctx = this.ctx;
+    const scale = this.dpr;
+    const tint = options.tint || [1, 1, 1];
+    const alpha = options.alpha ?? 1;
+    const source = this.getCanvas2dSource(sprite, name, tint);
+    const cx = x * scale;
+    const cy = y * scale;
+    const dw = width * scale;
+    const dh = height * scale;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.imageSmoothingEnabled = false;
+    ctx.translate(cx, cy);
+    if (options.rotation) ctx.rotate(options.rotation);
+    if (source === this.atlas.canvas) {
+      ctx.drawImage(source, sprite.x, sprite.y, sprite.w, sprite.h, -dw / 2, -dh / 2, dw, dh);
+    } else {
+      ctx.drawImage(source, -dw / 2, -dh / 2, dw, dh);
+    }
+    ctx.restore();
+
+    this.stats.quads += 1;
+    this.stats.drawCalls += 1;
+    this.stats.maxVertices = Math.max(this.stats.maxVertices, this.stats.quads * 6);
+  }
+
+  getCanvas2dSource(sprite, name, tint) {
+    const r = Math.max(0, Math.min(255, Math.round((tint[0] ?? 1) * 255)));
+    const g = Math.max(0, Math.min(255, Math.round((tint[1] ?? 1) * 255)));
+    const b = Math.max(0, Math.min(255, Math.round((tint[2] ?? 1) * 255)));
+    if (r === 255 && g === 255 && b === 255) return this.atlas.canvas;
+
+    const key = `${name}:${r},${g},${b}`;
+    const cached = this.tintCache.get(key);
+    if (cached) return cached;
+
+    if (this.tintCache.size >= this.maxTintCacheEntries) {
+      const oldest = this.tintCache.keys().next().value;
+      this.tintCache.delete(oldest);
+    }
+
+    const tinted = document.createElement("canvas");
+    tinted.width = sprite.w;
+    tinted.height = sprite.h;
+    const tintCtx = tinted.getContext("2d");
+    tintCtx.imageSmoothingEnabled = false;
+    tintCtx.drawImage(this.atlas.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0, sprite.w, sprite.h);
+    tintCtx.globalCompositeOperation = "multiply";
+    tintCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    tintCtx.fillRect(0, 0, sprite.w, sprite.h);
+    tintCtx.globalCompositeOperation = "destination-in";
+    tintCtx.drawImage(this.atlas.canvas, sprite.x, sprite.y, sprite.w, sprite.h, 0, 0, sprite.w, sprite.h);
+
+    this.tintCache.set(key, tinted);
+    return tinted;
+  }
+
   flush() {
+    if (!this.gl) return;
     if (this.vertexCount === 0) return;
     const gl = this.gl;
     gl.useProgram(this.program);
