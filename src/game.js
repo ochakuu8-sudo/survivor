@@ -1,7 +1,7 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { EXIT_HOLD_SECONDS, INITIAL_WEAPON_ONLY_RUN, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS, TILE_SIZE } from "./constants.js";
+import { EXIT_HOLD_SECONDS, INITIAL_WEAPON_ONLY_RUN, INTERACTION_HOLD_SECONDS, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS, TILE_SIZE } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, getActiveWeapon, updateDroneWeapons, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
@@ -11,6 +11,7 @@ import {
   createTreasureChestAt,
   generateDungeon,
   getDungeonRoomAtWorld,
+  hasReachedCombatRoomSword,
   hasReachedDungeonExit,
   lockDungeonRoom,
   roomSpawnPoints,
@@ -330,13 +331,37 @@ function updateDungeonRoomEvents(dt) {
 
   const room = getDungeonRoomAtWorld(dungeon, player.x, player.y);
   if (room?.type === ROOM_COMBAT && !room.cleared && !room.entered) {
-    startCombatRoom(dungeon, room);
+    updateCombatRoomSwordTrigger(dungeon, room, player, dt);
+  } else {
+    resetCombatRoomSwordTrigger(dungeon);
   }
 
   const activeRoom = dungeon.rooms?.find((entry) => entry.id === dungeon.activeRoomId);
   if (activeRoom?.type === ROOM_COMBAT && activeRoom.locked) {
     const alive = game.enemies.some((enemy) => !enemy.dead && enemy.roomId === activeRoom.id);
     if (!alive) clearCombatRoom(dungeon, activeRoom);
+  }
+}
+
+function resetCombatRoomSwordTrigger(dungeon) {
+  const previousRoom = dungeon?.rooms?.find((entry) => entry.id === dungeon.combatSwordHoldRoomId);
+  if (previousRoom) previousRoom.swordHoldTimer = 0;
+  if (dungeon) dungeon.combatSwordHoldRoomId = null;
+}
+
+function updateCombatRoomSwordTrigger(dungeon, room, player, dt) {
+  if (dungeon.combatSwordHoldRoomId !== room.id) resetCombatRoomSwordTrigger(dungeon);
+  dungeon.combatSwordHoldRoomId = room.id;
+
+  if (!hasReachedCombatRoomSword(dungeon, room, player)) {
+    resetCombatRoomSwordTrigger(dungeon);
+    return;
+  }
+
+  room.swordHoldTimer = Math.min(INTERACTION_HOLD_SECONDS, (room.swordHoldTimer || 0) + dt);
+  if (room.swordHoldTimer >= INTERACTION_HOLD_SECONDS) {
+    resetCombatRoomSwordTrigger(dungeon);
+    startCombatRoom(dungeon, room);
   }
 }
 

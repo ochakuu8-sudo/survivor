@@ -19,6 +19,7 @@ import {
   ROOM_STAIRS,
   ROOM_TREASURE,
   ROOM_WORKBENCH,
+  combatRoomSwordPosition,
   dungeonFloorSprite,
   dungeonVisualTileCoords,
   getDungeonRoomAt,
@@ -379,6 +380,19 @@ function drawWorld(view, camX, camY, zoom) {
     });
   }
 
+  for (const room of game.dungeon?.rooms || []) {
+    if (room.type !== ROOM_COMBAT || room.cleared || room.entered) continue;
+    const sword = combatRoomSwordPosition(game.dungeon, room);
+    if (!isVisibleWorld(sword.x, sword.y, 72, view, camX, camY, zoom)) continue;
+    actors.push({
+      kind: "combatSword",
+      y: sword.y + 26,
+      item: room,
+      drawX: sword.x,
+      drawY: sword.y,
+    });
+  }
+
   const visibleEnemies = [];
   for (const enemy of game.enemies) {
     const pos = visiblePositionForDraw(enemy, camX, camY);
@@ -411,6 +425,7 @@ function drawWorld(view, camX, camY, zoom) {
     else if (actor.kind === "obstacle") drawSceneryObstacle(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
     else if (actor.kind === "chest") drawTreasureChest(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
     else if (actor.kind === "facility") drawFacility(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
+    else if (actor.kind === "combatSword") drawCombatSword(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
     else drawEnemy(actor.item, view, camX, camY, zoom, actor.drawX, actor.drawY);
   }
 
@@ -740,6 +755,32 @@ function drawWorldLine(x1, y1, x2, y2, width, view, camX, camY, zoom, options = 
     rotation: Math.atan2(dy, dx),
     tint: options.tint || [1, 1, 1],
     alpha: options.alpha ?? 1,
+  });
+}
+
+function drawCombatSword(room, view, camX, camY, zoom, drawX, drawY) {
+  const screen = worldToScreen(drawX, drawY, view, camX, camY, zoom);
+  const progress = clamp((room.swordHoldTimer || 0) / INTERACTION_HOLD_SECONDS, 0, 1);
+  const pulse = 1 + Math.sin(game.elapsed * 4.2) * 0.06;
+  const glowAlpha = 0.22 + progress * 0.28 + Math.sin(game.elapsed * 3.4) * 0.04;
+
+  state.renderer.draw("glowAmber", screen.x, screen.y - 8 * zoom, 96 * pulse * zoom, 96 * pulse * zoom, {
+    alpha: glowAlpha,
+    tint: [1, 0.78, 0.28],
+  });
+  state.renderer.draw("shadow", screen.x, screen.y + 25 * zoom, 62 * zoom, 22 * zoom, { alpha: 0.66 });
+  state.renderer.draw("swordIcon", screen.x, screen.y - 12 * zoom, 42 * zoom, 64 * zoom, {
+    rotation: Math.sin(game.elapsed * 2.6) * 0.05,
+    tint: [1, 0.96, 0.84],
+  });
+
+  const barW = 56 * zoom;
+  const barH = 7 * zoom;
+  const barY = screen.y - 58 * zoom;
+  state.renderer.draw("white", screen.x, barY, barW, barH, { tint: [0.14, 0.09, 0.08], alpha: 0.62 });
+  state.renderer.draw("white", screen.x - (barW * (1 - progress)) / 2, barY, barW * progress, barH, {
+    tint: [1, 0.8, 0.24],
+    alpha: progress > 0 ? 0.92 : 0.24,
   });
 }
 
