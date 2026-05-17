@@ -11,6 +11,13 @@ import { claimTreasureReward, rerollTreasureReward } from "./treasure.js";
 import { cycleActiveWeapon } from "./weapons.js";
 import { updateHud } from "./hud.js";
 import { closeWorkbench } from "./workbench.js";
+import { localizeDom } from "./i18n.js";
+
+localizeDom();
+window.addEventListener("survivor:locale-changed", () => {
+  localizeDom();
+  updateHud();
+});
 
 hud.restart.addEventListener("click", resetRun);
 

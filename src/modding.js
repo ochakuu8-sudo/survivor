@@ -1,4 +1,5 @@
 import { getWeaponMaxAttachments } from "./constants.js";
+import { t } from "./i18n.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import {
@@ -175,7 +176,7 @@ export function applyPendingAttachmentToSlot(weaponId, slotIndex) {
   const current = weapon.attachments[slotIndex] || null;
   if (current?.locked) return false;
   if (current && typeof window !== "undefined" && typeof window.confirm === "function") {
-    const ok = window.confirm(`「${current.name}」を「${pending.attachment.name}」で上書きしますか？\n上書きされたアタッチメントは消えます。`);
+    const ok = window.confirm(t("modding.overwriteConfirm", { current: current.name, next: pending.attachment.name }));
     if (!ok) return false;
   }
 
@@ -187,14 +188,14 @@ export function applyPendingAttachmentToSlot(weaponId, slotIndex) {
 
 function sourceLabel(source) {
   const labels = {
-    chest: "宝箱",
-    treasureVault: "宝物庫",
-    combatRoom: "戦闘部屋",
-    workbench: "作業台",
-    debugLevelUp: "デバッグ強化",
-    reward: "報酬",
+    chest: t("modding.source.chest"),
+    treasureVault: t("modding.source.treasureVault"),
+    combatRoom: t("modding.source.combatRoom"),
+    workbench: t("modding.source.workbench"),
+    debugLevelUp: t("modding.source.debugLevelUp"),
+    reward: t("modding.source.reward"),
   };
-  return labels[source] || "報酬";
+  return labels[source] || t("modding.source.reward");
 }
 
 function setModdingPanelVariant(variant = "default") {
@@ -229,13 +230,13 @@ function renderRewardSlot(weapon, weaponIndex, slotIndex, pendingAttachment) {
   copy.className = "mod-slot-copy";
 
   const name = document.createElement("strong");
-  name.textContent = current ? current.name || currentDefinition.name || "アタッチメント" : "空きスロット";
+  name.textContent = current ? current.name || currentDefinition.name || t("modding.attachmentFallback") : t("modding.emptySlot");
 
   const meta = document.createElement("small");
-  if (locked) meta.textContent = "上書き不可";
-  else if (!compatible) meta.textContent = "この武器には装着不可";
-  else if (current) meta.textContent = `${starsLabel(currentStars)} / ${attachmentCategoryLabel(currentCategory)} → 上書き`;
-  else meta.textContent = `武器${weaponIndex + 1}へ装着`;
+  if (locked) meta.textContent = t("modding.locked");
+  else if (!compatible) meta.textContent = t("modding.incompatible");
+  else if (current) meta.textContent = t("modding.overwrite", { stars: starsLabel(currentStars), category: attachmentCategoryLabel(currentCategory) });
+  else meta.textContent = t("modding.attachToWeapon", { index: weaponIndex + 1 });
 
   copy.append(name, meta);
   button.append(icon, copy);
@@ -249,8 +250,8 @@ function renderRewardWeaponGroup(weapon, weaponIndex, pendingAttachment) {
 
   const heading = document.createElement("div");
   heading.className = "mod-weapon-heading";
-  const active = game.player?.gear?.activeWeaponIndex === weaponIndex ? " / 使用中" : " / 控え";
-  heading.innerHTML = `<strong>武器${weaponIndex + 1}: ${weapon.name}${active}</strong><small>スロット ${getFilledSlotCount(weapon)}/${maxAttachmentSlotsForWeapon(weapon)}</small>`;
+  const active = game.player?.gear?.activeWeaponIndex === weaponIndex ? ` / ${t("modding.active")}` : ` / ${t("modding.reserve")}`;
+  heading.innerHTML = `<strong>${t("modding.slotStatus", { index: weaponIndex + 1, weapon: weapon.name, active })}</strong><small>${t("modding.slotCount", { filled: getFilledSlotCount(weapon), max: maxAttachmentSlotsForWeapon(weapon) })}</small>`;
 
   const slots = document.createElement("ol");
   slots.className = "modding-slots modding-slots-nested";
@@ -303,28 +304,28 @@ export function renderModdingPanel() {
   const kicker = hud.moddingPanel.querySelector(".panel-kicker");
   const heading = hud.moddingPanel.querySelector("h1");
   if (kicker) kicker.textContent = sourceLabel(pending.source);
-  if (heading) heading.textContent = "今つけるか、捨てるか";
+  if (heading) heading.textContent = t("modding.title");
 
-  hud.moddingWeaponName.textContent = "新アタッチメント";
-  hud.moddingWeaponLevel.textContent = "装着しなければ消えます";
-  hud.moddingGold.textContent = "非所持";
+  hud.moddingWeaponName.textContent = t("modding.newAttachment");
+  hud.moddingWeaponLevel.textContent = t("modding.mustAttach");
+  hud.moddingGold.textContent = t("modding.notOwned");
   const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
   if (treasureIcon) {
     treasureIcon.className = `treasure-icon modding-main-icon attach-stars-${stars}`;
     treasureIcon.textContent = attachmentIcon(category, stars);
   }
-  hud.moddingAttachmentName.textContent = attachment.name || definition.name || "アタッチメント";
+  hud.moddingAttachmentName.textContent = attachment.name || definition.name || t("modding.attachmentFallback");
   hud.moddingAttachmentMeta.textContent = `${starsLabel(stars)} / ${attachmentCategoryLabel(category)}`;
-  hud.moddingAttachmentText.textContent = definition.text || "選んだ武器スロットへ即時装着。既存枠は上書きされ、古いアタッチメントは消えます。";
+  hud.moddingAttachmentText.textContent = definition.text || t("modding.defaultText");
 
   hud.moddingSlots.replaceChildren();
   (game.player?.gear?.weapons || []).forEach((weapon, weaponIndex) => {
     hud.moddingSlots.append(renderRewardWeaponGroup(weapon, weaponIndex, attachment));
   });
 
-  hud.moddingReroll.textContent = "リロールなし";
+  hud.moddingReroll.textContent = t("modding.noReroll");
   hud.moddingReroll.disabled = true;
-  hud.moddingTake.textContent = pending.allowDiscard === false ? "装着先を選択" : "捨てる";
+  hud.moddingTake.textContent = pending.allowDiscard === false ? t("modding.chooseTarget") : t("modding.discard");
   hud.moddingTake.disabled = pending.allowDiscard === false;
   hud.moddingPanel.classList.remove("hidden");
 }
@@ -352,21 +353,21 @@ function renderStoneItemChoicePanel(pending) {
   const kicker = hud.moddingPanel.querySelector(".panel-kicker");
   const heading = hud.moddingPanel.querySelector("h1");
   if (kicker) kicker.textContent = sourceLabel(pending.source);
-  if (heading) heading.textContent = "アイテムを選ぶ";
+  if (heading) heading.textContent = t("modding.chooseItem");
 
-  hud.moddingWeaponName.textContent = allSpecialChoices ? "合成済みアイテム3択" : `素材${pending.stoneChoices.length}択報酬`;
-  hud.moddingWeaponLevel.textContent = allSpecialChoices ? "特殊アイテムを石武器へ追加" : "素材も特殊アイテムも所持欄へ追加";
-  hud.moddingGold.textContent = "選択待ち";
+  hud.moddingWeaponName.textContent = allSpecialChoices ? t("modding.specialChoices") : t("modding.materialChoices", { count: pending.stoneChoices.length });
+  hud.moddingWeaponLevel.textContent = allSpecialChoices ? t("modding.addSpecial") : t("modding.addInventory");
+  hud.moddingGold.textContent = t("modding.waiting");
   const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
   if (treasureIcon) {
     treasureIcon.className = "treasure-icon modding-main-icon";
     treasureIcon.textContent = allSpecialChoices ? "★" : "●";
   }
-  hud.moddingAttachmentName.textContent = allSpecialChoices ? "合成済みアイテムを直接入手" : "素材を集めて作業台で合成";
-  hud.moddingAttachmentMeta.textContent = allSpecialChoices ? "特殊アイテム / 直接追加" : `基礎素材 / ${pending.stoneChoices.length}択`;
+  hud.moddingAttachmentName.textContent = allSpecialChoices ? t("modding.specialDirect") : t("modding.materialWorkbench");
+  hud.moddingAttachmentMeta.textContent = allSpecialChoices ? t("modding.specialMeta") : t("modding.materialMeta", { count: pending.stoneChoices.length });
   hud.moddingAttachmentText.textContent = allSpecialChoices
-    ? "合成済みの特殊アイテムです。3択から選んだ効果が石武器へ即座に追加されます。"
-    : "基礎素材を選んで入手します。素材は拾った時点で効果が発動し、作業台で特殊アイテムへ合成できます。";
+    ? t("modding.specialHelp")
+    : t("modding.materialHelp");
 
   hud.moddingSlots.replaceChildren();
   pending.stoneChoices.forEach((item, index) => {
@@ -390,16 +391,16 @@ function renderStoneItemChoicePanel(pending) {
     meta.textContent = formatStoneItemEffectSummary(definition);
     const count = document.createElement("span");
     count.className = "stone-choice-count";
-    count.textContent = `${material ? "素材" : "所持"} ${owned}→${owned + 1}`;
+    count.textContent = t("modding.count", { label: material ? t("modding.material") : t("modding.owned"), owned, next: owned + 1 });
     copy.append(name, meta, count);
     button.append(icon, copy);
     card.append(button);
     hud.moddingSlots.append(card);
   });
 
-  hud.moddingReroll.textContent = "リロールなし";
+  hud.moddingReroll.textContent = t("modding.noReroll");
   hud.moddingReroll.disabled = true;
-  hud.moddingTake.textContent = pending.allowDiscard === false ? "アイテムを選択" : "破棄";
+  hud.moddingTake.textContent = pending.allowDiscard === false ? t("modding.chooseItemAction") : t("modding.drop");
   hud.moddingTake.disabled = pending.allowDiscard === false;
   hud.moddingPanel.classList.remove("hidden");
 }

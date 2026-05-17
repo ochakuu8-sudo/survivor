@@ -1,4 +1,5 @@
 import { INITIAL_STONE_ITEM_SLOTS } from "./constants.js";
+import { t } from "./i18n.js";
 import { game } from "./state.js";
 import { STONE_ITEMS, STONE_MATERIALS, STONE_SPECIAL_ITEMS, findStoneItem, findStoneMaterial, findStoneSpecialItem } from "./data/stoneItems.js";
 import { restoreWeaponBaseStats } from "./weapons.js";
@@ -7,11 +8,11 @@ const PLAYER_BASE_STAT_KEYS = ["maxHp", "speed", "pickup", "armor", "barrierMax"
 export const STONE_EVOLUTIONS = [
   {
     key: "rubberBall",
-    name: "ゴムボール",
+    name: t("stone.evolution.rubberBall.name"), nameKey: "stone.evolution.rubberBall.name",
     progress: [{ key: "bounceStone", need: 3 }],
     when: (counts) => (counts.bounceStone || 0) >= 3,
     apply: (weapon) => {
-      weapon.name = "ゴムボール";
+      weapon.name = t("stone.evolution.rubberBall.name");
       weapon.ricochetSplitCount = Math.max(weapon.ricochetSplitCount || 1, 2);
       weapon.splitShardCount = Math.max(weapon.splitShardCount || 0, 1);
       weapon.splitSpawnLimit = Math.max(weapon.splitSpawnLimit || 10, 14);
@@ -23,11 +24,11 @@ export const STONE_EVOLUTIONS = [
   },
   {
     key: "meteorCore",
-    name: "隕石核",
+    name: t("stone.evolution.meteorCore.name"), nameKey: "stone.evolution.meteorCore.name",
     progress: [{ key: "explosiveStone", need: 3 }],
     when: (counts) => (counts.explosiveStone || 0) >= 3,
     apply: (weapon) => {
-      weapon.name = "隕石核";
+      weapon.name = t("stone.evolution.meteorCore.name");
       weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 92);
       weapon.explosionDamage *= 1.25;
       weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "meteor", trail: "orange", hitEffect: "heavy" };
@@ -39,11 +40,11 @@ export const STONE_EVOLUTIONS = [
   },
   {
     key: "masterStone",
-    name: "名人の一石",
+    name: t("stone.evolution.masterStone.name"), nameKey: "stone.evolution.masterStone.name",
     progress: [{ key: "critStone", need: 2 }, { key: "sniperStone", need: 2 }],
     when: (counts) => (counts.critStone || 0) >= 2 && (counts.sniperStone || 0) >= 2,
     apply: (weapon) => {
-      weapon.name = "名人の一石";
+      weapon.name = t("stone.evolution.masterStone.name");
       weapon.masterStoneInterval = Math.min(8, weapon.masterStoneInterval || 8);
       weapon.masterStoneTimer = Math.min(weapon.masterStoneTimer ?? weapon.masterStoneInterval, weapon.masterStoneInterval);
       weapon.masterStoneDamageScale = Math.max(weapon.masterStoneDamageScale || 0, 3.6);
@@ -56,11 +57,11 @@ export const STONE_EVOLUTIONS = [
   },
   {
     key: "rollingBoulder",
-    name: "転がる巨岩",
+    name: t("stone.evolution.rollingBoulder.name"), nameKey: "stone.evolution.rollingBoulder.name",
     progress: [{ key: "rollingStone", need: 2 }, { key: "heavyStone", need: 2 }],
     when: (counts) => (counts.rollingStone || 0) >= 2 && (counts.heavyStone || 0) >= 2,
     apply: (weapon) => {
-      weapon.name = "転がる巨岩";
+      weapon.name = t("stone.evolution.rollingBoulder.name");
       weapon.rollingStone = Math.max(weapon.rollingStone || 0, 2);
       weapon.radius *= 1.18;
       weapon.knockback += 18;
@@ -71,11 +72,11 @@ export const STONE_EVOLUTIONS = [
   },
   {
     key: "gravityCore",
-    name: "引力核",
+    name: t("stone.evolution.gravityCore.name"), nameKey: "stone.evolution.gravityCore.name",
     progress: [{ key: "gravityStone", need: 2 }, { key: "explosiveStone", need: 1 }],
     when: (counts) => (counts.gravityStone || 0) >= 2 && (counts.explosiveStone || 0) >= 1,
     apply: (weapon) => {
-      weapon.name = "引力核";
+      weapon.name = t("stone.evolution.gravityCore.name");
       weapon.pullStrength = Math.max(weapon.pullStrength || 0, 4);
       weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 82);
       weapon.chainShatterChance = Math.max(weapon.chainShatterChance || 0, 0.18);
@@ -86,11 +87,11 @@ export const STONE_EVOLUTIONS = [
   },
   {
     key: "returningSpear",
-    name: "帰還石槍",
+    name: t("stone.evolution.returningSpear.name"), nameKey: "stone.evolution.returningSpear.name",
     progress: [{ key: "returningStone", need: 2 }, { key: "piercingStone", need: 2 }],
     when: (counts) => (counts.returningStone || 0) >= 2 && (counts.piercingStone || 0) >= 2,
     apply: (weapon) => {
-      weapon.name = "帰還石槍";
+      weapon.name = t("stone.evolution.returningSpear.name");
       weapon.returningStone = Math.max(weapon.returningStone || 0, 2);
       weapon.pierce = Math.max(weapon.pierce || 0, 4);
       weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "sharp", trail: "white", hitEffect: "pierce" };
@@ -101,7 +102,7 @@ export const STONE_EVOLUTIONS = [
 ];
 
 export function isStoneWeapon(weapon) {
-  return (weapon?.baseName || weapon?.name) === "石" || ["石ころ", "ゴムボール", "隕石核", "名人の一石", "転がる巨岩", "引力核", "帰還石槍"].includes(weapon?.name);
+  return (weapon?.baseName || weapon?.name) === "stone" || Object.values(STONE_EVOLUTIONS).some((evolution) => evolution.name === weapon?.name);
 }
 
 export function ensureStoneItemSlots(weapon) {
@@ -244,23 +245,23 @@ export function stoneItemIcon(itemOrCategory) {
 }
 
 export function formatStoneItemEffectSummary(item) {
-  if (!item) return "効果なし";
+  if (!item) return t("stone.noEffect");
   const parts = [];
   const labels = {
-    damage: "ダメージ",
-    fireRate: "攻撃頻度",
-    range: "射程",
-    life: "持続",
-    bulletSpeed: "弾速",
-    radius: "サイズ",
-    knockbackFlat: "ノックバック",
-    explosionRadius: "爆発範囲",
-    maxHpFlat: "最大HP",
-    speed: "移動速度",
-    pickupFlat: "回収範囲",
-    armor: "防御",
-    barrierMax: "バリア",
-    weaponPowerBonus: "武器威力",
+    damage: t("stone.stats.damage"),
+    fireRate: t("stone.stats.fireRate"),
+    range: t("stone.stats.range"),
+    life: t("stone.stats.life"),
+    bulletSpeed: t("stone.stats.bulletSpeed"),
+    radius: t("stone.stats.radius"),
+    knockbackFlat: t("stone.stats.knockbackFlat"),
+    explosionRadius: t("stone.stats.explosionRadius"),
+    maxHpFlat: t("stone.stats.maxHpFlat"),
+    speed: t("stone.stats.speed"),
+    pickupFlat: t("stone.stats.pickupFlat"),
+    armor: t("stone.stats.armor"),
+    barrierMax: t("stone.stats.barrierMax"),
+    weaponPowerBonus: t("stone.stats.weaponPowerBonus"),
   };
   Object.entries(item.statBonus || {}).forEach(([stat, value]) => {
     const label = labels[stat] || stat;
@@ -268,27 +269,27 @@ export function formatStoneItemEffectSummary(item) {
     else parts.push(`${label}+${value}`);
   });
   const behaviorLabels = {
-    ricochetCount: "跳弾",
-    pierce: "貫通",
-    explosionDamage: "爆発",
-    returning: "帰還",
-    rolling: "転がり",
-    deployHazard: "設置",
-    pullStrength: "引力",
-    frost: "凍結",
-    fuseTrail: "導火",
-    orbit: "衛星",
-    criticalChance: "会心",
-    multishot: "多投",
-    haste: "加速",
-    heavy: "重量",
-    lifesteal: "吸命",
-    echo: "反響",
-    sniper: "狙撃",
-    barrier: "バリア",
+    ricochetCount: t("stone.behavior.ricochetCount"),
+    pierce: t("stone.behavior.pierce"),
+    explosionDamage: t("stone.behavior.explosionDamage"),
+    returning: t("stone.behavior.returning"),
+    rolling: t("stone.behavior.rolling"),
+    deployHazard: t("stone.behavior.deployHazard"),
+    pullStrength: t("stone.behavior.pullStrength"),
+    frost: t("stone.behavior.frost"),
+    fuseTrail: t("stone.behavior.fuseTrail"),
+    orbit: t("stone.behavior.orbit"),
+    criticalChance: t("stone.behavior.criticalChance"),
+    multishot: t("stone.behavior.multishot"),
+    haste: t("stone.behavior.haste"),
+    heavy: t("stone.behavior.heavy"),
+    lifesteal: t("stone.behavior.lifesteal"),
+    echo: t("stone.behavior.echo"),
+    sniper: t("stone.behavior.sniper"),
+    barrier: t("stone.behavior.barrier"),
   };
   if (item.behavior?.effect) parts.push(behaviorLabels[item.behavior.effect] || item.behavior.effect);
-  return parts.length ? parts.join(" / ") : (item.description || "効果なし");
+  return parts.length ? parts.join(" / ") : (item.description || t("stone.noEffect"));
 }
 
 export function recipeCounts(recipe = []) {
@@ -309,7 +310,7 @@ export function missingRecipeText(recipe = []) {
   const missing = Object.entries(recipeCounts(recipe))
     .filter(([key, need]) => (inventory[key] || 0) < need)
     .map(([key, need]) => `${findStoneItem(key)?.shortName || key} ${inventory[key] || 0}/${need}`);
-  return missing.length ? missing.join("、") : "作成可能";
+  return missing.length ? missing.join(", ") : t("stone.craftable");
 }
 
 function applyStatBonus(weapon, player, statBonus = {}) {
@@ -494,7 +495,7 @@ export function checkStoneEvolution(weapon, counts = countItemsByKey(weapon?.ite
 
 export function applyStoneEvolutionByName(weapon, evolutionName) {
   if (!weapon || !evolutionName) return false;
-  const evolution = STONE_EVOLUTIONS.find((candidate) => candidate.name === evolutionName);
+  const evolution = STONE_EVOLUTIONS.find((candidate) => candidate.key === evolutionName || candidate.name === evolutionName);
   if (!evolution) return false;
   weapon.evolvedStoneKey = evolution.key;
   weapon.evolvedStoneName = evolution.name;
@@ -522,5 +523,5 @@ function stoneItemCategoryIcon(category) {
 export function formatStoneItemSummary(weapon) {
   const counts = countItemsByKey(weapon?.items || []);
   const entries = STONE_ITEMS.filter((item) => counts[item.key] > 0).map((item) => `${stoneItemCategoryIcon(item.category)}${item.name} x${counts[item.key]}`);
-  return entries.length ? entries.join(" / ") : "アイテムなし";
+  return entries.length ? entries.join(" / ") : t("stone.noItems");
 }

@@ -144,7 +144,7 @@ export function updateBullets(dt) {
             enemy.y += (bullet.vy / moveSpeed) * bullet.knockback;
           }
 
-          // 貫通が先、跳弾が後。貫通が残っている間は跳弾しない。
+          // Pierce resolves before ricochet; ricochet waits until pierce is spent.
           if (bullet.kind === "poisonBottle") {
             addPoisonPool(bullet);
             keep = false;

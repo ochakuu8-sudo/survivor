@@ -1,4 +1,5 @@
 import { INTERACTION_HOLD_SECONDS } from "./constants.js";
+import { t } from "./i18n.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
@@ -79,9 +80,9 @@ function renderTreasureReward() {
   hud.treasureRewardName.textContent = reward.name;
   hud.treasureRewardText.textContent = reward.text;
   hud.treasureRewardMeta.textContent = reward.meta;
-  hud.treasureReroll.textContent = "リロールなし";
+  hud.treasureReroll.textContent = t("modding.noReroll");
   hud.treasureReroll.disabled = true;
-  hud.treasureTake.textContent = "閉じる";
+  hud.treasureTake.textContent = t("treasure.close");
   hud.treasureReward.classList.remove("hidden");
 }
 
@@ -92,13 +93,13 @@ function chooseTreasureReward(chest = null) {
   if (choices.length > 0) {
     return {
       type: "stoneItemChoice",
-      name: baseMaterialChoice ? "基礎素材選択" : specialOnly ? "合成済み石アイテム" : "石ころ素材",
+      name: baseMaterialChoice ? t("treasure.stoneMaterialChoice.name") : specialOnly ? t("treasure.specialChoice.name") : t("treasure.initialMaterial.name"),
       text: baseMaterialChoice
-        ? "6つの基礎素材から好きなものを1つ選び、作業台クラフト用の素材として入手する。"
+        ? t("treasure.stoneMaterialChoice.text")
         : specialOnly
-          ? "合成済みアイテムを3つから1つ選び、石武器へ追加する。"
-          : "3つから1つ選び、作業台クラフト用の初期素材として入手する。",
-      meta: baseMaterialChoice ? "基礎素材 / 6択" : specialOnly ? "特殊アイテム / 3択" : "初期素材中心 / 3択（まれに特殊アイテム）",
+          ? t("treasure.specialChoice.text")
+          : t("treasure.initialMaterial.text"),
+      meta: baseMaterialChoice ? t("treasure.baseMeta") : specialOnly ? t("treasure.specialMeta") : t("treasure.initialMeta"),
       icon: baseMaterialChoice ? "●" : specialOnly ? "★" : "●",
       stoneChoices: choices,
     };
@@ -106,9 +107,9 @@ function chooseTreasureReward(chest = null) {
 
   return {
     type: "empty",
-    name: "空の宝箱",
-    text: "今回は使えるアイテムが見つからなかった。",
-    meta: "取得なし",
+    name: t("treasure.empty.name"),
+    text: t("treasure.empty.text"),
+    meta: t("treasure.empty.meta"),
     icon: "×",
     stoneChoices: [],
   };

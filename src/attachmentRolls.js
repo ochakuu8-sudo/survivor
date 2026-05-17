@@ -13,9 +13,9 @@ export const STAR_WEIGHTS_BY_WEAPON_LEVEL = {
 };
 
 export const WEAPON_ATTACHMENT_BIAS = {
-  石: { preferred: ["projectile", "ricochet", "pierce", "crit", "explosion"] },
-  火炎放射器: { preferred: ["area", "fireRate", "duration", "freeze"] },
-  モーニングスター: { preferred: ["orbit", "area", "knockback", "defense"] },
+  stone: { preferred: ["projectile", "ricochet", "pierce", "crit", "explosion"] },
+  flamethrower: { preferred: ["area", "fireRate", "duration", "freeze"] },
+  morningStar: { preferred: ["orbit", "area", "knockback", "defense"] },
 };
 
 export function normalizeRolledAttachment(definition) {

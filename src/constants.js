@@ -1,3 +1,5 @@
+import { t } from "./i18n.js";
+
 export const TAU = Math.PI * 2;
 export const TILE_SIZE = 96;
 export const COLLISION_CELL_SIZE = 128;
@@ -20,13 +22,14 @@ export const STONE_INITIAL_DAMAGE = 42;
 export const ENEMY_HP_PER_FLOOR_MULTIPLIER = 1.25;
 
 export const OFFER_TYPE_LABELS = {
-  weapon: "武器",
-  attachment: "アタッチメント",
-  relic: "レリック",
+  weapon: t("offer.type.weapon"),
+  attachment: t("offer.type.attachment"),
+  relic: t("offer.type.relic"),
 };
 
 export const INITIAL_WEAPON_ONLY_RUN = true;
-export const STARTER_WEAPON_NAME = "石ころ";
+export const STARTER_WEAPON_KEY = "stone";
+export const STARTER_WEAPON_NAME = t("weapon.stone.name");
 export const MAX_WEAPONS = INITIAL_WEAPON_ONLY_RUN ? 1 : 2;
 export const MAX_WEAPON_LEVEL = 9;
 export const INITIAL_WEAPON_ATTACHMENT_SLOTS = 2;
