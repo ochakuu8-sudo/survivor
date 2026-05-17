@@ -4,6 +4,7 @@ import { resetVirtualMove } from "./input.js";
 import { getActiveWeapon } from "./weapons.js";
 import { countItemsByKey, ensureStoneMaterialInventory, formatStoneItemSummary, stoneEvolutionProgress } from "./stoneItems.js";
 import { STONE_MATERIALS } from "./data/stoneItems.js";
+import { ROOM_COMBAT, ROOM_START, ROOM_STAIRS, ROOM_TREASURE, ROOM_WORKBENCH, getDungeonRoomAtWorld } from "./dungeon.js";
 
 export function updateHud() {
   hud.wave.textContent = "Run";
@@ -34,9 +35,23 @@ function objectiveText() {
     const sec = String(elapsed % 60).padStart(2, "0");
     const weapon = getActiveWeapon();
     const floor = game.wave || 1;
-    return `B${floor}F 階段を探す / 滞在 ${m}:${sec} / ${weapon?.name || "武器"}`;
+    return `B${floor}F ${currentRoomObjective()} / 滞在 ${m}:${sec} / ${weapon?.name || "武器"}`;
   }
   return "準備中";
+}
+
+function currentRoomObjective() {
+  const room = getDungeonRoomAtWorld(game.dungeon, game.player?.x || 0, game.player?.y || 0);
+  if (!room) return "通路";
+  if (room.type === ROOM_COMBAT) {
+    if (room.locked) return "戦闘部屋: 敵を全滅";
+    return room.cleared ? "戦闘部屋: 宝箱回収" : "戦闘部屋";
+  }
+  if (room.type === ROOM_TREASURE) return "宝物庫: ゴールドで開放";
+  if (room.type === ROOM_WORKBENCH) return "作業台部屋";
+  if (room.type === ROOM_STAIRS) return "階段部屋";
+  if (room.type === ROOM_START) return "開始部屋";
+  return "探索";
 }
 
 function renderHpGauge() {

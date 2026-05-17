@@ -6,6 +6,12 @@ export const DUNGEON_WALL = 0;
 export const DUNGEON_FLOOR = 1;
 export const DUNGEON_EXIT = 2;
 
+export const ROOM_START = "start";
+export const ROOM_COMBAT = "combat";
+export const ROOM_TREASURE = "treasure";
+export const ROOM_WORKBENCH = "workbench";
+export const ROOM_STAIRS = "stairs";
+
 const ROOM_MARGIN = 1;
 const OBSTACLE_TYPES = [
   { sprite: "fieldTree", radius: 24, clearance: 40, scale: 0.95 },
@@ -92,11 +98,13 @@ export function generateDungeon(wave) {
     obstacles: [],
     chests: [],
     facilities: [],
+    activeRoomId: null,
   };
 
+  assignRoomTypes(dungeon, rng, startRoom, exitRoom, wave);
   setDungeonTile(dungeon, exitRoom.cx, exitRoom.cy, DUNGEON_EXIT);
   dungeon.obstacles = generateObstacles(dungeon, rng, startRoom, exitRoom);
-  dungeon.chests = generateChests(dungeon, rng, startRoom, exitRoom, wave);
+  dungeon.chests = [];
   dungeon.facilities = generateFacilities(dungeon, rng, startRoom, exitRoom, wave);
   return dungeon;
 }
@@ -132,25 +140,69 @@ export function generateArenaDungeon(wave) {
 }
 
 
+function assignRoomTypes(dungeon, rng, startRoom, exitRoom, wave) {
+  const eligible = dungeon.rooms.filter((room) => room !== startRoom && room !== exitRoom);
+  const shuffled = shuffleWithRng([...eligible], rng);
+  dungeon.rooms.forEach((room, index) => {
+    room.id = index;
+    room.type = ROOM_COMBAT;
+    room.cleared = false;
+    room.entered = false;
+    room.locked = false;
+    room.doorTiles = findRoomDoorTiles(dungeon, room);
+  });
+  startRoom.type = ROOM_START;
+  startRoom.cleared = true;
+  exitRoom.type = ROOM_STAIRS;
+  exitRoom.cleared = true;
+
+  const workbenchCount = clamp(1 + Math.floor((wave || 1) / 4), 1, 2);
+  for (let i = 0; i < workbenchCount && shuffled.length > 0; i += 1) {
+    const room = shuffled.shift();
+    room.type = ROOM_WORKBENCH;
+    room.cleared = true;
+  }
+
+  const treasureCount = clamp(1 + Math.floor((wave || 1) / 5), 1, 3);
+  for (let i = 0; i < treasureCount && shuffled.length > 0; i += 1) {
+    const room = shuffled.shift();
+    room.type = ROOM_TREASURE;
+    room.cleared = false;
+  }
+}
+
 function generateFacilities(dungeon, rng, startRoom, exitRoom, wave) {
   const facilities = [];
-  const candidates = dungeon.rooms.filter((room) => room !== startRoom && room !== exitRoom);
-  const count = clamp(1 + Math.floor((wave || 1) / 3), 1, 3);
-  const shuffled = [...candidates].sort(() => rng() - 0.5);
-  for (const room of shuffled) {
-    if (facilities.length >= count) break;
+  for (const room of dungeon.rooms) {
     const point = dungeonTileWorldCenter(dungeon, room.cx, room.cy);
-    if (dungeon.chests?.some((chest) => distanceSq(point.x, point.y, chest.x, chest.y) < TILE_SIZE * TILE_SIZE)) continue;
-    facilities.push({
-      type: "workbench",
-      x: point.x,
-      y: point.y,
-      radius: 30,
-      used: false,
-      holdTimer: 0,
-    });
+    if (room.type === ROOM_WORKBENCH) {
+      facilities.push({
+        type: "workbench",
+        roomId: room.id,
+        x: point.x,
+        y: point.y,
+        radius: 30,
+        used: false,
+        holdTimer: 0,
+      });
+    } else if (room.type === ROOM_TREASURE) {
+      facilities.push({
+        type: "treasureVault",
+        roomId: room.id,
+        x: point.x,
+        y: point.y,
+        radius: 34,
+        opened: false,
+        holdTimer: 0,
+        cost: treasureVaultCost(wave),
+      });
+    }
   }
   return facilities;
+}
+
+function treasureVaultCost(wave) {
+  return Math.max(8, Math.round(8 + (wave || 1) * 3));
 }
 
 function generateArenaObstacles(dungeon, rng) {
@@ -294,6 +346,77 @@ export function hasReachedDungeonExit(actor) {
   const exit = game.dungeon?.exit;
   if (!exit || !actor) return false;
   return Math.hypot(actor.x - exit.x, actor.y - exit.y) <= (actor.radius || 0) + EXIT_INTERACTION_RADIUS;
+}
+
+export function getDungeonRoomAt(dungeon, tx, ty) {
+  if (!dungeon?.rooms) return null;
+  return dungeon.rooms.find((room) => tx >= room.x && tx < room.x + room.w && ty >= room.y && ty < room.y + room.h) || null;
+}
+
+export function getDungeonRoomAtWorld(dungeon, x, y) {
+  if (!dungeon) return null;
+  const tile = worldToDungeonTile(dungeon, x, y);
+  return getDungeonRoomAt(dungeon, tile.tx, tile.ty);
+}
+
+export function lockDungeonRoom(dungeon, room) {
+  if (!dungeon || !room || room.locked) return;
+  room.locked = true;
+  room.doorTiles = room.doorTiles?.length ? room.doorTiles : findRoomDoorTiles(dungeon, room);
+  for (const door of room.doorTiles) {
+    door.previous = getDungeonTile(dungeon, door.tx, door.ty);
+    setDungeonTile(dungeon, door.tx, door.ty, DUNGEON_WALL);
+  }
+}
+
+export function unlockDungeonRoom(dungeon, room) {
+  if (!dungeon || !room || !room.locked) return;
+  for (const door of room.doorTiles || []) {
+    setDungeonTile(dungeon, door.tx, door.ty, door.previous ?? DUNGEON_FLOOR);
+  }
+  room.locked = false;
+}
+
+export function roomSpawnPoints(dungeon, room, count, radius = 22) {
+  const points = [];
+  if (!dungeon || !room) return points;
+  const candidates = [];
+  for (let ty = room.y + 1; ty < room.y + room.h - 1; ty += 1) {
+    for (let tx = room.x + 1; tx < room.x + room.w - 1; tx += 1) {
+      if (!isWalkableTile(dungeon, tx, ty)) continue;
+      const point = dungeonTileWorldCenter(dungeon, tx, ty);
+      if (canStandAt(dungeon, point.x, point.y, radius)) candidates.push(point);
+    }
+  }
+  shuffleWithRng(candidates, Math.random);
+  for (const point of candidates) {
+    if (points.length >= count) break;
+    if (points.some((placed) => distanceSq(point.x, point.y, placed.x, placed.y) < TILE_SIZE * TILE_SIZE * 1.4)) continue;
+    points.push({
+      x: point.x + (Math.random() - 0.5) * TILE_SIZE * 0.28,
+      y: point.y + (Math.random() - 0.5) * TILE_SIZE * 0.28,
+    });
+  }
+  return points;
+}
+
+function findRoomDoorTiles(dungeon, room) {
+  const doors = [];
+  const seen = new Set();
+  for (let ty = room.y; ty < room.y + room.h; ty += 1) {
+    for (let tx = room.x; tx < room.x + room.w; tx += 1) {
+      if (!isWalkableTile(dungeon, tx, ty)) continue;
+      [[tx - 1, ty], [tx + 1, ty], [tx, ty - 1], [tx, ty + 1]].forEach(([nx, ny]) => {
+        if (nx >= room.x && nx < room.x + room.w && ny >= room.y && ny < room.y + room.h) return;
+        if (!isWalkableTile(dungeon, nx, ny)) return;
+        const key = `${nx}:${ny}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        doors.push({ tx: nx, ty: ny, previous: DUNGEON_FLOOR });
+      });
+    }
+  }
+  return doors;
 }
 
 export function getDungeonTile(dungeon, tx, ty) {

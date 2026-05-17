@@ -6,12 +6,14 @@ import {
   canCraftStoneSpecial,
   craftStoneSpecial,
   addStoneItemToWeapon,
+  addStoneMaterial,
   ensureStoneMaterialInventory,
   isStoneWeapon,
   missingRecipeText,
+  pickStoneItemChoices,
   recipeShortText,
 } from "./stoneItems.js";
-import { STONE_MATERIALS, STONE_SPECIAL_ITEMS } from "./data/stoneItems.js";
+import { STONE_MATERIALS, STONE_SPECIAL_ITEMS, findStoneMaterial } from "./data/stoneItems.js";
 
 let statusText = "素材を確認し、作成可能な特殊アイテムを合成できます。所持素材と所持アイテムの効果は自動で発動します。";
 
@@ -38,21 +40,46 @@ export function updateFacilities(dt = 0) {
   const facilities = game.dungeon?.facilities || [];
   if (!player || facilities.length === 0 || game.mode !== "arena") return;
   for (const facility of facilities) {
-    if (facility.type !== "workbench" || facility.used) continue;
+    if ((facility.type !== "workbench" && facility.type !== "treasureVault") || facility.used || facility.opened) continue;
     const reach = player.radius + facility.radius + 20;
     if (Math.hypot(player.x - facility.x, player.y - facility.y) > reach) {
       facility.holdTimer = 0;
       continue;
     }
     facility.holdTimer = Math.min(INTERACTION_HOLD_SECONDS, (facility.holdTimer || 0) + dt);
-    if (facility.holdTimer >= INTERACTION_HOLD_SECONDS) {
-      facility.holdTimer = INTERACTION_HOLD_SECONDS;
+    if (facility.holdTimer < INTERACTION_HOLD_SECONDS) continue;
+    facility.holdTimer = INTERACTION_HOLD_SECONDS;
+    if (facility.type === "workbench") {
       facility.used = true;
       openWorkbench(facility);
       break;
     }
+    openTreasureVault(facility);
+    break;
   }
 }
+
+function openTreasureVault(facility) {
+  const cost = Math.max(0, facility.cost || 0);
+  if ((game.gold || 0) < cost) {
+    statusText = `宝物庫: ${cost}G 必要です（現在 ${game.gold || 0}G）。`;
+    facility.holdTimer = 0;
+    updateHud();
+    return false;
+  }
+  game.gold = Math.max(0, (game.gold || 0) - cost);
+  facility.opened = true;
+  const rewards = pickStoneItemChoices(3, { includeRareSpecial: true });
+  const stoneWeapon = (game.player?.gear?.weapons || []).find((weapon) => isStoneWeapon(weapon));
+  rewards.forEach((item) => {
+    if (findStoneMaterial(item.key)) addStoneMaterial(item.key, 1);
+    else if (stoneWeapon) addStoneItemToWeapon(stoneWeapon, item.key);
+  });
+  statusText = `宝物庫を開放: ${rewards.map((item) => item.name).join("・")} を獲得。`;
+  updateHud();
+  return true;
+}
+
 
 export function renderWorkbenchPanel() {
   if (!hud.workbenchPanel) return;

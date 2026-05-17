@@ -14,8 +14,14 @@ import { clamp, gridKey, hash2, mod } from "./utils/math.js";
 import {
   DUNGEON_EXIT,
   DUNGEON_WALL,
+  ROOM_COMBAT,
+  ROOM_START,
+  ROOM_STAIRS,
+  ROOM_TREASURE,
+  ROOM_WORKBENCH,
   dungeonFloorSprite,
   dungeonVisualTileCoords,
+  getDungeonRoomAt,
   getDungeonTile,
   isWalkableTile,
   nearestDungeonPoint,
@@ -99,13 +105,16 @@ function drawDungeonBackground(dungeon, view, camX, camY, zoom) {
         continue;
       }
 
+      const room = getDungeonRoomAt(dungeon, tx, ty);
+      const style = dungeonRoomFloorStyle(room, tx, ty, tile);
       state.renderer.draw(dungeonFloorSprite(tx, ty, dungeon), screen.x, screen.y, size, size, {
-        tint: tile === DUNGEON_EXIT ? [1, 0.96, 0.68] : [1, 1, 0.94],
+        tint: style.baseTint,
       });
       state.renderer.draw("white", screen.x, screen.y, size, size, {
-        tint: tile === DUNGEON_EXIT ? [0.48, 0.36, 0.06] : [0.32, 0.27, 0.08],
-        alpha: tile === DUNGEON_EXIT ? 0.08 : 0.04,
+        tint: style.overlayTint,
+        alpha: style.overlayAlpha,
       });
+      drawDungeonRoomFloorMark(style, tx, ty, screen, size, zoom);
 
       if (tile !== DUNGEON_EXIT) {
         const visual = dungeonVisualTileCoords(dungeon, tx, ty);
@@ -114,6 +123,39 @@ function drawDungeonBackground(dungeon, view, camX, camY, zoom) {
         else if (propRoll < 0.055) drawProp("sign", tx, ty, view, camX, camY, zoom, hash2(visual.tx, visual.ty, 11), hash2(visual.tx, visual.ty, 19), dungeon.offsetX, dungeon.offsetY);
       }
     }
+  }
+}
+
+function dungeonRoomFloorStyle(room, tx, ty, tile) {
+  if (tile === DUNGEON_EXIT || room?.type === ROOM_STAIRS) {
+    return { type: ROOM_STAIRS, baseTint: [1, 0.96, 0.68], overlayTint: [0.48, 0.36, 0.06], overlayAlpha: 0.1 };
+  }
+  if (!room) return { type: "corridor", baseTint: [1, 1, 0.94], overlayTint: [0.32, 0.27, 0.08], overlayAlpha: 0.04 };
+  if (room.type === ROOM_COMBAT) return { type: ROOM_COMBAT, baseTint: [1, 0.82, 0.76], overlayTint: [0.58, 0.08, 0.05], overlayAlpha: room.cleared ? 0.07 : 0.13 };
+  if (room.type === ROOM_TREASURE) return { type: ROOM_TREASURE, baseTint: [1, 0.95, 0.55], overlayTint: [0.72, 0.48, 0.04], overlayAlpha: 0.12 };
+  if (room.type === ROOM_WORKBENCH) return { type: ROOM_WORKBENCH, baseTint: [0.72, 0.94, 1], overlayTint: [0.04, 0.36, 0.56], overlayAlpha: 0.11 };
+  if (room.type === ROOM_START) return { type: ROOM_START, baseTint: [0.82, 1, 0.78], overlayTint: [0.08, 0.44, 0.12], overlayAlpha: 0.08 };
+  return { type: "corridor", baseTint: [1, 1, 0.94], overlayTint: [0.32, 0.27, 0.08], overlayAlpha: 0.04 };
+}
+
+function drawDungeonRoomFloorMark(style, tx, ty, screen, size, zoom) {
+  if (!style?.type || style.type === "corridor") return;
+  const thin = Math.max(2, 3 * zoom);
+  if (style.type === ROOM_COMBAT && (tx + ty) % 2 === 0) {
+    state.renderer.draw("white", screen.x, screen.y, size * 0.78, thin, { tint: [0.78, 0.06, 0.04], alpha: 0.18, rotation: 0.78 });
+    return;
+  }
+  if (style.type === ROOM_TREASURE) {
+    state.renderer.draw("white", screen.x, screen.y, size * 0.52, thin, { tint: [1, 0.92, 0.28], alpha: 0.24 });
+    state.renderer.draw("white", screen.x, screen.y, thin, size * 0.52, { tint: [1, 0.92, 0.28], alpha: 0.24 });
+    return;
+  }
+  if (style.type === ROOM_WORKBENCH && tx % 2 === 0) {
+    state.renderer.draw("white", screen.x, screen.y, thin, size * 0.72, { tint: [0.16, 0.68, 0.86], alpha: 0.18 });
+    return;
+  }
+  if (style.type === ROOM_STAIRS) {
+    state.renderer.draw("white", screen.x, screen.y, size * 0.62, thin, { tint: [0.58, 0.36, 0.04], alpha: 0.2 });
   }
 }
 
@@ -784,6 +826,15 @@ function drawTreasureChest(chest, view, camX, camY, zoom, drawX = chest.x, drawY
 function drawFacility(facility, view, camX, camY, zoom, drawX = facility.x, drawY = facility.y) {
   const screen = worldToScreen(drawX, drawY, view, camX, camY, zoom);
   const bob = Math.sin(game.elapsed * 2.5 + (facility.x + facility.y) * 0.01) * 1.2 * zoom;
+  if (facility.type === "treasureVault") {
+    const opened = facility.opened;
+    state.renderer.draw("shadow", screen.x, screen.y + 18 * zoom, 72 * zoom, 20 * zoom, { alpha: 0.58 });
+    if (!opened) state.renderer.draw("glowAmber", screen.x, screen.y + bob, 104 * zoom, 82 * zoom, { alpha: 0.18 });
+    state.renderer.draw("white", screen.x, screen.y + bob, 68 * zoom, 58 * zoom, { tint: opened ? [0.32, 0.26, 0.2] : [0.62, 0.38, 0.12], alpha: 0.98 });
+    state.renderer.draw("white", screen.x, screen.y - 2 * zoom + bob, 44 * zoom, 36 * zoom, { tint: opened ? [0.12, 0.12, 0.12] : [0.95, 0.76, 0.2], alpha: opened ? 0.55 : 0.95 });
+    if (!opened) drawHoldProgress(screen.x, screen.y + 50 * zoom, facility.holdTimer / INTERACTION_HOLD_SECONDS, 68 * zoom, zoom, [1, 0.86, 0.28]);
+    return;
+  }
   state.renderer.draw("shadow", screen.x, screen.y + 17 * zoom, 64 * zoom, 18 * zoom, { alpha: 0.55 });
   state.renderer.draw("glowCyan", screen.x, screen.y + bob, 92 * zoom, 72 * zoom, { alpha: 0.17 });
   state.renderer.draw("white", screen.x, screen.y + bob, 64 * zoom, 34 * zoom, { tint: [0.34, 0.22, 0.12], alpha: 0.96 });

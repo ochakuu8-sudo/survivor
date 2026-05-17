@@ -1,12 +1,23 @@
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { EXIT_HOLD_SECONDS, INITIAL_WEAPON_ONLY_RUN, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS } from "./constants.js";
+import { EXIT_HOLD_SECONDS, INITIAL_WEAPON_ONLY_RUN, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS, TILE_SIZE } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
 import { autoShoot, getActiveWeapon, updateDroneWeapons, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
 import { pickStrongestEnemyTypeForCurrentWave, resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
-import { generateDungeon, hasReachedDungeonExit, shortestDungeonDelta, wrapDungeonPoint } from "./dungeon.js";
+import {
+  ROOM_COMBAT,
+  createTreasureChestAt,
+  generateDungeon,
+  getDungeonRoomAtWorld,
+  hasReachedDungeonExit,
+  lockDungeonRoom,
+  roomSpawnPoints,
+  shortestDungeonDelta,
+  unlockDungeonRoom,
+  wrapDungeonPoint,
+} from "./dungeon.js";
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
@@ -167,7 +178,6 @@ export function startArenaWithSelectedWeapon() {
   hud.shop?.classList.add("hidden");
   hud.treasureReward.classList.add("hidden");
   hud.workbenchPanel?.classList.add("hidden");
-  spawnOpeningEnemies();
   resetEnemySpawnTimer();
   updateHud();
 }
@@ -290,8 +300,7 @@ function update(dt) {
   updateDungeonExit(dt);
   updateWeaponTimers(p, dt);
 
-  spawnEnemies(dt);
-  updateRunEvents();
+  updateDungeonRoomEvents(dt);
   updateEnemies(dt);
   updateBullets(dt);
   updateEnemyProjectiles(dt);
@@ -308,6 +317,54 @@ function update(dt) {
   }
 
   updateHud();
+}
+
+function updateDungeonRoomEvents(dt) {
+  const dungeon = game.dungeon;
+  const player = game.player;
+  if (!dungeon || !player || dungeon.arena) {
+    spawnEnemies(dt);
+    updateRunEvents();
+    return;
+  }
+
+  const room = getDungeonRoomAtWorld(dungeon, player.x, player.y);
+  if (room?.type === ROOM_COMBAT && !room.cleared && !room.entered) {
+    startCombatRoom(dungeon, room);
+  }
+
+  const activeRoom = dungeon.rooms?.find((entry) => entry.id === dungeon.activeRoomId);
+  if (activeRoom?.type === ROOM_COMBAT && activeRoom.locked) {
+    const alive = game.enemies.some((enemy) => !enemy.dead && enemy.roomId === activeRoom.id);
+    if (!alive) clearCombatRoom(dungeon, activeRoom);
+  }
+}
+
+function startCombatRoom(dungeon, room) {
+  room.entered = true;
+  room.cleared = false;
+  dungeon.activeRoomId = room.id;
+  lockDungeonRoom(dungeon, room);
+  const count = Math.max(4, Math.min(14, 3 + game.wave + Math.floor(room.w * room.h / 14)));
+  const points = roomSpawnPoints(dungeon, room, count);
+  for (const point of points) {
+    const enemy = spawnEnemy(undefined, { position: point, offscreen: false });
+    if (enemy) enemy.roomId = room.id;
+  }
+  game.shake = Math.max(game.shake, 3);
+}
+
+function clearCombatRoom(dungeon, room) {
+  room.cleared = true;
+  dungeon.activeRoomId = null;
+  unlockDungeonRoom(dungeon, room);
+  const chest = createTreasureChestAt(
+    dungeon.offsetX + (room.cx + 0.5) * TILE_SIZE,
+    dungeon.offsetY + (room.cy + 0.5) * TILE_SIZE,
+    "戦闘報酬",
+  );
+  if (chest) chest.roomId = room.id;
+  game.shake = Math.max(game.shake, 4);
 }
 
 function updateDungeonExit(dt) {
