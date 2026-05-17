@@ -9,7 +9,7 @@ import {
 } from "./constants.js";
 import * as state from "./state.js";
 import { game, backgroundTileCache } from "./state.js";
-import { canvas, hud } from "./dom.js";
+import { canvas, hud, worldLabels } from "./dom.js";
 import { clamp, gridKey, hash2, mod } from "./utils/math.js";
 import {
   DUNGEON_EXIT,
@@ -43,8 +43,38 @@ export function render() {
   drawBackground(view, camX, camY, zoom);
   drawBackgroundDepth(view);
   drawWorld(view, camX, camY, zoom);
+  updateWorldLabels(view, camX, camY, zoom);
   state.renderer.flush();
   publishRenderStats();
+}
+
+
+function updateWorldLabels(view, camX, camY, zoom) {
+  if (!worldLabels) return;
+  const treasureVaults = (game.dungeon?.facilities || [])
+    .filter((facility) => facility.type === "treasureVault" && !facility.opened && Number.isFinite(facility.cost))
+    .filter((facility) => {
+      const pos = visiblePositionForDraw(facility, camX, camY);
+      return isVisibleWorld(pos.x, pos.y, facility.radius * 2.8, view, camX, camY, zoom);
+    });
+
+  while (worldLabels.children.length > treasureVaults.length) {
+    worldLabels.removeChild(worldLabels.lastElementChild);
+  }
+  while (worldLabels.children.length < treasureVaults.length) {
+    const label = document.createElement("div");
+    label.className = "world-label";
+    worldLabels.append(label);
+  }
+
+  treasureVaults.forEach((facility, index) => {
+    const label = worldLabels.children[index];
+    const pos = visiblePositionForDraw(facility, camX, camY);
+    const screen = worldToScreen(pos.x, pos.y - 58, view, camX, camY, zoom);
+    label.textContent = `${facility.cost}G`;
+    label.style.transform = `translate(${Math.round(screen.x)}px, ${Math.round(screen.y)}px) translate(-50%, -50%)`;
+    label.classList.remove("hidden");
+  });
 }
 
 function drawBackgroundDepth(view) {

@@ -346,22 +346,25 @@ function renderStoneItemChoicePanel(pending) {
   setModdingPanelVariant("stoneChoice");
   const stoneWeapon = getStoneWeapon();
   const counts = countItemsByKey(stoneWeapon?.items || []);
+  const allSpecialChoices = pending.stoneChoices.every((item) => !findStoneMaterial(item.key));
   const kicker = hud.moddingPanel.querySelector(".panel-kicker");
   const heading = hud.moddingPanel.querySelector("h1");
   if (kicker) kicker.textContent = sourceLabel(pending.source);
   if (heading) heading.textContent = "アイテムを選ぶ";
 
-  hud.moddingWeaponName.textContent = "素材3択報酬";
-  hud.moddingWeaponLevel.textContent = "素材も特殊アイテムも所持欄へ追加";
+  hud.moddingWeaponName.textContent = allSpecialChoices ? "合成済みアイテム3択" : "素材3択報酬";
+  hud.moddingWeaponLevel.textContent = allSpecialChoices ? "特殊アイテムを石武器へ追加" : "素材も特殊アイテムも所持欄へ追加";
   hud.moddingGold.textContent = "選択待ち";
   const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
   if (treasureIcon) {
     treasureIcon.className = "treasure-icon modding-main-icon";
-    treasureIcon.textContent = "●";
+    treasureIcon.textContent = allSpecialChoices ? "★" : "●";
   }
-  hud.moddingAttachmentName.textContent = "素材を集めて作業台で合成";
-  hud.moddingAttachmentMeta.textContent = "初期素材 / クラフト用";
-  hud.moddingAttachmentText.textContent = "初期素材は拾った時点で効果が発動し、作業台で特殊アイテムへ合成できます。特殊アイテムも所持数として加算され、効果が自動で発動します。";
+  hud.moddingAttachmentName.textContent = allSpecialChoices ? "合成済みアイテムを直接入手" : "素材を集めて作業台で合成";
+  hud.moddingAttachmentMeta.textContent = allSpecialChoices ? "特殊アイテム / 直接追加" : "初期素材 / クラフト用";
+  hud.moddingAttachmentText.textContent = allSpecialChoices
+    ? "精鋭戦闘部屋の報酬は素材ではなく、作業台で合成済みの特殊アイテムです。選んだ効果が石武器へ即座に追加されます。"
+    : "初期素材は拾った時点で効果が発動し、作業台で特殊アイテムへ合成できます。特殊アイテムも所持数として加算され、効果が自動で発動します。";
 
   hud.moddingSlots.replaceChildren();
   pending.stoneChoices.forEach((item, index) => {

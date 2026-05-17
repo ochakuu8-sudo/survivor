@@ -14,6 +14,12 @@ import { isStoneWeapon, recomputeStoneItems } from "./stoneItems.js";
 
 const STAR_LABELS = { 1: "★", 2: "★★", 3: "★★★", 4: "★★★★", 5: "★★★★★" };
 
+function increasePlayerMaxHp(amount) {
+  if (!game.player || amount <= 0) return;
+  game.player.maxHp += amount;
+  game.player.hp = Math.min(game.player.maxHp, (game.player.hp || 0) + amount);
+}
+
 export function starsLabel(stars) {
   return STAR_LABELS[stars] || STAR_LABELS[1];
 }
@@ -175,7 +181,7 @@ export const ACTIVE_ATTACHMENTS = [
     category: "support",
     text: "最大HP +10。",
     attach: () => {
-      game.player.maxHp += 10;
+      increasePlayerMaxHp(10);
     },
   },
   {
@@ -437,7 +443,7 @@ export const ACTIVE_ATTACHMENTS = [
     category: "support",
     text: "最大HP +20。",
     attach: () => {
-      game.player.maxHp += 20;
+      increasePlayerMaxHp(20);
     },
   },
   {
@@ -447,7 +453,7 @@ export const ACTIVE_ATTACHMENTS = [
     category: "support",
     text: "最大HP +30。",
     attach: () => {
-      game.player.maxHp += 30;
+      increasePlayerMaxHp(30);
     },
   },
   {

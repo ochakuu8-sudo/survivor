@@ -4,7 +4,7 @@ import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
 import { updateHud } from "./hud.js";
 import { beginStoneItemChoiceReward } from "./modding.js";
-import { pickStoneItemChoices } from "./stoneItems.js";
+import { pickStoneItemChoices, pickStoneSpecialItemChoices } from "./stoneItems.js";
 
 export function treasureRerollPrice() {
   return 0;
@@ -31,7 +31,7 @@ export function updateTreasureChests(dt = 0) {
 function openTreasureChest(chest) {
   chest.opened = true;
   chest.holdTimer = INTERACTION_HOLD_SECONDS;
-  const reward = chooseTreasureReward();
+  const reward = chooseTreasureReward(chest);
   chest.rewardName = reward.name;
 
   addEffect({
@@ -84,15 +84,16 @@ function renderTreasureReward() {
   hud.treasureReward.classList.remove("hidden");
 }
 
-function chooseTreasureReward() {
-  const choices = pickStoneItemChoices(3);
+function chooseTreasureReward(chest = null) {
+  const specialOnly = chest?.rewardKind === "synthesizedStoneItem";
+  const choices = specialOnly ? pickStoneSpecialItemChoices(3) : pickStoneItemChoices(3);
   if (choices.length > 0) {
     return {
       type: "stoneItemChoice",
-      name: "石ころ素材",
-      text: "3つから1つ選び、作業台クラフト用の初期素材として入手する。",
-      meta: "初期素材中心 / 3択（まれに特殊アイテム）",
-      icon: "●",
+      name: specialOnly ? "合成済み石アイテム" : "石ころ素材",
+      text: specialOnly ? "合成済みアイテムを3つから1つ選び、石武器へ追加する。" : "3つから1つ選び、作業台クラフト用の初期素材として入手する。",
+      meta: specialOnly ? "特殊アイテム / 3択" : "初期素材中心 / 3択（まれに特殊アイテム）",
+      icon: specialOnly ? "★" : "●",
       stoneChoices: choices,
     };
   }

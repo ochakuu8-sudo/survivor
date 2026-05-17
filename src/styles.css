@@ -4361,3 +4361,31 @@ button.workbench-craft-node:not(:disabled):hover {
     font-size: 0.52rem;
   }
 }
+
+#worldLabels {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.world-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  padding: 3px 7px 4px;
+  border: 2px solid rgba(255, 238, 128, 0.88);
+  border-radius: 999px;
+  color: #fff9c9;
+  background: rgba(45, 28, 10, 0.76);
+  box-shadow:
+    0 2px 0 rgba(20, 10, 4, 0.62),
+    0 0 12px rgba(255, 210, 65, 0.28);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.48);
+  white-space: nowrap;
+}

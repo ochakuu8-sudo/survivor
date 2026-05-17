@@ -151,8 +151,7 @@ export function addStoneItemToWeapon(weapon, key) {
   return true;
 }
 
-export function pickStoneItemChoices(count = 3, { includeRareSpecial = true } = {}) {
-  const pool = includeRareSpecial && Math.random() < 0.08 ? [...STONE_MATERIALS, ...STONE_SPECIAL_ITEMS] : [...STONE_MATERIALS];
+function pickWeightedStoneChoices(pool, count) {
   const choices = [];
   while (pool.length > 0 && choices.length < count) {
     const total = pool.reduce((sum, item) => sum + (item.weight ?? 1), 0);
@@ -164,6 +163,15 @@ export function pickStoneItemChoices(count = 3, { includeRareSpecial = true } = 
     choices.push(pool.splice(index < 0 ? pool.length - 1 : index, 1)[0]);
   }
   return choices;
+}
+
+export function pickStoneItemChoices(count = 3, { includeRareSpecial = true } = {}) {
+  const pool = includeRareSpecial && Math.random() < 0.08 ? [...STONE_MATERIALS, ...STONE_SPECIAL_ITEMS] : [...STONE_MATERIALS];
+  return pickWeightedStoneChoices(pool, count);
+}
+
+export function pickStoneSpecialItemChoices(count = 3) {
+  return pickWeightedStoneChoices([...STONE_SPECIAL_ITEMS], count);
 }
 
 export function ensureStoneMaterialInventory() {
@@ -332,6 +340,7 @@ function applyStoneMaterialBonuses(weapon, player) {
 
 export function recomputeStoneItems(weapon, player = game.player, { gainedKey = null } = {}) {
   if (!weapon || !player) return;
+  const previousMaxHp = player.maxHp || 0;
   ensureStoneItemSlots(weapon);
   restoreWeaponBaseStats(weapon);
   ensureStoneItemSlots(weapon);
@@ -348,6 +357,8 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
   applyStoneBehaviorItems(weapon, counts);
 
   if (gainedKey === "barrierStone") player.barrier = (player.barrier || 0) + 1;
+  const maxHpGain = Math.max(0, (player.maxHp || 0) - previousMaxHp);
+  if (gainedKey && maxHpGain > 0) player.hp = (player.hp || 0) + maxHpGain;
   player.hp = Math.min(player.hp, player.maxHp);
   player.barrier = Math.min(player.barrier || 0, player.barrierMax || 0);
 
