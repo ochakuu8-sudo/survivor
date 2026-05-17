@@ -6,6 +6,7 @@ import { beginStoneItemChoiceReward } from "./modding.js";
 import {
   canCraftStoneSpecial,
   craftStoneSpecial,
+  addStoneItemToWeapon,
   addStoneMaterial,
   ensureStoneMaterialInventory,
   isStoneWeapon,
