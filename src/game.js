@@ -176,6 +176,7 @@ export function startArenaWithSelectedWeapon() {
   game.player.y = game.dungeon.start.y;
   game.camera.x = game.player.x;
   game.camera.y = game.player.y;
+  spawnOpeningEnemies();
   applyWaveStartRecovery();
   hideSkillTree();
   hud.shop?.classList.add("hidden");
