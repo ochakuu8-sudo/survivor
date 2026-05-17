@@ -13,6 +13,9 @@ export const ROOM_WORKBENCH = "workbench";
 export const ROOM_STAIRS = "stairs";
 
 const ROOM_MARGIN = 1;
+const STANDARD_ROOM_MIN_SIZE = 6;
+const STANDARD_ROOM_MAX_SIZE = 10;
+const COMBAT_SWORD_SPAWN_SAFE_RADIUS = TILE_SIZE * 2;
 const OBSTACLE_TYPES = [
   { sprite: "fieldTree", radius: 24, clearance: 40, scale: 0.95 },
   { sprite: "fieldBoulder", radius: 24, clearance: 30, scale: 1 },
@@ -57,10 +60,10 @@ export function generateDungeon(wave) {
   const attempts = targetRooms * 18;
   for (let i = 0; i < attempts && rooms.length < targetRooms; i += 1) {
     const room = {
-      w: randInt(rng, 5, 9),
-      h: randInt(rng, 5, 9),
-      x: randInt(rng, 2, width - 11),
-      y: randInt(rng, 2, height - 11),
+      w: randInt(rng, STANDARD_ROOM_MIN_SIZE, STANDARD_ROOM_MAX_SIZE),
+      h: randInt(rng, STANDARD_ROOM_MIN_SIZE, STANDARD_ROOM_MAX_SIZE),
+      x: randInt(rng, 2, width - STANDARD_ROOM_MAX_SIZE - 2),
+      y: randInt(rng, 2, height - STANDARD_ROOM_MAX_SIZE - 2),
     };
     room.x = Math.min(room.x, width - room.w - 2);
     room.y = Math.min(room.y, height - room.h - 2);
@@ -397,10 +400,12 @@ export function roomSpawnPoints(dungeon, room, count, radius = 22) {
   const points = [];
   if (!dungeon || !room) return points;
   const candidates = [];
+  const sword = room.type === ROOM_COMBAT ? combatRoomSwordPosition(dungeon, room) : null;
   for (let ty = room.y + 1; ty < room.y + room.h - 1; ty += 1) {
     for (let tx = room.x + 1; tx < room.x + room.w - 1; tx += 1) {
       if (!isWalkableTile(dungeon, tx, ty)) continue;
       const point = dungeonTileWorldCenter(dungeon, tx, ty);
+      if (sword && distanceSq(point.x, point.y, sword.x, sword.y) < COMBAT_SWORD_SPAWN_SAFE_RADIUS * COMBAT_SWORD_SPAWN_SAFE_RADIUS) continue;
       if (canStandAt(dungeon, point.x, point.y, radius)) candidates.push(point);
     }
   }
@@ -408,10 +413,12 @@ export function roomSpawnPoints(dungeon, room, count, radius = 22) {
   for (const point of candidates) {
     if (points.length >= count) break;
     if (points.some((placed) => distanceSq(point.x, point.y, placed.x, placed.y) < TILE_SIZE * TILE_SIZE * 1.4)) continue;
-    points.push({
+    const spawn = {
       x: point.x + (Math.random() - 0.5) * TILE_SIZE * 0.28,
       y: point.y + (Math.random() - 0.5) * TILE_SIZE * 0.28,
-    });
+    };
+    if (sword && distanceSq(spawn.x, spawn.y, sword.x, sword.y) < COMBAT_SWORD_SPAWN_SAFE_RADIUS * COMBAT_SWORD_SPAWN_SAFE_RADIUS) continue;
+    points.push(spawn);
   }
   return points;
 }
