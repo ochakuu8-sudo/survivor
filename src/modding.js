@@ -188,6 +188,8 @@ export function applyPendingAttachmentToSlot(weaponId, slotIndex) {
 function sourceLabel(source) {
   const labels = {
     chest: "宝箱",
+    treasureVault: "宝物庫",
+    combatRoom: "戦闘部屋",
     workbench: "作業台",
     debugLevelUp: "デバッグ強化",
     reward: "報酬",
@@ -352,7 +354,7 @@ function renderStoneItemChoicePanel(pending) {
   if (kicker) kicker.textContent = sourceLabel(pending.source);
   if (heading) heading.textContent = "アイテムを選ぶ";
 
-  hud.moddingWeaponName.textContent = allSpecialChoices ? "合成済みアイテム3択" : "素材3択報酬";
+  hud.moddingWeaponName.textContent = allSpecialChoices ? "合成済みアイテム3択" : `素材${pending.stoneChoices.length}択報酬`;
   hud.moddingWeaponLevel.textContent = allSpecialChoices ? "特殊アイテムを石武器へ追加" : "素材も特殊アイテムも所持欄へ追加";
   hud.moddingGold.textContent = "選択待ち";
   const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
@@ -361,10 +363,10 @@ function renderStoneItemChoicePanel(pending) {
     treasureIcon.textContent = allSpecialChoices ? "★" : "●";
   }
   hud.moddingAttachmentName.textContent = allSpecialChoices ? "合成済みアイテムを直接入手" : "素材を集めて作業台で合成";
-  hud.moddingAttachmentMeta.textContent = allSpecialChoices ? "特殊アイテム / 直接追加" : "初期素材 / クラフト用";
+  hud.moddingAttachmentMeta.textContent = allSpecialChoices ? "特殊アイテム / 直接追加" : `基礎素材 / ${pending.stoneChoices.length}択`;
   hud.moddingAttachmentText.textContent = allSpecialChoices
-    ? "精鋭戦闘部屋の報酬は素材ではなく、作業台で合成済みの特殊アイテムです。選んだ効果が石武器へ即座に追加されます。"
-    : "初期素材は拾った時点で効果が発動し、作業台で特殊アイテムへ合成できます。特殊アイテムも所持数として加算され、効果が自動で発動します。";
+    ? "合成済みの特殊アイテムです。3択から選んだ効果が石武器へ即座に追加されます。"
+    : "基礎素材を選んで入手します。素材は拾った時点で効果が発動し、作業台で特殊アイテムへ合成できます。";
 
   hud.moddingSlots.replaceChildren();
   pending.stoneChoices.forEach((item, index) => {

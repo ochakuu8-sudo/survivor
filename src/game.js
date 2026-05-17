@@ -398,7 +398,7 @@ function clearCombatRoom(dungeon, room) {
       dungeon.offsetX + (room.cx + 0.5) * TILE_SIZE,
       dungeon.offsetY + (room.cy + 0.5) * TILE_SIZE,
       "精鋭戦闘報酬",
-      { rewardKind: "synthesizedStoneItem" },
+      { rewardKind: "baseMaterialChoice" },
     );
     if (chest) chest.roomId = room.id;
   } else if (room.fixedRewardKey) {
