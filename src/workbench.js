@@ -13,14 +13,14 @@ import {
 } from "./stoneItems.js";
 import { STONE_MATERIALS, STONE_SPECIAL_ITEMS } from "./data/stoneItems.js";
 
-let statusText = "素材を確認し、作成可能な特殊アイテムを合成できます。所持アイテムの効果は自動で発動します。";
+let statusText = "素材を確認し、作成可能な特殊アイテムを合成できます。所持素材と所持アイテムの効果は自動で発動します。";
 
 export function openWorkbench(facility = null) {
   if (!game.player?.gear) return;
   game.modeBeforeWorkbench = game.mode;
   game.mode = "workbench";
   hud.workbenchPanel?.classList.remove("hidden");
-  statusText = facility ? "作業台: 初期素材 → 特殊アイテム。作成したアイテムは所持数として加算されます。" : statusText;
+  statusText = facility ? "作業台: 初期素材 → 特殊アイテム。素材の効果は所持中に発動し、作成後は特殊アイテムの効果に置き換わります。" : statusText;
   ensureStoneMaterialInventory();
   renderWorkbenchPanel();
   updateHud();
