@@ -12,6 +12,8 @@ import {
   missingRecipeText,
   pickStoneItemChoices,
   recipeShortText,
+  stoneItemIcon,
+  formatStoneItemEffectSummary,
 } from "./stoneItems.js";
 import { STONE_MATERIALS, STONE_SPECIAL_ITEMS, findStoneMaterial } from "./data/stoneItems.js";
 
@@ -104,7 +106,9 @@ export function renderWorkbenchPanel() {
   STONE_MATERIALS.forEach((material) => {
     const row = document.createElement("div");
     row.className = "workbench-material-chip";
-    row.innerHTML = `<strong>${material.shortName || material.name} ×${inventory[material.key] || 0}</strong><small>${material.description}</small>`;
+    row.title = `${material.name}: ${formatStoneItemEffectSummary(material)}`;
+    row.setAttribute("aria-label", `${material.name} ${inventory[material.key] || 0}個 ${formatStoneItemEffectSummary(material)}`);
+    row.innerHTML = `<span class="workbench-item-icon">${stoneItemIcon(material)}</span><strong>×${inventory[material.key] || 0}</strong>`;
     materialList.append(row);
   });
   materialCard.append(materialTitle, materialList);
@@ -127,7 +131,7 @@ function renderRecipeCard(item) {
   button.className = "workbench-craft-button";
   button.disabled = !craftable;
   button.addEventListener("click", () => craftAndStore(item.key));
-  button.innerHTML = `<strong>${item.name}</strong><small>レシピ: ${recipeShortText(item.recipe)}</small><span>${item.description}</span><small>${craftable ? "作成して所持数に追加" : `不足: ${missingRecipeText(item.recipe)}`}</small>`;
+  button.innerHTML = `<span class="workbench-recipe-head"><span class="workbench-item-icon">${stoneItemIcon(item)}</span><strong>${item.name}</strong></span><small>レシピ: ${recipeShortText(item.recipe)}</small><span>${formatStoneItemEffectSummary(item)}</span><small>${craftable ? "作成" : `不足: ${missingRecipeText(item.recipe)}`}</small>`;
   card.append(button);
   return card;
 }

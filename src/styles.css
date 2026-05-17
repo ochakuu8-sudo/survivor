@@ -4038,3 +4038,111 @@ h1 {
 .workbench-craft-button:not(:disabled):hover strong {
   color: #ffe28a;
 }
+
+/* Compact stone item reward choices: icon, name, and status effect only. */
+#moddingPanel.stone-choice-only .modding-slots {
+  width: min(560px, calc(100vw - 32px));
+  gap: 0.5rem;
+}
+
+.stone-choice-button {
+  min-height: 62px;
+  padding: 0.4rem;
+}
+
+.stone-choice-button .mod-slot-select {
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.stone-choice-button .mod-slot-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.7rem;
+}
+
+.stone-choice-button .mod-slot-copy {
+  gap: 0.12rem;
+}
+
+.stone-choice-button .mod-slot-copy strong {
+  font-size: 0.98rem;
+}
+
+.stone-choice-button .mod-slot-copy small {
+  color: #9df7ff;
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.stone-choice-count {
+  display: none;
+}
+
+.workbench-item-icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(255, 249, 242, 0.3);
+  border-radius: 0.58rem;
+  color: #10273a;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 44%), #ffe46b;
+  font-size: 0.72rem;
+  font-weight: 1000;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.14);
+}
+
+.workbench-materials {
+  padding: 8px;
+}
+
+.workbench-materials h2 {
+  font-size: 0.9rem;
+}
+
+.workbench-material-grid {
+  grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+  gap: 0.35rem;
+}
+
+.workbench-material-chip {
+  display: grid;
+  place-items: center;
+  gap: 0.18rem;
+  min-height: 54px;
+  padding: 0.32rem;
+  text-align: center;
+}
+
+.workbench-material-chip strong {
+  color: #fff9f2;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.workbench-recipe-head {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.workbench-recipe-head strong {
+  margin: 0;
+}
+
+.workbench-craft-button > span:not(.workbench-recipe-head) {
+  color: #9df7ff;
+  font-weight: 900;
+}
+
+#workbenchPanel .workbench-weapons {
+  grid-template-columns: 1fr;
+}
+
+#workbenchPanel .workbench-storage {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
