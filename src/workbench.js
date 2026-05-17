@@ -131,18 +131,15 @@ function renderCraftEvolutionTree() {
 
   const header = document.createElement("div");
   header.className = "workbench-craft-tree-legend";
-  header.innerHTML = `
-    <span><strong>素材</strong>を集めて特殊アイテムを作成</span>
-    <span><strong>特殊アイテム</strong>の所持数が条件を満たすと進化アイテムへ到達</span>
-  `;
+  header.innerHTML = `<span><strong>特殊アイテム</strong> → <strong>進化アイテム</strong> を1画面で確認</span>`;
 
   const viewport = document.createElement("div");
   viewport.className = "workbench-craft-tree-viewport skill-node-map-scroller";
   viewport.setAttribute("aria-label", "特殊アイテムの組み合わせで進化アイテムができるクラフトツリー");
 
-  const mapWidth = 1180;
-  const rowHeight = 138;
-  const mapHeight = Math.max(620, STONE_EVOLUTIONS.length * rowHeight + 72);
+  const mapWidth = 820;
+  const rowHeight = 62;
+  const mapHeight = Math.max(396, STONE_EVOLUTIONS.length * rowHeight + 24);
   const map = document.createElement("div");
   map.className = "workbench-craft-node-map skill-node-map";
   map.style.width = `${mapWidth}px`;
@@ -157,15 +154,15 @@ function renderCraftEvolutionTree() {
 
   const counts = currentStoneItemCounts();
   STONE_EVOLUTIONS.forEach((evolution, rowIndex) => {
-    const y = 74 + rowIndex * rowHeight;
-    const evolutionX = 980;
+    const y = 42 + rowIndex * rowHeight;
+    const evolutionX = 680;
     const completed = evolution.when(counts);
     const requirements = evolution.progress || [];
     requirements.forEach((requirement, requirementIndex) => {
       const item = STONE_SPECIAL_ITEMS.find((candidate) => candidate.key === requirement.key);
-      const x = 190 + requirementIndex * 250;
+      const x = 180 + requirementIndex * 190;
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", `M ${x + 78} ${y} C ${x + 170} ${y}, ${evolutionX - 150} ${y}, ${evolutionX - 72} ${y}`);
+      path.setAttribute("d", `M ${x + 64} ${y} C ${x + 118} ${y}, ${evolutionX - 118} ${y}, ${evolutionX - 66} ${y}`);
       path.classList.add("skill-link", (counts[requirement.key] || 0) >= requirement.need ? "skill-link-owned" : "skill-link-locked");
       svg.appendChild(path);
       map.appendChild(renderSpecialRecipeNode(item, requirement, { x, y }));
@@ -177,7 +174,7 @@ function renderCraftEvolutionTree() {
   viewport.appendChild(map);
   wrapper.append(header, viewport);
   requestAnimationFrame(() => {
-    viewport.scrollLeft = Math.max(0, mapWidth - viewport.clientWidth - 24);
+    viewport.scrollLeft = 0;
   });
   return wrapper;
 }
@@ -197,9 +194,8 @@ function renderSpecialRecipeNode(item, requirement, position) {
     <span class="workbench-node-icon">${stoneItemIcon(item)}</span>
     <span class="workbench-node-copy">
       <strong>${item?.name || requirement.key}</strong>
-      <small>所持 ${owned}/${requirement.need}</small>
       <em>${item ? recipeShortText(item.recipe) : "レシピ不明"}</em>
-      <span>${craftable ? "タップで作成" : `不足: ${item ? missingRecipeText(item.recipe) : "-"}`}</span>
+      <small>${owned}/${requirement.need}</small>
     </span>
   `;
   if (item) node.addEventListener("click", () => craftAndStore(item.key));
@@ -218,9 +214,8 @@ function renderEvolutionResultNode(evolution, counts, position, completed) {
     <span class="workbench-node-icon">🦋</span>
     <span class="workbench-node-copy">
       <strong>${completed ? "✓ " : ""}${evolution.name}</strong>
-      <small>進化アイテム</small>
       <em>${requirementText}</em>
-      <span>${completed ? "条件達成済み" : "特殊アイテムの組み合わせで進化"}</span>
+      <small>${completed ? "達成" : "進化"}</small>
     </span>
   `;
   return node;
