@@ -430,7 +430,7 @@ export function spawnEnemy(forceType, options = {}) {
   } else if (type === "archer") {
     enemy.kind = "archer";
     enemy.radius = 17;
-    enemy.hp = Math.round(baseHp * 0.85);
+    enemy.hp = Math.round(baseHp * 0.8);
     enemy.maxHp = enemy.hp;
     enemy.speed = 92;
     enemy.attackDamage = 0;
