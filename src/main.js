@@ -10,7 +10,7 @@ import { claimPendingAttachment, rerollPendingAttachment } from "./modding.js";
 import { claimTreasureReward, rerollTreasureReward } from "./treasure.js";
 import { cycleActiveWeapon } from "./weapons.js";
 import { updateHud } from "./hud.js";
-import { closeWorkbench } from "./workbench.js";
+import { closeWorkbench, openCraftTreeReference } from "./workbench.js";
 import { localizeDom } from "./i18n.js";
 
 localizeDom();
@@ -45,6 +45,7 @@ if (hud.moddingTake) hud.moddingTake.addEventListener("click", claimPendingAttac
 if (hud.treasureReroll) hud.treasureReroll.addEventListener("click", rerollTreasureReward);
 if (hud.treasureTake) hud.treasureTake.addEventListener("click", claimTreasureReward);
 if (hud.workbenchClose) hud.workbenchClose.addEventListener("click", closeWorkbench);
+if (hud.craftTreeBtn) hud.craftTreeBtn.addEventListener("click", openCraftTreeReference);
 if (hud.weaponSwitch) {
   hud.weaponSwitch.addEventListener("click", (event) => {
     event.preventDefault();
