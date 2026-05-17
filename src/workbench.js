@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import { INTERACTION_HOLD_SECONDS } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
@@ -20,14 +21,14 @@ import {
 } from "./stoneItems.js";
 import { STONE_MATERIALS, STONE_SPECIAL_ITEMS } from "./data/stoneItems.js";
 
-let statusText = "素材を確認し、作成可能な特殊アイテムを合成できます。所持素材と所持アイテムの効果は自動で発動します。";
+let statusText = t("workbench.status");
 
 export function openWorkbench(facility = null) {
   if (!game.player?.gear) return;
   game.modeBeforeWorkbench = game.mode;
   game.mode = "workbench";
   hud.workbenchPanel?.classList.remove("hidden");
-  statusText = facility ? "作業台: 初期素材 → 特殊アイテム。素材の効果は所持中に発動し、作成後は特殊アイテムの効果に置き換わります。" : statusText;
+  statusText = facility ? t("workbench.facilityStatus") : statusText;
   ensureStoneMaterialInventory();
   renderWorkbenchPanel();
   updateHud();
@@ -67,7 +68,7 @@ export function updateFacilities(dt = 0) {
 function openTreasureVault(facility) {
   const cost = Math.max(0, facility.cost || 0);
   if ((game.gold || 0) < cost) {
-    statusText = `宝物庫: ${cost}G 必要です（現在 ${game.gold || 0}G）。`;
+    statusText = t("workbench.vaultCost", { cost, gold: game.gold || 0 });
     facility.holdTimer = 0;
     updateHud();
     return false;
@@ -75,7 +76,7 @@ function openTreasureVault(facility) {
   game.gold = Math.max(0, (game.gold || 0) - cost);
   facility.opened = true;
   const choices = pickStoneSpecialItemChoices(3);
-  statusText = `宝物庫を開放: 合成済みアイテム3択から1つ選んでください。`;
+  statusText = t("workbench.vaultOpen");
   beginStoneItemChoiceReward(choices, { source: "treasureVault", allowDiscard: false });
   updateHud();
   return true;
@@ -90,7 +91,7 @@ export function renderWorkbenchPanel() {
   if (!gear || !weaponsRoot || !storageRoot) return;
 
   const heading = hud.workbenchPanel.querySelector("h1");
-  if (heading) heading.textContent = "アイテムクラフト作業台";
+  if (heading) heading.textContent = t("workbench.craftingTitle");
   hud.workbenchStatus.textContent = statusText;
   weaponsRoot.replaceChildren();
   storageRoot.replaceChildren();
@@ -98,7 +99,7 @@ export function renderWorkbenchPanel() {
   const materialCard = document.createElement("article");
   materialCard.className = "workbench-weapon-card workbench-materials";
   const materialTitle = document.createElement("h2");
-  materialTitle.textContent = "所持素材";
+  materialTitle.textContent = t("workbench.materials");
   const materialList = document.createElement("div");
   materialList.className = "workbench-material-grid";
   const inventory = ensureStoneMaterialInventory();
@@ -106,7 +107,7 @@ export function renderWorkbenchPanel() {
     const row = document.createElement("div");
     row.className = "workbench-material-chip";
     row.title = `${material.name}: ${formatStoneItemEffectSummary(material)}`;
-    row.setAttribute("aria-label", `${material.name} ${inventory[material.key] || 0}個 ${formatStoneItemEffectSummary(material)}`);
+    row.setAttribute("aria-label", t("workbench.materialAria", { name: material.name, count: inventory[material.key] || 0, summary: formatStoneItemEffectSummary(material) }));
     row.innerHTML = `<span class="workbench-item-icon">${stoneItemIcon(material)}</span><strong>×${inventory[material.key] || 0}</strong>`;
     materialList.append(row);
   });
@@ -118,7 +119,7 @@ export function renderWorkbenchPanel() {
   if (hud.workbenchStorageCount) {
     const craftable = STONE_SPECIAL_ITEMS.filter((item) => canCraftStoneSpecial(item.key)).length;
     const completed = STONE_EVOLUTIONS.filter((evolution) => evolution.when(currentStoneItemCounts())).length;
-    hud.workbenchStorageCount.textContent = `${craftable}/${STONE_SPECIAL_ITEMS.length} 作成可能 · 進化 ${completed}/${STONE_EVOLUTIONS.length}`;
+    hud.workbenchStorageCount.textContent = t("workbench.storageCount", { craftable, total: STONE_SPECIAL_ITEMS.length, completed, evolutionTotal: STONE_EVOLUTIONS.length });
   }
 }
 
@@ -128,11 +129,11 @@ function renderCraftEvolutionTree() {
 
   const header = document.createElement("div");
   header.className = "workbench-craft-tree-legend";
-  header.innerHTML = `<span><strong>特殊アイテム</strong> → <strong>進化アイテム</strong> を1画面で確認</span>`;
+  header.innerHTML = t("workbench.treeHeader");
 
   const viewport = document.createElement("div");
   viewport.className = "workbench-craft-tree-viewport skill-node-map-scroller";
-  viewport.setAttribute("aria-label", "特殊アイテムの組み合わせで進化アイテムができるクラフトツリー");
+  viewport.setAttribute("aria-label", t("workbench.treeAria"));
 
   const mapWidth = 820;
   const rowHeight = 62;
@@ -186,12 +187,12 @@ function renderSpecialRecipeNode(item, requirement, position) {
   node.style.setProperty("--node-x", `${position.x}px`);
   node.style.setProperty("--node-y", `${position.y}px`);
   node.disabled = !craftable;
-  node.setAttribute("aria-label", `${item?.name || requirement.key} ${owned}/${requirement.need}、${craftable ? "作成可能" : missingRecipeText(item?.recipe || [])}`);
+  node.setAttribute("aria-label", t("workbench.nodeAria", { name: item?.name || requirement.key, owned, need: requirement.need, status: craftable ? t("stone.craftable") : missingRecipeText(item?.recipe || []) }));
   node.innerHTML = `
     <span class="workbench-node-icon">${stoneItemIcon(item)}</span>
     <span class="workbench-node-copy">
       <strong>${item?.name || requirement.key}</strong>
-      <em>${item ? recipeShortText(item.recipe) : "レシピ不明"}</em>
+      <em>${item ? recipeShortText(item.recipe) : t("workbench.unknownRecipe")}</em>
       <small>${owned}/${requirement.need}</small>
     </span>
   `;
@@ -212,7 +213,7 @@ function renderEvolutionResultNode(evolution, counts, position, completed) {
     <span class="workbench-node-copy">
       <strong>${completed ? "✓ " : ""}${evolution.name}</strong>
       <em>${requirementText}</em>
-      <small>${completed ? "達成" : "進化"}</small>
+      <small>${completed ? t("workbench.done") : t("workbench.evolution")}</small>
     </span>
   `;
   return node;
@@ -226,20 +227,20 @@ function currentStoneItemCounts() {
 function craftAndStore(key) {
   const stoneWeapon = (game.player?.gear?.weapons || []).find((weapon) => isStoneWeapon(weapon));
   if (!stoneWeapon) {
-    statusText = "石ころ武器がないためアイテムを作成できません。";
+    statusText = t("workbench.noStoneWeapon");
     renderWorkbenchPanel();
     return;
   }
 
   const crafted = craftStoneSpecial(key);
   if (!crafted) {
-    statusText = "素材が足りません。";
+    statusText = t("workbench.missingMaterials");
     renderWorkbenchPanel();
     return;
   }
 
   addStoneItemToWeapon(stoneWeapon, crafted.key);
-  statusText = `「${crafted.name}」を作成し、所持アイテムに追加しました。`;
+  statusText = t("workbench.crafted", { item: crafted.name });
   renderWorkbenchPanel();
   updateHud();
 }

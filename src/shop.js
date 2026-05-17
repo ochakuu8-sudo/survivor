@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { INITIAL_WEAPON_ONLY_RUN, MAX_ATTACHMENTS, MAX_STORED_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, STARTER_WEAPON_NAME, STONE_INITIAL_DAMAGE, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
@@ -17,13 +18,13 @@ import { updateHud } from "./hud.js";
 
 export const WEAPON_POOL = [
   {
-    name: "石ころ",
+    key: "stone", name: t("weapon.stone.name"), nameKey: "weapon.stone.name",
     rarity: "normal",
-    text: "威力が少し高い、扱いやすい投げ石。",
+    text: t("weapon.stone.text"), textKey: "weapon.stone.text",
     weapon: {
-      baseName: "石",
+      baseName: "stone",
       rarity: "normal",
-      variantSummary: "威力が少し高い",
+      variantSummary: t("weapon.stone.summary"), variantSummaryKey: "weapon.stone.summary",
       damage: STONE_INITIAL_DAMAGE,
       fireRate: 0.9,
       bulletSpeed: 360,
@@ -265,7 +266,7 @@ function bindPress(element, handler) {
 export function weaponIcon(weapon) {
   if (!weapon) return "+";
   const baseName = weapon.baseName || weapon.name;
-  if (baseName === "石") return "R";
+  if (baseName === "stone") return "R";
   return "W";
 }
 
@@ -289,7 +290,7 @@ function buildLevelUpCard(weapon, index) {
 
   const type = document.createElement("span");
   type.className = "offer-type offer-type-weapon";
-  type.textContent = `武器 ${index + 1}`;
+  type.textContent = t("shop.weaponIndex", { index: index + 1 });
   headRow.append(type);
 
   const title = document.createElement("h2");
@@ -297,14 +298,14 @@ function buildLevelUpCard(weapon, index) {
 
   const description = document.createElement("p");
   description.textContent = maxed
-    ? "最大レベル。これ以上アタッチメントは増えません。"
-    : `Lv${nextLevel}で付与するアタッチメントをランダム3択から選びます。`;
+    ? t("shop.maxLevelDesc")
+    : t("shop.levelChoiceDesc", { level: nextLevel });
 
   const meta = document.createElement("small");
   meta.className = "offer-meta";
   meta.textContent = maxed
-    ? `Lv ${level}/${maxLevel}・アタッチメント ${weapon.attachments.length}/${maxAttachments}`
-    : `Lv ${level}/${maxLevel}・アタッチメント ${weapon.attachments.length}/${maxAttachments}・抽選 ${attachmentRarityChanceText(nextLevel)}`;
+    ? t("shop.levelMeta", { level, maxLevel, count: weapon.attachments.length, max: maxAttachments })
+    : t("shop.levelMetaRoll", { level, maxLevel, count: weapon.attachments.length, max: maxAttachments, chance: attachmentRarityChanceText(nextLevel) });
 
   const price = document.createElement("div");
   price.className = "price";
@@ -313,7 +314,7 @@ function buildLevelUpCard(weapon, index) {
   priceAmount.textContent = maxed ? "MAX" : `${cost}G`;
   const owned = document.createElement("span");
   owned.className = "price-owned";
-  owned.textContent = `所持 ${game.gold}G`;
+  owned.textContent = t("shop.ownedGold", { gold: game.gold });
   price.append(priceAmount, owned);
 
   const action = document.createElement("div");
@@ -321,7 +322,7 @@ function buildLevelUpCard(weapon, index) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "offer-buy";
-  button.textContent = maxed ? "最大" : canAfford ? `Lv${nextLevel}へ` : "不足";
+  button.textContent = maxed ? t("shop.max") : canAfford ? t("shop.toLevel", { level: nextLevel }) : t("shop.shortage");
   button.disabled = maxed || !canAfford;
   button.addEventListener("click", () => beginWeaponLevelUp(weapon.id));
   action.append(button);
@@ -350,7 +351,7 @@ function buildAttachmentChoiceCard(choice, index, weapon) {
   headRow.className = "offer-head";
   const type = document.createElement("span");
   type.className = "offer-type offer-type-attachment";
-  type.textContent = `候補 ${index + 1}・${starsLabel(choice.stars)}`;
+  type.textContent = t("shop.choice", { index: index + 1, stars: starsLabel(choice.stars) });
   headRow.append(type);
 
   const title = document.createElement("h2");
@@ -361,7 +362,7 @@ function buildAttachmentChoiceCard(choice, index, weapon) {
 
   const meta = document.createElement("small");
   meta.className = "offer-meta";
-  meta.textContent = `${weapon?.name || "武器"}へ付与・${attachmentCategoryLabel(choice.category)}`;
+  meta.textContent = t("shop.applyTo", { weapon: weapon?.name || t("skill.weaponFallback"), category: attachmentCategoryLabel(choice.category) });
 
   const body = document.createElement("div");
   body.className = "offer-body";
@@ -372,7 +373,7 @@ function buildAttachmentChoiceCard(choice, index, weapon) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "offer-buy";
-  button.textContent = "付与する";
+  button.textContent = t("shop.apply");
   button.addEventListener("click", () => chooseLevelAttachment(index));
   action.append(button);
 
@@ -404,7 +405,7 @@ export function renderShop() {
     if (!gear?.weapons.length) {
       const empty = document.createElement("p");
       empty.className = "storage-empty";
-      empty.textContent = "装備中の武器がありません";
+      empty.textContent = t("shop.noEquippedWeapon");
       hud.offers.append(empty);
     }
   }
@@ -429,11 +430,11 @@ function updateShopTabs() {
 function updateShopHeading() {
   const heading = hud.shop?.querySelector("h1");
   const kicker = hud.shop?.querySelector(".panel-kicker");
-  if (kicker) kicker.textContent = game.pendingAttachmentChoice ? "武器レベルアップ" : "安全地帯";
+  if (kicker) kicker.textContent = game.pendingAttachmentChoice ? t("shop.weaponLevelUp") : t("shop.safeZone");
   if (heading) {
     heading.textContent = game.pendingAttachmentChoice
-      ? "付与するアタッチメントを選択"
-      : "武器をレベルアップ";
+      ? t("shop.chooseAttachment")
+      : t("shop.headingLevelUp");
   }
 }
 
@@ -443,10 +444,10 @@ function updateShopControls() {
   hud.shopReroll.disabled = true;
   if (hud.shopContinue) {
     hud.shopContinue.textContent = game.pendingAttachmentChoice
-      ? "強化を選択"
+      ? t("shop.chooseUpgrade")
       : isShopTabStorage()
-        ? "次の階層へ"
-        : "倉庫へ";
+        ? t("shop.nextFloor")
+        : t("shop.storage");
     hud.shopContinue.disabled = !!game.pendingAttachmentChoice;
   }
 }
@@ -472,7 +473,7 @@ function renderStorageInventory() {
   const board = document.createElement("div");
   board.className = "storage-board";
   board.append(
-    buildStorageSection("倉庫の武器", gear.storageWeapons, buildStoredWeaponCard, "武器の予備はありません"),
+    buildStorageSection(t("shop.storageWeapons"), gear.storageWeapons, buildStoredWeaponCard, t("shop.noStoredWeapons")),
   );
   hud.storageInventory.append(board);
 }
@@ -518,7 +519,7 @@ function buildStoredWeaponCard(weapon, storageIndex) {
   const name = document.createElement("strong");
   name.textContent = weapon.name;
   const meta = document.createElement("small");
-  meta.textContent = `Lv ${syncWeaponLevel(weapon)}/${getWeaponMaxLevel(weapon)} / ${weaponMetaLabel(weapon)} / アタッチメント ${weapon.attachments.length}/${getWeaponMaxAttachments(weapon)}`;
+  meta.textContent = t("shop.storedMeta", { level: syncWeaponLevel(weapon), maxLevel: getWeaponMaxLevel(weapon), meta: weaponMetaLabel(weapon), count: weapon.attachments.length, max: getWeaponMaxAttachments(weapon) });
   body.append(name, meta);
 
   const actions = document.createElement("div");
@@ -529,7 +530,7 @@ function buildStoredWeaponCard(weapon, storageIndex) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "storage-action";
-    button.textContent = occupied ? `${i + 1}と交換` : `${i + 1}に装備`;
+    button.textContent = occupied ? t("shop.swapSlot", { index: i + 1 }) : t("shop.equipSlot", { index: i + 1 });
     button.disabled = !occupied && !canUseEmptySlot;
     bindPress(button, () => equipStoredWeapon(storageIndex, i));
     actions.append(button);
@@ -565,7 +566,7 @@ function buildStoredAttachmentCard(attachment, storageIndex) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "storage-action";
-    button.textContent = `${weaponIndex + 1}へ`;
+    button.textContent = t("shop.toWeapon", { index: weaponIndex + 1 });
     button.disabled = weapon.attachments.length >= getWeaponMaxAttachments(weapon) || !canAttachToWeapon(definition, weapon);
     bindPress(button, () => equipStoredAttachment(storageIndex, weapon.id));
     actions.append(button);
@@ -574,7 +575,7 @@ function buildStoredAttachmentCard(attachment, storageIndex) {
   if (gear.weapons.length === 0) {
     const empty = document.createElement("span");
     empty.className = "storage-action-note";
-    empty.textContent = "装備中の武器がありません";
+    empty.textContent = t("shop.noEquippedWeapon");
     actions.append(empty);
   }
 
@@ -599,26 +600,26 @@ function buildWeaponSlot(weapon, index) {
   top.className = "weapon-slot-top";
   const label = document.createElement("span");
   label.className = "slot-index";
-  label.textContent = `武器 ${index + 1}`;
+  label.textContent = t("shop.weaponIndex", { index: index + 1 });
   const status = document.createElement("span");
   status.className = `slot-status ${weapon ? (isActive ? "slot-status-active" : "slot-status-equipped") : "slot-status-empty"}`;
-  status.textContent = weapon ? (isActive ? "使用中" : "控え") : "空き";
+  status.textContent = weapon ? (isActive ? t("shop.active") : t("shop.reserve")) : t("shop.empty");
   top.append(label, status);
 
   const name = document.createElement("strong");
   name.className = "weapon-slot-name";
-  name.textContent = weapon ? weapon.name : "未装備";
+  name.textContent = weapon ? weapon.name : t("shop.unequipped");
   const kind = document.createElement("small");
   kind.className = "weapon-slot-kind";
-  kind.textContent = weapon ? `${weaponMetaLabel(weapon)}` : "武器スロット";
+  kind.textContent = weapon ? `${weaponMetaLabel(weapon)}` : t("shop.weaponSlot");
 
   const attachmentTrack = document.createElement("div");
   attachmentTrack.className = "attachment-track";
   const attachmentTitle = document.createElement("span");
   attachmentTitle.className = "attachment-title";
   attachmentTitle.textContent = weapon
-    ? `Lv ${level}/${maxLevel}・アタッチメント ${weapon.attachments.length}/${maxAttachments}`
-    : "アタッチメント";
+    ? t("shop.levelMeta", { level, maxLevel, count: weapon.attachments.length, max: maxAttachments })
+    : t("shop.attachments");
   const attachmentList = document.createElement("div");
   attachmentList.className = "attachment-list";
   const attachments = weapon?.attachments || [];
@@ -654,7 +655,7 @@ function buildWeaponSlot(weapon, index) {
   } else {
     const empty = document.createElement("span");
     empty.className = "attach-chip attach-chip-empty";
-    empty.textContent = weapon ? "空き" : "未装備";
+    empty.textContent = weapon ? t("shop.empty") : t("shop.unequipped");
     attachmentList.append(empty);
   }
 
@@ -674,7 +675,7 @@ function buildWeaponSlot(weapon, index) {
       const use = document.createElement("button");
       use.type = "button";
       use.className = "weapon-use";
-      use.textContent = "使用する";
+      use.textContent = t("shop.use");
       bindPress(use, () => {
         setActiveWeaponIndex(index);
         renderShop();
@@ -685,14 +686,14 @@ function buildWeaponSlot(weapon, index) {
     const unequip = document.createElement("button");
     unequip.type = "button";
     unequip.className = "weapon-unequip";
-    unequip.textContent = "武器を倉庫へ";
+    unequip.textContent = t("shop.sendWeaponToStorage");
     unequip.disabled = game.player.gear.weapons.length <= 1 || !!game.pendingAttachmentChoice;
     bindPress(unequip, () => unequipWeapon(weapon.id));
     slotActions.append(unequip);
   } else {
     const note = document.createElement("span");
     note.className = "slot-empty-note";
-    note.textContent = "倉庫の武器を装備できます";
+    note.textContent = t("shop.equipStoredHint");
     slotActions.append(note);
   }
   const body = document.createElement("div");
@@ -737,11 +738,11 @@ export function renderStarterPick() {
   hud.starterOffers.replaceChildren();
   const kicker = hud.starterPick.querySelector(".panel-kicker");
   const heading = hud.starterPick.querySelector("h1");
-  if (kicker) kicker.textContent = "最初の武器";
+  if (kicker) kicker.textContent = t("starter.label");
   if (heading) {
     heading.textContent = INITIAL_WEAPON_ONLY_RUN
-      ? `${STARTER_WEAPON_NAME}で探索開始`
-      : "メインを選び、武器A/Bでダンジョン探索へ";
+      ? t("starter.fixedTitle", { weapon: STARTER_WEAPON_NAME })
+      : t("starter.pickTitle");
   }
   game.starterChoices.forEach((template, index) => {
     const card = document.createElement("article");
@@ -749,7 +750,7 @@ export function renderStarterPick() {
 
     const tag = document.createElement("span");
     tag.className = "offer-type offer-type-weapon";
-    tag.textContent = "メイン武器";
+    tag.textContent = t("starter.mainWeapon");
 
     const title = document.createElement("h2");
     title.textContent = template.name;
@@ -760,7 +761,7 @@ export function renderStarterPick() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "starter-card-pick";
-    button.textContent = INITIAL_WEAPON_ONLY_RUN ? "探索を開始" : "これを武器Aにする";
+    button.textContent = INITIAL_WEAPON_ONLY_RUN ? t("starter.start") : t("starter.setWeaponA");
     button.addEventListener("click", () => pickStarterWeapon(index));
 
     card.append(tag, title, text, button);

@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import { game } from "./state.js";
 import { MAX_STORED_ATTACHMENTS, getWeaponMaxAttachments } from "./constants.js";
 import {
@@ -25,22 +26,7 @@ export function starsLabel(stars) {
 }
 
 export function attachmentCategoryLabel(category) {
-  const labels = {
-    stat: "ステータス",
-    special: "特殊効果",
-    support: "プレイヤー強化",
-    trajectory: "軌道変化",
-    deploy: "設置",
-    shatter: "破砕",
-    element: "属性",
-    control: "制御",
-    delayed: "遅延",
-    defense: "防御",
-    growth: "成長",
-    throwStyle: "投げ方",
-    unique: "ユニーク効果",
-  };
-  return labels[category] || "効果";
+  return t(`category.${category}`) || t("category.default");
 }
 
 export function findAttachmentDefinition(key) {
@@ -123,50 +109,50 @@ export function recomputeAllAttachments() {
 export const ACTIVE_ATTACHMENTS = [
   {
     key: "powerCore",
-    name: "ダメージ+15%",
+    name: t("attachment.powerCore.name"), nameKey: "attachment.powerCore.name",
     stars: 1,
     category: "stat",
-    text: "基礎ダメージ +15%。爆発武器は基礎爆風ダメージも +15%。",
+    text: t("attachment.powerCore.text"), textKey: "attachment.powerCore.text",
     attach: (weapon) => {
       boostWeaponImpactPercent(weapon, 0.15);
     },
   },
   {
     key: "rapidMechanism",
-    name: "攻撃頻度+13%",
+    name: t("attachment.rapidMechanism.name"), nameKey: "attachment.rapidMechanism.name",
     stars: 1,
     category: "stat",
-    text: "攻撃頻度 +13%。",
+    text: t("attachment.rapidMechanism.text"), textKey: "attachment.rapidMechanism.text",
     attach: (weapon) => {
       addWeaponBasePercent(weapon, "fireRate", 0.13, { min: 0.15 });
     },
   },
   {
     key: "rangeTube",
-    name: "射程+13%",
+    name: t("attachment.rangeTube.name"), nameKey: "attachment.rangeTube.name",
     stars: 1,
     category: "stat",
-    text: "射程 +13%、弾速 +13%、滞空 +6%、軌道半径 +8%（武器に応じて）。",
+    text: t("attachment.rangeTube.text"), textKey: "attachment.rangeTube.text",
     attach: (weapon) => {
       extendWeaponReach(weapon, 1.13);
     },
   },
   {
     key: "areaLens",
-    name: "範囲+8%",
+    name: t("attachment.areaLens.name"), nameKey: "attachment.areaLens.name",
     stars: 1,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲・命中幅 +8%（武器に応じて）。",
+    text: t("attachment.areaLens.text"), textKey: "attachment.areaLens.text",
     attach: (weapon) => {
       expandWeaponArea(weapon, 1);
     },
   },
   {
     key: "stableGrip",
-    name: "ばらつき-22%",
+    name: t("attachment.stableGrip.name"), nameKey: "attachment.stableGrip.name",
     stars: 1,
     category: "stat",
-    text: "ばらつき −22%、ぶれ −30%、弾速 +8%、ダメージ +5%。",
+    text: t("attachment.stableGrip.text"), textKey: "attachment.stableGrip.text",
     attach: (weapon) => {
       reduceWeaponBasePercent(weapon, "spread", 0.22, { min: 0.02 });
       reduceWeaponBasePercent(weapon, "jitter", 0.3, { min: 0 });
@@ -176,220 +162,220 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "vitalityCharm",
-    name: "最大HP+10",
+    name: t("attachment.vitalityCharm.name"), nameKey: "attachment.vitalityCharm.name",
     stars: 1,
     category: "support",
-    text: "最大HP +10。",
+    text: t("attachment.vitalityCharm.text"), textKey: "attachment.vitalityCharm.text",
     attach: () => {
       increasePlayerMaxHp(10);
     },
   },
   {
     key: "guardBadge",
-    name: "被ダメ軽減+4",
+    name: t("attachment.guardBadge.name"), nameKey: "attachment.guardBadge.name",
     stars: 1,
     category: "support",
-    text: "被ダメージ軽減 +4。",
+    text: t("attachment.guardBadge.text"), textKey: "attachment.guardBadge.text",
     attach: () => {
       game.player.armor += 4;
     },
   },
   {
     key: "scrapMagnet",
-    name: "吸引範囲+36",
+    name: t("attachment.scrapMagnet.name"), nameKey: "attachment.scrapMagnet.name",
     stars: 1,
     category: "support",
-    text: "ゴールド吸引範囲 +36。",
+    text: t("attachment.scrapMagnet.text"), textKey: "attachment.scrapMagnet.text",
     attach: () => {
       game.player.pickup += 36;
     },
   },
   {
     key: "lightSneaker",
-    name: "移動速度+26",
+    name: t("attachment.lightSneaker.name"), nameKey: "attachment.lightSneaker.name",
     stars: 1,
     category: "support",
-    text: "移動速度 +26。",
+    text: t("attachment.lightSneaker.text"), textKey: "attachment.lightSneaker.text",
     attach: () => {
       game.player.speed += 26;
     },
   },
   {
     key: "speedCore",
-    name: "攻撃頻度+15%",
+    name: t("attachment.speedCore.name"), nameKey: "attachment.speedCore.name",
     stars: 1,
     category: "stat",
-    text: "攻撃頻度 +15%。",
+    text: t("attachment.speedCore.text"), textKey: "attachment.speedCore.text",
     attach: (weapon) => {
       boostWeaponAttackSpeed(weapon, 0.15);
     },
   },
   {
     key: "powerCore2",
-    name: "ダメージ+30%",
+    name: t("attachment.powerCore2.name"), nameKey: "attachment.powerCore2.name",
     stars: 2,
     category: "stat",
-    text: "基礎ダメージ +30%。爆発武器は基礎爆風ダメージも +30%。",
+    text: t("attachment.powerCore2.text"), textKey: "attachment.powerCore2.text",
     attach: (weapon) => {
       boostWeaponImpactPercent(weapon, 0.3);
     },
   },
   {
     key: "powerCore3",
-    name: "ダメージ+50%",
+    name: t("attachment.powerCore3.name"), nameKey: "attachment.powerCore3.name",
     stars: 3,
     category: "stat",
-    text: "基礎ダメージ +50%。爆発武器は基礎爆風ダメージも +50%。",
+    text: t("attachment.powerCore3.text"), textKey: "attachment.powerCore3.text",
     attach: (weapon) => {
       boostWeaponImpactPercent(weapon, 0.5);
     },
   },
   {
     key: "powerCore4",
-    name: "ダメージ+75%",
+    name: t("attachment.powerCore4.name"), nameKey: "attachment.powerCore4.name",
     stars: 4,
     category: "stat",
-    text: "基礎ダメージ +75%。爆発武器は基礎爆風ダメージも +75%。",
+    text: t("attachment.powerCore4.text"), textKey: "attachment.powerCore4.text",
     attach: (weapon) => {
       boostWeaponImpactPercent(weapon, 0.75);
     },
   },
   {
     key: "powerCore5",
-    name: "ダメージ+110%",
+    name: t("attachment.powerCore5.name"), nameKey: "attachment.powerCore5.name",
     stars: 5,
     category: "stat",
-    text: "基礎ダメージ +110%。爆発武器は基礎爆風ダメージも +110%。",
+    text: t("attachment.powerCore5.text"), textKey: "attachment.powerCore5.text",
     attach: (weapon) => {
       boostWeaponImpactPercent(weapon, 1.1);
     },
   },
   {
     key: "rapidMechanism2",
-    name: "攻撃頻度+22%",
+    name: t("attachment.rapidMechanism2.name"), nameKey: "attachment.rapidMechanism2.name",
     stars: 2,
     category: "stat",
-    text: "攻撃頻度 +22%。",
+    text: t("attachment.rapidMechanism2.text"), textKey: "attachment.rapidMechanism2.text",
     attach: (weapon) => {
       addWeaponBasePercent(weapon, "fireRate", 0.22, { min: 0.15 });
     },
   },
   {
     key: "rapidMechanism3",
-    name: "攻撃頻度+34%",
+    name: t("attachment.rapidMechanism3.name"), nameKey: "attachment.rapidMechanism3.name",
     stars: 3,
     category: "stat",
-    text: "攻撃頻度 +34%。",
+    text: t("attachment.rapidMechanism3.text"), textKey: "attachment.rapidMechanism3.text",
     attach: (weapon) => {
       addWeaponBasePercent(weapon, "fireRate", 0.34, { min: 0.15 });
     },
   },
   {
     key: "rapidMechanism4",
-    name: "攻撃頻度+48%",
+    name: t("attachment.rapidMechanism4.name"), nameKey: "attachment.rapidMechanism4.name",
     stars: 4,
     category: "stat",
-    text: "攻撃頻度 +48%。",
+    text: t("attachment.rapidMechanism4.text"), textKey: "attachment.rapidMechanism4.text",
     attach: (weapon) => {
       addWeaponBasePercent(weapon, "fireRate", 0.48, { min: 0.15 });
     },
   },
   {
     key: "rapidMechanism5",
-    name: "攻撃頻度+65%",
+    name: t("attachment.rapidMechanism5.name"), nameKey: "attachment.rapidMechanism5.name",
     stars: 5,
     category: "stat",
-    text: "攻撃頻度 +65%。",
+    text: t("attachment.rapidMechanism5.text"), textKey: "attachment.rapidMechanism5.text",
     attach: (weapon) => {
       addWeaponBasePercent(weapon, "fireRate", 0.65, { min: 0.15 });
     },
   },
   {
     key: "rangeTube2",
-    name: "射程+22%",
+    name: t("attachment.rangeTube2.name"), nameKey: "attachment.rangeTube2.name",
     stars: 2,
     category: "stat",
-    text: "射程 +22%、弾速 +22%、滞空 +10%、軌道半径 +14%（武器に応じて）。",
+    text: t("attachment.rangeTube2.text"), textKey: "attachment.rangeTube2.text",
     attach: (weapon) => {
       extendWeaponReach(weapon, 1.22);
     },
   },
   {
     key: "rangeTube3",
-    name: "射程+36%",
+    name: t("attachment.rangeTube3.name"), nameKey: "attachment.rangeTube3.name",
     stars: 3,
     category: "stat",
-    text: "射程 +36%、弾速 +36%、滞空 +16%、軌道半径 +23%（武器に応じて）。",
+    text: t("attachment.rangeTube3.text"), textKey: "attachment.rangeTube3.text",
     attach: (weapon) => {
       extendWeaponReach(weapon, 1.36);
     },
   },
   {
     key: "rangeTube4",
-    name: "射程+52%",
+    name: t("attachment.rangeTube4.name"), nameKey: "attachment.rangeTube4.name",
     stars: 4,
     category: "stat",
-    text: "射程 +52%、弾速 +52%、滞空 +23%、軌道半径 +34%（武器に応じて）。",
+    text: t("attachment.rangeTube4.text"), textKey: "attachment.rangeTube4.text",
     attach: (weapon) => {
       extendWeaponReach(weapon, 1.52);
     },
   },
   {
     key: "rangeTube5",
-    name: "射程+72%",
+    name: t("attachment.rangeTube5.name"), nameKey: "attachment.rangeTube5.name",
     stars: 5,
     category: "stat",
-    text: "射程 +72%、弾速 +72%、滞空 +32%、軌道半径 +47%（武器に応じて）。",
+    text: t("attachment.rangeTube5.text"), textKey: "attachment.rangeTube5.text",
     attach: (weapon) => {
       extendWeaponReach(weapon, 1.72);
     },
   },
   {
     key: "areaLens2",
-    name: "範囲+16%",
+    name: t("attachment.areaLens2.name"), nameKey: "attachment.areaLens2.name",
     stars: 2,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲・命中幅 +16%（武器に応じて）。",
+    text: t("attachment.areaLens2.text"), textKey: "attachment.areaLens2.text",
     attach: (weapon) => {
       expandWeaponArea(weapon, 2);
     },
   },
   {
     key: "areaLens3",
-    name: "範囲+24%",
+    name: t("attachment.areaLens3.name"), nameKey: "attachment.areaLens3.name",
     stars: 3,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲・命中幅 +24%（武器に応じて）。",
+    text: t("attachment.areaLens3.text"), textKey: "attachment.areaLens3.text",
     attach: (weapon) => {
       expandWeaponArea(weapon, 3);
     },
   },
   {
     key: "areaLens4",
-    name: "範囲+36%",
+    name: t("attachment.areaLens4.name"), nameKey: "attachment.areaLens4.name",
     stars: 4,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲・命中幅 +36%（武器に応じて）。",
+    text: t("attachment.areaLens4.text"), textKey: "attachment.areaLens4.text",
     attach: (weapon) => {
       expandWeaponArea(weapon, 4.5);
     },
   },
   {
     key: "areaLens5",
-    name: "範囲+52%",
+    name: t("attachment.areaLens5.name"), nameKey: "attachment.areaLens5.name",
     stars: 5,
     category: "stat",
-    text: "爆発半径・線幅・コーン範囲・命中幅 +52%（武器に応じて）。",
+    text: t("attachment.areaLens5.text"), textKey: "attachment.areaLens5.text",
     attach: (weapon) => {
       expandWeaponArea(weapon, 6.5);
     },
   },
   {
     key: "stableGrip2",
-    name: "ばらつき-35%",
+    name: t("attachment.stableGrip2.name"), nameKey: "attachment.stableGrip2.name",
     stars: 2,
     category: "stat",
-    text: "ばらつき −35%、ぶれ −45%、弾速 +12%、ダメージ +10%。",
+    text: t("attachment.stableGrip2.text"), textKey: "attachment.stableGrip2.text",
     attach: (weapon) => {
       reduceWeaponBasePercent(weapon, "spread", 0.35, { min: 0.02 });
       reduceWeaponBasePercent(weapon, "jitter", 0.45, { min: 0 });
@@ -399,10 +385,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "stableGrip3",
-    name: "ばらつき-50%",
+    name: t("attachment.stableGrip3.name"), nameKey: "attachment.stableGrip3.name",
     stars: 3,
     category: "stat",
-    text: "ばらつき −50%、ぶれ −60%、弾速 +16%、ダメージ +16%。",
+    text: t("attachment.stableGrip3.text"), textKey: "attachment.stableGrip3.text",
     attach: (weapon) => {
       reduceWeaponBasePercent(weapon, "spread", 0.5, { min: 0.02 });
       reduceWeaponBasePercent(weapon, "jitter", 0.6, { min: 0 });
@@ -412,10 +398,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "stableGrip4",
-    name: "ばらつき-65%",
+    name: t("attachment.stableGrip4.name"), nameKey: "attachment.stableGrip4.name",
     stars: 4,
     category: "stat",
-    text: "ばらつき −65%、ぶれ −72%、弾速 +22%、ダメージ +24%。",
+    text: t("attachment.stableGrip4.text"), textKey: "attachment.stableGrip4.text",
     attach: (weapon) => {
       reduceWeaponBasePercent(weapon, "spread", 0.65, { min: 0.02 });
       reduceWeaponBasePercent(weapon, "jitter", 0.72, { min: 0 });
@@ -425,10 +411,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "stableGrip5",
-    name: "ばらつき-75%",
+    name: t("attachment.stableGrip5.name"), nameKey: "attachment.stableGrip5.name",
     stars: 5,
     category: "stat",
-    text: "ばらつき −75%、ぶれ −82%、弾速 +32%、ダメージ +35%。",
+    text: t("attachment.stableGrip5.text"), textKey: "attachment.stableGrip5.text",
     attach: (weapon) => {
       reduceWeaponBasePercent(weapon, "spread", 0.75, { min: 0.02 });
       reduceWeaponBasePercent(weapon, "jitter", 0.82, { min: 0 });
@@ -438,190 +424,190 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "vitalityCharm3",
-    name: "最大HP+20",
+    name: t("attachment.vitalityCharm3.name"), nameKey: "attachment.vitalityCharm3.name",
     stars: 3,
     category: "support",
-    text: "最大HP +20。",
+    text: t("attachment.vitalityCharm3.text"), textKey: "attachment.vitalityCharm3.text",
     attach: () => {
       increasePlayerMaxHp(20);
     },
   },
   {
     key: "vitalityCharm5",
-    name: "最大HP+30",
+    name: t("attachment.vitalityCharm5.name"), nameKey: "attachment.vitalityCharm5.name",
     stars: 5,
     category: "support",
-    text: "最大HP +30。",
+    text: t("attachment.vitalityCharm5.text"), textKey: "attachment.vitalityCharm5.text",
     attach: () => {
       increasePlayerMaxHp(30);
     },
   },
   {
     key: "guardBadge2",
-    name: "被ダメ軽減+7",
+    name: t("attachment.guardBadge2.name"), nameKey: "attachment.guardBadge2.name",
     stars: 2,
     category: "support",
-    text: "被ダメージ軽減 +7。",
+    text: t("attachment.guardBadge2.text"), textKey: "attachment.guardBadge2.text",
     attach: () => {
       game.player.armor += 7;
     },
   },
   {
     key: "guardBadge3",
-    name: "被ダメ軽減+11",
+    name: t("attachment.guardBadge3.name"), nameKey: "attachment.guardBadge3.name",
     stars: 3,
     category: "support",
-    text: "被ダメージ軽減 +11。",
+    text: t("attachment.guardBadge3.text"), textKey: "attachment.guardBadge3.text",
     attach: () => {
       game.player.armor += 11;
     },
   },
   {
     key: "guardBadge4",
-    name: "被ダメ軽減+16",
+    name: t("attachment.guardBadge4.name"), nameKey: "attachment.guardBadge4.name",
     stars: 4,
     category: "support",
-    text: "被ダメージ軽減 +16。",
+    text: t("attachment.guardBadge4.text"), textKey: "attachment.guardBadge4.text",
     attach: () => {
       game.player.armor += 16;
     },
   },
   {
     key: "guardBadge5",
-    name: "被ダメ軽減+24",
+    name: t("attachment.guardBadge5.name"), nameKey: "attachment.guardBadge5.name",
     stars: 5,
     category: "support",
-    text: "被ダメージ軽減 +24。",
+    text: t("attachment.guardBadge5.text"), textKey: "attachment.guardBadge5.text",
     attach: () => {
       game.player.armor += 24;
     },
   },
   {
     key: "scrapMagnet2",
-    name: "吸引範囲+64",
+    name: t("attachment.scrapMagnet2.name"), nameKey: "attachment.scrapMagnet2.name",
     stars: 2,
     category: "support",
-    text: "ゴールド吸引範囲 +64。",
+    text: t("attachment.scrapMagnet2.text"), textKey: "attachment.scrapMagnet2.text",
     attach: () => {
       game.player.pickup += 64;
     },
   },
   {
     key: "scrapMagnet3",
-    name: "吸引範囲+96",
+    name: t("attachment.scrapMagnet3.name"), nameKey: "attachment.scrapMagnet3.name",
     stars: 3,
     category: "support",
-    text: "ゴールド吸引範囲 +96。",
+    text: t("attachment.scrapMagnet3.text"), textKey: "attachment.scrapMagnet3.text",
     attach: () => {
       game.player.pickup += 96;
     },
   },
   {
     key: "scrapMagnet4",
-    name: "吸引範囲+140",
+    name: t("attachment.scrapMagnet4.name"), nameKey: "attachment.scrapMagnet4.name",
     stars: 4,
     category: "support",
-    text: "ゴールド吸引範囲 +140。",
+    text: t("attachment.scrapMagnet4.text"), textKey: "attachment.scrapMagnet4.text",
     attach: () => {
       game.player.pickup += 140;
     },
   },
   {
     key: "scrapMagnet5",
-    name: "吸引範囲+200",
+    name: t("attachment.scrapMagnet5.name"), nameKey: "attachment.scrapMagnet5.name",
     stars: 5,
     category: "support",
-    text: "ゴールド吸引範囲 +200。",
+    text: t("attachment.scrapMagnet5.text"), textKey: "attachment.scrapMagnet5.text",
     attach: () => {
       game.player.pickup += 200;
     },
   },
   {
     key: "lightSneaker2",
-    name: "移動速度+45",
+    name: t("attachment.lightSneaker2.name"), nameKey: "attachment.lightSneaker2.name",
     stars: 2,
     category: "support",
-    text: "移動速度 +45。",
+    text: t("attachment.lightSneaker2.text"), textKey: "attachment.lightSneaker2.text",
     attach: () => {
       game.player.speed += 45;
     },
   },
   {
     key: "speedCore2",
-    name: "攻撃頻度+25%",
+    name: t("attachment.speedCore2.name"), nameKey: "attachment.speedCore2.name",
     stars: 2,
     category: "stat",
-    text: "攻撃頻度 +25%。",
+    text: t("attachment.speedCore2.text"), textKey: "attachment.speedCore2.text",
     attach: (weapon) => {
       boostWeaponAttackSpeed(weapon, 0.25);
     },
   },
   {
     key: "lightSneaker3",
-    name: "移動速度+70",
+    name: t("attachment.lightSneaker3.name"), nameKey: "attachment.lightSneaker3.name",
     stars: 3,
     category: "support",
-    text: "移動速度 +70。",
+    text: t("attachment.lightSneaker3.text"), textKey: "attachment.lightSneaker3.text",
     attach: () => {
       game.player.speed += 70;
     },
   },
   {
     key: "speedCore3",
-    name: "攻撃頻度+40%",
+    name: t("attachment.speedCore3.name"), nameKey: "attachment.speedCore3.name",
     stars: 3,
     category: "stat",
-    text: "攻撃頻度 +40%。",
+    text: t("attachment.speedCore3.text"), textKey: "attachment.speedCore3.text",
     attach: (weapon) => {
       boostWeaponAttackSpeed(weapon, 0.4);
     },
   },
   {
     key: "lightSneaker4",
-    name: "移動速度+105",
+    name: t("attachment.lightSneaker4.name"), nameKey: "attachment.lightSneaker4.name",
     stars: 4,
     category: "support",
-    text: "移動速度 +105。",
+    text: t("attachment.lightSneaker4.text"), textKey: "attachment.lightSneaker4.text",
     attach: () => {
       game.player.speed += 105;
     },
   },
   {
     key: "speedCore4",
-    name: "攻撃頻度+60%",
+    name: t("attachment.speedCore4.name"), nameKey: "attachment.speedCore4.name",
     stars: 4,
     category: "stat",
-    text: "攻撃頻度 +60%。",
+    text: t("attachment.speedCore4.text"), textKey: "attachment.speedCore4.text",
     attach: (weapon) => {
       boostWeaponAttackSpeed(weapon, 0.6);
     },
   },
   {
     key: "lightSneaker5",
-    name: "移動速度+150",
+    name: t("attachment.lightSneaker5.name"), nameKey: "attachment.lightSneaker5.name",
     stars: 5,
     category: "support",
-    text: "移動速度 +150。",
+    text: t("attachment.lightSneaker5.text"), textKey: "attachment.lightSneaker5.text",
     attach: () => {
       game.player.speed += 150;
     },
   },
   {
     key: "speedCore5",
-    name: "攻撃頻度+85%",
+    name: t("attachment.speedCore5.name"), nameKey: "attachment.speedCore5.name",
     stars: 5,
     category: "stat",
-    text: "攻撃頻度 +85%。",
+    text: t("attachment.speedCore5.text"), textKey: "attachment.speedCore5.text",
     attach: (weapon) => {
       boostWeaponAttackSpeed(weapon, 0.85);
     },
   },
   {
     key: "splitChamber",
-    name: "同時攻撃数+1",
+    name: t("attachment.splitChamber.name"), nameKey: "attachment.splitChamber.name",
     stars: 3,
     category: "special",
-    text: "同時攻撃数 +1。通常射撃は弾が増え、回転武器は回る攻撃が増える。炎・剣は攻撃範囲が広がる。",
+    text: t("attachment.splitChamber.text"), textKey: "attachment.splitChamber.text",
     attach: (weapon) => {
       if (weapon.kind === "flame" || weapon.kind === "sword") {
         weapon.cone = Math.min(1.12, weapon.cone + 0.12);
@@ -641,10 +627,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "sustainEmitter",
-    name: "持続時間+25%",
+    name: t("attachment.sustainEmitter.name"), nameKey: "attachment.sustainEmitter.name",
     stars: 2,
     category: "stat",
-    text: "持続時間 +25%、ティック頻度 +20%、炎・設置レーザーの発射 +8%、回転半径 +10%。",
+    text: t("attachment.sustainEmitter.text"), textKey: "attachment.sustainEmitter.text",
     attach: (weapon) => {
       addWeaponBasePercent(weapon, "duration", 0.25, { min: 0 });
       if (weapon.tickRate > 0) addWeaponBasePercent(weapon, "tickRate", 0.2, { min: 0 });
@@ -657,10 +643,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "looseBattery",
-    name: "威力+14/防御-3",
+    name: t("attachment.looseBattery.name"), nameKey: "attachment.looseBattery.name",
     stars: 2,
     category: "support",
-    text: "武器威力ボーナス +14、被ダメージ軽減 −3。",
+    text: t("attachment.looseBattery.text"), textKey: "attachment.looseBattery.text",
     attach: () => {
       game.player.weaponPowerBonus += 14;
       game.player.armor -= 3;
@@ -668,11 +654,11 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "ricochetCore",
-    name: "跳弾+1",
+    name: t("attachment.ricochetCore.name"), nameKey: "attachment.ricochetCore.name",
     stars: 3,
     category: "special",
-    compatibleWeapons: ["石"],
-    text: "通常弾が命中後、近くの別の敵へ1回跳ねる。",
+    compatibleWeapons: ["stone"],
+    text: t("attachment.ricochetCore.text"), textKey: "attachment.ricochetCore.text",
     attach: (weapon) => {
       weapon.ricochetCount = (weapon.ricochetCount || 0) + 1;
       weapon.ricochetRange = Math.max(weapon.ricochetRange || 0, 230);
@@ -680,10 +666,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "criticalLens",
-    name: "クリティカル+12%",
+    name: t("attachment.criticalLens.name"), nameKey: "attachment.criticalLens.name",
     stars: 3,
     category: "special",
-    text: "命中時に12%でクリティカル。クリティカルダメージは1.8倍。",
+    text: t("attachment.criticalLens.text"), textKey: "attachment.criticalLens.text",
     attach: (weapon) => {
       weapon.critChance = (weapon.critChance || 0) + 0.12;
       weapon.critMultiplier = Math.max(weapon.critMultiplier || 1.75, 1.8);
@@ -691,10 +677,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "frostPowder",
-    name: "氷結+22%",
+    name: t("attachment.frostPowder.name"), nameKey: "attachment.frostPowder.name",
     stars: 3,
     category: "special",
-    text: "命中時に22%で敵の移動速度を1.6秒間38%低下させる。",
+    text: t("attachment.frostPowder.text"), textKey: "attachment.frostPowder.text",
     attach: (weapon) => {
       weapon.freezeChance = (weapon.freezeChance || 0) + 0.22;
       weapon.freezeSlow = Math.min(weapon.freezeSlow || 1, 0.62);
@@ -703,51 +689,51 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "lifeDrain",
-    name: "吸血+1",
+    name: t("attachment.lifeDrain.name"), nameKey: "attachment.lifeDrain.name",
     stars: 3,
     category: "special",
-    text: "この武器で敵を倒すたび、倒した数 × 1 HP回復する。",
+    text: t("attachment.lifeDrain.text"), textKey: "attachment.lifeDrain.text",
     attach: (weapon) => {
       weapon.lifeStealPerKill = (weapon.lifeStealPerKill || 0) + 1;
     },
   },
   {
     key: "barrierEmitter",
-    name: "バリア+1",
+    name: t("attachment.barrierEmitter.name"), nameKey: "attachment.barrierEmitter.name",
     stars: 3,
     category: "support",
     barrierGain: 1,
-    text: "バリア +1。バリアは被ダメージを1回だけ無効化する。",
+    text: t("attachment.barrierEmitter.text"), textKey: "attachment.barrierEmitter.text",
     attach: () => {
       game.player.barrierMax += 1;
     },
   },
   {
     key: "piercer",
-    name: "貫通+1",
+    name: t("attachment.piercer.name"), nameKey: "attachment.piercer.name",
     stars: 3,
     category: "special",
-    text: "貫通 +1。武器に応じて爆発半径・線幅・コーン範囲・命中幅も追加で広がる。",
+    text: t("attachment.piercer.text"), textKey: "attachment.piercer.text",
     attach: (weapon) => {
       addWeaponPierce(weapon, 1);
     },
   },
   {
     key: "knockbackBooster",
-    name: "ノックバック+8",
+    name: t("attachment.knockbackBooster.name"), nameKey: "attachment.knockbackBooster.name",
     stars: 3,
     category: "special",
-    text: "弾の与えるノックバック +8。",
+    text: t("attachment.knockbackBooster.text"), textKey: "attachment.knockbackBooster.text",
     attach: (weapon) => {
       weapon.knockback = (weapon.knockback || 0) + 8;
     },
   },
   {
     key: "overdriveCore",
-    name: "ダメージ+45%/頻度+8%",
+    name: t("attachment.overdriveCore.name"), nameKey: "attachment.overdriveCore.name",
     stars: 3,
     category: "special",
-    text: "基礎ダメージ +45%。攻撃頻度 +8%。",
+    text: t("attachment.overdriveCore.text"), textKey: "attachment.overdriveCore.text",
     attach: (weapon) => {
       boostWeaponImpactPercent(weapon, 0.45);
       addWeaponBasePercent(weapon, "fireRate", 0.08, { min: 0.15 });
@@ -755,10 +741,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "multiForge",
-    name: "同時攻撃数+2",
+    name: t("attachment.multiForge.name"), nameKey: "attachment.multiForge.name",
     stars: 4,
     category: "special",
-    text: "同時攻撃数 +2。通常射撃は弾が増え、回転武器は回る攻撃が増える。炎・剣は攻撃範囲が広がる。",
+    text: t("attachment.multiForge.text"), textKey: "attachment.multiForge.text",
     attach: (weapon) => {
       if (weapon.kind === "flame" || weapon.kind === "sword") {
         weapon.cone = Math.min(1.2, weapon.cone + 0.18);
@@ -777,20 +763,20 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "deepPiercer",
-    name: "貫通+2",
+    name: t("attachment.deepPiercer.name"), nameKey: "attachment.deepPiercer.name",
     stars: 4,
     category: "special",
-    text: "貫通 +2。武器に応じて爆発・線幅・コーン・命中幅も大きく広がる。",
+    text: t("attachment.deepPiercer.text"), textKey: "attachment.deepPiercer.text",
     attach: (weapon) => {
       addWeaponPierce(weapon, 2);
     },
   },
   {
     key: "cryoEngine",
-    name: "氷結+35%",
+    name: t("attachment.cryoEngine.name"), nameKey: "attachment.cryoEngine.name",
     stars: 4,
     category: "special",
-    text: "命中時に35%で敵の移動速度を2.2秒間45%低下させる。",
+    text: t("attachment.cryoEngine.text"), textKey: "attachment.cryoEngine.text",
     attach: (weapon) => {
       weapon.freezeChance = (weapon.freezeChance || 0) + 0.35;
       weapon.freezeSlow = Math.min(weapon.freezeSlow || 1, 0.55);
@@ -799,21 +785,21 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "lifeDrain2",
-    name: "吸血+2",
+    name: t("attachment.lifeDrain2.name"), nameKey: "attachment.lifeDrain2.name",
     stars: 4,
     category: "special",
-    text: "この武器で敵を倒すたび、倒した数 × 2 HP回復する。",
+    text: t("attachment.lifeDrain2.text"), textKey: "attachment.lifeDrain2.text",
     attach: (weapon) => {
       weapon.lifeStealPerKill = (weapon.lifeStealPerKill || 0) + 2;
     },
   },
   {
     key: "safetyField",
-    name: "バリア+2/吸引+24",
+    name: t("attachment.safetyField.name"), nameKey: "attachment.safetyField.name",
     stars: 4,
     category: "support",
     barrierGain: 2,
-    text: "バリア +2。ゴールド吸引範囲 +24。",
+    text: t("attachment.safetyField.text"), textKey: "attachment.safetyField.text",
     attach: () => {
       game.player.barrierMax += 2;
       game.player.pickup += 24;
@@ -821,11 +807,11 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "ricochetCore2",
-    name: "跳弾+2",
+    name: t("attachment.ricochetCore2.name"), nameKey: "attachment.ricochetCore2.name",
     stars: 4,
     category: "special",
-    compatibleWeapons: ["石"],
-    text: "通常弾が命中後、近くの敵へ2回跳ねる。跳弾距離も少し伸びる。",
+    compatibleWeapons: ["stone"],
+    text: t("attachment.ricochetCore2.text"), textKey: "attachment.ricochetCore2.text",
     attach: (weapon) => {
       weapon.ricochetCount = (weapon.ricochetCount || 0) + 2;
       weapon.ricochetRange = Math.max(weapon.ricochetRange || 0, 260);
@@ -833,11 +819,11 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "ricochetCore3",
-    name: "跳弾+3",
+    name: t("attachment.ricochetCore3.name"), nameKey: "attachment.ricochetCore3.name",
     stars: 5,
     category: "special",
-    compatibleWeapons: ["石"],
-    text: "通常弾が命中後、近くの敵へ3回跳ねる。跳弾距離も大きく伸びる。",
+    compatibleWeapons: ["stone"],
+    text: t("attachment.ricochetCore3.text"), textKey: "attachment.ricochetCore3.text",
     attach: (weapon) => {
       weapon.ricochetCount = (weapon.ricochetCount || 0) + 3;
       weapon.ricochetRange = Math.max(weapon.ricochetRange || 0, 300);
@@ -845,10 +831,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "criticalLens2",
-    name: "クリティカル+25%",
+    name: t("attachment.criticalLens2.name"), nameKey: "attachment.criticalLens2.name",
     stars: 4,
     category: "special",
-    text: "命中時に25%でクリティカル。クリティカルダメージは2倍。",
+    text: t("attachment.criticalLens2.text"), textKey: "attachment.criticalLens2.text",
     attach: (weapon) => {
       weapon.critChance = (weapon.critChance || 0) + 0.25;
       weapon.critMultiplier = Math.max(weapon.critMultiplier || 1.75, 2);
@@ -856,10 +842,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "criticalLens3",
-    name: "クリティカル+40%",
+    name: t("attachment.criticalLens3.name"), nameKey: "attachment.criticalLens3.name",
     stars: 5,
     category: "special",
-    text: "命中時に40%でクリティカル。クリティカルダメージは2.25倍。",
+    text: t("attachment.criticalLens3.text"), textKey: "attachment.criticalLens3.text",
     attach: (weapon) => {
       weapon.critChance = (weapon.critChance || 0) + 0.4;
       weapon.critMultiplier = Math.max(weapon.critMultiplier || 1.75, 2.25);
@@ -867,10 +853,10 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "frostPowder3",
-    name: "氷結+50%",
+    name: t("attachment.frostPowder3.name"), nameKey: "attachment.frostPowder3.name",
     stars: 5,
     category: "special",
-    text: "命中時に50%で敵の移動速度を2.8秒間55%低下させる。",
+    text: t("attachment.frostPowder3.text"), textKey: "attachment.frostPowder3.text",
     attach: (weapon) => {
       weapon.freezeChance = (weapon.freezeChance || 0) + 0.5;
       weapon.freezeSlow = Math.min(weapon.freezeSlow || 1, 0.45);
@@ -879,61 +865,61 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "lifeDrain3",
-    name: "吸血+5",
+    name: t("attachment.lifeDrain3.name"), nameKey: "attachment.lifeDrain3.name",
     stars: 5,
     category: "special",
-    text: "この武器で敵を倒すたび、倒した数 × 5 HP回復する。",
+    text: t("attachment.lifeDrain3.text"), textKey: "attachment.lifeDrain3.text",
     attach: (weapon) => {
       weapon.lifeStealPerKill = (weapon.lifeStealPerKill || 0) + 5;
     },
   },
   {
     key: "barrierEmitter3",
-    name: "バリア+3",
+    name: t("attachment.barrierEmitter3.name"), nameKey: "attachment.barrierEmitter3.name",
     stars: 5,
     category: "support",
     barrierGain: 3,
-    text: "バリア +3。バリアは被ダメージを1回だけ無効化する。",
+    text: t("attachment.barrierEmitter3.text"), textKey: "attachment.barrierEmitter3.text",
     attach: () => {
       game.player.barrierMax += 3;
     },
   },
   {
     key: "piercer3",
-    name: "貫通+3",
+    name: t("attachment.piercer3.name"), nameKey: "attachment.piercer3.name",
     stars: 5,
     category: "special",
-    text: "貫通 +3。武器に応じて爆発・線幅・コーン・命中幅も大きく広がる。",
+    text: t("attachment.piercer3.text"), textKey: "attachment.piercer3.text",
     attach: (weapon) => {
       addWeaponPierce(weapon, 3);
     },
   },
   {
     key: "knockbackBooster2",
-    name: "ノックバック+14",
+    name: t("attachment.knockbackBooster2.name"), nameKey: "attachment.knockbackBooster2.name",
     stars: 4,
     category: "special",
-    text: "弾の与えるノックバック +14。",
+    text: t("attachment.knockbackBooster2.text"), textKey: "attachment.knockbackBooster2.text",
     attach: (weapon) => {
       weapon.knockback = (weapon.knockback || 0) + 14;
     },
   },
   {
     key: "knockbackBooster3",
-    name: "ノックバック+22",
+    name: t("attachment.knockbackBooster3.name"), nameKey: "attachment.knockbackBooster3.name",
     stars: 5,
     category: "special",
-    text: "弾の与えるノックバック +22。",
+    text: t("attachment.knockbackBooster3.text"), textKey: "attachment.knockbackBooster3.text",
     attach: (weapon) => {
       weapon.knockback = (weapon.knockback || 0) + 22;
     },
   },
   {
     key: "multiForge3",
-    name: "同時攻撃数+3",
+    name: t("attachment.multiForge3.name"), nameKey: "attachment.multiForge3.name",
     stars: 5,
     category: "special",
-    text: "同時攻撃数 +3。通常射撃は弾が増え、回転武器は回る攻撃が増える。炎・剣は攻撃範囲が広がる。",
+    text: t("attachment.multiForge3.text"), textKey: "attachment.multiForge3.text",
     attach: (weapon) => {
       if (weapon.kind === "flame" || weapon.kind === "sword") {
         weapon.cone = Math.min(1.28, weapon.cone + 0.26);
@@ -947,11 +933,11 @@ export const ACTIVE_ATTACHMENTS = [
   },
   {
     key: "safetyField3",
-    name: "バリア+3/吸引+80",
+    name: t("attachment.safetyField3.name"), nameKey: "attachment.safetyField3.name",
     stars: 5,
     category: "support",
     barrierGain: 3,
-    text: "バリア +3。ゴールド吸引範囲 +80。",
+    text: t("attachment.safetyField3.text"), textKey: "attachment.safetyField3.text",
     attach: () => {
       game.player.barrierMax += 3;
       game.player.pickup += 80;

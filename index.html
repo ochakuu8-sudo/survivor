@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>平原サバイバー</title>
+    <title>Stone Survivor</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="src/styles.css" />
   </head>
   <body>
-    <main id="app" aria-label="平原サバイバー">
-      <canvas id="game" aria-label="ゲーム画面"></canvas>
+    <main id="app" aria-label="Stone Survivor" data-i18n-aria-label="app.title">
+      <canvas id="game" aria-label="Game screen" data-i18n-aria-label="app.canvas"></canvas>
       <div id="worldLabels" aria-hidden="true"></div>
 
       <div id="vignette"></div>
@@ -37,193 +37,193 @@
           </div>
         </div>
         <div class="hud-block hud-gold">
-          <span class="hud-label">ポイント</span>
+          <span class="hud-label" data-i18n="hud.points">Points</span>
           <strong id="goldText">0</strong>
         </div>
         <div class="hud-block hud-kills">
-          <span class="hud-label">撃破</span>
+          <span class="hud-label" data-i18n="hud.kills">Kills</span>
           <strong id="killText">0</strong>
         </div>
       </section>
 
       <div class="hud-block wide hud-objective" aria-live="polite">
-        <span class="hud-label">目的</span>
-        <strong id="timeText">武器選択</strong>
+        <span class="hud-label" data-i18n="hud.objective">Objective</span>
+        <strong id="timeText" data-i18n="hud.objective.weaponSelect">Choose Weapon</strong>
       </div>
 
-      <button id="pauseBtn" type="button" class="pause-button hidden" aria-label="一時停止">II</button>
+      <button id="pauseBtn" type="button" class="pause-button hidden" aria-label="Pause" data-i18n-aria-label="pause.label">II</button>
 
-      <section id="pauseMenu" class="panel narrow hidden" aria-label="一時停止メニュー">
-        <span class="panel-kicker">一時停止</span>
-        <h1>休憩中</h1>
+      <section id="pauseMenu" class="panel narrow hidden" aria-label="Pause Menu" data-i18n-aria-label="pause.label">
+        <span class="panel-kicker" data-i18n="pause.label">Pause</span>
+        <h1 data-i18n="pause.title">Paused</h1>
         <div id="pauseStoneItems" class="pause-stone-items"></div>
         <div class="pause-actions">
-          <button id="resumeBtn" type="button" class="primary">再開</button>
-          <button id="pauseSkillDebugBtn" type="button">スキルツリーDEBUG</button>
-          <button id="pauseDebugBtn" type="button" class="hidden">デバッグメニュー</button>
-          <button id="pauseRestartBtn" type="button">やり直す</button>
+          <button id="resumeBtn" type="button" class="primary" data-i18n="pause.resume">Resume</button>
+          <button id="pauseSkillDebugBtn" type="button" data-i18n="pause.skillDebug">Skill Tree DEBUG</button>
+          <button id="pauseDebugBtn" type="button" class="hidden" data-i18n="pause.debug">Debug Menu</button>
+          <button id="pauseRestartBtn" type="button" data-i18n="pause.restart">Restart</button>
         </div>
       </section>
 
-      <section id="starterPick" class="panel narrow hidden" aria-label="開始武器選択">
+      <section id="starterPick" class="panel narrow hidden" aria-label="Starter Weapon" data-i18n-aria-label="starter.label">
         <div class="panel-head">
           <div>
-            <span class="panel-kicker">最初の武器</span>
-            <h1>3つから1つ選んで平原へ</h1>
+            <span class="panel-kicker" data-i18n="starter.label">Starter Weapon</span>
+            <h1 data-i18n="starter.title">Pick one and enter</h1>
           </div>
         </div>
         <div id="starterOffers" class="starter-offers"></div>
       </section>
 
-      <section id="skillTree" class="panel hidden" aria-label="スキルツリー強化">
+      <section id="skillTree" class="panel hidden" aria-label="Skill Tree" data-i18n-aria-label="skill.title">
         <div class="panel-head">
           <div>
-            <span id="skillTreeWave" class="panel-kicker">ラン外成長</span>
-            <h1>SPで武器を恒久強化</h1>
+            <span id="skillTreeWave" class="panel-kicker" data-i18n="skill.label">Meta Growth</span>
+            <h1 data-i18n="skill.title">Spend SP on permanent weapon upgrades</h1>
           </div>
         </div>
         <div class="skill-tree-summary">
           <div>
-            <span class="hud-label">現在武器</span>
-            <strong id="skillTreeWeaponName">武器</strong>
+            <span class="hud-label" data-i18n="skill.currentWeapon">Current Weapon</span>
+            <strong id="skillTreeWeaponName" data-i18n="skill.weaponFallback">Weapon</strong>
             <small id="skillTreeWeaponMeta"></small>
           </div>
           <div>
-            <span class="hud-label">所持SP</span>
+            <span class="hud-label" data-i18n="skill.ownedSp">SP</span>
             <strong id="skillTreeGold">0</strong>
-            <small id="skillTreeFree">無料解放なし</small>
+            <small id="skillTreeFree" data-i18n="skill.noFreeUnlock">No free unlock</small>
           </div>
         </div>
         <div class="skill-tree-layout">
-          <section class="skill-tree-pane" aria-label="武器専用ツリー">
-            <h2>武器専用ツリー</h2>
+          <section class="skill-tree-pane" aria-label="Weapon Tree" data-i18n-aria-label="skill.weaponTree">
+            <h2 data-i18n="skill.weaponTree">Weapon Tree</h2>
             <div id="skillTreeWeaponNodes" class="skill-node-grid"></div>
           </section>
         </div>
         <div class="skill-tree-footer">
-          <p>ノードをタップして詳細を確認し、マップはスワイプ／ドラッグで全体を移動できます。</p>
-          <button id="skillTreeContinueBtn" type="button" class="primary">再挑戦へ</button>
+          <p data-i18n="skill.help">Tap a node for details. Drag or swipe the map to move around.</p>
+          <button id="skillTreeContinueBtn" type="button" class="primary" data-i18n="skill.continue">Retry</button>
         </div>
       </section>
 
-      <section id="moddingPanel" class="panel narrow hidden" aria-label="アタッチメント報酬">
+      <section id="moddingPanel" class="panel narrow hidden" aria-label="Attachment Reward" data-i18n-aria-label="modding.label">
         <div class="panel-head">
           <div>
-            <span class="panel-kicker">アタッチメント報酬</span>
-            <h1>今つけるか、捨てるか</h1>
+            <span class="panel-kicker" data-i18n="modding.label">Attachment Reward</span>
+            <h1 data-i18n="modding.title">Attach or discard</h1>
           </div>
           <strong id="moddingGold" class="modding-gold">0G</strong>
         </div>
         <article class="treasure-card modding-card">
           <span class="treasure-icon">★</span>
           <div class="treasure-copy">
-            <strong id="moddingWeaponName">武器</strong>
+            <strong id="moddingWeaponName" data-i18n="modding.weaponFallback">Weapon</strong>
             <small id="moddingWeaponLevel">Lv 1/9</small>
-            <h2 id="moddingAttachmentName">アタッチメント</h2>
+            <h2 id="moddingAttachmentName" data-i18n="modding.attachmentFallback">Attachment</h2>
             <small id="moddingAttachmentMeta"></small>
             <p id="moddingAttachmentText"></p>
           </div>
         </article>
         <ol id="moddingSlots" class="modding-slots"></ol>
         <div class="treasure-actions">
-          <button id="moddingRerollBtn" type="button">リロールなし</button>
-          <button id="moddingTakeBtn" type="button" class="primary">捨てる</button>
+          <button id="moddingRerollBtn" type="button" data-i18n="modding.noReroll">No Reroll</button>
+          <button id="moddingTakeBtn" type="button" class="primary" data-i18n="modding.discard">Discard</button>
         </div>
       </section>
 
-      <section id="treasureReward" class="panel narrow hidden" aria-label="宝箱報酬">
+      <section id="treasureReward" class="panel narrow hidden" aria-label="Chest Reward" data-i18n-aria-label="treasure.label">
         <div class="panel-head">
           <div>
-            <span class="panel-kicker">宝箱</span>
-            <h1>報酬を確認</h1>
+            <span class="panel-kicker" data-i18n="treasure.label">Chest</span>
+            <h1 data-i18n="treasure.title">Check Reward</h1>
           </div>
         </div>
         <article class="treasure-card">
           <span id="treasureRewardIcon" class="treasure-icon">W</span>
           <div class="treasure-copy">
-            <strong id="treasureRewardName">武器</strong>
+            <strong id="treasureRewardName" data-i18n="skill.weaponFallback">Weapon</strong>
             <p id="treasureRewardText"></p>
             <small id="treasureRewardMeta"></small>
           </div>
         </article>
         <div class="treasure-actions">
-          <button id="treasureRerollBtn" type="button">リロール 無料</button>
-          <button id="treasureTakeBtn" type="button" class="primary">受け取る</button>
+          <button id="treasureRerollBtn" type="button" data-i18n="treasure.rerollFree">Reroll Free</button>
+          <button id="treasureTakeBtn" type="button" class="primary" data-i18n="treasure.take">Claim</button>
         </div>
       </section>
 
 
-      <section id="workbenchPanel" class="panel hidden" aria-label="作業台">
+      <section id="workbenchPanel" class="panel hidden" aria-label="Workbench" data-i18n-aria-label="workbench.label">
         <div class="panel-head">
           <div>
-            <span class="panel-kicker">作業台</span>
-            <h1>石ころクラフト作業台</h1>
+            <span class="panel-kicker" data-i18n="workbench.label">Workbench</span>
+            <h1 data-i18n="workbench.title">Stone Craft Workbench</h1>
           </div>
-          <button id="workbenchCloseBtn" type="button">閉じる</button>
+          <button id="workbenchCloseBtn" type="button" data-i18n="workbench.close">Close</button>
         </div>
-        <p id="workbenchStatus" class="workbench-status">素材を合成して特殊アイテムを作り、石ころに装備します。</p>
+        <p id="workbenchStatus" class="workbench-status" data-i18n="workbench.initialStatus">Combine materials into special items and equip them to stones.</p>
         <div id="workbenchWeapons" class="workbench-weapons"></div>
         <div class="workbench-storage-head">
-          <h2>特殊アイテムレシピ</h2>
+          <h2 data-i18n="workbench.recipeTitle">Special Item Recipes</h2>
           <small id="workbenchStorageCount">0/12</small>
         </div>
         <div id="workbenchStorage" class="workbench-storage"></div>
       </section>
 
-      <section id="gameOver" class="panel narrow hidden" aria-label="ゲームオーバー">
-        <span class="panel-kicker">ラン終了</span>
-        <h1>探索はここまで</h1>
+      <section id="gameOver" class="panel narrow hidden" aria-label="Game Over" data-i18n-aria-label="gameOver.label">
+        <span class="panel-kicker" data-i18n="gameOver.kicker">Run Ended</span>
+        <h1 data-i18n="gameOver.title">The run ends here</h1>
         <p id="resultText"></p>
-        <button id="restartBtn" type="button" class="primary">もう一度プレイ</button>
+        <button id="restartBtn" type="button" class="primary" data-i18n="gameOver.restart">Play Again</button>
       </section>
 
-      <div id="touchControls" aria-label="タッチ操作">
+      <div id="touchControls" aria-label="Touch Controls" data-i18n-aria-label="touch.label">
         <div id="moveStick" class="stick">
           <div id="moveThumb" class="stick-thumb"></div>
         </div>
-        <button id="weaponSwitchBtn" class="weapon-switch hidden" type="button">武器</button>
+        <button id="weaponSwitchBtn" class="weapon-switch hidden" type="button" data-i18n="weapon.switch">Weapon</button>
       </div>
 
-      <aside id="debugPanel" class="hidden" aria-label="デバッグメニュー">
+      <aside id="debugPanel" class="hidden" aria-label="Debug Menu" data-i18n-aria-label="debug.label">
         <div class="debug-head">
           <strong>DEBUG</strong>
-          <small>~ で開閉</small>
-          <button id="dbgClose" type="button">閉じる</button>
+          <small data-i18n="debug.toggleHint">Toggle with ~</small>
+          <button id="dbgClose" type="button" data-i18n="debug.close">Close</button>
         </div>
         <div class="debug-row">
-          <label>武器</label>
+          <label data-i18n="debug.weapon">Weapon</label>
           <select id="dbgWeaponSel"></select>
-          <button id="dbgWeaponEquip" type="button">装備</button>
+          <button id="dbgWeaponEquip" type="button" data-i18n="debug.equip">Equip</button>
         </div>
         <div class="debug-row">
-          <label>アタッチ</label>
+          <label data-i18n="debug.attach">Attach</label>
           <select id="dbgAttSel"></select>
         </div>
         <div class="debug-row">
-          <label>装備先</label>
+          <label data-i18n="debug.target">Target</label>
           <select id="dbgAttWeapon"></select>
-          <button id="dbgAttApply" type="button">装着</button>
+          <button id="dbgAttApply" type="button" data-i18n="debug.apply">Apply</button>
         </div>
         <div class="debug-row">
-          <label>敵</label>
+          <label data-i18n="debug.enemy">Enemy</label>
           <select id="dbgEnemySel">
-            <option value="walker">ゾンビ歩</option>
-            <option value="runner">ゾンビ走</option>
-            <option value="orc">オーク</option>
-            <option value="archer">スケルトン</option>
+            <option value="walker" data-i18n="debug.enemy.walker">Walker Zombie</option>
+            <option value="runner" data-i18n="debug.enemy.runner">Runner Zombie</option>
+            <option value="orc" data-i18n="debug.enemy.orc">Orc</option>
+            <option value="archer" data-i18n="debug.enemy.archer">Skeleton</option>
           </select>
-          <button id="dbgEnemySpawn" type="button">出現</button>
+          <button id="dbgEnemySpawn" type="button" data-i18n="debug.spawn">Spawn</button>
         </div>
         <div class="debug-row debug-actions">
-          <button id="dbgHeal" type="button">回復</button>
-          <button id="dbgKillAll" type="button">全滅</button>
-          <button id="dbgInvuln" type="button">無敵 OFF</button>
+          <button id="dbgHeal" type="button" data-i18n="debug.heal">Heal</button>
+          <button id="dbgKillAll" type="button" data-i18n="debug.killAll">Kill All</button>
+          <button id="dbgInvuln" type="button" data-i18n="debug.invincible">Invincible OFF</button>
         </div>
         <div class="debug-row debug-actions">
-          <button id="dbgShop" type="button">スキルツリー</button>
-          <button id="dbgNextWave" type="button">+60秒</button>
+          <button id="dbgShop" type="button" data-i18n="debug.skillTree">Skill Tree</button>
+          <button id="dbgNextWave" type="button">+60s</button>
         </div>
-        <pre id="debugStats" class="debug-stats">描画統計待機中</pre>
+        <pre id="debugStats" class="debug-stats">Waiting for render stats</pre>
       </aside>
     </main>
 

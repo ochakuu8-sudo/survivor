@@ -992,19 +992,19 @@ export function buildAtlas() {
 
 
   add("materialPower", 48, 48, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "力", dark: "#6b2318", mid: "#d64b2f", light: "#ff9a5c" }), 1, "rgba(17, 12, 43, 0.58)");
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "P", dark: "#6b2318", mid: "#d64b2f", light: "#ff9a5c" }), 1, "rgba(17, 12, 43, 0.58)");
   });
   add("materialFrequency", 48, 48, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "速", dark: "#7a5616", mid: "#e0a22b", light: "#ffe66a" }), 1, "rgba(17, 12, 43, 0.58)");
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "F", dark: "#7a5616", mid: "#e0a22b", light: "#ffe66a" }), 1, "rgba(17, 12, 43, 0.58)");
   });
   add("materialDuration", 48, 48, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "時", dark: "#24396b", mid: "#4f75d6", light: "#94c7ff" }), 1, "rgba(17, 12, 43, 0.58)");
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "T", dark: "#24396b", mid: "#4f75d6", light: "#94c7ff" }), 1, "rgba(17, 12, 43, 0.58)");
   });
   add("materialSpeed", 48, 48, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "弾", dark: "#24524a", mid: "#39aa92", light: "#8fffe1" }), 1, "rgba(17, 12, 43, 0.58)");
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "S", dark: "#24524a", mid: "#39aa92", light: "#8fffe1" }), 1, "rgba(17, 12, 43, 0.58)");
   });
   add("materialSize", 48, 48, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "大", dark: "#4e3368", mid: "#9460cb", light: "#d7a6ff" }), 1, "rgba(17, 12, 43, 0.58)");
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "Z", dark: "#4e3368", mid: "#9460cb", light: "#d7a6ff" }), 1, "rgba(17, 12, 43, 0.58)");
   });
   add("materialHp", 48, 48, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "HP", dark: "#24613d", mid: "#3dc56f", light: "#a6ffae" }), 1, "rgba(17, 12, 43, 0.58)");

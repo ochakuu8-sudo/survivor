@@ -129,7 +129,7 @@ export function resetRun() {
   hud.treasureReward.classList.add("hidden");
   hud.workbenchPanel?.classList.add("hidden");
   hideModdingPanel();
-  hud.restart.textContent = "もう一度プレイ";
+  hud.restart.textContent = t("gameOver.restart");
   hud.gameOver.classList.add("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel?.classList.add("hidden");
@@ -256,13 +256,15 @@ function showRunResult() {
   const r = game.runResult;
   const time = formatTime(r?.survivalTime || 0);
   const best = formatTime(game.bestSurvivalTime || 0);
-  hud.result.textContent =
-    `${r?.result === "clear" ? "探索クリア！" : "探索はここまで"}\n` +
-    `探索時間 ${time} / 最高 ${best}\n` +
-    `撃破数 ${r?.kills || 0}\n` +
-    `回収 ${r?.runPoints || 0}pt / ボーナス ${r?.bonusPoints || 0}pt\n` +
-    `ラン中ビルドはリセットされます`;
-  hud.restart.textContent = "もう一度プレイ";
+  hud.result.textContent = t("result.summary", {
+    result: r?.result === "clear" ? t("result.clear") : t("result.over"),
+    time,
+    best,
+    kills: r?.kills || 0,
+    runPoints: r?.runPoints || 0,
+    bonusPoints: r?.bonusPoints || 0,
+  });
+  hud.restart.textContent = t("gameOver.restart");
   hud.gameOver.classList.remove("hidden");
   hud.pauseMenu.classList.add("hidden");
   hud.debugPanel?.classList.add("hidden");
@@ -398,7 +400,7 @@ function clearCombatRoom(dungeon, room) {
     const chest = createTreasureChestAt(
       dungeon.offsetX + (room.cx + 0.5) * TILE_SIZE,
       dungeon.offsetY + (room.cy + 0.5) * TILE_SIZE,
-      "精鋭戦闘報酬",
+      t("modding.source.combatRoom"),
       { rewardKind: "baseMaterialChoice" },
     );
     if (chest) chest.roomId = room.id;
@@ -406,7 +408,7 @@ function clearCombatRoom(dungeon, room) {
     beginStoneItemReward({ key: room.fixedRewardKey }, { source: "combatRoom" });
     const material = findStoneMaterial(room.fixedRewardKey);
     room.rewardClaimed = true;
-    room.rewardName = material?.name || "固定素材";
+    room.rewardName = material?.name || t("modding.material");
   }
   game.shake = Math.max(game.shake, 4);
 }

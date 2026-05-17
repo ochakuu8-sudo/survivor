@@ -349,7 +349,7 @@ export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance
   return fallbackToBest ? best : null;
 }
 
-export function createTreasureChestAt(x, y, label = "改造宝箱", options = {}) {
+export function createTreasureChestAt(x, y, label = "Mod Chest", options = {}) {
   if (!game.dungeon) return null;
   const chest = {
     x,

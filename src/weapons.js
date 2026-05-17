@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import { TAU, INITIAL_STONE_ITEM_SLOTS, INITIAL_WEAPON_ATTACHMENT_SLOTS, MAX_ATTACHMENTS, WEAPON_STAT_KEYS, getWeaponMaxLevel } from "./constants.js";
 import { game, nextWeaponId } from "./state.js";
 import { distanceToSegmentSq, distSq } from "./utils/math.js";
@@ -13,26 +14,26 @@ import {
 } from "./combat.js";
 
 const WEAPON_RARITIES = {
-  normal: { label: "ノーマル", affixCount: 0, power: 1 },
-  rare: { label: "レア", affixCount: 1, power: 1 },
-  epic: { label: "エピック", affixCount: 2, power: 1.08 },
-  legend: { label: "レジェンド", affixCount: 3, power: 1.18 },
+  normal: { label: t("weapon.rarity.normal"), affixCount: 0, power: 1 },
+  rare: { label: t("weapon.rarity.rare"), affixCount: 1, power: 1 },
+  epic: { label: t("weapon.rarity.epic"), affixCount: 2, power: 1.08 },
+  legend: { label: t("weapon.rarity.legend"), affixCount: 3, power: 1.18 },
 };
 
 const MULTI_PROJECTILE_STEP = Math.PI / 36;
 
 const WEAPON_AFFIXES = {
-  石: [
+  stone: [
     {
       key: "sharp",
-      prefix: "鋭い",
-      text: (power) => `威力 +${percent(0.18, power)}`,
+      prefix: t("weapon.affix.sharp"),
+      text: (power) => t("weapon.affix.damage", { value: percent(0.18, power) }),
       apply: (weapon, power) => { weapon.damage *= 1 + 0.18 * power; },
     },
     {
       key: "far",
-      prefix: "遠投の",
-      text: (power) => `射程 +${percent(0.16, power)}`,
+      prefix: t("weapon.affix.far"),
+      text: (power) => t("weapon.affix.range", { value: percent(0.16, power) }),
       apply: (weapon, power) => {
         weapon.range *= 1 + 0.16 * power;
         weapon.bulletSpeed *= 1 + 0.12 * power;
@@ -40,14 +41,14 @@ const WEAPON_AFFIXES = {
     },
     {
       key: "quick",
-      prefix: "速投げ",
-      text: (power) => `攻撃頻度 +${percent(0.14, power)}`,
+      prefix: t("weapon.affix.quick"),
+      text: (power) => t("weapon.affix.fireRate", { value: percent(0.14, power) }),
       apply: (weapon, power) => { weapon.fireRate *= 1 + 0.14 * power; },
     },
     {
       key: "heavy",
-      prefix: "重い",
-      text: (power) => `威力 +${percent(0.24, power)} / 攻撃頻度 -${percent(0.08, power)}`,
+      prefix: t("weapon.affix.heavy"),
+      text: (power) => t("weapon.affix.heavyText", { damage: percent(0.24, power), rate: percent(0.08, power) }),
       apply: (weapon, power) => {
         weapon.damage *= 1 + 0.24 * power;
         weapon.fireRate *= Math.max(0.55, 1 - 0.08 * power);
@@ -55,37 +56,37 @@ const WEAPON_AFFIXES = {
       },
     },
   ],
-  火炎放射器: [
+  flamethrower: [
     {
       key: "hot",
-      prefix: "高火力",
-      text: (power) => `威力 +${percent(0.16, power)}`,
+      prefix: "High Power",
+      text: (power) => t("weapon.affix.damage", { value: percent(0.16, power) }),
       apply: (weapon, power) => { weapon.damage *= 1 + 0.16 * power; },
     },
     {
       key: "wide",
-      prefix: "広角",
-      text: (power) => `炎の角度 +${Math.round((0.08 * power) * 100)}%`,
+      prefix: "Wide",
+      text: (power) => `Flame Angle +${Math.round((0.08 * power) * 100)}%`,
       apply: (weapon, power) => { weapon.cone = Math.min(1.12, weapon.cone + 0.08 * power); },
     },
     {
       key: "long",
-      prefix: "長炎",
-      text: (power) => `射程 +${percent(0.16, power)}`,
+      prefix: "Long Flame",
+      text: (power) => t("weapon.affix.range", { value: percent(0.16, power) }),
       apply: (weapon, power) => { weapon.range *= 1 + 0.16 * power; },
     },
     {
       key: "pressure",
-      prefix: "高圧",
-      text: (power) => `攻撃頻度 +${percent(0.14, power)}`,
+      prefix: "High Pressure",
+      text: (power) => t("weapon.affix.fireRate", { value: percent(0.14, power) }),
       apply: (weapon, power) => { weapon.fireRate *= 1 + 0.14 * power; },
     },
   ],
-  モーニングスター: [
+  morningStar: [
     {
       key: "large",
-      prefix: "大玉",
-      text: (power) => `範囲 +${percent(0.16, power)}`,
+      prefix: "Large Head",
+      text: (power) => `Area +${percent(0.16, power)}`,
       apply: (weapon, power) => {
         weapon.areaRadius *= 1 + 0.16 * power;
         weapon.damage *= 1 + 0.08 * power;
@@ -93,8 +94,8 @@ const WEAPON_AFFIXES = {
     },
     {
       key: "chain",
-      prefix: "長鎖",
-      text: (power) => `回転半径 +${percent(0.16, power)}`,
+      prefix: "Long Chain",
+      text: (power) => `Orbit Radius +${percent(0.16, power)}`,
       apply: (weapon, power) => {
         weapon.orbitRadius *= 1 + 0.16 * power;
         weapon.range *= 1 + 0.12 * power;
@@ -102,8 +103,8 @@ const WEAPON_AFFIXES = {
     },
     {
       key: "fast",
-      prefix: "高速回転",
-      text: (power) => `回転速度 +${percent(0.18, power)}`,
+      prefix: "High Spin",
+      text: (power) => `Spin Speed +${percent(0.18, power)}`,
       apply: (weapon, power) => {
         weapon.orbitSpeed *= 1 + 0.18 * power;
         weapon.fireRate *= 1 + 0.1 * power;
@@ -111,8 +112,8 @@ const WEAPON_AFFIXES = {
     },
     {
       key: "heavy",
-      prefix: "重撃",
-      text: (power) => `威力 +${percent(0.2, power)} / 回転速度 -${percent(0.06, power)}`,
+      prefix: "Heavy Strike",
+      text: (power) => `Power +${percent(0.2, power)} / Spin Speed -${percent(0.06, power)}`,
       apply: (weapon, power) => {
         weapon.damage *= 1 + 0.2 * power;
         weapon.orbitSpeed *= Math.max(0.65, 1 - 0.06 * power);
@@ -232,10 +233,10 @@ export function createWeapon(template, options = {}) {
   const life = template.life || 0.72;
   const rarityKey = template.rarity || "normal";
   const rarityLabel = template.rarityLabel || {
-    normal: "ノーマル",
-    rare: "レア",
-    epic: "エピック",
-    legend: "レジェンド",
+    normal: t("weapon.rarity.normal"),
+    rare: t("weapon.rarity.rare"),
+    epic: t("weapon.rarity.epic"),
+    legend: t("weapon.rarity.legend"),
   }[rarityKey] || rarityKey;
   const weapon = {
     id: nextWeaponId(),
@@ -377,27 +378,27 @@ export function cycleActiveWeapon() {
 }
 
 export function weaponStatusLabel(weapon) {
-  if (!weapon) return "武器なし";
-  return "無制限攻撃";
+  if (!weapon) return t("skill.noWeapon");
+  return "Unlimited Attack";
 }
 
 export function weaponKindLabel(weapon) {
   const labels = {
-    projectile: "投射",
-    flame: "火炎",
-    laser: "レーザー",
-    sustainedLaser: "持続レーザー",
-    bomb: "爆発",
-    timedBomb: "時限爆弾",
-    chain: "電撃",
-    orbit: "回転",
-    sword: "ソード",
-    boomerang: "往復",
-    mine: "設置",
-    poisonBottle: "毒",
-    drone: "自律",
+    projectile: "Projectile",
+    flame: "Flame",
+    laser: "Laser",
+    sustainedLaser: "Sustained Laser",
+    bomb: "Blast",
+    timedBomb: "Timed Bomb",
+    chain: "Chain",
+    orbit: "Orbit",
+    sword: "Sword",
+    boomerang: "Boomerang",
+    mine: "Mine",
+    poisonBottle: "Poison",
+    drone: "Drone",
   };
-  return labels[weapon.kind] || "武器";
+  return labels[weapon.kind] || t("skill.weaponFallback");
 }
 
 export function weaponRarityLabel(weapon) {
@@ -406,25 +407,25 @@ export function weaponRarityLabel(weapon) {
 
 export function weaponVariantSummary(weapon) {
   if (weapon?.variantSummary) return weapon.variantSummary;
-  if (!weapon?.affixes?.length) return "個体差なし";
+  if (!weapon?.affixes?.length) return "No variant";
   return weapon.affixes.map((affix) => affix.text).join(" / ");
 }
 
 export function weaponVariantText(weapon) {
   const summary = weaponVariantSummary(weapon);
-  if (weapon?.variantSummary) return `${weaponRarityLabel(weapon)}個体・${summary}。`;
-  return summary === "個体差なし"
-    ? `${weaponRarityLabel(weapon)}個体。基礎性能のまま扱いやすい。`
-    : `${weaponRarityLabel(weapon)}個体。${summary}。`;
+  if (weapon?.variantSummary) return `${weaponRarityLabel(weapon)} variant · ${summary}.`;
+  return summary === "No variant"
+    ? `${weaponRarityLabel(weapon)} variant. Reliable base stats.`
+    : `${weaponRarityLabel(weapon)} variant. ${summary}.`;
 }
 
 export function weaponMetaLabel(weapon) {
   const rarity = weaponRarityLabel(weapon);
   const kind = weaponKindLabel(weapon);
   const summary = weaponVariantSummary(weapon);
-  return summary === "個体差なし"
-    ? `${rarity}・${kind}`
-    : `${rarity}・${kind}・${summary}`;
+  return summary === "No variant"
+    ? `${rarity} · ${kind}`
+    : `${rarity} · ${kind} · ${summary}`;
 }
 
 export function updateWeaponTimers(player, dt) {

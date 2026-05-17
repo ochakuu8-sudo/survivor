@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
 import { resetVirtualMove } from "./input.js";
@@ -21,38 +22,38 @@ export function updateHud() {
 }
 
 function objectiveText() {
-  if (game.mode === "weaponSelect") return "武器選択";
-  if (game.mode === "upgradeTree") return "スキルツリー";
-  if (game.mode === "treasure") return "宝箱報酬";
-  if (game.mode === "modding") return "武器改造";
-  if (game.mode === "workbench") return "作業台";
-  if (game.mode === "pause") return "一時停止";
-  if (game.mode === "result") return game.runResult?.result === "clear" ? "クリア" : "ラン終了";
-  if (game.mode === "over") return "ラン終了";
+  if (game.mode === "weaponSelect") return t("hud.objective.weaponSelect");
+  if (game.mode === "upgradeTree") return t("debug.skillTree");
+  if (game.mode === "treasure") return t("treasure.label");
+  if (game.mode === "modding") return t("modding.label");
+  if (game.mode === "workbench") return t("workbench.label");
+  if (game.mode === "pause") return t("pause.label");
+  if (game.mode === "result") return game.runResult?.result === "clear" ? t("result.clear") : t("gameOver.kicker");
+  if (game.mode === "over") return t("gameOver.kicker");
   if (game.mode === "arena") {
     const elapsed = Math.max(0, Math.floor(game.floorElapsed || 0));
     const m = Math.floor(elapsed / 60);
     const sec = String(elapsed % 60).padStart(2, "0");
     const weapon = getActiveWeapon();
     const floor = game.wave || 1;
-    return `B${floor}F ${currentRoomObjective()} / 滞在 ${m}:${sec} / ${weapon?.name || "武器"}`;
+    return t("hud.objective.dungeon", { floor, objective: currentRoomObjective(), time: `${m}:${sec}`, weapon: weapon?.name || t("skill.weaponFallback") });
   }
-  return "準備中";
+  return t("hud.objective.preparing");
 }
 
 function currentRoomObjective() {
   const room = getDungeonRoomAtWorld(game.dungeon, game.player?.x || 0, game.player?.y || 0);
-  if (!room) return "通路";
+  if (!room) return t("hud.room.path");
   if (room.type === ROOM_COMBAT) {
-    const label = room.combatKind === COMBAT_ROOM_ELITE ? "精鋭戦闘部屋" : "通常戦闘部屋";
-    if (room.locked) return `${label}: 敵を全滅`;
-    return room.cleared ? `${label}: 報酬回収済み` : `${label}: 中央の剣に1秒触れる`;
+    const label = room.combatKind === COMBAT_ROOM_ELITE ? t("hud.room.combat.elite") : t("hud.room.combat.normal");
+    if (room.locked) return t("hud.room.combat.locked", { label });
+    return room.cleared ? t("hud.room.combat.cleared", { label }) : t("hud.room.combat.ready", { label });
   }
-  if (room.type === ROOM_TREASURE) return "宝物庫: ゴールドで開放";
-  if (room.type === ROOM_WORKBENCH) return "作業台部屋";
-  if (room.type === ROOM_STAIRS) return "階段部屋";
-  if (room.type === ROOM_START) return "開始部屋";
-  return "探索";
+  if (room.type === ROOM_TREASURE) return t("hud.room.treasure");
+  if (room.type === ROOM_WORKBENCH) return t("hud.room.workbench");
+  if (room.type === ROOM_STAIRS) return t("hud.room.stairs");
+  if (room.type === ROOM_START) return t("hud.room.start");
+  return t("hud.room.explore");
 }
 
 function renderHpGauge() {
@@ -87,7 +88,7 @@ function renderPauseStoneItems() {
     .join("<br>");
   const materials = ensureStoneMaterialInventory();
   const materialText = STONE_MATERIALS.map((item) => `${stoneItemIcon(item)} ${item.shortName || item.name}×${materials[item.key] || 0}`).join(" / ");
-  hud.pauseStoneItems.innerHTML = `<strong>所持素材</strong><p>${materialText}</p><strong>所持アイテム</strong><p>${formatStoneItemSummary(weapon)}</p><strong>進化進捗</strong><p>${progress}</p>`;
+  hud.pauseStoneItems.innerHTML = `<strong>${t("pause.materials")}</strong><p>${materialText}</p><strong>${t("pause.items")}</strong><p>${formatStoneItemSummary(weapon)}</p><strong>${t("pause.evolution")}</strong><p>${progress}</p>`;
 }
 
 function renderWeaponSwitch() {
@@ -98,10 +99,10 @@ function renderWeaponSwitch() {
   const canSwitch = isArena && !!weapon && (gear?.weapons?.length || 0) >= 2;
   hud.weaponSwitch.classList.toggle("hidden", !canSwitch);
   hud.weaponSwitch.disabled = !canSwitch;
-  hud.weaponSwitch.title = "Q / Tab で武器切り替え";
-  hud.weaponSwitch.setAttribute("aria-label", "武器切り替え");
+  hud.weaponSwitch.title = t("weapon.switchTitle");
+  hud.weaponSwitch.setAttribute("aria-label", t("weapon.switchTitle"));
   if (!weapon || !gear) {
-    hud.weaponSwitch.textContent = "武器";
+    hud.weaponSwitch.textContent = t("weapon.switch");
     return;
   }
   const labels = (gear.weapons || []).map((item, index) => {

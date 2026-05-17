@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import { WAVE_NODE_PRICE_BASE } from "./constants.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
@@ -14,12 +15,14 @@ import { updateHud } from "./hud.js";
 
 const selectedSkillNodes = { weapon: null };
 
-const weaponNode = (id, tier, title, text, cost, requires = [], effect = {}) => ({
+const weaponNode = (id, tier, _title, _text, cost, requires = [], effect = {}) => ({
   scope: "weapon",
   id,
   tier,
-  title,
-  text,
+  title: t(`skill.node.${id}.title`),
+  titleKey: `skill.node.${id}.title`,
+  text: t(`skill.node.${id}.text`),
+  textKey: `skill.node.${id}.text`,
   cost,
   requires,
   ...effect,
@@ -27,23 +30,23 @@ const weaponNode = (id, tier, title, text, cost, requires = [], effect = {}) => 
 
 
 export const WEAPON_SKILL_TREES = {
-  石: [
-    weaponNode("stone_bounce", 1, "跳ね石", "命中した石が近くの別敵へ1回跳ねる。黄色い反射線と短い残像が出る。", 50, [], { custom: (weapon) => { weapon.ricochetCount += 1; weapon.ricochetSpeedScale = Math.max(weapon.ricochetSpeedScale || 1, 1.1); setStoneVisual(weapon, { trail: "yellow", hitEffect: "bounce" }); setStoneFlag(weapon, "bounce"); } }),
-    weaponNode("stone_reflect", 2, "反射する石", "跳弾 +1。敵へ強く誘導され、橙色の少し大きい石になる。", 110, ["stone_bounce"], { custom: (weapon) => { weapon.ricochetCount += 1; weapon.ricochetRange = Math.max(weapon.ricochetRange || 220, 280); addWeaponBasePercent(weapon, "radius", 0.1, { min: 2 }); boostWeaponImpactPercent(weapon, 0.1); setStoneVisual(weapon, { form: "bouncy", trail: "orange", hitEffect: "bounce", sizeScale: 1.1 }); weapon.bulletTint = [1, 0.72, 0.25]; weapon.bulletGlow = "glowAmber"; } }),
-    weaponNode("stone_split_bounce", 3, "割れ跳ね", "跳弾時に短射程の小石を1個飛ばす。本体は欠けた見た目になる。", 220, ["stone_reflect"], { custom: (weapon) => { weapon.splitShardCount = (weapon.splitShardCount || 0) + 1; setStoneVisual(weapon, { form: "cracked", trail: "orange", hitEffect: "shatter" }); setStoneFlag(weapon, "splitBounce"); } }),
-    weaponNode("stone_elastic_core", 4, "弾む核", "跳弾するたび最大3回まで石が膨らみ、威力も上がる。", 360, ["stone_split_bounce"], { custom: (weapon) => { weapon.elasticGrowth = { size: 0.08, damage: 0.08, max: 3 }; setStoneVisual(weapon, { form: "bouncy", trail: "orange", hitEffect: "bounce" }); setStoneFlag(weapon, "elasticCore"); } }),
-    weaponNode("stone_evolve_rubber", 5, "進化：ゴムボール", "跳弾時に2つへ分裂するゴムボール化。1投あたり最大10弾まで。", 600, ["stone_elastic_core"], { evolveTo: "ゴムボール" }),
+  stone: [
+    weaponNode("stone_bounce", 1, "", "", 50, [], { custom: (weapon) => { weapon.ricochetCount += 1; weapon.ricochetSpeedScale = Math.max(weapon.ricochetSpeedScale || 1, 1.1); setStoneVisual(weapon, { trail: "yellow", hitEffect: "bounce" }); setStoneFlag(weapon, "bounce"); } }),
+    weaponNode("stone_reflect", 2, "", "", 110, ["stone_bounce"], { custom: (weapon) => { weapon.ricochetCount += 1; weapon.ricochetRange = Math.max(weapon.ricochetRange || 220, 280); addWeaponBasePercent(weapon, "radius", 0.1, { min: 2 }); boostWeaponImpactPercent(weapon, 0.1); setStoneVisual(weapon, { form: "bouncy", trail: "orange", hitEffect: "bounce", sizeScale: 1.1 }); weapon.bulletTint = [1, 0.72, 0.25]; weapon.bulletGlow = "glowAmber"; } }),
+    weaponNode("stone_split_bounce", 3, "", "", 220, ["stone_reflect"], { custom: (weapon) => { weapon.splitShardCount = (weapon.splitShardCount || 0) + 1; setStoneVisual(weapon, { form: "cracked", trail: "orange", hitEffect: "shatter" }); setStoneFlag(weapon, "splitBounce"); } }),
+    weaponNode("stone_elastic_core", 4, "", "", 360, ["stone_split_bounce"], { custom: (weapon) => { weapon.elasticGrowth = { size: 0.08, damage: 0.08, max: 3 }; setStoneVisual(weapon, { form: "bouncy", trail: "orange", hitEffect: "bounce" }); setStoneFlag(weapon, "elasticCore"); } }),
+    weaponNode("stone_evolve_rubber", 5, "", "", 600, ["stone_elastic_core"], { evolveTo: "rubberBall" }),
 
-    weaponNode("stone_cracked", 1, "ひび割れ石", "命中時に小範囲へ破砕ダメージ。ひび割れた大きめの石になる。", 50, [], { custom: (weapon) => { weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 36); weapon.explosionDamage = Math.max(weapon.explosionDamage || 0, weapon.damage * 0.3); addWeaponBasePercent(weapon, "radius", 0.08, { min: 2 }); boostWeaponImpactPercent(weapon, 0.08); setStoneVisual(weapon, { form: "cracked", hitEffect: "shatter", sizeScale: 1.08 }); setStoneFlag(weapon, "cracked"); weapon.bulletSprite = "stoneCracked"; } }),
-    weaponNode("stone_shrapnel", 2, "破片弾", "命中時に3方向へ短射程の破片を飛ばす。鋭い形の石になる。", 110, ["stone_cracked"], { custom: (weapon) => { weapon.hitShardCount = (weapon.hitShardCount || 0) + 3; addWeaponBasePercent(weapon, "radius", 0.1, { min: 2 }); boostWeaponImpactPercent(weapon, 0.1); setStoneVisual(weapon, { form: "sharp", trail: "yellow", hitEffect: "shatter", sizeScale: 1.1 }); weapon.bulletSprite = "stoneSharp"; } }),
-    weaponNode("stone_blast", 3, "爆ぜ石", "着弾時の爆発が大きくなり、中心が赤く光る大型石になる。", 220, ["stone_shrapnel"], { custom: (weapon) => { addWeaponBasePercent(weapon, "explosionRadius", 0.35, { min: 36 }); addWeaponBasePercent(weapon, "explosionDamage", 0.3, { min: 0 }); boostWeaponImpactPercent(weapon, 0.1); addWeaponBasePercent(weapon, "radius", 0.15, { min: 2 }); setStoneVisual(weapon, { form: "cracked", trail: "red", hitEffect: "explosion", sizeScale: 1.15 }); weapon.bulletTint = [1, 0.46, 0.32]; weapon.effectTint = [0.76, 0.48, 0.28]; weapon.effectGlow = "glowRed"; } }),
-    weaponNode("stone_chain_shatter", 4, "連鎖破砕", "爆発で倒した敵の地点に35%で小さな二次破砕が発生する。", 360, ["stone_blast"], { custom: (weapon) => { weapon.chainShatterChance = Math.max(weapon.chainShatterChance || 0, 0.35); weapon.chainShatterRadiusScale = 0.6; weapon.chainShatterDamageScale = 0.45; setStoneVisual(weapon, { form: "cracked", trail: "red", hitEffect: "explosion" }); setStoneFlag(weapon, "chainShatter"); } }),
-    weaponNode("stone_evolve_meteor", 5, "進化：隕石核", "黒赤い隕石核化。大爆発と6個の破片を放つが攻撃頻度は少し低下。", 600, ["stone_chain_shatter"], { evolveTo: "隕石核" }),
+    weaponNode("stone_cracked", 1, "", "", 50, [], { custom: (weapon) => { weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 36); weapon.explosionDamage = Math.max(weapon.explosionDamage || 0, weapon.damage * 0.3); addWeaponBasePercent(weapon, "radius", 0.08, { min: 2 }); boostWeaponImpactPercent(weapon, 0.08); setStoneVisual(weapon, { form: "cracked", hitEffect: "shatter", sizeScale: 1.08 }); setStoneFlag(weapon, "cracked"); weapon.bulletSprite = "stoneCracked"; } }),
+    weaponNode("stone_shrapnel", 2, "", "", 110, ["stone_cracked"], { custom: (weapon) => { weapon.hitShardCount = (weapon.hitShardCount || 0) + 3; addWeaponBasePercent(weapon, "radius", 0.1, { min: 2 }); boostWeaponImpactPercent(weapon, 0.1); setStoneVisual(weapon, { form: "sharp", trail: "yellow", hitEffect: "shatter", sizeScale: 1.1 }); weapon.bulletSprite = "stoneSharp"; } }),
+    weaponNode("stone_blast", 3, "", "", 220, ["stone_shrapnel"], { custom: (weapon) => { addWeaponBasePercent(weapon, "explosionRadius", 0.35, { min: 36 }); addWeaponBasePercent(weapon, "explosionDamage", 0.3, { min: 0 }); boostWeaponImpactPercent(weapon, 0.1); addWeaponBasePercent(weapon, "radius", 0.15, { min: 2 }); setStoneVisual(weapon, { form: "cracked", trail: "red", hitEffect: "explosion", sizeScale: 1.15 }); weapon.bulletTint = [1, 0.46, 0.32]; weapon.effectTint = [0.76, 0.48, 0.28]; weapon.effectGlow = "glowRed"; } }),
+    weaponNode("stone_chain_shatter", 4, "", "", 360, ["stone_blast"], { custom: (weapon) => { weapon.chainShatterChance = Math.max(weapon.chainShatterChance || 0, 0.35); weapon.chainShatterRadiusScale = 0.6; weapon.chainShatterDamageScale = 0.45; setStoneVisual(weapon, { form: "cracked", trail: "red", hitEffect: "explosion" }); setStoneFlag(weapon, "chainShatter"); } }),
+    weaponNode("stone_evolve_meteor", 5, "", "", 600, ["stone_chain_shatter"], { evolveTo: "meteorCore" }),
 
-    weaponNode("stone_heavy", 1, "重石", "大きく重い石。威力とノックバックが上がるが投げ間隔は少し長い。", 50, [], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.2, { min: 2 }); boostWeaponImpactPercent(weapon, 0.25); weapon.knockback += 8; addWeaponBasePercent(weapon, "fireRate", -0.05, { min: 0.15 }); setStoneVisual(weapon, { form: "heavy", hitEffect: "heavy", sizeScale: 1.2 }); weapon.bulletSprite = "stoneHeavy"; } }),
-    weaponNode("stone_critical_throw", 3, "会心投げ", "4投に1回、白く光る巨大な確定会心石を投げる。", 220, ["stone_heavy"], { custom: (weapon) => { weapon.criticalThrowEvery = 4; weapon.criticalThrowDamageScale = 1.5; weapon.criticalThrowSizeScale = 1.35; weapon.critChance += 0.1; setStoneVisual(weapon, { form: "sharp", trail: "white", hitEffect: "critical" }); setStoneFlag(weapon, "criticalThrow"); } }),
-    weaponNode("stone_boulder", 4, "巨岩投げ", "岩サイズの石で敵を押し潰す。さらに大きく強いが遅くなる。", 360, ["stone_critical_throw"], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.3, { min: 2 }); boostWeaponImpactPercent(weapon, 0.35); weapon.knockback += 15; addWeaponBasePercent(weapon, "bulletSpeed", -0.08, { min: 1 }); addWeaponBasePercent(weapon, "fireRate", -0.08, { min: 0.15 }); setStoneVisual(weapon, { form: "heavy", hitEffect: "heavy", sizeScale: 1.3 }); weapon.bulletSprite = "stoneHeavy"; } }),
-    weaponNode("stone_evolve_master", 5, "進化：名人の一石", "2.5秒ごとに最もHPの高い敵へ、白く光る巨大な精密投石を放つ。", 600, ["stone_boulder"], { evolveTo: "名人の一石" }),
+    weaponNode("stone_heavy", 1, "", "", 50, [], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.2, { min: 2 }); boostWeaponImpactPercent(weapon, 0.25); weapon.knockback += 8; addWeaponBasePercent(weapon, "fireRate", -0.05, { min: 0.15 }); setStoneVisual(weapon, { form: "heavy", hitEffect: "heavy", sizeScale: 1.2 }); weapon.bulletSprite = "stoneHeavy"; } }),
+    weaponNode("stone_critical_throw", 3, "", "", 220, ["stone_heavy"], { custom: (weapon) => { weapon.criticalThrowEvery = 4; weapon.criticalThrowDamageScale = 1.5; weapon.criticalThrowSizeScale = 1.35; weapon.critChance += 0.1; setStoneVisual(weapon, { form: "sharp", trail: "white", hitEffect: "critical" }); setStoneFlag(weapon, "criticalThrow"); } }),
+    weaponNode("stone_boulder", 4, "", "", 360, ["stone_critical_throw"], { custom: (weapon) => { addWeaponBasePercent(weapon, "radius", 0.3, { min: 2 }); boostWeaponImpactPercent(weapon, 0.35); weapon.knockback += 15; addWeaponBasePercent(weapon, "bulletSpeed", -0.08, { min: 1 }); addWeaponBasePercent(weapon, "fireRate", -0.08, { min: 0.15 }); setStoneVisual(weapon, { form: "heavy", hitEffect: "heavy", sizeScale: 1.3 }); weapon.bulletSprite = "stoneHeavy"; } }),
+    weaponNode("stone_evolve_master", 5, "", "", 600, ["stone_boulder"], { evolveTo: "masterStone" }),
   ],
 };
 
@@ -71,8 +74,8 @@ function setStoneFlag(weapon, flag) {
 }
 
 function treeForWeapon(weapon = getActiveWeapon()) {
-  const key = weapon?.baseName || weapon?.name || "石";
-  return WEAPON_SKILL_TREES[key] || WEAPON_SKILL_TREES.石;
+  const key = weapon?.baseName || weapon?.name || "stone";
+  return WEAPON_SKILL_TREES[key] || WEAPON_SKILL_TREES.stone;
 }
 
 export function initSkillProgress() {
@@ -112,30 +115,30 @@ export function enterDebugSkillTree() {
 export function renderSkillTree() {
   if (!hud.skillTree || !hud.skillTreeWeaponNodes) return;
   const weapon = getActiveWeapon();
-  hud.skillTreeWeaponName.textContent = weapon?.name || "武器未選択";
+  hud.skillTreeWeaponName.textContent = weapon?.name || t("skill.noWeapon");
   hud.skillTreeWeaponMeta.textContent = weapon ? `${weaponMetaLabel(weapon)} / ${weaponStatusLabel(weapon)}` : "";
   hud.skillTreeGold.textContent = game.debugSkillTreeMode ? "∞" : String(game.totalSkillPoints || 0);
-  hud.skillTreeWave.textContent = game.debugSkillTreeMode ? "DEBUG" : "ラン外成長";
-  hud.skillTreeFree.textContent = game.debugSkillTreeMode ? "無制限ON/OFF" : freeCreditText();
+  hud.skillTreeWave.textContent = game.debugSkillTreeMode ? "DEBUG" : t("skill.label");
+  hud.skillTreeFree.textContent = game.debugSkillTreeMode ? "Unlimited ON/OFF" : freeCreditText();
   const fullscreenPreferred = isMobileSkillTreeFullscreenPreferred();
   setMobileSkillTreeFullscreen(fullscreenPreferred);
   const currentSkillPoints = game.totalSkillPoints || 0;
   const title = hud.skillTree.querySelector(".panel-head h1");
   if (title) {
     title.textContent = game.debugSkillTreeMode
-      ? "DEBUG：スキルツリー無制限ON/OFF"
+      ? t("skill.debugTitle")
       : fullscreenPreferred
-        ? `スキルツリー（所持${currentSkillPoints}SP）`
-        : "SPで武器を恒久強化";
+        ? t("skill.titleWithSp", { sp: currentSkillPoints })
+        : t("skill.title");
   }
   const footerHint = hud.skillTree.querySelector(".skill-tree-footer p");
   if (footerHint) {
     footerHint.textContent = game.debugSkillTreeMode
-      ? "DEBUG中はSPと前提条件を無視して、取得状態を何度でもON/OFFできます。"
-      : "スマホ側と同じノードマップです。ドラッグで移動し、タップ／クリックで詳細を確認できます。";
+      ? t("skill.debugHelp")
+      : t("skill.mapHelp");
   }
   if (hud.skillTreeContinue) {
-    hud.skillTreeContinue.textContent = game.debugSkillTreeMode ? "一時停止へ戻る" : "再挑戦へ";
+    hud.skillTreeContinue.textContent = game.debugSkillTreeMode ? t("skill.backToPause") : t("skill.continue");
   }
   hud.skillTreeWeaponNodes.replaceChildren(renderNodeMap(treeForWeapon(weapon), weapon));
 }
@@ -161,7 +164,7 @@ function renderMobileSkillTree(nodes, weapon, scope = nodes[0]?.scope || "weapon
 
   const viewport = document.createElement("div");
   viewport.className = "mobile-skill-tree-viewport skill-node-map-scroller";
-  viewport.setAttribute("aria-label", "スマホ向けスキルツリーマップ。ドラッグで移動し、タップで詳細を確認できます。");
+  viewport.setAttribute("aria-label", t("skill.mapAria"));
 
   const map = document.createElement("div");
   map.className = "skill-node-map mobile-skill-node-map";
@@ -454,7 +457,7 @@ function renderCompactSkillCard(node, weapon, selected = false) {
   card.type = "button";
   card.className = `compact-skill-card compact-skill-card-${status}${selected ? " compact-skill-card-selected" : ""}${isEvolutionNode(node) ? " compact-skill-card-evolution" : ""}`;
   card.setAttribute("aria-pressed", selected ? "true" : "false");
-  card.setAttribute("aria-label", `${node.title}、${statusLabel(status)}、詳細を表示`);
+  card.setAttribute("aria-label", t("skill.cardAria", { title: node.title, status: statusLabel(status) }));
 
   card.dataset.nodeId = node.id;
   card.innerHTML = `
@@ -504,23 +507,23 @@ function renderCompactSkillDetail(node, scope) {
 function renderCompactSkillHint() {
   const hint = document.createElement("aside");
   hint.className = "compact-skill-detail-hint";
-  hint.textContent = "気になるノードをタップすると、効果・コスト・前提ノードをここに表示します。";
+  hint.textContent = t("skill.detailHint");
   return hint;
 }
 
 function compactTierTitle(tier, hasEvolution = false) {
-  return hasEvolution ? "進化ノード" : `Tier ${tier}`;
+  return hasEvolution ? t("skill.evolutionTier") : `Tier ${tier}`;
 }
 
 function compactTierHint(group) {
-  if (group.some(isEvolutionNode)) return "最終進化への到達点";
+  if (group.some(isEvolutionNode)) return t("skill.evolutionHint");
   const available = group.filter((node) => nodeStatus(node) === "available").length;
   const owned = group.filter((node) => nodeStatus(node) === "owned").length;
-  return `取得済み ${owned}/${group.length}${available ? ` / 開放可能 ${available}` : ""}`;
+  return t("skill.tierProgress", { owned, total: group.length, available: available ? t("skill.tierAvailable", { count: available }) : "" });
 }
 
 function isEvolutionNode(node) {
-  return !!node.evolveTo || node.title.includes("進化");
+  return !!node.evolveTo || node.titleKey?.includes("evolve");
 }
 
 function layoutSkillNodes(nodes) {
@@ -770,9 +773,9 @@ function renderSkillHub(weapon, position = { x: 50, y: 50 }) {
   if (position.nodeHeight) hub.style.setProperty("--mobile-node-height", `${position.nodeHeight}px`);
   hub.innerHTML = `
     <span class="skill-node-hub-icon" aria-hidden="true">${weapon ? nodeIcon({ id: weapon.name, title: weapon.name, text: "" }, weapon) : "✦"}</span>
-    <span class="skill-node-hub-label">中心</span>
+    <span class="skill-node-hub-label">${t("skill.hub")}</span>
   `;
-  hub.setAttribute("aria-label", `${weapon?.name || "武器"}の中心ノード`);
+  hub.setAttribute("aria-label", t("skill.hubAria", { weapon: weapon?.name || t("skill.weaponFallback") }));
   return hub;
 }
 
@@ -827,7 +830,7 @@ function renderNodeButton(node, weapon, position = { x: 50, y: 50, tier: node.ti
   if (position.nodeWidth) button.style.setProperty("--mobile-node-width", `${position.nodeWidth}px`);
   if (position.nodeHeight) button.style.setProperty("--mobile-node-height", `${position.nodeHeight}px`);
   button.setAttribute("aria-pressed", selected ? "true" : "false");
-  button.setAttribute("aria-label", `${node.title}、${statusLabel(status)}、詳細を表示`);
+  button.setAttribute("aria-label", t("skill.cardAria", { title: node.title, status: statusLabel(status) }));
   button.innerHTML = `
     <span class="skill-node-icon" aria-hidden="true">${nodeIcon(node, weapon)}</span>
     <span class="skill-node-copy">
@@ -847,7 +850,7 @@ function renderNodeDetail(node, scope, { detailedRequirements = false } = {}) {
   const panel = document.createElement("article");
   panel.className = "skill-node-detail";
   if (!node) {
-    panel.textContent = "ノードがありません。";
+    panel.textContent = t("skill.empty");
     return panel;
   }
 
@@ -867,8 +870,8 @@ function renderNodeDetail(node, scope, { detailedRequirements = false } = {}) {
     </div>
     <p>${node.text}</p>
     <dl>
-      <div><dt>コスト</dt><dd>${game.debugSkillTreeMode ? "DEBUG無制限" : usesFreeCredit ? "無料解放を使用" : `${cost}SP`}</dd></div>
-      <div><dt>条件</dt><dd>${game.debugSkillTreeMode ? "DEBUG中は無視" : requireText}</dd></div>
+      <div><dt>${t("skill.cost")}</dt><dd>${game.debugSkillTreeMode ? t("skill.debugUnlimited") : usesFreeCredit ? t("skill.useFreeUnlock") : `${cost}SP`}</dd></div>
+      <div><dt>${t("skill.requirement")}</dt><dd>${game.debugSkillTreeMode ? t("skill.debugIgnore") : requireText}</dd></div>
     </dl>
   `;
 
@@ -886,13 +889,13 @@ function renderNodeDetail(node, scope, { detailedRequirements = false } = {}) {
 }
 
 function requirementText(node, detailed = false) {
-  if (!node.requires?.length) return "なし";
+  if (!node.requires?.length) return t("skill.none");
   const cleared = node.requires.filter((id) => isPurchased(id, node.scope)).length;
-  if (!detailed) return `${cleared}/${node.requires.length} ノード開放`;
+  if (!detailed) return t("skill.requireShort", { cleared, total: node.requires.length });
   const nodes = treeForWeapon();
   const requirements = node.requires.map((id) => {
     const required = nodes.find((candidate) => candidate.id === id);
-    const mark = isPurchased(id, node.scope) ? "✓" : "未";
+    const mark = isPurchased(id, node.scope) ? "✓" : t("skill.unownedMark");
     return `${mark} ${required?.title || id}`;
   });
   return requirements.join(" / ");
@@ -900,34 +903,34 @@ function requirementText(node, detailed = false) {
 
 function statusLabel(status) {
   return {
-    available: "開放可能",
-    costly: "SP不足",
-    locked: "ロック中",
-    owned: "取得済み",
-  }[status] || "確認";
+    available: t("skill.status.available"),
+    costly: t("skill.status.costly"),
+    locked: t("skill.status.locked"),
+    owned: t("skill.status.owned"),
+  }[status] || t("skill.status.check");
 }
 
 function debugToggleButtonLabel(status) {
-  return status === "owned" ? "OFFにする" : "ONにする";
+  return status === "owned" ? t("skill.toggle.off") : t("skill.toggle.on");
 }
 
 function unlockButtonLabel(status, free) {
-  if (status === "owned") return "取得済み";
-  if (status === "locked") return "条件未達成";
-  if (status === "costly" && !free) return "SP不足";
-  return free ? "無料で開放" : "開放";
+  if (status === "owned") return t("skill.status.owned");
+  if (status === "locked") return t("skill.action.locked");
+  if (status === "costly" && !free) return t("skill.status.costly");
+  return free ? t("skill.action.free") : t("skill.action.unlock");
 }
 
 function nodeIcon(node) {
-  if (node.evolveTo || node.title.includes("進化")) return "🦋";
+  if (node.evolveTo || node.titleKey?.includes("evolve")) return "🦋";
   const text = `${node.id} ${node.title} ${node.text}`;
-  if (text.includes("範囲") || text.includes("爆発") || text.includes("破片")) return "💥";
-  if (text.includes("速") || text.includes("頻度") || text.includes("連射")) return "⚡";
-  if (text.includes("貫通")) return "🪡";
-  if (text.includes("弾") || text.includes("投") || text.includes("射")) return "🎯";
-  if (text.includes("重") || text.includes("威力") || text.includes("ダメージ")) return "💪";
-  if (text.includes("クリティカル") || text.includes("急所")) return "⭐";
-  if (text.includes("ノックバック") || text.includes("押し")) return "🛡️";
+  if (text.includes("area") || text.includes("blast") || text.includes("shard")) return "💥";
+  if (text.includes("speed") || text.includes("rate") || text.includes("rapid")) return "⚡";
+  if (text.includes("pierce")) return "🪡";
+  if (text.includes("stone") || text.includes("throw") || text.includes("shot")) return "🎯";
+  if (text.includes("heavy") || text.includes("power") || text.includes("damage")) return "💪";
+  if (text.includes("critical")) return "⭐";
+  if (text.includes("knockback") || text.includes("push")) return "🛡️";
   return "✨";
 }
 
@@ -957,9 +960,9 @@ function freeCredits(scope) {
 function freeCreditText() {
   const weapon = freeCredits("weapon");
   const parts = [];
-  if (weapon) parts.push(`武器無料 ${weapon}`);
-  if (game.evolutionMaterials) parts.push(`進化素材 ${game.evolutionMaterials}`);
-  return parts.length ? parts.join(" / ") : "無料解放なし";
+  if (weapon) parts.push(t("skill.free.weapon", { count: weapon }));
+  if (game.evolutionMaterials) parts.push(t("skill.free.evolution", { count: game.evolutionMaterials }));
+  return parts.length ? parts.join(" / ") : t("skill.noFreeUnlock");
 }
 
 export function purchaseNode(id, scope = "weapon") {

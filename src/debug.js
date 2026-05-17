@@ -1,4 +1,5 @@
 import { MAX_WEAPONS } from "./constants.js";
+import { t } from "./i18n.js";
 import { game } from "./state.js";
 import { hud } from "./dom.js";
 import { ACTIVE_ATTACHMENTS, addAttachmentToWeapon, recomputeAllAttachments, starsLabel } from "./attachments.js";
@@ -33,7 +34,7 @@ export function setupDebug() {
   });
   hud.dbgInvuln.addEventListener("click", () => {
     game.debugInvincible = !game.debugInvincible;
-    hud.dbgInvuln.textContent = `無敵 ${game.debugInvincible ? "ON" : "OFF"}`;
+    hud.dbgInvuln.textContent = t("debug.invincible", { state: game.debugInvincible ? "ON" : "OFF" });
   });
   hud.dbgShop.addEventListener("click", () => {
     if (!game.player?.gear?.weapons?.length) return;
@@ -82,7 +83,7 @@ function populateAttachmentSelect() {
     opt.value = definition.key;
     const stars = starsLabel(definition.stars);
     const compatibility = definition.compatibleWeapons
-      ? ` (${definition.compatibleWeapons.join("/")}専用)`
+      ? t("debug.compatOnly", { weapons: definition.compatibleWeapons.join("/") })
       : "";
     opt.textContent = `${stars} ${definition.name}${compatibility}`;
     hud.dbgAttSel.append(opt);
@@ -95,7 +96,7 @@ function refreshWeaponTargets() {
   if (weapons.length === 0) {
     const opt = document.createElement("option");
     opt.value = "";
-    opt.textContent = "(武器なし)";
+    opt.textContent = t("debug.noWeapon");
     hud.dbgAttWeapon.append(opt);
     return;
   }
@@ -143,8 +144,8 @@ function debugApplyAttachment() {
   const ok = addAttachmentToWeapon(weapon, { definition });
   const weaponName = weapon.baseName || weapon.name;
   if (!ok && definition.compatibleWeapons && !definition.compatibleWeapons.includes(weaponName)) {
-    hud.dbgAttApply.textContent = "互換なし";
-    setTimeout(() => { hud.dbgAttApply.textContent = "装着"; }, 900);
+    hud.dbgAttApply.textContent = t("debug.incompatible");
+    setTimeout(() => { hud.dbgAttApply.textContent = t("debug.apply"); }, 900);
     return;
   }
   refreshWeaponTargets();
