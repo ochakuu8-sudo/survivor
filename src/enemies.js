@@ -315,6 +315,7 @@ function enemySpawnStandRadius(type, options = {}) {
   if (type === "runner") radius = 16;
   else if (type === "archer") radius = 17;
   else if (type === "orc") radius = 27;
+  else if (type === "bigZombie") radius = 33;
   if (options.boss) return radius * 1.35;
   if (options.elite) return radius * 1.18;
   return radius;
@@ -377,6 +378,29 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.attackCooldown = 0.76;
     enemy.sprite = "zombieB";
     enemy.readableSprite = "zombieBReadable";
+  } else if (type === "bigZombie") {
+    enemy.kind = "bigZombie";
+    enemy.radius = 33;
+    enemy.hp = Math.round(baseHp * 5.4);
+    enemy.maxHp = enemy.hp;
+    enemy.speed = 54;
+    enemy.attackDamage = 18;
+    enemy.attackCooldown = 1.1;
+    enemy.sprite = "bigZombie";
+    enemy.readableSprite = "bigZombieReadable";
+    enemy.bigZombieState = "chase";
+    enemy.chargeRange = 260;
+    enemy.chargeWidth = 82;
+    enemy.chargeWindup = 0.72;
+    enemy.chargeDuration = 0.42;
+    enemy.chargeCooldown = 1.8;
+    enemy.chargeCooldownLeft = 0.6 + Math.random() * 0.6;
+    enemy.chargeTimer = 0;
+    enemy.chargeSpeed = 620;
+    enemy.chargeDirX = 0;
+    enemy.chargeDirY = 0;
+    enemy.chargeDamage = 24;
+    enemy.chargeHitIds = new Set();
   } else if (type === "orc") {
     enemy.kind = "orc";
     enemy.radius = 27;
@@ -415,6 +439,8 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.preferredDistance = 220;
   }
 
+  if (options.noDeathChest) enemy.noDeathChest = true;
+
   if (options.elite || options.boss) {
     enemy.elite = true;
     enemy.boss = !!options.boss;
@@ -449,6 +475,8 @@ export function updateEnemies(dt) {
       updateArcher(enemy, p, dt);
     } else if (enemy.kind === "orc") {
       updateOrc(enemy, p, dt);
+    } else if (enemy.kind === "bigZombie") {
+      updateBigZombie(enemy, p, dt);
     } else {
       updateMeleeEnemy(enemy, p, dt);
     }
@@ -458,7 +486,7 @@ export function updateEnemies(dt) {
 }
 
 function shouldEnemyChase(enemy, p) {
-  if (enemy.boss || enemy.elite) return true;
+  if (enemy.boss || enemy.elite || enemy.roomId === game.dungeon?.activeRoomId) return true;
   const delta = shortestDungeonDelta(game.dungeon, enemy.x, enemy.y, p.x, p.y);
   return delta.dx * delta.dx + delta.dy * delta.dy <= ENEMY_AGGRO_RANGE * ENEMY_AGGRO_RANGE;
 }
@@ -589,6 +617,68 @@ function updateArcher(enemy, p, dt) {
     });
     addSparks(enemy.x, enemy.y - 6, 3, 110);
     enemy.shotCooldown = enemy.shotInterval;
+  }
+}
+
+function updateBigZombie(enemy, p, dt) {
+  enemy.chargeCooldownLeft = Math.max(0, (enemy.chargeCooldownLeft ?? 0) - dt);
+  enemy.attackTimer = Math.max(0, (enemy.attackTimer ?? 0) - dt);
+
+  if (enemy.bigZombieState === "windup") {
+    enemy.chargeTimer -= dt;
+    if (enemy.chargeTimer <= 0) {
+      enemy.bigZombieState = "dashing";
+      enemy.chargeTimer = enemy.chargeDuration;
+      enemy.chargeHitIds = new Set();
+      game.shake = Math.max(game.shake, 3);
+    }
+    return;
+  }
+
+  if (enemy.bigZombieState === "dashing") {
+    enemy.chargeTimer -= dt;
+    moveActorWithDungeonCollision(enemy, enemy.chargeDirX * enemy.chargeSpeed * dt, enemy.chargeDirY * enemy.chargeSpeed * dt);
+    const delta = shortestDungeonDelta(game.dungeon, enemy.x, enemy.y, p.x, p.y);
+    const hitRange = enemy.radius + p.radius;
+    if (delta.dx * delta.dx + delta.dy * delta.dy <= hitRange * hitRange && !enemy.chargeHitIds?.has("player")) {
+      damagePlayer(enemy.chargeDamage);
+      enemy.chargeHitIds?.add("player");
+      game.shake = Math.max(game.shake, 7);
+    }
+    if (enemy.chargeTimer <= 0) {
+      enemy.bigZombieState = "recover";
+      enemy.chargeTimer = 0.34;
+      enemy.chargeCooldownLeft = enemy.chargeCooldown;
+    }
+    return;
+  }
+
+  if (enemy.bigZombieState === "recover") {
+    enemy.chargeTimer -= dt;
+    if (enemy.chargeTimer <= 0) enemy.bigZombieState = "chase";
+    return;
+  }
+
+  const delta = shortestDungeonDelta(game.dungeon, enemy.x, enemy.y, p.x, p.y);
+  const distance = Math.hypot(delta.dx, delta.dy) || 0.0001;
+  if (distance > enemy.chargeRange * 0.72) {
+    moveActorWithDungeonCollision(enemy, (delta.dx / distance) * enemy.speed * dt, (delta.dy / distance) * enemy.speed * dt);
+  }
+
+  const minDist = p.radius + enemy.radius;
+  if (distance < minDist && enemy.attackTimer <= 0) {
+    damagePlayer(enemy.attackDamage);
+    enemy.attackTimer = enemy.attackCooldown;
+  }
+
+  if (enemy.chargeCooldownLeft <= 0 && distance <= enemy.chargeRange) {
+    enemy.bigZombieState = "windup";
+    enemy.chargeTimer = enemy.chargeWindup;
+    enemy.chargeDirX = delta.dx / distance;
+    enemy.chargeDirY = delta.dy / distance;
+    const reachX = enemy.x + enemy.chargeDirX * enemy.chargeRange;
+    const reachY = enemy.y + enemy.chargeDirY * enemy.chargeRange;
+    addTelegraphLine(enemy.x, enemy.y, reachX, reachY, enemy.chargeWidth, enemy.chargeWindup);
   }
 }
 

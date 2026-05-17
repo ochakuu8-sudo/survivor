@@ -146,7 +146,7 @@ export function killEnemy(enemy, source = null) {
   game.waveKills += 1;
   dropGold(enemy);
   healPlayerFromKill(source);
-  if (enemy.elite || enemy.boss) createTreasureChestAt(enemy.x, enemy.y, enemy.boss ? "ボス宝箱" : "エリート宝箱");
+  if ((enemy.elite || enemy.boss) && !enemy.noDeathChest) createTreasureChestAt(enemy.x, enemy.y, enemy.boss ? "ボス宝箱" : "エリート宝箱");
   if (enemy.radius > 22) {
     addSparks(enemy.x, enemy.y, 6, 110);
     game.shake = Math.max(game.shake, 4);

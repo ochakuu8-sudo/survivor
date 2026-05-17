@@ -1,6 +1,8 @@
 export const STONE_MATERIALS = [
   {
     key: "powerMaterial",
+    icon: "力",
+    sprite: "materialPower",
     name: "威力の素材",
     shortName: "威力",
     description: "石ころのダメージを目に見えて大きく上げる基礎素材。爆発・会心・強敵特効の材料になる。",
@@ -13,6 +15,8 @@ export const STONE_MATERIALS = [
   },
   {
     key: "frequencyMaterial",
+    icon: "速",
+    sprite: "materialFrequency",
     name: "攻撃頻度の素材",
     shortName: "攻撃頻度",
     description: "投石間隔を目に見えて大きく短くする基礎素材。多投・導火・衛星・加速の材料になる。",
@@ -25,6 +29,8 @@ export const STONE_MATERIALS = [
   },
   {
     key: "durationMaterial",
+    icon: "時",
+    sprite: "materialDuration",
     name: "持続時間の素材",
     shortName: "持続時間",
     description: "石の寿命と届く距離を目に見えて大きく伸ばす基礎素材。設置・帰還・衛星・反響の材料になる。",
@@ -37,6 +43,8 @@ export const STONE_MATERIALS = [
   },
   {
     key: "speedMaterial",
+    icon: "弾",
+    sprite: "materialSpeed",
     name: "弾速の素材",
     shortName: "弾速",
     description: "石ころの弾速を目に見えて大きく上げる基礎素材。貫通・跳弾・帰還・加速の材料になる。",
@@ -49,6 +57,8 @@ export const STONE_MATERIALS = [
   },
   {
     key: "sizeMaterial",
+    icon: "大",
+    sprite: "materialSize",
     name: "サイズの素材",
     shortName: "サイズ",
     description: "石サイズと押し返しを目に見えて大きく上げる基礎素材。重さ・爆発範囲・転がりの材料になる。",
@@ -61,6 +71,8 @@ export const STONE_MATERIALS = [
   },
   {
     key: "hpMaterial",
+    icon: "HP",
+    sprite: "materialHp",
     name: "HPの素材",
     shortName: "HP",
     description: "最大HPを目に見えて大きく上げる基礎素材。守り・回復・凍結・衛星の材料になる。",

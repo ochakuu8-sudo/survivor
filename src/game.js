@@ -8,6 +8,7 @@ import { snapshotPlayerBaseStats } from "./attachments.js";
 import { pickStrongestEnemyTypeForCurrentWave, resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
 import {
   ROOM_COMBAT,
+  COMBAT_ROOM_ELITE,
   createTreasureChestAt,
   generateDungeon,
   getDungeonRoomAtWorld,
@@ -29,8 +30,9 @@ import { pickStarterWeapon, prepareStarterPick, renderStarterPick } from "./shop
 import { enterUpgradeTree, hideSkillTree, initSkillProgress } from "./skillTree.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
-import { hideModdingPanel } from "./modding.js";
+import { beginStoneItemReward, hideModdingPanel } from "./modding.js";
 import { updateFacilities } from "./workbench.js";
+import { findStoneMaterial } from "./data/stoneItems.js";
 
 export function resetRun() {
   game.mode = "weaponSelect";
@@ -370,25 +372,40 @@ function startCombatRoom(dungeon, room) {
   room.cleared = false;
   dungeon.activeRoomId = room.id;
   lockDungeonRoom(dungeon, room);
-  const count = Math.max(4, Math.min(14, 3 + game.wave + Math.floor(room.w * room.h / 14)));
-  const points = roomSpawnPoints(dungeon, room, count);
-  for (const point of points) {
-    const enemy = spawnEnemy(undefined, { position: point, offscreen: false });
+  const isElite = room.combatKind === COMBAT_ROOM_ELITE;
+  const count = Math.max(4, Math.min(isElite ? 12 : 14, 3 + game.wave + Math.floor(room.w * room.h / 14)));
+  const points = roomSpawnPoints(dungeon, room, count + (isElite ? 1 : 0), isElite ? 28 : 22);
+  if (isElite && points.length > 0) {
+    const bossPoint = points.shift();
+    const boss = spawnEnemy("bigZombie", { position: bossPoint, offscreen: false, noDeathChest: true });
+    if (boss) boss.roomId = room.id;
+  }
+  const roomTypes = ["walker", "archer", "runner"];
+  for (let i = 0; i < points.length && i < count; i += 1) {
+    const enemyType = roomTypes[(room.id + i + (game.wave || 1)) % roomTypes.length];
+    const enemy = spawnEnemy(enemyType, { position: points[i], offscreen: false });
     if (enemy) enemy.roomId = room.id;
   }
-  game.shake = Math.max(game.shake, 3);
+  game.shake = Math.max(game.shake, isElite ? 5 : 3);
 }
 
 function clearCombatRoom(dungeon, room) {
   room.cleared = true;
   dungeon.activeRoomId = null;
   unlockDungeonRoom(dungeon, room);
-  const chest = createTreasureChestAt(
-    dungeon.offsetX + (room.cx + 0.5) * TILE_SIZE,
-    dungeon.offsetY + (room.cy + 0.5) * TILE_SIZE,
-    "戦闘報酬",
-  );
-  if (chest) chest.roomId = room.id;
+  if (room.combatKind === COMBAT_ROOM_ELITE) {
+    const chest = createTreasureChestAt(
+      dungeon.offsetX + (room.cx + 0.5) * TILE_SIZE,
+      dungeon.offsetY + (room.cy + 0.5) * TILE_SIZE,
+      "精鋭戦闘報酬",
+    );
+    if (chest) chest.roomId = room.id;
+  } else if (room.fixedRewardKey) {
+    beginStoneItemReward({ key: room.fixedRewardKey }, { source: "combatRoom" });
+    const material = findStoneMaterial(room.fixedRewardKey);
+    room.rewardClaimed = true;
+    room.rewardName = material?.name || "固定素材";
+  }
   game.shake = Math.max(game.shake, 4);
 }
 

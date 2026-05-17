@@ -348,6 +348,22 @@ function drawPixelSwordIcon(ctx, w, h) {
   px(ctx, cx - 4, cy + 12, 8, 10, "#4b2d1b");
 }
 
+function drawPixelMaterialIcon(ctx, w, h, config) {
+  const cx = Math.floor(w / 2);
+  const cy = Math.floor(h / 2);
+  px(ctx, cx - 18, cy + 14, 36, 5, "rgba(17, 12, 43, 0.34)");
+  px(ctx, cx - 16, cy - 15, 32, 30, config.dark);
+  px(ctx, cx - 19, cy - 10, 38, 20, config.dark);
+  px(ctx, cx - 13, cy - 17, 26, 34, config.mid);
+  px(ctx, cx - 12, cy - 12, 24, 22, config.light);
+  px(ctx, cx - 7, cy - 13, 9, 4, "rgba(255, 255, 255, 0.48)");
+  ctx.fillStyle = config.text || "#1c1730";
+  ctx.font = `bold ${config.label.length > 1 ? 13 : 18}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(config.label, cx, cy + 1);
+}
+
 function drawPixelGoldCoin(ctx, w, h) {
   const cx = Math.floor(w / 2);
   const cy = Math.floor(h / 2);
@@ -898,6 +914,7 @@ export function buildAtlas() {
   add("zombieA", 72, 72, (ctx, w, h) => drawPixelZombie(ctx, w, h, "#98f06e", "#5131a8", "#ff7a5c"));
   add("zombieB", 72, 72, (ctx, w, h) => drawPixelZombie(ctx, w, h, "#c5ff6b", "#f04d8b", "#ffe46b"));
   add("orc", 96, 96, (ctx, w, h) => drawPixelOrc(ctx, w, h));
+  add("bigZombie", 96, 96, (ctx, w, h) => drawPixelZombie(ctx, w, h, "#79d75e", "#5b3a77", "#ff6b4b", 1.34));
   add("zombieAReadable", 72, 72, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelZombie(target, width, height, "#98f06e", "#5131a8", "#ff7a5c"), 2, "rgba(222, 28, 45, 0.78)");
   });
@@ -906,6 +923,9 @@ export function buildAtlas() {
   });
   add("orcReadable", 96, 96, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelOrc, 2, "rgba(245, 38, 50, 0.84)");
+  });
+  add("bigZombieReadable", 96, 96, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelZombie(target, width, height, "#79d75e", "#5b3a77", "#ff6b4b", 1.34), 2, "rgba(245, 38, 50, 0.84)");
   });
   add("skeletonArcher", 72, 72, (ctx, w, h) => drawPixelSkeleton(ctx, w, h));
   add("skeletonArcherReadable", 72, 72, (ctx, w, h) => {
@@ -969,6 +989,26 @@ export function buildAtlas() {
   add("droneShot", 24, 14, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelBullet, 1, "rgba(17, 12, 43, 0.45)"); });
   add("lightningStaff", 32, 48, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelLightningStaff, 1, "rgba(17, 12, 43, 0.5)"); });
   add("swordIcon", 34, 52, (ctx, w, h) => { drawOutlinedSprite(ctx, w, h, drawPixelSwordIcon, 1, "rgba(17, 12, 43, 0.52)"); });
+
+
+  add("materialPower", 48, 48, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "力", dark: "#6b2318", mid: "#d64b2f", light: "#ff9a5c" }), 1, "rgba(17, 12, 43, 0.58)");
+  });
+  add("materialFrequency", 48, 48, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "速", dark: "#7a5616", mid: "#e0a22b", light: "#ffe66a" }), 1, "rgba(17, 12, 43, 0.58)");
+  });
+  add("materialDuration", 48, 48, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "時", dark: "#24396b", mid: "#4f75d6", light: "#94c7ff" }), 1, "rgba(17, 12, 43, 0.58)");
+  });
+  add("materialSpeed", 48, 48, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "弾", dark: "#24524a", mid: "#39aa92", light: "#8fffe1" }), 1, "rgba(17, 12, 43, 0.58)");
+  });
+  add("materialSize", 48, 48, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "大", dark: "#4e3368", mid: "#9460cb", light: "#d7a6ff" }), 1, "rgba(17, 12, 43, 0.58)");
+  });
+  add("materialHp", 48, 48, (ctx, w, h) => {
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "HP", dark: "#24613d", mid: "#3dc56f", light: "#a6ffae" }), 1, "rgba(17, 12, 43, 0.58)");
+  });
 
   add("goldCoin", 34, 34, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelGoldCoin, 1, "rgba(93, 58, 16, 0.5)");

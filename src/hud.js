@@ -2,9 +2,9 @@ import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
 import { resetVirtualMove } from "./input.js";
 import { getActiveWeapon } from "./weapons.js";
-import { countItemsByKey, ensureStoneMaterialInventory, formatStoneItemSummary, stoneEvolutionProgress } from "./stoneItems.js";
+import { countItemsByKey, ensureStoneMaterialInventory, formatStoneItemSummary, stoneEvolutionProgress, stoneItemIcon } from "./stoneItems.js";
 import { STONE_MATERIALS } from "./data/stoneItems.js";
-import { ROOM_COMBAT, ROOM_START, ROOM_STAIRS, ROOM_TREASURE, ROOM_WORKBENCH, getDungeonRoomAtWorld } from "./dungeon.js";
+import { COMBAT_ROOM_ELITE, ROOM_COMBAT, ROOM_START, ROOM_STAIRS, ROOM_TREASURE, ROOM_WORKBENCH, getDungeonRoomAtWorld } from "./dungeon.js";
 
 export function updateHud() {
   hud.wave.textContent = "Run";
@@ -44,8 +44,9 @@ function currentRoomObjective() {
   const room = getDungeonRoomAtWorld(game.dungeon, game.player?.x || 0, game.player?.y || 0);
   if (!room) return "通路";
   if (room.type === ROOM_COMBAT) {
-    if (room.locked) return "戦闘部屋: 敵を全滅";
-    return room.cleared ? "戦闘部屋: 宝箱回収" : "戦闘部屋: 中央の剣に1秒触れる";
+    const label = room.combatKind === COMBAT_ROOM_ELITE ? "精鋭戦闘部屋" : "通常戦闘部屋";
+    if (room.locked) return `${label}: 敵を全滅`;
+    return room.cleared ? `${label}: 報酬回収済み` : `${label}: 中央の剣に1秒触れる`;
   }
   if (room.type === ROOM_TREASURE) return "宝物庫: ゴールドで開放";
   if (room.type === ROOM_WORKBENCH) return "作業台部屋";
@@ -85,7 +86,7 @@ function renderPauseStoneItems() {
     .map((evolution) => `${evolution.name}: ${evolution.requirements.map((req) => `${req.name} ${Math.min(req.count, req.need)}/${req.need}`).join(" + ")}`)
     .join("<br>");
   const materials = ensureStoneMaterialInventory();
-  const materialText = STONE_MATERIALS.map((item) => `${item.shortName || item.name}×${materials[item.key] || 0}`).join(" / ");
+  const materialText = STONE_MATERIALS.map((item) => `${stoneItemIcon(item)} ${item.shortName || item.name}×${materials[item.key] || 0}`).join(" / ");
   hud.pauseStoneItems.innerHTML = `<strong>所持素材</strong><p>${materialText}</p><strong>所持アイテム</strong><p>${formatStoneItemSummary(weapon)}</p><strong>進化進捗</strong><p>${progress}</p>`;
 }
 
