@@ -45,7 +45,7 @@ function currentRoomObjective() {
   if (!room) return "通路";
   if (room.type === ROOM_COMBAT) {
     if (room.locked) return "戦闘部屋: 敵を全滅";
-    return room.cleared ? "戦闘部屋: 宝箱回収" : "戦闘部屋";
+    return room.cleared ? "戦闘部屋: 宝箱回収" : "戦闘部屋: 中央の剣に1秒触れる";
   }
   if (room.type === ROOM_TREASURE) return "宝物庫: ゴールドで開放";
   if (room.type === ROOM_WORKBENCH) return "作業台部屋";

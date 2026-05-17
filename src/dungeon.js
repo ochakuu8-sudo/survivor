@@ -22,6 +22,7 @@ const OBSTACLE_TYPES = [
   { sprite: "fieldFlowers", radius: 0, clearance: 24, scale: 1 },
 ];
 const EXIT_INTERACTION_RADIUS = TILE_SIZE * 0.42;
+export const COMBAT_SWORD_INTERACTION_RADIUS = TILE_SIZE * 0.42;
 const DUNGEON_WIDTH_BASE = 48;
 const DUNGEON_WIDTH_PER_WAVE = 2.4;
 const DUNGEON_WIDTH_MAX = 84;
@@ -99,6 +100,7 @@ export function generateDungeon(wave) {
     chests: [],
     facilities: [],
     activeRoomId: null,
+    combatSwordHoldRoomId: null,
   };
 
   assignRoomTypes(dungeon, rng, startRoom, exitRoom, wave);
@@ -348,6 +350,20 @@ export function hasReachedDungeonExit(actor) {
   return Math.hypot(actor.x - exit.x, actor.y - exit.y) <= (actor.radius || 0) + EXIT_INTERACTION_RADIUS;
 }
 
+export function combatRoomSwordPosition(dungeon, room) {
+  if (!dungeon || !room) return { x: 0, y: 0 };
+  return {
+    x: dungeon.offsetX + (room.cx + 0.5) * TILE_SIZE,
+    y: dungeon.offsetY + (room.cy + 0.5) * TILE_SIZE,
+  };
+}
+
+export function hasReachedCombatRoomSword(dungeon, room, actor) {
+  if (!dungeon || !room || !actor) return false;
+  const sword = combatRoomSwordPosition(dungeon, room);
+  return Math.hypot(actor.x - sword.x, actor.y - sword.y) <= (actor.radius || 0) + COMBAT_SWORD_INTERACTION_RADIUS;
+}
+
 export function getDungeonRoomAt(dungeon, tx, ty) {
   if (!dungeon?.rooms) return null;
   return dungeon.rooms.find((room) => tx >= room.x && tx < room.x + room.w && ty >= room.y && ty < room.y + room.h) || null;
@@ -561,6 +577,11 @@ function generateObstacles(dungeon, rng, startRoom, exitRoom) {
       const exitSafe = TILE_SIZE * (isExit ? 2.15 : 1.25);
       if (distanceSq(x, y, dungeon.start.x, dungeon.start.y) < startSafe * startSafe) continue;
       if (distanceSq(x, y, dungeon.exit.x, dungeon.exit.y) < exitSafe * exitSafe) continue;
+      if (room.type === ROOM_COMBAT) {
+        const sword = combatRoomSwordPosition(dungeon, room);
+        const swordSafe = TILE_SIZE * 1.05;
+        if (distanceSq(x, y, sword.x, sword.y) < swordSafe * swordSafe) continue;
+      }
       if (!canStandAt(dungeon, x, y, type.clearance)) continue;
 
       obstacles.push({
