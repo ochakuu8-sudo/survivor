@@ -1,6 +1,6 @@
 import { game } from "./state.js";
 import { hud } from "./dom.js";
-import { INITIAL_WEAPON_ONLY_RUN, MAX_ATTACHMENTS, MAX_STORED_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, STARTER_WEAPON_NAME, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
+import { INITIAL_WEAPON_ONLY_RUN, MAX_ATTACHMENTS, MAX_STORED_ATTACHMENTS, MAX_WEAPON_LEVEL, MAX_WEAPONS, STARTER_WEAPON_NAME, STONE_INITIAL_DAMAGE, getWeaponMaxAttachments, getWeaponMaxLevel } from "./constants.js";
 import { resetEnemySpawnTimer, spawnOpeningEnemies } from "./enemies.js";
 import { clampActiveWeaponIndex, createWeapon, setActiveWeaponIndex, weaponMetaLabel } from "./weapons.js";
 import {
@@ -24,7 +24,7 @@ export const WEAPON_POOL = [
       baseName: "石",
       rarity: "normal",
       variantSummary: "威力が少し高い",
-      damage: 42,
+      damage: STONE_INITIAL_DAMAGE,
       fireRate: 0.9,
       bulletSpeed: 360,
       life: 1.15,

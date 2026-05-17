@@ -1,4 +1,4 @@
-import { COLLISION_CELL_SIZE, ENEMY_SPEED_RAMP_SECONDS, TAU, TILE_SIZE } from "./constants.js";
+import { COLLISION_CELL_SIZE, ENEMY_HP_PER_FLOOR_MULTIPLIER, ENEMY_SPEED_RAMP_SECONDS, STONE_INITIAL_DAMAGE, TAU, TILE_SIZE } from "./constants.js";
 import { enemyCollisionGrid, game, nextEnemyId } from "./state.js";
 import { distanceToSegmentSq, gridKey, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
@@ -24,7 +24,6 @@ const SAFETY_ENEMY_CAP = 3000;
 const ENEMY_PUSH_RADIUS_SCALE = 1.0;
 const ENEMY_PUSH_STRENGTH = 0.42;
 const ENEMY_PUSH_MAX_STEP = 5.5;
-const ENEMY_HP_PER_FLOOR_MULTIPLIER = 0.18;
 
 function runProgress(elapsed = game.floorElapsed || 0) {
   return Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
@@ -77,7 +76,7 @@ function enemySpawnRamp(elapsed = game.floorElapsed || 0) {
 
 function enemyFloorHpMultiplier(wave = game.wave || 1) {
   const floor = Math.max(1, Math.floor(wave || 1));
-  return 1 + (floor - 1) * ENEMY_HP_PER_FLOOR_MULTIPLIER;
+  return ENEMY_HP_PER_FLOOR_MULTIPLIER ** (floor - 1);
 }
 
 function currentSpawnPlan(elapsed = game.floorElapsed || 0) {
@@ -356,7 +355,7 @@ export function spawnEnemy(forceType, options = {}) {
     y = spawnPoint.y;
   }
 
-  const baseHp = Math.round(28 * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
+  const baseHp = Math.round(STONE_INITIAL_DAMAGE * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
   const enemy = {
     id: nextEnemyId(),
     kind: "melee",
