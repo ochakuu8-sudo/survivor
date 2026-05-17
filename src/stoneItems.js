@@ -213,6 +213,83 @@ export function craftStoneSpecial(key) {
   return special;
 }
 
+export function stoneItemIcon(itemOrCategory) {
+  const category = typeof itemOrCategory === "string" ? itemOrCategory : itemOrCategory?.category;
+  const key = typeof itemOrCategory === "string" ? null : itemOrCategory?.key;
+  const keyIcons = {
+    powerMaterial: "力",
+    frequencyMaterial: "速",
+    durationMaterial: "時",
+    speedMaterial: "弾",
+    sizeMaterial: "大",
+    hpMaterial: "HP",
+  };
+  if (key && keyIcons[key]) return keyIcons[key];
+  const icons = {
+    material: "●",
+    stat: "◆",
+    trajectory: "↻",
+    deploy: "▣",
+    shatter: "✹",
+    element: "✦",
+    control: "◎",
+    delayed: "⌛",
+    defense: "✚",
+    growth: "▲",
+    throwStyle: "⇉",
+    special: "★",
+  };
+  return icons[category] || "◆";
+}
+
+export function formatStoneItemEffectSummary(item) {
+  if (!item) return "効果なし";
+  const parts = [];
+  const labels = {
+    damage: "ダメージ",
+    fireRate: "攻撃頻度",
+    range: "射程",
+    life: "持続",
+    bulletSpeed: "弾速",
+    radius: "サイズ",
+    knockbackFlat: "ノックバック",
+    explosionRadius: "爆発範囲",
+    maxHpFlat: "最大HP",
+    speed: "移動速度",
+    pickupFlat: "回収範囲",
+    armor: "防御",
+    barrierMax: "バリア",
+    weaponPowerBonus: "武器威力",
+  };
+  Object.entries(item.statBonus || {}).forEach(([stat, value]) => {
+    const label = labels[stat] || stat;
+    if (Math.abs(value) > 0 && Math.abs(value) < 1) parts.push(`${label}+${Math.round(value * 100)}%`);
+    else parts.push(`${label}+${value}`);
+  });
+  const behaviorLabels = {
+    ricochetCount: "跳弾",
+    pierce: "貫通",
+    explosionDamage: "爆発",
+    returning: "帰還",
+    rolling: "転がり",
+    deployHazard: "設置",
+    pullStrength: "引力",
+    frost: "凍結",
+    fuseTrail: "導火",
+    orbit: "衛星",
+    criticalChance: "会心",
+    multishot: "多投",
+    haste: "加速",
+    heavy: "重量",
+    lifesteal: "吸命",
+    echo: "反響",
+    sniper: "狙撃",
+    barrier: "バリア",
+  };
+  if (item.behavior?.effect) parts.push(behaviorLabels[item.behavior.effect] || item.behavior.effect);
+  return parts.length ? parts.join(" / ") : (item.description || "効果なし");
+}
+
 export function recipeCounts(recipe = []) {
   return recipe.reduce((counts, key) => {
     counts[key] = (counts[key] || 0) + 1;
@@ -435,20 +512,7 @@ export function stoneEvolutionProgress(counts) {
 }
 
 function stoneItemCategoryIcon(category) {
-  const icons = {
-    stat: "◆",
-    trajectory: "↻",
-    deploy: "▣",
-    shatter: "✹",
-    element: "✦",
-    control: "◎",
-    delayed: "⌛",
-    defense: "✚",
-    growth: "▲",
-    throwStyle: "⇉",
-    special: "★",
-  };
-  return icons[category] || "◆";
+  return stoneItemIcon(category);
 }
 
 export function formatStoneItemSummary(weapon) {

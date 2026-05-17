@@ -17,6 +17,8 @@ import {
   countItemsByKey,
   isStoneWeapon,
   pickStoneItemChoices,
+  stoneItemIcon,
+  formatStoneItemEffectSummary,
 } from "./stoneItems.js";
 import { findStoneItem, findStoneMaterial } from "./data/stoneItems.js";
 
@@ -374,14 +376,17 @@ function renderStoneItemChoicePanel(pending) {
     button.addEventListener("click", () => choosePendingStoneItem(index));
     const icon = document.createElement("span");
     icon.className = "mod-slot-icon";
-    icon.textContent = "●";
+    icon.textContent = stoneItemIcon(definition);
     const copy = document.createElement("span");
     copy.className = "mod-slot-copy";
     const name = document.createElement("strong");
     name.textContent = definition.name;
     const meta = document.createElement("small");
-    meta.textContent = material ? `${definition.description} / 素材所持 ${owned}→${owned + 1} / 用途: ${(definition.uses || []).slice(0, 3).join("・")}` : `${definition.description} / 所持数 ${owned}→${owned + 1}`;
-    copy.append(name, meta);
+    meta.textContent = formatStoneItemEffectSummary(definition);
+    const count = document.createElement("span");
+    count.className = "stone-choice-count";
+    count.textContent = `${material ? "素材" : "所持"} ${owned}→${owned + 1}`;
+    copy.append(name, meta, count);
     button.append(icon, copy);
     card.append(button);
     hud.moddingSlots.append(card);
