@@ -216,15 +216,8 @@ export function craftStoneSpecial(key) {
 export function stoneItemIcon(itemOrCategory) {
   const category = typeof itemOrCategory === "string" ? itemOrCategory : itemOrCategory?.category;
   const key = typeof itemOrCategory === "string" ? null : itemOrCategory?.key;
-  const keyIcons = {
-    powerMaterial: "力",
-    frequencyMaterial: "速",
-    durationMaterial: "時",
-    speedMaterial: "弾",
-    sizeMaterial: "大",
-    hpMaterial: "HP",
-  };
-  if (key && keyIcons[key]) return keyIcons[key];
+  const material = key ? findStoneMaterial(key) : null;
+  if (material?.icon) return material.icon;
   const icons = {
     material: "●",
     stat: "◆",

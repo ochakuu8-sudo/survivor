@@ -15,6 +15,7 @@ import {
   DUNGEON_EXIT,
   DUNGEON_WALL,
   ROOM_COMBAT,
+  COMBAT_ROOM_ELITE,
   ROOM_START,
   ROOM_STAIRS,
   ROOM_TREASURE,
@@ -27,6 +28,7 @@ import {
   isWalkableTile,
   nearestDungeonPoint,
 } from "./dungeon.js";
+import { findStoneMaterial } from "./data/stoneItems.js";
 
 export function render() {
   const view = viewSize();
@@ -762,17 +764,35 @@ function drawCombatSword(room, view, camX, camY, zoom, drawX, drawY) {
   const screen = worldToScreen(drawX, drawY, view, camX, camY, zoom);
   const progress = clamp((room.swordHoldTimer || 0) / INTERACTION_HOLD_SECONDS, 0, 1);
   const pulse = 1 + Math.sin(game.elapsed * 4.2) * 0.06;
+  const isElite = room.combatKind === COMBAT_ROOM_ELITE;
   const glowAlpha = 0.22 + progress * 0.28 + Math.sin(game.elapsed * 3.4) * 0.04;
 
   state.renderer.draw("glowAmber", screen.x, screen.y - 8 * zoom, 96 * pulse * zoom, 96 * pulse * zoom, {
     alpha: glowAlpha,
-    tint: [1, 0.78, 0.28],
+    tint: isElite ? [1, 0.38, 0.24] : [1, 0.78, 0.28],
   });
   state.renderer.draw("shadow", screen.x, screen.y + 25 * zoom, 62 * zoom, 22 * zoom, { alpha: 0.66 });
-  state.renderer.draw("swordIcon", screen.x, screen.y - 12 * zoom, 42 * zoom, 64 * zoom, {
-    rotation: Math.sin(game.elapsed * 2.6) * 0.05,
-    tint: [1, 0.96, 0.84],
-  });
+  if (isElite) {
+    state.renderer.draw("swordIcon", screen.x - 11 * zoom, screen.y - 12 * zoom, 40 * zoom, 62 * zoom, {
+      rotation: -0.72 + Math.sin(game.elapsed * 2.2) * 0.035,
+      tint: [1, 0.92, 0.82],
+    });
+    state.renderer.draw("swordIcon", screen.x + 11 * zoom, screen.y - 12 * zoom, 40 * zoom, 62 * zoom, {
+      rotation: 0.72 - Math.sin(game.elapsed * 2.2) * 0.035,
+      tint: [1, 0.92, 0.82],
+    });
+  } else {
+    state.renderer.draw("swordIcon", screen.x, screen.y - 12 * zoom, 42 * zoom, 64 * zoom, {
+      rotation: Math.sin(game.elapsed * 2.6) * 0.05,
+      tint: [1, 0.96, 0.84],
+    });
+    const material = findStoneMaterial(room.fixedRewardKey);
+    if (material?.sprite) {
+      state.renderer.draw(material.sprite, screen.x, screen.y - 72 * zoom, 34 * zoom, 34 * zoom, {
+        rotation: Math.sin(game.elapsed * 3.1) * 0.06,
+      });
+    }
+  }
 
   const barW = 56 * zoom;
   const barH = 7 * zoom;

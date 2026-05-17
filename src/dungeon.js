@@ -1,6 +1,7 @@
 import { TILE_SIZE } from "./constants.js";
 import { game } from "./state.js";
 import { clamp, hash2, makeRng } from "./utils/math.js";
+import { STONE_MATERIALS } from "./data/stoneItems.js";
 
 export const DUNGEON_WALL = 0;
 export const DUNGEON_FLOOR = 1;
@@ -8,6 +9,8 @@ export const DUNGEON_EXIT = 2;
 
 export const ROOM_START = "start";
 export const ROOM_COMBAT = "combat";
+export const COMBAT_ROOM_NORMAL = "normal";
+export const COMBAT_ROOM_ELITE = "elite";
 export const ROOM_TREASURE = "treasure";
 export const ROOM_WORKBENCH = "workbench";
 export const ROOM_STAIRS = "stairs";
@@ -151,6 +154,8 @@ function assignRoomTypes(dungeon, rng, startRoom, exitRoom, wave) {
   dungeon.rooms.forEach((room, index) => {
     room.id = index;
     room.type = ROOM_COMBAT;
+    room.combatKind = COMBAT_ROOM_NORMAL;
+    room.fixedRewardKey = pickCombatRoomMaterial(index, wave);
     room.cleared = false;
     room.entered = false;
     room.locked = false;
@@ -174,6 +179,19 @@ function assignRoomTypes(dungeon, rng, startRoom, exitRoom, wave) {
     room.type = ROOM_TREASURE;
     room.cleared = false;
   }
+
+  const combatRooms = shuffled.filter((room) => room.type === ROOM_COMBAT);
+  const eliteCount = clamp(1 + Math.floor((wave || 1) / 6), 1, Math.max(1, Math.ceil(combatRooms.length * 0.28)));
+  for (let i = 0; i < eliteCount && i < combatRooms.length; i += 1) {
+    combatRooms[i].combatKind = COMBAT_ROOM_ELITE;
+    combatRooms[i].fixedRewardKey = null;
+  }
+
+}
+
+function pickCombatRoomMaterial(index, wave) {
+  if (!STONE_MATERIALS.length) return null;
+  return STONE_MATERIALS[(index + Math.max(0, (wave || 1) - 1)) % STONE_MATERIALS.length]?.key || null;
 }
 
 function generateFacilities(dungeon, rng, startRoom, exitRoom, wave) {
