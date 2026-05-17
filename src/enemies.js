@@ -24,6 +24,7 @@ const SAFETY_ENEMY_CAP = 3000;
 const ENEMY_PUSH_RADIUS_SCALE = 1.0;
 const ENEMY_PUSH_STRENGTH = 0.42;
 const ENEMY_PUSH_MAX_STEP = 5.5;
+const ENEMY_HP_PER_FLOOR_MULTIPLIER = 0.18;
 
 function runProgress(elapsed = game.floorElapsed || 0) {
   return Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
@@ -72,6 +73,11 @@ export function pickStrongestEnemyTypeForCurrentWave() {
 
 function enemySpawnRamp(elapsed = game.floorElapsed || 0) {
   return Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
+}
+
+function enemyFloorHpMultiplier(wave = game.wave || 1) {
+  const floor = Math.max(1, Math.floor(wave || 1));
+  return 1 + (floor - 1) * ENEMY_HP_PER_FLOOR_MULTIPLIER;
 }
 
 function currentSpawnPlan(elapsed = game.floorElapsed || 0) {
@@ -440,6 +446,10 @@ export function spawnEnemy(forceType, options = {}) {
   }
 
   if (options.noDeathChest) enemy.noDeathChest = true;
+
+  const floorHpMultiplier = enemyFloorHpMultiplier();
+  enemy.maxHp = Math.max(1, Math.round(enemy.maxHp * floorHpMultiplier));
+  enemy.hp = enemy.maxHp;
 
   if (options.elite || options.boss) {
     enemy.elite = true;
