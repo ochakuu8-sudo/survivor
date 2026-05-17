@@ -174,11 +174,23 @@ export function ensureStoneMaterialInventory() {
   return game.stoneMaterials;
 }
 
+function getEquippedStoneWeapon() {
+  return (game.player?.gear?.weapons || []).find((weapon) => isStoneWeapon(weapon)) || null;
+}
+
+function recomputeEquippedStoneItems(options = {}) {
+  const stoneWeapon = getEquippedStoneWeapon();
+  if (!stoneWeapon) return false;
+  recomputeStoneItems(stoneWeapon, game.player, options);
+  return true;
+}
+
 export function addStoneMaterial(key, amount = 1) {
   const material = findStoneMaterial(key);
   if (!material) return false;
   const inventory = ensureStoneMaterialInventory();
   inventory[key] = Math.max(0, (inventory[key] || 0) + amount);
+  recomputeEquippedStoneItems({ gainedKey: key });
   return true;
 }
 
@@ -197,6 +209,7 @@ export function craftStoneSpecial(key) {
   Object.entries(recipeCounts(special.recipe)).forEach(([materialKey, need]) => {
     inventory[materialKey] = Math.max(0, (inventory[materialKey] || 0) - need);
   });
+  recomputeEquippedStoneItems();
   return special;
 }
 
@@ -237,6 +250,16 @@ function applyStatBonus(weapon, player, statBonus = {}) {
   });
 }
 
+function applyStoneMaterialBonuses(weapon, player) {
+  const inventory = ensureStoneMaterialInventory();
+  STONE_MATERIALS.forEach((material) => {
+    const owned = Math.max(0, Math.floor(inventory[material.key] || 0));
+    for (let i = 0; i < owned; i += 1) {
+      applyStatBonus(weapon, player, material.statBonus);
+    }
+  });
+}
+
 export function recomputeStoneItems(weapon, player = game.player, { gainedKey = null } = {}) {
   if (!weapon || !player) return;
   ensureStoneItemSlots(weapon);
@@ -244,6 +267,8 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
   ensureStoneItemSlots(weapon);
   restorePlayerBaseStats();
   const counts = countItemsByKey(weapon.items);
+
+  applyStoneMaterialBonuses(weapon, player);
 
   weapon.items.forEach((item) => {
     const definition = findStoneItem(item?.key);

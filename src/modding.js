@@ -102,8 +102,14 @@ export function beginStoneItemChoiceReward(rawChoices, { source = "reward", allo
 
 export function beginStoneItemReward(rawItem) {
   const item = normalizePendingStoneItem(rawItem);
+  if (!item) return false;
+  if (findStoneMaterial(item.key)) {
+    addStoneMaterial(item.key, 1);
+    updateHud();
+    return true;
+  }
   const stoneWeapon = getStoneWeapon();
-  if (!item || !stoneWeapon) return false;
+  if (!stoneWeapon) return false;
   addStoneItemToWeapon(stoneWeapon, item.key);
   updateHud();
   return true;
@@ -270,8 +276,12 @@ export function renderModdingPanel() {
     return;
   }
   if (pending?.stoneItem) {
-    const stoneWeapon = getStoneWeapon();
-    if (stoneWeapon) addStoneItemToWeapon(stoneWeapon, pending.stoneItem.key);
+    if (findStoneMaterial(pending.stoneItem.key)) {
+      addStoneMaterial(pending.stoneItem.key, 1);
+    } else {
+      const stoneWeapon = getStoneWeapon();
+      if (stoneWeapon) addStoneItemToWeapon(stoneWeapon, pending.stoneItem.key);
+    }
     finishAttachmentReward();
     return;
   }
@@ -349,7 +359,7 @@ function renderStoneItemChoicePanel(pending) {
   }
   hud.moddingAttachmentName.textContent = "素材を集めて作業台で合成";
   hud.moddingAttachmentMeta.textContent = "初期素材 / クラフト用";
-  hud.moddingAttachmentText.textContent = "初期素材は作業台で特殊アイテムへ合成します。特殊アイテムは所持数として加算され、効果が自動で発動します。";
+  hud.moddingAttachmentText.textContent = "初期素材は拾った時点で効果が発動し、作業台で特殊アイテムへ合成できます。特殊アイテムも所持数として加算され、効果が自動で発動します。";
 
   hud.moddingSlots.replaceChildren();
   pending.stoneChoices.forEach((item, index) => {
