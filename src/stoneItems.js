@@ -1,7 +1,7 @@
 import { INITIAL_STONE_ITEM_SLOTS } from "./constants.js";
 import { t } from "./i18n.js";
 import { game } from "./state.js";
-import { STONE_ITEMS, STONE_MATERIALS, STONE_SPECIAL_ITEMS, findStoneItem, findStoneMaterial, findStoneSpecialItem } from "./data/stoneItems.js";
+import { STONE_ITEMS, STONE_MATERIALS, STONE_SPECIAL_ITEMS, STONE_MATERIAL_ALIASES, canonicalStoneMaterialKey, findStoneItem, findStoneMaterial, findStoneSpecialItem } from "./data/stoneItems.js";
 import { restoreWeaponBaseStats } from "./weapons.js";
 
 const PLAYER_BASE_STAT_KEYS = ["maxHp", "speed", "pickup", "armor", "barrierMax", "weaponPowerBonus"];
@@ -108,13 +108,19 @@ export function isStoneWeapon(weapon) {
 export function ensureStoneItemSlots(weapon) {
   if (!weapon) return null;
   if (!Array.isArray(weapon.items)) weapon.items = [];
+  weapon.items.forEach((item) => {
+    if (item?.key) item.key = canonicalStoneMaterialKey(item.key);
+  });
   weapon.itemSlots = Math.max(1, weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS);
   return weapon.items;
 }
 
 export function countItemsByKey(items = []) {
   return items.reduce((counts, item) => {
-    if (item?.key) counts[item.key] = (counts[item.key] || 0) + 1;
+    if (item?.key) {
+      const key = canonicalStoneMaterialKey(item.key);
+      counts[key] = (counts[key] || 0) + 1;
+    }
     return counts;
   }, {});
 }
@@ -177,6 +183,13 @@ export function pickStoneSpecialItemChoices(count = 3) {
 
 export function ensureStoneMaterialInventory() {
   if (!game.stoneMaterials || typeof game.stoneMaterials !== "object") game.stoneMaterials = {};
+  Object.entries(STONE_MATERIAL_ALIASES).forEach(([legacyKey, canonicalKey]) => {
+    const legacyAmount = Math.max(0, Math.floor(game.stoneMaterials[legacyKey] || 0));
+    if (legacyAmount > 0) {
+      game.stoneMaterials[canonicalKey] = Math.max(0, Math.floor(game.stoneMaterials[canonicalKey] || 0)) + legacyAmount;
+    }
+    delete game.stoneMaterials[legacyKey];
+  });
   STONE_MATERIALS.forEach((material) => {
     if (!Number.isFinite(game.stoneMaterials[material.key])) game.stoneMaterials[material.key] = 0;
   });
@@ -198,7 +211,8 @@ export function addStoneMaterial(key, amount = 1) {
   const material = findStoneMaterial(key);
   if (!material) return false;
   const inventory = ensureStoneMaterialInventory();
-  inventory[key] = Math.max(0, (inventory[key] || 0) + amount);
+  const materialKey = canonicalStoneMaterialKey(key);
+  inventory[materialKey] = Math.max(0, (inventory[materialKey] || 0) + amount);
   recomputeEquippedStoneItems({ gainedKey: key });
   return true;
 }
