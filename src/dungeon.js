@@ -349,7 +349,7 @@ export function pickDungeonSpawnPoint(originX, originY, minDistance, maxDistance
   return fallbackToBest ? best : null;
 }
 
-export function createTreasureChestAt(x, y, label = "改造宝箱") {
+export function createTreasureChestAt(x, y, label = "改造宝箱", options = {}) {
   if (!game.dungeon) return null;
   const chest = {
     x,
@@ -359,6 +359,7 @@ export function createTreasureChestAt(x, y, label = "改造宝箱") {
     holdTimer: 0,
     bob: Math.random() * Math.PI * 2,
     rewardName: label,
+    rewardKind: options.rewardKind || null,
   };
   if (!Array.isArray(game.dungeon.chests)) game.dungeon.chests = [];
   game.dungeon.chests.push(chest);

@@ -1,4 +1,5 @@
 export const canvas = document.querySelector("#game");
+export const worldLabels = document.querySelector("#worldLabels");
 
 export const hud = {
   wave: document.querySelector("#waveText"),

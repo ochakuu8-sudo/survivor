@@ -396,7 +396,7 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.chargeCooldown = 1.8;
     enemy.chargeCooldownLeft = 0.6 + Math.random() * 0.6;
     enemy.chargeTimer = 0;
-    enemy.chargeSpeed = 620;
+    enemy.chargeSpeed = 760;
     enemy.chargeDirX = 0;
     enemy.chargeDirY = 0;
     enemy.chargeDamage = 24;
@@ -592,7 +592,7 @@ function updateArcher(enemy, p, dt) {
   }
 
   if (enemy.shotCooldown <= 0 && distance <= enemy.shootRange) {
-    const speed = 360;
+    const speed = 320;
     const life = Math.max(0.6, distance / speed + 0.4);
     game.enemyProjectiles.push({
       x: enemy.x,
