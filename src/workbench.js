@@ -14,6 +14,8 @@ import {
   recipeShortText,
   stoneItemIcon,
   formatStoneItemEffectSummary,
+  countItemsByKey,
+  STONE_EVOLUTIONS,
 } from "./stoneItems.js";
 import { STONE_MATERIALS, STONE_SPECIAL_ITEMS, findStoneMaterial } from "./data/stoneItems.js";
 
@@ -114,26 +116,119 @@ export function renderWorkbenchPanel() {
   materialCard.append(materialTitle, materialList);
   weaponsRoot.append(materialCard);
 
-  STONE_SPECIAL_ITEMS.forEach((item) => storageRoot.append(renderRecipeCard(item)));
+  storageRoot.append(renderCraftEvolutionTree());
 
   if (hud.workbenchStorageCount) {
     const craftable = STONE_SPECIAL_ITEMS.filter((item) => canCraftStoneSpecial(item.key)).length;
-    hud.workbenchStorageCount.textContent = `${craftable}/${STONE_SPECIAL_ITEMS.length} 作成可能`;
+    const completed = STONE_EVOLUTIONS.filter((evolution) => evolution.when(currentStoneItemCounts())).length;
+    hud.workbenchStorageCount.textContent = `${craftable}/${STONE_SPECIAL_ITEMS.length} 作成可能 · 進化 ${completed}/${STONE_EVOLUTIONS.length}`;
   }
 }
 
-function renderRecipeCard(item) {
-  const craftable = canCraftStoneSpecial(item.key);
-  const card = document.createElement("article");
-  card.className = `workbench-storage-item${craftable ? " selected" : ""}`;
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "workbench-craft-button";
-  button.disabled = !craftable;
-  button.addEventListener("click", () => craftAndStore(item.key));
-  button.innerHTML = `<span class="workbench-recipe-head"><span class="workbench-item-icon">${stoneItemIcon(item)}</span><strong>${item.name}</strong></span><small>レシピ: ${recipeShortText(item.recipe)}</small><span>${formatStoneItemEffectSummary(item)}</span><small>${craftable ? "作成" : `不足: ${missingRecipeText(item.recipe)}`}</small>`;
-  card.append(button);
-  return card;
+function renderCraftEvolutionTree() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "workbench-craft-tree skill-node-map-wrap";
+
+  const header = document.createElement("div");
+  header.className = "workbench-craft-tree-legend";
+  header.innerHTML = `
+    <span><strong>素材</strong>を集めて特殊アイテムを作成</span>
+    <span><strong>特殊アイテム</strong>の所持数が条件を満たすと進化アイテムへ到達</span>
+  `;
+
+  const viewport = document.createElement("div");
+  viewport.className = "workbench-craft-tree-viewport skill-node-map-scroller";
+  viewport.setAttribute("aria-label", "特殊アイテムの組み合わせで進化アイテムができるクラフトツリー");
+
+  const mapWidth = 1180;
+  const rowHeight = 138;
+  const mapHeight = Math.max(620, STONE_EVOLUTIONS.length * rowHeight + 72);
+  const map = document.createElement("div");
+  map.className = "workbench-craft-node-map skill-node-map";
+  map.style.width = `${mapWidth}px`;
+  map.style.height = `${mapHeight}px`;
+  map.style.setProperty("--skill-grid-size", "92px");
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("skill-node-links", "workbench-craft-links");
+  svg.setAttribute("viewBox", `0 0 ${mapWidth} ${mapHeight}`);
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.setAttribute("aria-hidden", "true");
+
+  const counts = currentStoneItemCounts();
+  STONE_EVOLUTIONS.forEach((evolution, rowIndex) => {
+    const y = 74 + rowIndex * rowHeight;
+    const evolutionX = 980;
+    const completed = evolution.when(counts);
+    const requirements = evolution.progress || [];
+    requirements.forEach((requirement, requirementIndex) => {
+      const item = STONE_SPECIAL_ITEMS.find((candidate) => candidate.key === requirement.key);
+      const x = 190 + requirementIndex * 250;
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", `M ${x + 78} ${y} C ${x + 170} ${y}, ${evolutionX - 150} ${y}, ${evolutionX - 72} ${y}`);
+      path.classList.add("skill-link", (counts[requirement.key] || 0) >= requirement.need ? "skill-link-owned" : "skill-link-locked");
+      svg.appendChild(path);
+      map.appendChild(renderSpecialRecipeNode(item, requirement, { x, y }));
+    });
+    map.appendChild(renderEvolutionResultNode(evolution, counts, { x: evolutionX, y }, completed));
+  });
+
+  map.appendChild(svg);
+  viewport.appendChild(map);
+  wrapper.append(header, viewport);
+  requestAnimationFrame(() => {
+    viewport.scrollLeft = Math.max(0, mapWidth - viewport.clientWidth - 24);
+  });
+  return wrapper;
+}
+
+function renderSpecialRecipeNode(item, requirement, position) {
+  const node = document.createElement("button");
+  const craftable = item ? canCraftStoneSpecial(item.key) : false;
+  const owned = currentStoneItemCounts()[requirement.key] || 0;
+  const ready = owned >= requirement.need;
+  node.type = "button";
+  node.className = `workbench-craft-node workbench-special-node ${ready ? "workbench-node-owned" : craftable ? "workbench-node-available" : "workbench-node-locked"}`;
+  node.style.setProperty("--node-x", `${position.x}px`);
+  node.style.setProperty("--node-y", `${position.y}px`);
+  node.disabled = !craftable;
+  node.setAttribute("aria-label", `${item?.name || requirement.key} ${owned}/${requirement.need}、${craftable ? "作成可能" : missingRecipeText(item?.recipe || [])}`);
+  node.innerHTML = `
+    <span class="workbench-node-icon">${stoneItemIcon(item)}</span>
+    <span class="workbench-node-copy">
+      <strong>${item?.name || requirement.key}</strong>
+      <small>所持 ${owned}/${requirement.need}</small>
+      <em>${item ? recipeShortText(item.recipe) : "レシピ不明"}</em>
+      <span>${craftable ? "タップで作成" : `不足: ${item ? missingRecipeText(item.recipe) : "-"}`}</span>
+    </span>
+  `;
+  if (item) node.addEventListener("click", () => craftAndStore(item.key));
+  return node;
+}
+
+function renderEvolutionResultNode(evolution, counts, position, completed) {
+  const node = document.createElement("article");
+  node.className = `workbench-craft-node workbench-evolution-node ${completed ? "workbench-node-owned" : "workbench-node-evolution"}`;
+  node.style.setProperty("--node-x", `${position.x}px`);
+  node.style.setProperty("--node-y", `${position.y}px`);
+  const requirementText = evolution.progress
+    .map((requirement) => `${STONE_SPECIAL_ITEMS.find((item) => item.key === requirement.key)?.name || requirement.key} ${counts[requirement.key] || 0}/${requirement.need}`)
+    .join(" + ");
+  node.innerHTML = `
+    <span class="workbench-node-icon">🦋</span>
+    <span class="workbench-node-copy">
+      <strong>${completed ? "✓ " : ""}${evolution.name}</strong>
+      <small>進化アイテム</small>
+      <em>${requirementText}</em>
+      <span>${completed ? "条件達成済み" : "特殊アイテムの組み合わせで進化"}</span>
+    </span>
+  `;
+  return node;
+}
+
+function currentStoneItemCounts() {
+  const stoneWeapon = (game.player?.gear?.weapons || []).find((weapon) => isStoneWeapon(weapon));
+  return countItemsByKey(stoneWeapon?.items || []);
 }
 
 function craftAndStore(key) {
