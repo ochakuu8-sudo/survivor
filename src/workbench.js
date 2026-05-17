@@ -13,31 +13,49 @@ import {
   isStoneWeapon,
   missingRecipeText,
   pickStoneSpecialItemChoices,
-  recipeShortText,
+  recipeCounts,
   stoneItemIcon,
   formatStoneItemEffectSummary,
   countItemsByKey,
   STONE_EVOLUTIONS,
 } from "./stoneItems.js";
-import { STONE_MATERIALS, STONE_SPECIAL_ITEMS } from "./data/stoneItems.js";
+import { STONE_MATERIALS, STONE_SPECIAL_ITEMS, findStoneItem } from "./data/stoneItems.js";
 
 let statusText = t("workbench.status");
+let workbenchReadOnly = false;
+let selectedCraftItemKey = null;
 
 export function openWorkbench(facility = null) {
   if (!game.player?.gear) return;
+  workbenchReadOnly = false;
   game.modeBeforeWorkbench = game.mode;
   game.mode = "workbench";
   hud.workbenchPanel?.classList.remove("hidden");
-  statusText = facility ? t("workbench.facilityStatus") : statusText;
+  statusText = facility ? t("workbench.facilityStatus") : t("workbench.status");
   ensureStoneMaterialInventory();
+  if (!selectedCraftItemKey) selectedCraftItemKey = STONE_SPECIAL_ITEMS[0]?.key || null;
+  renderWorkbenchPanel();
+  updateHud();
+}
+
+export function openCraftTreeReference() {
+  if (!game.player?.gear || game.mode !== "arena") return;
+  workbenchReadOnly = true;
+  game.modeBeforeWorkbench = game.mode;
+  game.mode = "workbench";
+  hud.workbenchPanel?.classList.remove("hidden");
+  statusText = t("workbench.referenceStatus");
+  ensureStoneMaterialInventory();
+  if (!selectedCraftItemKey) selectedCraftItemKey = STONE_SPECIAL_ITEMS[0]?.key || null;
   renderWorkbenchPanel();
   updateHud();
 }
 
 export function closeWorkbench() {
   hud.workbenchPanel?.classList.add("hidden");
-  game.mode = "arena";
+  game.mode = game.modeBeforeWorkbench || "arena";
   game.modeBeforeWorkbench = null;
+  workbenchReadOnly = false;
   updateHud();
 }
 
@@ -115,6 +133,7 @@ export function renderWorkbenchPanel() {
   weaponsRoot.append(materialCard);
 
   storageRoot.append(renderCraftEvolutionTree());
+  storageRoot.append(renderCraftInfoPanel());
 
   if (hud.workbenchStorageCount) {
     const craftable = STONE_SPECIAL_ITEMS.filter((item) => canCraftStoneSpecial(item.key)).length;
@@ -163,7 +182,7 @@ function renderCraftEvolutionTree() {
       path.setAttribute("d", `M ${x + 64} ${y} C ${x + 118} ${y}, ${evolutionX - 118} ${y}, ${evolutionX - 66} ${y}`);
       path.classList.add("skill-link", (counts[requirement.key] || 0) >= requirement.need ? "skill-link-owned" : "skill-link-locked");
       svg.appendChild(path);
-      map.appendChild(renderSpecialRecipeNode(item, requirement, { x, y }));
+      map.appendChild(renderSpecialRecipeNode(item, requirement, { x, y }, selectedCraftItemKey === item?.key));
     });
     map.appendChild(renderEvolutionResultNode(evolution, counts, { x: evolutionX, y }, completed));
   });
@@ -177,26 +196,25 @@ function renderCraftEvolutionTree() {
   return wrapper;
 }
 
-function renderSpecialRecipeNode(item, requirement, position) {
+function renderSpecialRecipeNode(item, requirement, position, selected = false) {
   const node = document.createElement("button");
   const craftable = item ? canCraftStoneSpecial(item.key) : false;
   const owned = currentStoneItemCounts()[requirement.key] || 0;
   const ready = owned >= requirement.need;
   node.type = "button";
-  node.className = `workbench-craft-node workbench-special-node ${ready ? "workbench-node-owned" : craftable ? "workbench-node-available" : "workbench-node-locked"}`;
+  node.className = `workbench-craft-node workbench-special-node ${selected ? "workbench-node-selected" : ""} ${ready ? "workbench-node-owned" : craftable ? "workbench-node-available" : "workbench-node-locked"}`;
   node.style.setProperty("--node-x", `${position.x}px`);
   node.style.setProperty("--node-y", `${position.y}px`);
-  node.disabled = !craftable;
   node.setAttribute("aria-label", t("workbench.nodeAria", { name: item?.name || requirement.key, owned, need: requirement.need, status: craftable ? t("stone.craftable") : missingRecipeText(item?.recipe || []) }));
   node.innerHTML = `
     <span class="workbench-node-icon">${stoneItemIcon(item)}</span>
     <span class="workbench-node-copy">
       <strong>${item?.name || requirement.key}</strong>
-      <em>${item ? recipeShortText(item.recipe) : t("workbench.unknownRecipe")}</em>
+      <span class="workbench-node-recipe">${item ? recipeIconText(item.recipe) : t("workbench.unknownRecipe")}</span>
       <small>${owned}/${requirement.need}</small>
     </span>
   `;
-  if (item) node.addEventListener("click", () => craftAndStore(item.key));
+  if (item) node.addEventListener("click", () => selectCraftItem(item.key));
   return node;
 }
 
@@ -219,12 +237,72 @@ function renderEvolutionResultNode(evolution, counts, position, completed) {
   return node;
 }
 
+function recipeIconText(recipe = []) {
+  const entries = Object.entries(recipeCounts(recipe));
+  if (entries.length === 0) return "";
+  return entries
+    .map(([key, count]) => {
+      const material = findStoneItem(key);
+      return `<span class="workbench-recipe-chip" title="${material?.name || key}"><span class="workbench-recipe-icon">${stoneItemIcon(material)}</span><b>×${count}</b></span>`;
+    })
+    .join("");
+}
+
+function renderCraftInfoPanel() {
+  const item = STONE_SPECIAL_ITEMS.find((candidate) => candidate.key === selectedCraftItemKey) || STONE_SPECIAL_ITEMS[0];
+  const panel = document.createElement("aside");
+  panel.className = "workbench-info-panel";
+  panel.setAttribute("aria-live", "polite");
+  if (!item) {
+    panel.textContent = t("workbench.selectPrompt");
+    return panel;
+  }
+
+  const craftable = canCraftStoneSpecial(item.key);
+  const counts = currentStoneItemCounts();
+  const owned = counts[item.key] || 0;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "primary workbench-info-craft";
+  button.disabled = workbenchReadOnly || !craftable;
+  button.textContent = workbenchReadOnly ? t("workbench.referenceOnly") : craftable ? t("workbench.craftButton") : t("workbench.needMaterials");
+  button.addEventListener("click", () => craftAndStore(item.key));
+
+  panel.innerHTML = `
+    <div class="workbench-info-head">
+      <span class="workbench-info-icon">${stoneItemIcon(item)}</span>
+      <div>
+        <strong>${item.name}</strong>
+        <small>${t("workbench.ownedCount", { count: owned })}</small>
+      </div>
+    </div>
+    <p>${item.description || t("stone.noEffect")}</p>
+    <dl>
+      <div><dt>${t("workbench.effectLabel")}</dt><dd>${formatStoneItemEffectSummary(item)}</dd></div>
+      <div><dt>${t("workbench.recipeLabel")}</dt><dd class="workbench-info-recipe">${recipeIconText(item.recipe)}</dd></div>
+      <div><dt>${t("workbench.statusLabel")}</dt><dd>${craftable ? t("stone.craftable") : missingRecipeText(item.recipe)}</dd></div>
+    </dl>
+  `;
+  panel.append(button);
+  return panel;
+}
+
+function selectCraftItem(key) {
+  selectedCraftItemKey = key;
+  renderWorkbenchPanel();
+}
+
 function currentStoneItemCounts() {
   const stoneWeapon = (game.player?.gear?.weapons || []).find((weapon) => isStoneWeapon(weapon));
   return countItemsByKey(stoneWeapon?.items || []);
 }
 
 function craftAndStore(key) {
+  if (workbenchReadOnly) {
+    statusText = t("workbench.referenceStatus");
+    renderWorkbenchPanel();
+    return;
+  }
   const stoneWeapon = (game.player?.gear?.weapons || []).find((weapon) => isStoneWeapon(weapon));
   if (!stoneWeapon) {
     statusText = t("workbench.noStoneWeapon");

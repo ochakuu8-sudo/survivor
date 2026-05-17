@@ -15,6 +15,7 @@ export function updateHud() {
   hud.kills.textContent = String(game.totalKills || 0);
   renderHpGauge();
   renderWeaponSwitch();
+  renderCraftTreeButton();
   renderPauseStoneItems();
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
   if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "arena");
@@ -89,6 +90,15 @@ function renderPauseStoneItems() {
   const materials = ensureStoneMaterialInventory();
   const materialText = STONE_MATERIALS.map((item) => `${stoneItemIcon(item)} ${item.shortName || item.name}×${materials[item.key] || 0}`).join(" / ");
   hud.pauseStoneItems.innerHTML = `<strong>${t("pause.materials")}</strong><p>${materialText}</p><strong>${t("pause.items")}</strong><p>${formatStoneItemSummary(weapon)}</p><strong>${t("pause.evolution")}</strong><p>${progress}</p>`;
+}
+
+function renderCraftTreeButton() {
+  if (!hud.craftTreeBtn) return;
+  const isArena = game.mode === "arena";
+  hud.craftTreeBtn.classList.toggle("hidden", !isArena);
+  hud.craftTreeBtn.disabled = !isArena;
+  hud.craftTreeBtn.title = t("workbench.craftTreeButton");
+  hud.craftTreeBtn.setAttribute("aria-label", t("workbench.craftTreeButton"));
 }
 
 function renderWeaponSwitch() {

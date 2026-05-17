@@ -63,6 +63,7 @@ export const hud = {
   moveStick: document.querySelector("#moveStick"),
   moveThumb: document.querySelector("#moveThumb"),
   weaponSwitch: document.querySelector("#weaponSwitchBtn"),
+  craftTreeBtn: document.querySelector("#craftTreeBtn"),
   pauseBtn: document.querySelector("#pauseBtn"),
   pauseMenu: document.querySelector("#pauseMenu"),
   pauseStoneItems: document.querySelector("#pauseStoneItems"),
