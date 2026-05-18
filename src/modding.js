@@ -13,9 +13,10 @@ import {
 import { updateHud } from "./hud.js";
 import { findWeapon, getActiveWeapon } from "./weapons.js";
 import {
-  addStoneItemToWeapon,
   addStoneMaterial,
   countItemsByKey,
+  equipStoneSpecial,
+  isStoneSpecialUnlocked,
   isStoneWeapon,
   pickStoneItemChoices,
   stoneItemIcon,
@@ -69,6 +70,17 @@ function getStoneWeapon() {
   return (game.player?.gear?.weapons || []).find((weapon) => isStoneWeapon(weapon)) || null;
 }
 
+function equipOrPromptStoneSpecial(stoneWeapon, key) {
+  if (!stoneWeapon) return false;
+  if (equipStoneSpecial(stoneWeapon, key)) return true;
+  const max = Math.max(1, stoneWeapon.itemSlots || 1);
+  const input = typeof window !== "undefined" && typeof window.prompt === "function"
+    ? window.prompt(t("workbench.chooseReplaceSlot", { max }))
+    : "1";
+  const slotIndex = Number.parseInt(input, 10) - 1;
+  return Number.isInteger(slotIndex) && equipStoneSpecial(stoneWeapon, key, slotIndex);
+}
+
 export function beginAttachmentReward(rawAttachment, { source = "reward", allowDiscard = true } = {}) {
   const attachment = normalizePendingAttachment(rawAttachment);
   if (!attachment) return false;
@@ -113,7 +125,8 @@ export function beginStoneItemReward(rawItem) {
   }
   const stoneWeapon = getStoneWeapon();
   if (!stoneWeapon) return false;
-  addStoneItemToWeapon(stoneWeapon, item.key);
+  if (!isStoneSpecialUnlocked(item.key)) return false;
+  equipOrPromptStoneSpecial(stoneWeapon, item.key);
   updateHud();
   return true;
 }
@@ -285,7 +298,7 @@ export function renderModdingPanel() {
       addStoneMaterial(pending.stoneItem.key, 1);
     } else {
       const stoneWeapon = getStoneWeapon();
-      if (stoneWeapon) addStoneItemToWeapon(stoneWeapon, pending.stoneItem.key);
+      if (stoneWeapon) equipOrPromptStoneSpecial(stoneWeapon, pending.stoneItem.key);
     }
     finishAttachmentReward();
     return;
@@ -341,7 +354,7 @@ function choosePendingStoneItem(index) {
   }
   const stoneWeapon = getStoneWeapon();
   if (!stoneWeapon) return;
-  addStoneItemToWeapon(stoneWeapon, item.key);
+  if (!isStoneSpecialUnlocked(item.key) || !equipOrPromptStoneSpecial(stoneWeapon, item.key)) return;
   finishAttachmentReward();
 }
 

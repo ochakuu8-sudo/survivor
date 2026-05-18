@@ -83,9 +83,8 @@ function renderHpGauge() {
 function renderPauseStoneItems() {
   if (!hud.pauseStoneItems) return;
   const weapon = getActiveWeapon();
-  const counts = countItemsByKey(weapon?.items || []);
-  const progress = stoneEvolutionProgress(counts)
-    .map((evolution) => `${evolution.name}: ${evolution.requirements.map((req) => `${req.name} ${Math.min(req.count, req.need)}/${req.need}`).join(" + ")}`)
+  const progress = stoneEvolutionProgress(weapon)
+    .map((evolution) => `${evolution.complete ? "✓ " : ""}${evolution.name}: ${evolution.requirements.map((req) => req.type === "equipped" ? `${req.name} ${req.equipped ? t("workbench.equipped") : t("workbench.requiresEquipped")}` : `${req.name} ${Math.min(req.count, req.need)}/${req.need}`).join(" + ")}`)
     .join("<br>");
   const materials = ensureStoneMaterialInventory();
   const materialText = STONE_MATERIALS.map((item) => `${stoneItemIcon(item)} ${item.shortName || item.name}×${materials[item.key] || 0}`).join(" / ");
