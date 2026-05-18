@@ -9,10 +9,15 @@ export const STONE_EVOLUTIONS = [
   {
     key: "rubberBall",
     name: t("stone.evolution.rubberBall.name"), nameKey: "stone.evolution.rubberBall.name",
-    progress: [{ key: "bounceStone", need: 3 }],
-    when: (counts) => (counts.bounceStone || 0) >= 3,
+    progress: [
+      { key: "bounceStone", need: 1, type: "equipped" },
+      { key: "frequencyMaterial", need: 4, type: "material" },
+      { key: "durationMaterial", need: 3, type: "material" },
+    ],
+    when: (counts, weapon) => hasEquippedSpecial(weapon, "bounceStone") && hasMaterials({ frequencyMaterial: 4, durationMaterial: 3 }),
     apply: (weapon) => {
       weapon.name = t("stone.evolution.rubberBall.name");
+      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
       weapon.ricochetSplitCount = Math.max(weapon.ricochetSplitCount || 1, 2);
       weapon.splitShardCount = Math.max(weapon.splitShardCount || 0, 1);
       weapon.splitSpawnLimit = Math.max(weapon.splitSpawnLimit || 10, 14);
@@ -25,10 +30,15 @@ export const STONE_EVOLUTIONS = [
   {
     key: "meteorCore",
     name: t("stone.evolution.meteorCore.name"), nameKey: "stone.evolution.meteorCore.name",
-    progress: [{ key: "explosiveStone", need: 3 }],
-    when: (counts) => (counts.explosiveStone || 0) >= 3,
+    progress: [
+      { key: "explosiveStone", need: 1, type: "equipped" },
+      { key: "powerMaterial", need: 6, type: "material" },
+      { key: "hpMaterial", need: 3, type: "material" },
+    ],
+    when: (counts, weapon) => hasEquippedSpecial(weapon, "explosiveStone") && hasMaterials({ powerMaterial: 6, hpMaterial: 3 }),
     apply: (weapon) => {
       weapon.name = t("stone.evolution.meteorCore.name");
+      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
       weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 92);
       weapon.explosionDamage *= 1.25;
       weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "meteor", trail: "orange", hitEffect: "heavy" };
@@ -41,10 +51,16 @@ export const STONE_EVOLUTIONS = [
   {
     key: "masterStone",
     name: t("stone.evolution.masterStone.name"), nameKey: "stone.evolution.masterStone.name",
-    progress: [{ key: "critStone", need: 2 }, { key: "sniperStone", need: 2 }],
-    when: (counts) => (counts.critStone || 0) >= 2 && (counts.sniperStone || 0) >= 2,
+    progress: [
+      { key: "critStone", need: 1, type: "equipped" },
+      { key: "sniperStone", need: 1, type: "equipped" },
+      { key: "powerMaterial", need: 6, type: "material" },
+      { key: "frequencyMaterial", need: 4, type: "material" },
+    ],
+    when: (counts, weapon) => hasEquippedSpecial(weapon, "critStone") && hasEquippedSpecial(weapon, "sniperStone") && hasMaterials({ powerMaterial: 6, frequencyMaterial: 4 }),
     apply: (weapon) => {
       weapon.name = t("stone.evolution.masterStone.name");
+      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
       weapon.masterStoneInterval = Math.min(8, weapon.masterStoneInterval || 8);
       weapon.masterStoneTimer = Math.min(weapon.masterStoneTimer ?? weapon.masterStoneInterval, weapon.masterStoneInterval);
       weapon.masterStoneDamageScale = Math.max(weapon.masterStoneDamageScale || 0, 3.6);
@@ -58,10 +74,11 @@ export const STONE_EVOLUTIONS = [
   {
     key: "rollingBoulder",
     name: t("stone.evolution.rollingBoulder.name"), nameKey: "stone.evolution.rollingBoulder.name",
-    progress: [{ key: "rollingStone", need: 2 }, { key: "heavyStone", need: 2 }],
-    when: (counts) => (counts.rollingStone || 0) >= 2 && (counts.heavyStone || 0) >= 2,
+    progress: [{ key: "rollingStone", need: 1, type: "equipped" }, { key: "heavyStone", need: 1, type: "equipped" }, { key: "hpMaterial", need: 5, type: "material" }],
+    when: (counts, weapon) => hasEquippedSpecial(weapon, "rollingStone") && hasEquippedSpecial(weapon, "heavyStone") && hasMaterials({ hpMaterial: 5 }),
     apply: (weapon) => {
       weapon.name = t("stone.evolution.rollingBoulder.name");
+      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
       weapon.rollingStone = Math.max(weapon.rollingStone || 0, 2);
       weapon.radius *= 1.18;
       weapon.knockback += 18;
@@ -73,10 +90,11 @@ export const STONE_EVOLUTIONS = [
   {
     key: "gravityCore",
     name: t("stone.evolution.gravityCore.name"), nameKey: "stone.evolution.gravityCore.name",
-    progress: [{ key: "gravityStone", need: 2 }, { key: "explosiveStone", need: 1 }],
-    when: (counts) => (counts.gravityStone || 0) >= 2 && (counts.explosiveStone || 0) >= 1,
+    progress: [{ key: "gravityStone", need: 1, type: "equipped" }, { key: "explosiveStone", need: 1, type: "equipped" }, { key: "powerMaterial", need: 4, type: "material" }, { key: "hpMaterial", need: 4, type: "material" }],
+    when: (counts, weapon) => hasEquippedSpecial(weapon, "gravityStone") && hasEquippedSpecial(weapon, "explosiveStone") && hasMaterials({ powerMaterial: 4, hpMaterial: 4 }),
     apply: (weapon) => {
       weapon.name = t("stone.evolution.gravityCore.name");
+      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
       weapon.pullStrength = Math.max(weapon.pullStrength || 0, 4);
       weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 82);
       weapon.chainShatterChance = Math.max(weapon.chainShatterChance || 0, 0.18);
@@ -88,10 +106,11 @@ export const STONE_EVOLUTIONS = [
   {
     key: "returningSpear",
     name: t("stone.evolution.returningSpear.name"), nameKey: "stone.evolution.returningSpear.name",
-    progress: [{ key: "returningStone", need: 2 }, { key: "piercingStone", need: 2 }],
-    when: (counts) => (counts.returningStone || 0) >= 2 && (counts.piercingStone || 0) >= 2,
+    progress: [{ key: "returningStone", need: 1, type: "equipped" }, { key: "piercingStone", need: 1, type: "equipped" }, { key: "frequencyMaterial", need: 4, type: "material" }, { key: "durationMaterial", need: 4, type: "material" }],
+    when: (counts, weapon) => hasEquippedSpecial(weapon, "returningStone") && hasEquippedSpecial(weapon, "piercingStone") && hasMaterials({ frequencyMaterial: 4, durationMaterial: 4 }),
     apply: (weapon) => {
       weapon.name = t("stone.evolution.returningSpear.name");
+      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
       weapon.returningStone = Math.max(weapon.returningStone || 0, 2);
       weapon.pierce = Math.max(weapon.pierce || 0, 4);
       weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "sharp", trail: "white", hitEffect: "pierce" };
@@ -108,9 +127,17 @@ export function isStoneWeapon(weapon) {
 export function ensureStoneItemSlots(weapon) {
   if (!weapon) return null;
   if (!Array.isArray(weapon.items)) weapon.items = [];
-  weapon.items.forEach((item) => {
-    if (item?.key) item.key = canonicalStoneMaterialKey(item.key);
-  });
+  const inventory = ensureStoneMaterialInventory();
+  weapon.items = weapon.items
+    .map((item) => (item?.key ? { ...item, key: canonicalStoneMaterialKey(item.key) } : item))
+    .filter((item) => {
+      if (!item?.key) return false;
+      if (findStoneMaterial(item.key)) {
+        inventory[item.key] = Math.max(0, Math.floor(inventory[item.key] || 0) + 1);
+        return false;
+      }
+      return !!findStoneSpecialItem(item.key);
+    });
   weapon.itemSlots = Math.max(1, weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS);
   return weapon.items;
 }
@@ -142,20 +169,34 @@ export function stoneItemCount(weapon, key) {
 }
 
 export function stoneItemCapacity(weapon) {
-  return Math.max(1, weapon?.itemSlots || INITIAL_STONE_ITEM_SLOTS);
+  return stoneSpecialSlotCapacity(weapon);
+}
+
+export function stoneSpecialSlotCapacity(weapon) {
+  if (!weapon) return 0;
+  const evolvedBonus = weapon.evolvedStoneKey ? 1 : 0;
+  return Math.max(1, weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + evolvedBonus);
+}
+
+export function equippedStoneSpecials(weapon) {
+  ensureStoneItemSlots(weapon);
+  return (weapon?.items || []).slice(0, stoneSpecialSlotCapacity(weapon));
+}
+
+export function hasStoneSpecialSpace(weapon) {
+  return equippedStoneSpecials(weapon).length < stoneSpecialSlotCapacity(weapon);
 }
 
 export function hasStoneItemSpace(weapon) {
-  return !!weapon;
+  return hasStoneSpecialSpace(weapon);
+}
+
+export function hasEquippedSpecial(weapon, key) {
+  return equippedStoneSpecials(weapon).some((item) => item?.key === key);
 }
 
 export function addStoneItemToWeapon(weapon, key) {
-  const definition = findStoneItem(key);
-  if (!weapon || !definition) return false;
-  ensureStoneItemSlots(weapon);
-  weapon.items.push({ key: definition.key });
-  recomputeStoneItems(weapon, game.player, { gainedKey: key });
-  return true;
+  return equipStoneSpecial(weapon, key);
 }
 
 function pickWeightedStoneChoices(pool, count) {
@@ -217,7 +258,7 @@ export function addStoneMaterial(key, amount = 1) {
   return true;
 }
 
-export function canCraftStoneSpecial(key) {
+export function isStoneSpecialUnlocked(key) {
   const special = findStoneSpecialItem(key);
   if (!special?.recipe?.length) return false;
   const inventory = ensureStoneMaterialInventory();
@@ -225,15 +266,61 @@ export function canCraftStoneSpecial(key) {
   return Object.entries(needs).every(([materialKey, need]) => (inventory[materialKey] || 0) >= need);
 }
 
+export function canCraftStoneSpecial(key) {
+  return isStoneSpecialUnlocked(key);
+}
+
+export function stoneSpecialRank(key) {
+  const special = findStoneSpecialItem(key);
+  if (!special?.recipe?.length) return 0;
+  const inventory = ensureStoneMaterialInventory();
+  const sets = Object.entries(recipeCounts(special.recipe)).map(([materialKey, need]) => Math.floor((inventory[materialKey] || 0) / need));
+  if (!sets.length) return 0;
+  return Math.max(0, Math.min(3, Math.min(...sets)));
+}
+
+export function stoneSpecialRankMultiplier(key) {
+  const rank = stoneSpecialRank(key);
+  return rank <= 1 ? 1 : rank === 2 ? 1.2 : 1.4;
+}
+
 export function craftStoneSpecial(key) {
   const special = findStoneSpecialItem(key);
-  if (!special || !canCraftStoneSpecial(key)) return null;
-  const inventory = ensureStoneMaterialInventory();
-  Object.entries(recipeCounts(special.recipe)).forEach(([materialKey, need]) => {
-    inventory[materialKey] = Math.max(0, (inventory[materialKey] || 0) - need);
-  });
+  if (!special || !isStoneSpecialUnlocked(key)) return null;
   recomputeEquippedStoneItems();
   return special;
+}
+
+export function equipStoneSpecial(weapon, key, slotIndex = null) {
+  const special = craftStoneSpecial(key);
+  if (!weapon || !special) return false;
+  ensureStoneItemSlots(weapon);
+  const capacity = stoneSpecialSlotCapacity(weapon);
+  const existing = weapon.items.findIndex((item) => item?.key === special.key);
+  if (existing >= 0) return true;
+  if (Number.isInteger(slotIndex) && slotIndex >= 0 && slotIndex < capacity) weapon.items[slotIndex] = { key: special.key };
+  else if (weapon.items.length < capacity) weapon.items.push({ key: special.key });
+  else return false;
+  recomputeStoneItems(weapon, game.player, { gainedKey: key });
+  return true;
+}
+
+export function unequipStoneSpecial(weapon, slotIndex) {
+  if (!weapon) return false;
+  ensureStoneItemSlots(weapon);
+  if (!Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= weapon.items.length) return false;
+  weapon.items.splice(slotIndex, 1);
+  recomputeStoneItems(weapon, game.player);
+  return true;
+}
+
+export function replaceStoneSpecial(weapon, slotIndex, key) {
+  return equipStoneSpecial(weapon, key, slotIndex);
+}
+
+export function hasMaterials(requirements = {}) {
+  const inventory = ensureStoneMaterialInventory();
+  return Object.entries(requirements).every(([key, need]) => (inventory[canonicalStoneMaterialKey(key)] || 0) >= need);
 }
 
 export function stoneItemIcon(itemOrCategory) {
@@ -360,13 +447,21 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
   restoreWeaponBaseStats(weapon);
   ensureStoneItemSlots(weapon);
   restorePlayerBaseStats();
-  const counts = countItemsByKey(weapon.items);
+  const equipped = equippedStoneSpecials(weapon);
+  const counts = equipped.reduce((memo, item) => {
+    if (item?.key) memo[item.key] = (memo[item.key] || 0) + stoneSpecialRankMultiplier(item.key);
+    return memo;
+  }, {});
 
   applyStoneMaterialBonuses(weapon, player);
 
-  weapon.items.forEach((item) => {
-    const definition = findStoneItem(item?.key);
-    if (definition?.statBonus) applyStatBonus(weapon, player, definition.statBonus);
+  equipped.forEach((item) => {
+    const definition = findStoneSpecialItem(item?.key);
+    if (definition?.statBonus) {
+      const multiplier = stoneSpecialRankMultiplier(definition.key);
+      const rankedBonus = Object.fromEntries(Object.entries(definition.statBonus).map(([stat, value]) => [stat, value * multiplier]));
+      applyStatBonus(weapon, player, rankedBonus);
+    }
   });
 
   applyStoneBehaviorItems(weapon, counts);
@@ -499,7 +594,7 @@ export function checkStoneEvolution(weapon, counts = countItemsByKey(weapon?.ite
     existing.apply(weapon);
     return false;
   }
-  const evolution = STONE_EVOLUTIONS.find((candidate) => candidate.when(counts));
+  const evolution = STONE_EVOLUTIONS.find((candidate) => candidate.when(counts, weapon));
   if (!evolution) return false;
   weapon.evolvedStoneKey = evolution.key;
   weapon.evolvedStoneName = evolution.name;
@@ -518,15 +613,24 @@ export function applyStoneEvolutionByName(weapon, evolutionName) {
 }
 
 
-export function stoneEvolutionProgress(counts) {
+export function stoneEvolutionProgress(weaponOrCounts) {
+  const weapon = Array.isArray(weaponOrCounts?.items) ? weaponOrCounts : null;
+  const counts = weapon ? countItemsByKey(equippedStoneSpecials(weapon)) : (weaponOrCounts || {});
+  const inventory = ensureStoneMaterialInventory();
   return STONE_EVOLUTIONS.map((evolution) => ({
     name: evolution.name,
-    complete: evolution.when(counts),
-    requirements: evolution.progress.map((req) => ({
-      name: findStoneItem(req.key)?.name || req.key,
-      count: counts[req.key] || 0,
-      need: req.need,
-    })),
+    complete: evolution.when(counts, weapon),
+    requirements: evolution.progress.map((req) => {
+      const material = findStoneMaterial(req.key);
+      const count = material ? (inventory[req.key] || 0) : (counts[req.key] || 0);
+      return {
+        name: findStoneItem(req.key)?.name || req.key,
+        count,
+        need: req.need,
+        equipped: !material && count > 0,
+        type: material ? "material" : "equipped",
+      };
+    }),
   }));
 }
 
@@ -535,7 +639,11 @@ function stoneItemCategoryIcon(category) {
 }
 
 export function formatStoneItemSummary(weapon) {
-  const counts = countItemsByKey(weapon?.items || []);
-  const entries = STONE_ITEMS.filter((item) => counts[item.key] > 0).map((item) => `${stoneItemCategoryIcon(item.category)}${item.name} x${counts[item.key]}`);
+  const counts = countItemsByKey(equippedStoneSpecials(weapon));
+  const entries = STONE_SPECIAL_ITEMS.filter((item) => counts[item.key] > 0).map((item) => `${stoneItemCategoryIcon(item.category)}${item.name} ${romanRank(stoneSpecialRank(item.key))}`);
   return entries.length ? entries.join(" / ") : t("stone.noItems");
+}
+
+export function romanRank(rank) {
+  return rank >= 3 ? "III" : rank === 2 ? "II" : rank === 1 ? "I" : "0";
 }
