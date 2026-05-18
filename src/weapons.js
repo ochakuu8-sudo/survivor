@@ -832,6 +832,7 @@ function fireBullet(angle, weapon, options = {}) {
     deployStoneHazard: weapon.deployStoneHazard ? { ...weapon.deployStoneHazard } : null,
     stuckStone: weapon.stuckStone ? { ...weapon.stuckStone } : null,
     damageTrail: weapon.damageTrail ? { ...weapon.damageTrail } : null,
+    playerBeam: weapon.playerBeam ? { ...weapon.playerBeam } : null,
     flightGrowth: weapon.flightGrowth ? { ...weapon.flightGrowth } : null,
     wallBounceCount: weapon.wallBounceCount || 0,
     wallBounceSpeedScale: weapon.wallBounceSpeedScale || 1,
