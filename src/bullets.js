@@ -62,6 +62,7 @@ export function updateBullets(dt) {
     }
     if (bullet.flightGrowth) applyFlightGrowth(bullet, dt);
     if (bullet.damageTrail && bullet.kind !== "satelliteStone") addDamageTrailSegment(bullet, previousX, previousY);
+    if (bullet.playerBeam && bullet.kind !== "satelliteStone") addPlayerBeamSegment(bullet);
     if (game.dungeon && bullet.wallBounceCount > 0 && bullet.kind !== "satelliteStone" && !canStandAt(game.dungeon, bullet.x, bullet.y, bullet.radius * 0.55)) {
       reflectBulletFromDungeon(bullet, previousX, previousY);
     }
@@ -455,6 +456,31 @@ function addDamageTrailSegment(bullet, x1, y1) {
     life,
     maxLife: life,
     tint: bullet.effectTint || [1, 0.36, 0.12],
+  });
+}
+
+function addPlayerBeamSegment(bullet) {
+  if (!game.player) return;
+  const config = bullet.playerBeam;
+  addEffect({
+    type: "damageLine",
+    x1: game.player.x,
+    y1: game.player.y,
+    x2: bullet.x,
+    y2: bullet.y,
+    width: Math.max(7, bullet.radius * (config.widthScale || 0.5)),
+    damage: Math.max(1, bullet.damage * (config.damageScale || 0.2)),
+    tickRate: 8,
+    tickTimer: 0,
+    maxHits: config.maxHits || 10,
+    critChance: bullet.critChance || 0,
+    critMultiplier: bullet.critMultiplier || 1.75,
+    eliteBossBonus: bullet.eliteBossBonus || 0,
+    lifeStealPerKill: bullet.lifeStealPerKill || 0,
+    life: 0.08,
+    maxLife: 0.08,
+    glow: bullet.effectGlow || "glowCyan",
+    tint: bullet.effectTint || [0.64, 0.95, 1],
   });
 }
 
