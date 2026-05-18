@@ -11,13 +11,24 @@ import { claimTreasureReward, rerollTreasureReward } from "./treasure.js";
 import { cycleActiveWeapon } from "./weapons.js";
 import { updateHud } from "./hud.js";
 import { closeWorkbench, openCraftTreeReference } from "./workbench.js";
-import { localizeDom } from "./i18n.js";
+import { getLocale, localizeDom, setLocale } from "./i18n.js";
+
+function syncLocaleSelect() {
+  if (hud.localeSelect) hud.localeSelect.value = getLocale();
+}
 
 localizeDom();
+syncLocaleSelect();
 window.addEventListener("survivor:locale-changed", () => {
   localizeDom();
+  syncLocaleSelect();
   updateHud();
 });
+if (hud.localeSelect) {
+  hud.localeSelect.addEventListener("change", () => {
+    setLocale(hud.localeSelect.value);
+  });
+}
 
 hud.restart.addEventListener("click", resetRun);
 

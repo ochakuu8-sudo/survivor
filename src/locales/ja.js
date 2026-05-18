@@ -33,6 +33,8 @@ const ja = {
   "pause.materials": "所持素材",
   "pause.items": "所持アイテム",
   "pause.evolution": "進化進捗",
+  "pause.language": "言語",
+  "pause.languageSelect": "言語",
   "starter.label": "最初の武器",
   "starter.title": "3つから1つ選んで平原へ",
   "starter.fixedTitle": "{weapon}で探索開始",

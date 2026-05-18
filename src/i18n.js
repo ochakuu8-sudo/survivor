@@ -1,9 +1,10 @@
 import en from "./locales/en.js";
+import ja from "./locales/ja.js";
 
-export const SUPPORTED_LOCALES = ["en"];
+export const SUPPORTED_LOCALES = ["en", "ja"];
 export const DEFAULT_LOCALE = "en";
 
-const dictionaries = { en };
+const dictionaries = { en, ja };
 let currentLocale = DEFAULT_LOCALE;
 
 function normalizeLocale(locale) {
@@ -13,10 +14,13 @@ function normalizeLocale(locale) {
 }
 
 export function resolveInitialLocale() {
-  // The game is currently published as an English-only build.  Do not infer a
-  // different language from the host page, browser, or saved values; doing so
-  // can surface untranslated/Japanese UI on English distribution pages.
-  return DEFAULT_LOCALE;
+  try {
+    const savedLocale = globalThis.localStorage?.getItem("survivor_locale");
+    if (savedLocale) return normalizeLocale(savedLocale);
+  } catch (_error) {
+    // Ignore storage failures.
+  }
+  return normalizeLocale(globalThis.navigator?.language);
 }
 
 export function setLocale(locale) {
