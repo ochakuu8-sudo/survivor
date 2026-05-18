@@ -191,6 +191,10 @@ function assignRoomTypes(dungeon, rng, startRoom, exitRoom, wave) {
 
 function pickCombatRoomMaterial(index, wave) {
   if (!STONE_MATERIALS.length) return null;
+  if ((wave || 1) === 1) {
+    const earlyUnlockSequence = ["frequencyMaterial", "hpMaterial", "powerMaterial", "durationMaterial"];
+    return earlyUnlockSequence[index % earlyUnlockSequence.length];
+  }
   return STONE_MATERIALS[(index + Math.max(0, (wave || 1) - 1)) % STONE_MATERIALS.length]?.key || null;
 }
 

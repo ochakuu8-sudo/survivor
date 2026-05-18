@@ -21,6 +21,9 @@ import {
   pickStoneItemChoices,
   stoneItemIcon,
   formatStoneItemEffectSummary,
+  stoneSpecialSlotCapacity,
+  romanRank,
+  stoneSpecialRank,
 } from "./stoneItems.js";
 import { findStoneItem, findStoneMaterial } from "./data/stoneItems.js";
 
@@ -72,13 +75,7 @@ function getStoneWeapon() {
 
 function equipOrPromptStoneSpecial(stoneWeapon, key) {
   if (!stoneWeapon) return false;
-  if (equipStoneSpecial(stoneWeapon, key)) return true;
-  const max = Math.max(1, stoneWeapon.itemSlots || 1);
-  const input = typeof window !== "undefined" && typeof window.prompt === "function"
-    ? window.prompt(t("workbench.chooseReplaceSlot", { max }))
-    : "1";
-  const slotIndex = Number.parseInt(input, 10) - 1;
-  return Number.isInteger(slotIndex) && equipStoneSpecial(stoneWeapon, key, slotIndex);
+  return equipStoneSpecial(stoneWeapon, key);
 }
 
 export function beginAttachmentReward(rawAttachment, { source = "reward", allowDiscard = true } = {}) {
@@ -99,7 +96,7 @@ export function beginAttachmentReward(rawAttachment, { source = "reward", allowD
 }
 
 export function beginStoneItemChoiceReward(rawChoices, { source = "reward", allowDiscard = true } = {}) {
-  const choices = (rawChoices || []).map(normalizePendingStoneItem).filter(Boolean);
+  const choices = (rawChoices || []).map(normalizePendingStoneItem).filter((item) => item && (findStoneMaterial(item.key) || isStoneSpecialUnlocked(item.key)));
   if (choices.length === 0) return false;
   game.pendingAttachmentReward = {
     stoneChoices: choices,
@@ -126,7 +123,9 @@ export function beginStoneItemReward(rawItem) {
   const stoneWeapon = getStoneWeapon();
   if (!stoneWeapon) return false;
   if (!isStoneSpecialUnlocked(item.key)) return false;
-  equipOrPromptStoneSpecial(stoneWeapon, item.key);
+  if (!equipOrPromptStoneSpecial(stoneWeapon, item.key)) {
+    return beginStoneItemChoiceReward([item], { source: "reward", allowDiscard: true });
+  }
   updateHud();
   return true;
 }
@@ -167,6 +166,11 @@ function finishAttachmentReward() {
 }
 
 export function claimPendingAttachment() {
+  if (game.pendingAttachmentReward?.stoneReplaceKey) {
+    game.pendingAttachmentReward.stoneReplaceKey = null;
+    renderModdingPanel();
+    return;
+  }
   discardPendingAttachment();
 }
 
@@ -354,13 +358,22 @@ function choosePendingStoneItem(index) {
   }
   const stoneWeapon = getStoneWeapon();
   if (!stoneWeapon) return;
-  if (!isStoneSpecialUnlocked(item.key) || !equipOrPromptStoneSpecial(stoneWeapon, item.key)) return;
+  if (!isStoneSpecialUnlocked(item.key)) return;
+  if (!equipOrPromptStoneSpecial(stoneWeapon, item.key)) {
+    pending.stoneReplaceKey = item.key;
+    renderModdingPanel();
+    return;
+  }
   finishAttachmentReward();
 }
 
 function renderStoneItemChoicePanel(pending) {
   setModdingPanelVariant("stoneChoice");
   const stoneWeapon = getStoneWeapon();
+  if (pending.stoneReplaceKey) {
+    renderStoneReplacePanel(pending, stoneWeapon);
+    return;
+  }
   const counts = countItemsByKey(stoneWeapon?.items || []);
   const allSpecialChoices = pending.stoneChoices.every((item) => !findStoneMaterial(item.key));
   const kicker = hud.moddingPanel.querySelector(".panel-kicker");
@@ -415,6 +428,57 @@ function renderStoneItemChoicePanel(pending) {
   hud.moddingReroll.disabled = true;
   hud.moddingTake.textContent = pending.allowDiscard === false ? t("modding.chooseItemAction") : t("modding.drop");
   hud.moddingTake.disabled = pending.allowDiscard === false;
+  hud.moddingPanel.classList.remove("hidden");
+}
+
+function renderStoneReplacePanel(pending, stoneWeapon) {
+  const item = findStoneItem(pending.stoneReplaceKey);
+  const kicker = hud.moddingPanel.querySelector(".panel-kicker");
+  const heading = hud.moddingPanel.querySelector("h1");
+  if (kicker) kicker.textContent = sourceLabel(pending.source);
+  if (heading) heading.textContent = t("workbench.replaceMode");
+  hud.moddingWeaponName.textContent = t("workbench.noEmptySlot");
+  hud.moddingWeaponLevel.textContent = t("workbench.replaceMode");
+  hud.moddingGold.textContent = t("modding.waiting");
+  const treasureIcon = hud.moddingPanel.querySelector(".treasure-icon");
+  if (treasureIcon) {
+    treasureIcon.className = "treasure-icon modding-main-icon";
+    treasureIcon.textContent = stoneItemIcon(item);
+  }
+  hud.moddingAttachmentName.textContent = item?.name || pending.stoneReplaceKey;
+  hud.moddingAttachmentMeta.textContent = t("workbench.rank", { rank: romanRank(stoneSpecialRank(pending.stoneReplaceKey)) });
+  hud.moddingAttachmentText.textContent = t("workbench.noSpendHint");
+  hud.moddingSlots.replaceChildren();
+  const capacity = stoneSpecialSlotCapacity(stoneWeapon);
+  for (let slotIndex = 0; slotIndex < capacity; slotIndex += 1) {
+    const current = stoneWeapon?.items?.[slotIndex] || null;
+    const currentDefinition = findStoneItem(current?.key);
+    const card = document.createElement("li");
+    card.className = `mod-slot ${current ? "filled" : "empty"}`;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "mod-slot-select";
+    button.addEventListener("click", () => {
+      if (equipStoneSpecial(stoneWeapon, pending.stoneReplaceKey, slotIndex)) finishAttachmentReward();
+    });
+    const icon = document.createElement("span");
+    icon.className = "mod-slot-icon";
+    icon.textContent = currentDefinition ? stoneItemIcon(currentDefinition) : "+";
+    const copy = document.createElement("span");
+    copy.className = "mod-slot-copy";
+    const name = document.createElement("strong");
+    name.textContent = currentDefinition ? `${currentDefinition.name} ${romanRank(stoneSpecialRank(currentDefinition.key))}` : t("workbench.emptySlot");
+    const meta = document.createElement("small");
+    meta.textContent = t("workbench.replaceWith", { item: item?.name || pending.stoneReplaceKey });
+    copy.append(name, meta);
+    button.append(icon, copy);
+    card.append(button);
+    hud.moddingSlots.append(card);
+  }
+  hud.moddingReroll.textContent = t("modding.noReroll");
+  hud.moddingReroll.disabled = true;
+  hud.moddingTake.textContent = t("workbench.cancelReplace");
+  hud.moddingTake.disabled = false;
   hud.moddingPanel.classList.remove("hidden");
 }
 

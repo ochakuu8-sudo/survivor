@@ -5,7 +5,7 @@ import { hud } from "./dom.js";
 import { addEffect, addSparks } from "./effects.js";
 import { updateHud } from "./hud.js";
 import { beginStoneItemChoiceReward } from "./modding.js";
-import { pickStoneItemChoices, pickStoneSpecialItemChoices } from "./stoneItems.js";
+import { isStoneSpecialUnlocked, pickStoneItemChoices, pickStoneSpecialItemChoices } from "./stoneItems.js";
 import { STONE_MATERIALS } from "./data/stoneItems.js";
 
 export function treasureRerollPrice() {
@@ -89,7 +89,8 @@ function renderTreasureReward() {
 function chooseTreasureReward(chest = null) {
   const baseMaterialChoice = chest?.rewardKind === "baseMaterialChoice";
   const specialOnly = chest?.rewardKind === "synthesizedStoneItem";
-  const choices = baseMaterialChoice ? [...STONE_MATERIALS] : specialOnly ? pickStoneSpecialItemChoices(3) : pickStoneItemChoices(3);
+  let choices = baseMaterialChoice ? [...STONE_MATERIALS] : specialOnly ? pickStoneSpecialItemChoices(8).filter((item) => isStoneSpecialUnlocked(item.key)).slice(0, 3) : pickStoneItemChoices(3, { includeRareSpecial: false });
+  if (specialOnly && choices.length === 0) choices = pickStoneItemChoices(3, { includeRareSpecial: false });
   if (choices.length > 0) {
     return {
       type: "stoneItemChoice",
