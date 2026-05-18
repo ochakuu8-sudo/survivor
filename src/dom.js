@@ -67,6 +67,7 @@ export const hud = {
   pauseBtn: document.querySelector("#pauseBtn"),
   pauseMenu: document.querySelector("#pauseMenu"),
   pauseStoneItems: document.querySelector("#pauseStoneItems"),
+  localeSelect: document.querySelector("#localeSelect"),
   resumeBtn: document.querySelector("#resumeBtn"),
   pauseSkillDebugBtn: document.querySelector("#pauseSkillDebugBtn"),
   pauseDebugBtn: document.querySelector("#pauseDebugBtn"),

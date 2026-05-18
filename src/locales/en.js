@@ -33,6 +33,8 @@ const en = {
   "pause.materials": "Materials",
   "pause.items": "Modules",
   "pause.evolution": "Evolution",
+  "pause.language": "Language",
+  "pause.languageSelect": "Language",
   "starter.label": "Starter Weapon",
   "starter.title": "Pick one and enter",
   "starter.fixedTitle": "Start with {weapon}",
