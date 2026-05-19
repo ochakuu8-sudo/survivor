@@ -29,6 +29,7 @@ let statusText = t("workbench.status");
 let workbenchReadOnly = false;
 let selectedCraftItemKey = null;
 let pendingReplaceItemKey = null;
+let craftTreeViewportState = { left: 0, top: 0 };
 
 export function openWorkbench(facility = null) {
   if (!game.player?.gear) return;
@@ -207,9 +208,6 @@ function renderEquippedStoneItems(stoneWeapon) {
 function renderSpecialItemList(stoneWeapon) {
   const wrapper = document.createElement("div");
   wrapper.className = "workbench-craft-tree skill-node-map-wrap";
-  const header = document.createElement("div");
-  header.className = "workbench-craft-tree-legend";
-  header.textContent = t("workbench.availableItems");
   const grid = document.createElement("div");
   grid.className = "workbench-material-grid";
   STONE_SPECIAL_ITEMS.forEach((item) => {
@@ -224,17 +222,13 @@ function renderSpecialItemList(stoneWeapon) {
     card.addEventListener("click", () => equipSelectedItem(stoneWeapon, item.key));
     grid.append(card);
   });
-  wrapper.append(header, grid);
+  wrapper.append(grid);
   return wrapper;
 }
 
 function renderModuleEvolutionTree() {
   const wrapper = document.createElement("div");
   wrapper.className = "workbench-craft-tree skill-node-map-wrap";
-
-  const header = document.createElement("div");
-  header.className = "workbench-craft-tree-legend";
-  header.innerHTML = t("workbench.treeHeader");
 
   const viewport = document.createElement("div");
   viewport.className = "workbench-craft-tree-viewport skill-node-map-scroller";
@@ -306,10 +300,12 @@ function renderModuleEvolutionTree() {
 
   map.appendChild(svg);
   viewport.appendChild(map);
-  wrapper.append(header, viewport);
-  requestAnimationFrame(() => {
-    viewport.scrollLeft = 0;
-  });
+  viewport.scrollLeft = craftTreeViewportState.left || 0;
+  viewport.scrollTop = craftTreeViewportState.top || 0;
+  viewport.addEventListener("scroll", () => {
+    craftTreeViewportState = { left: viewport.scrollLeft, top: viewport.scrollTop };
+  }, { passive: true });
+  wrapper.append(viewport);
   return wrapper;
 }
 
