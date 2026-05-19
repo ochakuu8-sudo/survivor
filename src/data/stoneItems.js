@@ -9,7 +9,7 @@ export const STONE_MATERIAL_ALIASES = {
 export const STONE_MATERIALS = [
   {
     key: "powerMaterial",
-    icon: "P",
+    icon: "💥",
     sprite: "materialPower",
     name: t("stone.item.powerMaterial.name"), nameKey: "stone.item.powerMaterial.name",
     shortName: t("stone.stats.damage"),
@@ -23,7 +23,7 @@ export const STONE_MATERIALS = [
   },
   {
     key: "frequencyMaterial",
-    icon: "F",
+    icon: "⚙️",
     sprite: "materialFrequency",
     name: t("stone.item.frequencyMaterial.name"), nameKey: "stone.item.frequencyMaterial.name",
     shortName: `${t("stone.stats.fireRate")} / ${t("stone.stats.bulletSpeed")}`,
@@ -37,7 +37,7 @@ export const STONE_MATERIALS = [
   },
   {
     key: "durationMaterial",
-    icon: "T",
+    icon: "🧭",
     sprite: "materialDuration",
     name: t("stone.item.durationMaterial.name"), nameKey: "stone.item.durationMaterial.name",
     shortName: t("stone.stats.life"),
@@ -51,7 +51,7 @@ export const STONE_MATERIALS = [
   },
   {
     key: "hpMaterial",
-    icon: "HP",
+    icon: "🛡️",
     sprite: "materialHp",
     name: t("stone.item.hpMaterial.name"), nameKey: "stone.item.hpMaterial.name",
     shortName: `HP / ${t("stone.stats.radius")}`,

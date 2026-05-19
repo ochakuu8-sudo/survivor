@@ -357,11 +357,48 @@ function drawPixelMaterialIcon(ctx, w, h, config) {
   px(ctx, cx - 13, cy - 17, 26, 34, config.mid);
   px(ctx, cx - 12, cy - 12, 24, 22, config.light);
   px(ctx, cx - 7, cy - 13, 9, 4, "rgba(255, 255, 255, 0.48)");
-  ctx.fillStyle = config.text || "#1c1730";
-  ctx.font = `bold ${config.label.length > 1 ? 13 : 18}px sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(config.label, cx, cy + 1);
+  if (typeof config.drawGlyph === "function") {
+    config.drawGlyph(ctx, cx, cy);
+  }
+}
+
+function drawPowerGlyph(ctx, cx, cy) {
+  px(ctx, cx - 2, cy - 9, 4, 18, "#2b1324");
+  px(ctx, cx - 7, cy - 4, 14, 4, "#2b1324");
+  px(ctx, cx - 4, cy - 11, 8, 22, "#ffecbf");
+  px(ctx, cx - 10, cy - 3, 20, 6, "#ff9b5a");
+  px(ctx, cx - 2, cy - 14, 4, 28, "#fff8df");
+  px(ctx, cx - 3, cy + 3, 6, 3, "#ff6638");
+}
+
+function drawFrequencyGlyph(ctx, cx, cy) {
+  px(ctx, cx - 10, cy - 10, 20, 20, "#3a2a16");
+  px(ctx, cx - 7, cy - 7, 14, 14, "#f3be46");
+  px(ctx, cx - 3, cy - 3, 6, 6, "#3a2a16");
+  px(ctx, cx - 2, cy - 14, 4, 6, "#ffe38f");
+  px(ctx, cx - 2, cy + 8, 4, 6, "#ffe38f");
+  px(ctx, cx - 14, cy - 2, 6, 4, "#ffe38f");
+  px(ctx, cx + 8, cy - 2, 6, 4, "#ffe38f");
+  px(ctx, cx - 11, cy - 11, 4, 4, "#ffefb7");
+}
+
+function drawDurationGlyph(ctx, cx, cy) {
+  px(ctx, cx - 12, cy - 12, 24, 24, "#23315f");
+  px(ctx, cx - 10, cy - 10, 20, 20, "#4d76da");
+  px(ctx, cx - 2, cy - 8, 4, 10, "#f5fbff");
+  px(ctx, cx - 2, cy - 2, 8, 4, "#f5fbff");
+  px(ctx, cx - 1, cy - 9, 2, 2, "#bfd6ff");
+  px(ctx, cx + 8, cy - 10, 2, 4, "#b0d5ff");
+  px(ctx, cx - 10, cy + 8, 4, 2, "#b0d5ff");
+}
+
+function drawHpGlyph(ctx, cx, cy) {
+  px(ctx, cx - 13, cy - 12, 26, 22, "#1d4c31");
+  px(ctx, cx - 11, cy - 10, 22, 18, "#3fbf69");
+  px(ctx, cx - 3, cy - 7, 6, 14, "#f5ffd8");
+  px(ctx, cx - 7, cy - 3, 14, 6, "#f5ffd8");
+  px(ctx, cx - 9, cy + 9, 18, 2, "#265738");
+  px(ctx, cx - 4, cy - 12, 8, 2, "#b9ffd0");
 }
 
 function drawPixelGoldCoin(ctx, w, h) {
@@ -992,13 +1029,13 @@ export function buildAtlas() {
 
 
   add("materialPower", 48, 48, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "P", dark: "#6b2318", mid: "#d64b2f", light: "#ff9a5c" }), 1, "rgba(17, 12, 43, 0.58)");
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { dark: "#6b2318", mid: "#d64b2f", light: "#ff9a5c", drawGlyph: drawPowerGlyph }), 1, "rgba(17, 12, 43, 0.58)");
   });
   add("materialFrequency", 48, 48, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "F", dark: "#7a5616", mid: "#e0a22b", light: "#ffe66a" }), 1, "rgba(17, 12, 43, 0.58)");
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { dark: "#7a5616", mid: "#e0a22b", light: "#ffe66a", drawGlyph: drawFrequencyGlyph }), 1, "rgba(17, 12, 43, 0.58)");
   });
   add("materialDuration", 48, 48, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "T", dark: "#24396b", mid: "#4f75d6", light: "#94c7ff" }), 1, "rgba(17, 12, 43, 0.58)");
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { dark: "#24396b", mid: "#4f75d6", light: "#94c7ff", drawGlyph: drawDurationGlyph }), 1, "rgba(17, 12, 43, 0.58)");
   });
   add("materialSpeed", 48, 48, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "S", dark: "#24524a", mid: "#39aa92", light: "#8fffe1" }), 1, "rgba(17, 12, 43, 0.58)");
@@ -1007,7 +1044,7 @@ export function buildAtlas() {
     drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "Z", dark: "#4e3368", mid: "#9460cb", light: "#d7a6ff" }), 1, "rgba(17, 12, 43, 0.58)");
   });
   add("materialHp", 48, 48, (ctx, w, h) => {
-    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { label: "HP", dark: "#24613d", mid: "#3dc56f", light: "#a6ffae" }), 1, "rgba(17, 12, 43, 0.58)");
+    drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { dark: "#24613d", mid: "#3dc56f", light: "#a6ffae", drawGlyph: drawHpGlyph }), 1, "rgba(17, 12, 43, 0.58)");
   });
 
   add("goldCoin", 34, 34, (ctx, w, h) => {
