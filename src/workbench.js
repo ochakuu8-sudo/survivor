@@ -435,8 +435,6 @@ function renderModuleInfoPanel() {
   }
 
   const unlocked = isStoneSpecialUnlocked(item.key);
-  const counts = currentStoneItemCounts();
-  const owned = counts[item.key] || 0;
   const button = document.createElement("button");
   button.type = "button";
   button.className = "primary workbench-info-craft";
@@ -445,21 +443,17 @@ function renderModuleInfoPanel() {
   button.addEventListener("click", () => equipSelectedModule(item.key));
 
   panel.innerHTML = `
-    <div class="workbench-info-head">
-      <span class="workbench-info-icon">${stoneItemIcon(item)}</span>
-      <div>
-        <strong>${item.name}</strong>
-        <small>${t("workbench.rank", { rank: romanRank(stoneSpecialRank(item.key)) })} · ${t("workbench.ownedCount", { count: owned })}</small>
+    <div class="workbench-info-row">
+      <div class="workbench-info-head">
+        <span class="workbench-info-icon">${stoneItemIcon(item)}</span>
+        <div>
+          <strong>${item.name}</strong>
+          <small>${formatStoneItemEffectSummary(item)}</small>
+        </div>
       </div>
     </div>
-    <p>${item.description || t("stone.noEffect")}</p>
-    <dl>
-      <div><dt>${t("workbench.effectLabel")}</dt><dd>${formatStoneItemEffectSummary(item)}</dd></div>
-      <div><dt>${t("workbench.recipeLabel")}</dt><dd class="workbench-info-recipe">${recipeIconText(item.recipe)}</dd></div>
-      <div><dt>${t("workbench.statusLabel")}</dt><dd>${unlocked ? t("stone.craftable") : t("workbench.lockedBy", { requirements: missingRecipeText(item.recipe) })}</dd></div>
-    </dl>
   `;
-  panel.append(button);
+  panel.querySelector(".workbench-info-row")?.append(button);
   return panel;
 }
 
