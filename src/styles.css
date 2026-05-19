@@ -4483,7 +4483,7 @@ button.workbench-craft-node:not(:disabled):hover {
   width: 1rem;
   height: 1rem;
   border-radius: 0.3rem;
-  color: #10273a;
+  color: #000;
   background: #ffe46b;
   font-size: 0.42rem;
   font-weight: 1000;
