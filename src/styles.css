@@ -3888,6 +3888,13 @@ h1 {
 }
 
 @media (max-width: 760px), (max-height: 640px) {
+  body.workbench-tree-open {
+    --workbench-top-bar-height: 48px;
+    --workbench-equipped-panel-height: clamp(72px, 14dvh, 120px);
+    --workbench-info-panel-height: clamp(150px, 30dvh, 220px);
+    --workbench-panel-gap: 6px;
+  }
+
   body.workbench-tree-open #workbenchPanel.panel {
     position: fixed;
     inset: 0;
@@ -3907,7 +3914,10 @@ h1 {
   }
 
   body.workbench-tree-open #workbenchPanel .panel-head > div,
-  body.workbench-tree-open #workbenchPanel .workbench-status {
+  body.workbench-tree-open #workbenchStorageCount,
+  body.workbench-tree-open #workbenchPanel .workbench-status,
+  body.workbench-tree-open #workbenchPanel .workbench-weapons,
+  body.workbench-tree-open #workbenchPanel .workbench-special-list {
     display: none !important;
   }
 
@@ -3916,10 +3926,7 @@ h1 {
     gap: 7px;
   }
 
-  #workbenchPanel .workbench-weapons,
-  #workbenchPanel .workbench-storage-head,
-  #workbenchStorageCount,
-  #workbenchPanel .workbench-special-list {
+  #workbenchPanel .workbench-storage-head {
     display: none !important;
   }
 
@@ -3927,6 +3934,7 @@ h1 {
     position: absolute;
     inset: 0;
     display: block;
+    width: 100%;
     height: 100%;
     padding: 0;
     overflow: hidden;
@@ -3936,9 +3944,9 @@ h1 {
     position: fixed;
     top: max(8px, env(safe-area-inset-top));
     right: max(8px, env(safe-area-inset-right));
-    z-index: 30;
+    z-index: 50;
     min-width: 56px;
-    min-height: 36px;
+    height: 36px;
   }
 
   body.workbench-tree-open .workbench-material-bar {
@@ -3946,33 +3954,32 @@ h1 {
     top: env(safe-area-inset-top);
     left: 0;
     right: calc(72px + env(safe-area-inset-right));
-    z-index: 20;
+    z-index: 45;
+    height: var(--workbench-top-bar-height);
+    min-height: var(--workbench-top-bar-height);
+    max-height: var(--workbench-top-bar-height);
     display: flex;
-    gap: 6px;
-    min-height: 44px;
+    align-items: center;
+    gap: 4px;
     padding: 6px 8px;
-    background: rgba(20, 23, 54, 0.95);
-    border-bottom: 1px solid rgba(157, 247, 255, 0.32);
     overflow: hidden;
   }
 
   .workbench-material-bar-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
     min-width: 0;
-    padding: 2px 6px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.08);
+    flex: 0 1 auto;
   }
 
   body.workbench-tree-open .workbench-tree-stage {
     position: absolute;
-    top: calc(env(safe-area-inset-top) + 48px);
+    top: calc(env(safe-area-inset-top) + var(--workbench-top-bar-height));
     left: 0;
     right: 0;
-    bottom: calc(env(safe-area-inset-bottom) + 176px);
+    bottom: calc(
+      env(safe-area-inset-bottom) + var(--workbench-info-panel-height) + var(--workbench-equipped-panel-height) + var(--workbench-panel-gap) * 3
+    );
     overflow: hidden;
+    min-height: 120px;
   }
 
   body.workbench-tree-open .workbench-tree-stage .workbench-craft-tree,
@@ -3985,19 +3992,86 @@ h1 {
     -webkit-overflow-scrolling: touch;
   }
 
+  body.workbench-tree-open .workbench-equipped-slot {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: calc(
+      env(safe-area-inset-bottom) + var(--workbench-info-panel-height) + var(--workbench-panel-gap) * 2
+    );
+    z-index: 46;
+    height: var(--workbench-equipped-panel-height);
+    max-height: var(--workbench-equipped-panel-height);
+    overflow: hidden;
+  }
+
+  body.workbench-tree-open .workbench-equipped-compact {
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid rgba(157, 247, 255, 0.24);
+    background: rgba(20, 23, 54, 0.9);
+  }
+
+  body.workbench-tree-open .workbench-equipped-compact h2 {
+    margin: 0 0 4px;
+    font-size: 0.75rem;
+  }
+
+  body.workbench-tree-open .workbench-equipped-compact-list {
+    display: flex;
+    gap: 6px;
+    height: calc(100% - 24px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.workbench-tree-open .workbench-equipped-chip {
+    display: grid;
+    gap: 1px;
+    align-content: center;
+    min-width: 110px;
+    padding: 4px 6px;
+    border-radius: 10px;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  body.workbench-tree-open .workbench-equipped-chip.empty {
+    opacity: 0.8;
+  }
+
+  body.workbench-tree-open .workbench-equipped-chip strong {
+    font-size: 0.69rem;
+    line-height: 1.1;
+  }
+
+  body.workbench-tree-open .workbench-equipped-chip small {
+    font-size: 0.6rem;
+    opacity: 0.9;
+  }
+
   body.workbench-tree-open .workbench-info-slot {
     position: fixed;
     left: 8px;
     right: 8px;
     bottom: max(6px, env(safe-area-inset-bottom));
-    z-index: 25;
-    max-height: 166px;
-    overflow: auto;
+    z-index: 47;
+    height: var(--workbench-info-panel-height);
+    max-height: var(--workbench-info-panel-height);
+    overflow: hidden;
   }
 
-  .workbench-info-panel {
-    max-height: 166px;
+  body.workbench-tree-open .workbench-info-panel {
+    height: 100%;
+    max-height: 100%;
+    margin: 0;
     overflow: auto;
+    padding: 8px;
+    border-radius: 12px;
   }
 
   .workbench-weapon-card,
@@ -4058,6 +4132,28 @@ h1 {
   .workbench-material-chip {
     padding: 0.38rem;
     border-radius: 0.55rem;
+  }
+}
+
+@media (max-height: 640px) {
+  body.workbench-tree-open {
+    --workbench-top-bar-height: 42px;
+    --workbench-equipped-panel-height: clamp(56px, 12dvh, 84px);
+    --workbench-info-panel-height: clamp(120px, 28dvh, 170px);
+    --workbench-panel-gap: 4px;
+  }
+
+  body.workbench-tree-open .workbench-info-panel p {
+    display: none;
+  }
+
+  body.workbench-tree-open .workbench-info-panel dl {
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+
+  body.workbench-tree-open .workbench-info-craft {
+    min-height: 36px;
   }
 }
 

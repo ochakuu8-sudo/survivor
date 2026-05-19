@@ -136,6 +136,16 @@ export function renderWorkbenchPanel() {
     treeStage.className = "workbench-tree-stage";
     treeStage.append(renderModuleEvolutionTree());
     storageRoot.append(treeStage);
+
+    const equippedSlot = document.createElement("div");
+    equippedSlot.className = "workbench-equipped-slot";
+    equippedSlot.append(renderEquippedStoneItemsCompact(stoneWeapon));
+    storageRoot.append(equippedSlot);
+    
+    workbenchInfoSlot = document.createElement("div");
+    workbenchInfoSlot.id = "workbenchInfoSlot";
+    workbenchInfoSlot.className = "workbench-info-slot";
+    storageRoot.append(workbenchInfoSlot);
   } else {
     const inventory = ensureStoneMaterialInventory();
     const materialCard = document.createElement("article");
@@ -159,10 +169,12 @@ export function renderWorkbenchPanel() {
     storageRoot.append(renderModuleEvolutionTree());
   }
 
-  workbenchInfoSlot = document.createElement("div");
-  workbenchInfoSlot.id = "workbenchInfoSlot";
-  workbenchInfoSlot.className = "workbench-info-slot";
-  storageRoot.append(workbenchInfoSlot);
+  if (!mobileTreeMode) {
+    workbenchInfoSlot = document.createElement("div");
+    workbenchInfoSlot.id = "workbenchInfoSlot";
+    workbenchInfoSlot.className = "workbench-info-slot";
+    storageRoot.append(workbenchInfoSlot);
+  }
   updateCraftSelectionUi();
   updateWorkbenchInfoPanel();
 
@@ -175,6 +187,38 @@ export function renderWorkbenchPanel() {
     const completed = stoneEvolutionProgress(stoneWeapon).filter((evolution) => evolution.complete).length;
     hud.workbenchStorageCount.textContent = t("workbench.storageCount", { craftable: unlocked, total: STONE_SPECIAL_ITEMS.length, completed, evolutionTotal: STONE_EVOLUTIONS.length });
   }
+}
+
+function renderEquippedStoneItemsCompact(stoneWeapon) {
+  const card = document.createElement("section");
+  card.className = "workbench-equipped-compact";
+  const title = document.createElement("h2");
+  title.textContent = t("workbench.equippedItems");
+  const list = document.createElement("div");
+  list.className = "workbench-equipped-compact-list";
+  const capacity = stoneSpecialSlotCapacity(stoneWeapon);
+  for (let index = 0; index < capacity; index += 1) {
+    const equipped = stoneWeapon?.items?.[index] || null;
+    const item = equipped ? STONE_SPECIAL_ITEMS.find((candidate) => candidate.key === equipped.key) : null;
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = `workbench-equipped-chip${item ? " filled" : " empty"}`;
+    chip.innerHTML = `
+      <span class="workbench-item-icon">${item ? stoneItemIcon(item) : "+"}</span>
+      <strong>${item ? item.name : t("workbench.emptySlot")}</strong>
+      <small>${item ? romanRank(stoneSpecialRank(item.key)) : ""}</small>
+    `;
+    if (item) chip.addEventListener("click", () => selectCraftItem(item.key));
+    list.append(chip);
+  }
+  card.append(title, list);
+  return card;
+}
+
+function updateEquippedModulesPanel() {
+  const slot = hud.workbenchStorage?.querySelector(".workbench-equipped-slot");
+  if (!slot) return;
+  slot.replaceChildren(renderEquippedStoneItemsCompact(getStoneWeapon()));
 }
 
 function renderCompactMaterialBar() {
@@ -501,7 +545,11 @@ function equipSelectedItem(stoneWeapon, key) {
   if (equipStoneSpecial(stoneWeapon, key)) {
     const item = STONE_SPECIAL_ITEMS.find((candidate) => candidate.key === key);
     statusText = t("workbench.equippedStatus", { item: item?.name || key });
-    renderWorkbenchPanel();
+    if (window.matchMedia(MOBILE_WORKBENCH_MEDIA).matches) {
+      updateCraftSelectionUi();
+      updateWorkbenchInfoPanel();
+      updateEquippedModulesPanel();
+    } else renderWorkbenchPanel();
     updateHud();
     return;
   }
@@ -532,7 +580,11 @@ function replacePendingModule(stoneWeapon, slotIndex) {
   } else {
     statusText = t("workbench.noEmptySlot");
   }
-  renderWorkbenchPanel();
+  if (window.matchMedia(MOBILE_WORKBENCH_MEDIA).matches) {
+    updateCraftSelectionUi();
+    updateWorkbenchInfoPanel();
+    updateEquippedModulesPanel();
+  } else renderWorkbenchPanel();
   updateHud();
 }
 
