@@ -65,7 +65,7 @@ export const STONE_MATERIALS = [
   },
 ];
 
-export const STONE_SPECIAL_ITEMS = [
+const ALL_STONE_SPECIAL_ITEMS = [
   { key: "heavyStone", name: t("stone.item.heavyStone.name"), nameKey: "stone.item.heavyStone.name", description: t("stone.item.heavyStone.description"), descriptionKey: "stone.item.heavyStone.description", category: "special", tags: ["hp", "boulder", "knockback"], recipe: ["hpMaterial", "hpMaterial"], statBonus: { radius: 0.32, knockbackFlat: 28 }, behavior: { effect: "heavy", value: 1 }, weight: 0.05 },
   { key: "critStone", name: t("stone.item.critStone.name"), nameKey: "stone.item.critStone.name", description: t("stone.item.critStone.description"), descriptionKey: "stone.item.critStone.description", category: "special", tags: ["critical", "damage"], recipe: ["powerMaterial", "powerMaterial"], statBonus: { damage: 0.16 }, behavior: { effect: "criticalChance", value: 0.25 }, weight: 0.05 },
   { key: "bounceStone", name: t("stone.item.bounceStone.name"), nameKey: "stone.item.bounceStone.name", description: t("stone.item.bounceStone.description"), descriptionKey: "stone.item.bounceStone.description", category: "special", tags: ["range", "ricochet", "targeting"], recipe: ["durationMaterial", "durationMaterial"], statBonus: { life: 0.22, range: 0.12 }, behavior: { effect: "ricochetCount", value: 1 }, weight: 0.05 },
@@ -77,6 +77,8 @@ export const STONE_SPECIAL_ITEMS = [
   { key: "multiThrow", name: t("stone.item.multiThrow.name"), nameKey: "stone.item.multiThrow.name", description: t("stone.item.multiThrow.description"), descriptionKey: "stone.item.multiThrow.description", category: "special", tags: ["power", "speed", "projectileCount"], recipe: ["powerMaterial", "frequencyMaterial"], statBonus: { damage: 0.1, fireRate: 0.1 }, behavior: { effect: "projectileCount", value: 1 }, weight: 0.05 },
   { key: "piercingStone", name: t("stone.item.piercingStone.name"), nameKey: "stone.item.piercingStone.name", description: t("stone.item.piercingStone.description"), descriptionKey: "stone.item.piercingStone.description", category: "special", tags: ["range", "speed", "pierce", "wallBounce"], recipe: ["durationMaterial", "frequencyMaterial"], statBonus: { bulletSpeed: 0.14, life: 0.14 }, behavior: { effect: "pierce", value: 1 }, weight: 0.05 },
 ];
+
+export const STONE_SPECIAL_ITEMS = ALL_STONE_SPECIAL_ITEMS.slice(0, 10);
 
 export const STONE_ITEMS = [...STONE_MATERIALS, ...STONE_SPECIAL_ITEMS];
 
