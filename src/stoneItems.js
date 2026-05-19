@@ -5,120 +5,8 @@ import { STONE_ITEMS, STONE_MATERIALS, STONE_SPECIAL_ITEMS, STONE_MATERIAL_ALIAS
 import { restoreWeaponBaseStats } from "./weapons.js";
 
 const PLAYER_BASE_STAT_KEYS = ["maxHp", "speed", "pickup", "armor", "barrierMax", "weaponPowerBonus"];
-export const STONE_EVOLUTIONS = [
-  {
-    key: "rubberBall",
-    name: t("stone.evolution.rubberBall.name"), nameKey: "stone.evolution.rubberBall.name",
-    progress: [
-      { key: "bounceStone", need: 1, type: "equipped" },
-      { key: "frequencyMaterial", need: 4, type: "material" },
-      { key: "durationMaterial", need: 3, type: "material" },
-    ],
-    when: (counts, weapon) => hasEquippedSpecial(weapon, "bounceStone") && hasMaterials({ frequencyMaterial: 4, durationMaterial: 3 }),
-    apply: (weapon) => {
-      weapon.name = t("stone.evolution.rubberBall.name");
-      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
-      weapon.ricochetSplitCount = Math.max(weapon.ricochetSplitCount || 1, 2);
-      weapon.splitShardCount = Math.max(weapon.splitShardCount || 0, 1);
-      weapon.splitSpawnLimit = Math.max(weapon.splitSpawnLimit || 10, 14);
-      weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "rubber", trail: "yellow", hitEffect: "heavy" };
-      weapon.bulletTint = [0.95, 0.86, 0.45];
-      weapon.bulletGlow = "glowAmber";
-      weapon.bulletSprite = "stoneRound";
-    },
-  },
-  {
-    key: "meteorCore",
-    name: t("stone.evolution.meteorCore.name"), nameKey: "stone.evolution.meteorCore.name",
-    progress: [
-      { key: "explosiveStone", need: 1, type: "equipped" },
-      { key: "powerMaterial", need: 6, type: "material" },
-      { key: "hpMaterial", need: 3, type: "material" },
-    ],
-    when: (counts, weapon) => hasEquippedSpecial(weapon, "explosiveStone") && hasMaterials({ powerMaterial: 6, hpMaterial: 3 }),
-    apply: (weapon) => {
-      weapon.name = t("stone.evolution.meteorCore.name");
-      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
-      weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 92);
-      weapon.explosionDamage *= 1.25;
-      weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "meteor", trail: "orange", hitEffect: "heavy" };
-      weapon.bulletTint = [1, 0.34, 0.18];
-      weapon.bulletGlow = "glowRed";
-      weapon.effectTint = [1, 0.34, 0.18];
-      weapon.effectGlow = "glowRed";
-    },
-  },
-  {
-    key: "masterStone",
-    name: t("stone.evolution.masterStone.name"), nameKey: "stone.evolution.masterStone.name",
-    progress: [
-      { key: "critStone", need: 1, type: "equipped" },
-      { key: "laserStone", need: 1, type: "equipped" },
-      { key: "powerMaterial", need: 6, type: "material" },
-      { key: "frequencyMaterial", need: 4, type: "material" },
-    ],
-    when: (counts, weapon) => hasEquippedSpecial(weapon, "critStone") && hasEquippedSpecial(weapon, "laserStone") && hasMaterials({ powerMaterial: 6, frequencyMaterial: 4 }),
-    apply: (weapon) => {
-      weapon.name = t("stone.evolution.masterStone.name");
-      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
-      weapon.masterStoneInterval = Math.min(8, weapon.masterStoneInterval || 8);
-      weapon.masterStoneTimer = Math.min(weapon.masterStoneTimer ?? weapon.masterStoneInterval, weapon.masterStoneInterval);
-      weapon.masterStoneDamageScale = Math.max(weapon.masterStoneDamageScale || 0, 3.6);
-      weapon.masterStoneEliteBossBonus = Math.max(weapon.masterStoneEliteBossBonus || 0, 0.6);
-      weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "master", trail: "white", hitEffect: "critical" };
-      weapon.bulletTint = [1, 1, 0.92];
-      weapon.bulletGlow = "glowCyan";
-      weapon.bulletSprite = "stoneMaster";
-    },
-  },
-  {
-    key: "rollingBoulder",
-    name: t("stone.evolution.rollingBoulder.name"), nameKey: "stone.evolution.rollingBoulder.name",
-    progress: [{ key: "satelliteStone", need: 1, type: "equipped" }, { key: "heavyStone", need: 1, type: "equipped" }, { key: "hpMaterial", need: 5, type: "material" }],
-    when: (counts, weapon) => hasEquippedSpecial(weapon, "satelliteStone") && hasEquippedSpecial(weapon, "heavyStone") && hasMaterials({ hpMaterial: 5 }),
-    apply: (weapon) => {
-      weapon.name = t("stone.evolution.rollingBoulder.name");
-      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
-      weapon.rollingStone = Math.max(weapon.rollingStone || 0, 2);
-      weapon.radius *= 1.18;
-      weapon.knockback += 18;
-      weapon.splitSpawnLimit = Math.max(weapon.splitSpawnLimit || 10, 12);
-      weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "heavy", trail: "none", hitEffect: "heavy" };
-      weapon.bulletSprite = "stoneHeavy";
-    },
-  },
-  {
-    key: "gravityCore",
-    name: t("stone.evolution.gravityCore.name"), nameKey: "stone.evolution.gravityCore.name",
-    progress: [{ key: "laserStone", need: 1, type: "equipped" }, { key: "explosiveStone", need: 1, type: "equipped" }, { key: "powerMaterial", need: 4, type: "material" }, { key: "hpMaterial", need: 4, type: "material" }],
-    when: (counts, weapon) => hasEquippedSpecial(weapon, "laserStone") && hasEquippedSpecial(weapon, "explosiveStone") && hasMaterials({ powerMaterial: 4, hpMaterial: 4 }),
-    apply: (weapon) => {
-      weapon.name = t("stone.evolution.gravityCore.name");
-      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
-      weapon.pullStrength = Math.max(weapon.pullStrength || 0, 4);
-      weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, 82);
-      weapon.chainShatterChance = Math.max(weapon.chainShatterChance || 0, 0.18);
-      weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "meteor", trail: "orange", hitEffect: "heavy" };
-      weapon.effectTint = [0.7, 0.45, 1];
-      weapon.effectGlow = "glowCyan";
-    },
-  },
-  {
-    key: "returningSpear",
-    name: t("stone.evolution.returningSpear.name"), nameKey: "stone.evolution.returningSpear.name",
-    progress: [{ key: "bounceStone", need: 1, type: "equipped" }, { key: "piercingStone", need: 1, type: "equipped" }, { key: "frequencyMaterial", need: 4, type: "material" }, { key: "durationMaterial", need: 4, type: "material" }],
-    when: (counts, weapon) => hasEquippedSpecial(weapon, "bounceStone") && hasEquippedSpecial(weapon, "piercingStone") && hasMaterials({ frequencyMaterial: 4, durationMaterial: 4 }),
-    apply: (weapon) => {
-      weapon.name = t("stone.evolution.returningSpear.name");
-      weapon.itemSlots = Math.max(weapon.itemSlots || INITIAL_STONE_ITEM_SLOTS, INITIAL_STONE_ITEM_SLOTS + 1);
-      weapon.returningStone = Math.max(weapon.returningStone || 0, 2);
-      weapon.pierce = Math.max(weapon.pierce || 0, 4);
-      weapon.stoneVisual = { ...(weapon.stoneVisual || {}), form: "sharp", trail: "white", hitEffect: "pierce" };
-      weapon.bulletSprite = "stoneSharp";
-    },
-  },
+export const STONE_EVOLUTIONS = [];
 
-];
 
 export function isStoneWeapon(weapon) {
   return (weapon?.baseName || weapon?.name) === "stone" || Object.values(STONE_EVOLUTIONS).some((evolution) => evolution.name === weapon?.name);
@@ -272,16 +160,11 @@ export function canCraftStoneSpecial(key) {
 
 export function stoneSpecialRank(key) {
   const special = findStoneSpecialItem(key);
-  if (!special?.recipe?.length) return 0;
-  const inventory = ensureStoneMaterialInventory();
-  const sets = Object.entries(recipeCounts(special.recipe)).map(([materialKey, need]) => Math.floor((inventory[materialKey] || 0) / need));
-  if (!sets.length) return 0;
-  return Math.max(0, Math.min(3, Math.min(...sets)));
+  return special?.recipe?.length ? 1 : 0;
 }
 
 export function stoneSpecialRankMultiplier(key) {
-  const rank = stoneSpecialRank(key);
-  return rank <= 1 ? 1 : rank === 2 ? 1.2 : 1.4;
+  return stoneSpecialRank(key) > 0 ? 1 : 0;
 }
 
 export function craftStoneSpecial(key) {
@@ -480,7 +363,6 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
   player.hp = Math.min(player.hp, player.maxHp);
   player.barrier = Math.min(player.barrier || 0, player.barrierMax || 0);
 
-  checkStoneEvolution(weapon, counts);
 }
 
 function applyStoneBehaviorItems(weapon, counts) {
