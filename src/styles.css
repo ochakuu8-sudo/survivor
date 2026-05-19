@@ -3891,7 +3891,7 @@ h1 {
   body.workbench-tree-open {
     --workbench-top-bar-height: 48px;
     --workbench-equipped-panel-height: clamp(72px, 14dvh, 120px);
-    --workbench-info-panel-height: clamp(150px, 30dvh, 220px);
+    --workbench-info-panel-max-height: clamp(72px, 14dvh, 120px);
     --workbench-panel-gap: 6px;
   }
 
@@ -3976,7 +3976,7 @@ h1 {
     left: 0;
     right: 0;
     bottom: calc(
-      env(safe-area-inset-bottom) + var(--workbench-info-panel-height) + var(--workbench-equipped-panel-height) + var(--workbench-panel-gap) * 3
+      env(safe-area-inset-bottom) + var(--workbench-info-panel-max-height) + var(--workbench-equipped-panel-height) + var(--workbench-panel-gap) * 3
     );
     overflow: hidden;
     min-height: 120px;
@@ -3997,7 +3997,7 @@ h1 {
     left: 8px;
     right: 8px;
     bottom: calc(
-      env(safe-area-inset-bottom) + var(--workbench-info-panel-height) + var(--workbench-panel-gap) * 2
+      env(safe-area-inset-bottom) + var(--workbench-info-panel-max-height) + var(--workbench-panel-gap) * 2
     );
     z-index: 46;
     height: var(--workbench-equipped-panel-height);
@@ -4060,18 +4060,76 @@ h1 {
     right: 8px;
     bottom: max(6px, env(safe-area-inset-bottom));
     z-index: 47;
-    height: var(--workbench-info-panel-height);
-    max-height: var(--workbench-info-panel-height);
-    overflow: hidden;
+    height: auto;
+    max-height: var(--workbench-info-panel-max-height);
+    overflow: visible;
   }
 
   body.workbench-tree-open .workbench-info-panel {
-    height: 100%;
-    max-height: 100%;
+    height: auto;
+    max-height: var(--workbench-info-panel-max-height);
     margin: 0;
     overflow: auto;
-    padding: 8px;
+    padding: 6px;
     border-radius: 12px;
+  }
+
+  body.workbench-tree-open .workbench-info-head {
+    margin-bottom: 3px;
+    gap: 6px;
+  }
+
+  body.workbench-tree-open .workbench-info-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 0.62rem;
+  }
+
+  body.workbench-tree-open .workbench-info-head strong {
+    font-size: 0.78rem;
+    line-height: 1.05;
+  }
+
+  body.workbench-tree-open .workbench-info-head small {
+    font-size: 0.56rem;
+    line-height: 1.05;
+  }
+
+  body.workbench-tree-open .workbench-info-panel p {
+    display: none;
+  }
+
+  body.workbench-tree-open .workbench-info-panel dl {
+    display: grid;
+    gap: 2px;
+    margin: 0 0 4px;
+  }
+
+  body.workbench-tree-open .workbench-info-panel dl > div {
+    display: grid;
+    grid-template-columns: 4.2rem minmax(0, 1fr);
+    gap: 4px;
+    align-items: center;
+  }
+
+  body.workbench-tree-open .workbench-info-panel dt {
+    font-size: 0.54rem;
+    line-height: 1;
+  }
+
+  body.workbench-tree-open .workbench-info-panel dd {
+    font-size: 0.6rem;
+    line-height: 1.05;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.workbench-tree-open .workbench-info-craft {
+    min-height: 30px;
+    border-radius: 8px;
+    font-size: 0.7rem;
   }
 
   .workbench-weapon-card,
@@ -4139,21 +4197,8 @@ h1 {
   body.workbench-tree-open {
     --workbench-top-bar-height: 42px;
     --workbench-equipped-panel-height: clamp(56px, 12dvh, 84px);
-    --workbench-info-panel-height: clamp(120px, 28dvh, 170px);
+    --workbench-info-panel-max-height: clamp(56px, 12dvh, 84px);
     --workbench-panel-gap: 4px;
-  }
-
-  body.workbench-tree-open .workbench-info-panel p {
-    display: none;
-  }
-
-  body.workbench-tree-open .workbench-info-panel dl {
-    gap: 4px;
-    margin-bottom: 6px;
-  }
-
-  body.workbench-tree-open .workbench-info-craft {
-    min-height: 36px;
   }
 }
 
