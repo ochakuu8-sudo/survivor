@@ -314,7 +314,7 @@ function update(dt) {
   updateParticles(dt);
   updateGoldDrops(dt);
   updateEffects(dt);
-  autoShoot();
+  autoShoot(dt);
   updateOrbitWeapons(dt);
   updateDroneWeapons(dt);
   updateCamera(dt);

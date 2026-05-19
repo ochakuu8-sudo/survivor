@@ -517,12 +517,21 @@ export function expandWeaponArea(weapon, power) {
 
 const TARGETLESS_KINDS = new Set(["flame", "sword", "mine", "timedBomb"]);
 
-export function autoShoot() {
+export function autoShoot(dt = 0) {
   const p = game.player;
   const weapon = getActiveWeapon(p);
 
   if (!weapon || weapon.kind === "orbit" || weapon.kind === "drone") return;
   fireMasterStoneIfReady(weapon);
+  const chargeStone = weapon.chargeStone;
+  if (chargeStone) {
+    const moveLen = Math.hypot(p.moveX || 0, p.moveY || 0);
+    const isMoving = moveLen >= (chargeStone.minMovingInput || 0.1);
+    if (!isMoving) {
+      weapon.chargeStoneTimer = Math.min(chargeStone.maxChargeTime || 2.5, (weapon.chargeStoneTimer || 0) + dt);
+      return;
+    }
+  }
   if (weapon.shootTimer > 0) return;
   let target = null;
   if (TARGETLESS_KINDS.has(weapon.kind)) {
@@ -533,7 +542,9 @@ export function autoShoot() {
     if (!target) return;
   }
 
-  fireWeapon(weapon, target);
+  const chargeScale = weapon.chargeStone ? Math.max(0, weapon.chargeStoneTimer || 0) : 0;
+  fireWeapon(weapon, target, { chargeScale });
+  if (weapon.chargeStone) weapon.chargeStoneTimer = 0;
   weapon.shootTimer = 1 / weapon.fireRate;
   game.shake = Math.max(game.shake, weapon.kick);
 }
@@ -723,7 +734,7 @@ function findTargetForWeapon(player, weapon) {
   return best;
 }
 
-function fireWeapon(weapon, target) {
+function fireWeapon(weapon, target, options = {}) {
   const p = game.player;
   const usesFacing = weapon.kind === "flame" || weapon.kind === "sword";
   const angle = usesFacing
@@ -775,7 +786,7 @@ function fireWeapon(weapon, target) {
     fireChain(weapon, target);
     return;
   }
-  fireProjectileWeapon(weapon, angle);
+  fireProjectileWeapon(weapon, angle, options);
 }
 
 function targetAngle(from, target) {
@@ -783,14 +794,14 @@ function targetAngle(from, target) {
   return Math.atan2(delta.dy, delta.dx);
 }
 
-function fireProjectileWeapon(weapon, angle) {
+function fireProjectileWeapon(weapon, angle, options = {}) {
   weapon.throwCounter = (weapon.throwCounter || 0) + 1;
   const count = Math.max(1, Math.round(weapon.projectiles || 1));
   const spread = count === 1 ? 0 : MULTI_PROJECTILE_STEP;
   for (let i = 0; i < count; i += 1) {
     const offset = (i - (count - 1) / 2) * spread;
     const jitter = count === 1 && weapon.jitter > 0 ? (Math.random() - 0.5) * weapon.jitter : 0;
-    fireBullet(angle + offset + jitter, weapon);
+    fireBullet(angle + offset + jitter, weapon, options);
   }
 }
 
@@ -800,8 +811,12 @@ function fireBullet(angle, weapon, options = {}) {
   const speed = options.master ? Math.max(weapon.bulletSpeed * 1.25, 620) : weapon.bulletSpeed;
   const bonus = p.weaponPowerBonus;
   const isCriticalThrow = !options.master && weapon.criticalThrowEvery > 0 && weapon.throwCounter % weapon.criticalThrowEvery === 0;
-  const damageScale = options.master ? (weapon.masterStoneDamageScale || 2.8) : isCriticalThrow ? (weapon.criticalThrowDamageScale || 1.5) : 1;
-  const sizeScale = options.master ? 1.5 : isCriticalThrow ? (weapon.criticalThrowSizeScale || 1.35) : 1;
+  const chargeTime = Math.max(0, options.chargeScale || 0);
+  const chargeConfig = !options.master ? weapon.chargeStone : null;
+  const chargeDamageScale = chargeConfig ? (1 + chargeTime * (chargeConfig.damagePerSecond || 0.6)) : 1;
+  const chargeSizeScale = chargeConfig ? (1 + chargeTime * (chargeConfig.sizePerSecond || 0.35)) : 1;
+  const damageScale = (options.master ? (weapon.masterStoneDamageScale || 2.8) : isCriticalThrow ? (weapon.criticalThrowDamageScale || 1.5) : 1) * chargeDamageScale;
+  const sizeScale = (options.master ? 1.5 : isCriticalThrow ? (weapon.criticalThrowSizeScale || 1.35) : 1) * chargeSizeScale;
   const visual = weapon.stoneVisual || {};
   const originId = `${weapon.id}:${game.elapsed.toFixed(3)}:${Math.random().toString(36).slice(2, 8)}`;
   const tumbles = !!(options.master ? "stoneMaster" : weapon.bulletSprite);
