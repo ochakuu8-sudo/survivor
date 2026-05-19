@@ -14,7 +14,6 @@ export function updateHud() {
   if (hud.shopGold) hud.shopGold.textContent = String(game.gold || 0);
   hud.kills.textContent = String(game.totalKills || 0);
   renderHpGauge();
-  renderWeaponSwitch();
   renderCraftTreeButton();
   renderPauseStoneItems();
   renderMaterialHud();
@@ -110,28 +109,6 @@ function renderCraftTreeButton() {
   hud.craftTreeBtn.title = t("workbench.craftTreeButton");
   hud.craftTreeBtn.setAttribute("aria-label", t("workbench.craftTreeButton"));
 }
-
-function renderWeaponSwitch() {
-  if (!hud.weaponSwitch) return;
-  const gear = game.player?.gear;
-  const weapon = getActiveWeapon();
-  const isArena = game.mode === "arena";
-  const canSwitch = isArena && !!weapon && (gear?.weapons?.length || 0) >= 2;
-  hud.weaponSwitch.classList.toggle("hidden", !canSwitch);
-  hud.weaponSwitch.disabled = !canSwitch;
-  hud.weaponSwitch.title = t("weapon.switchTitle");
-  hud.weaponSwitch.setAttribute("aria-label", t("weapon.switchTitle"));
-  if (!weapon || !gear) {
-    hud.weaponSwitch.textContent = t("weapon.switch");
-    return;
-  }
-  const labels = (gear.weapons || []).map((item, index) => {
-    const active = index === (gear.activeWeaponIndex || 0) ? "▶" : "";
-    return `${active}${index === 0 ? "A" : "B"}:${item.name}(${item.attachments?.length || 0}/${item.unlockedSlots || 2})`;
-  });
-  hud.weaponSwitch.textContent = labels.join(" | ");
-}
-
 
 export function syncTouchControls() {
   if (!hud.touchControls) return;
