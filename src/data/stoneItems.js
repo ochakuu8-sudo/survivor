@@ -23,7 +23,7 @@ export const STONE_MATERIALS = [
   },
   {
     key: "frequencyMaterial",
-    icon: "⚙️",
+    icon: "⏩",
     sprite: "materialFrequency",
     name: t("stone.item.frequencyMaterial.name"), nameKey: "stone.item.frequencyMaterial.name",
     shortName: `${t("stone.stats.fireRate")} / ${t("stone.stats.bulletSpeed")}`,
@@ -37,7 +37,7 @@ export const STONE_MATERIALS = [
   },
   {
     key: "durationMaterial",
-    icon: "🧭",
+    icon: "🎯",
     sprite: "materialDuration",
     name: t("stone.item.durationMaterial.name"), nameKey: "stone.item.durationMaterial.name",
     shortName: t("stone.stats.life"),
@@ -51,7 +51,7 @@ export const STONE_MATERIALS = [
   },
   {
     key: "hpMaterial",
-    icon: "🛡️",
+    icon: "💚",
     sprite: "materialHp",
     name: t("stone.item.hpMaterial.name"), nameKey: "stone.item.hpMaterial.name",
     shortName: `HP / ${t("stone.stats.radius")}`,
