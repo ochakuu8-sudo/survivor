@@ -4220,7 +4220,7 @@ h1 {
 }
 
 .workbench-craft-tree-viewport {
-  max-height: min(420px, calc(100dvh - 250px));
+  max-height: min(580px, calc(100dvh - 150px));
   overflow: auto;
 }
 
@@ -4352,7 +4352,7 @@ button.workbench-craft-node:not(:disabled):hover {
 
 @media (max-width: 760px), (max-height: 640px) {
   .workbench-craft-tree-viewport {
-    max-height: min(405px, calc(100dvh - 214px));
+    max-height: min(72dvh, calc(100dvh - 122px));
   }
 
   .workbench-craft-tree-legend {
