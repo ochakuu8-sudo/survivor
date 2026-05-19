@@ -540,10 +540,11 @@ function applyStoneBehaviorItems(weapon, counts) {
 
   const laser = counts.laserStone || 0;
   if (laser > 0) {
-    weapon.playerBeam = {
-      damageScale: Math.min(0.42, 0.18 + laser * 0.05),
-      widthScale: Math.min(0.9, 0.42 + laser * 0.08),
-      maxHits: 8 + laser * 2,
+    weapon.chargeStone = {
+      maxChargeTime: Math.min(3.5, 1.6 + laser * 0.45),
+      damagePerSecond: 0.52 + laser * 0.2,
+      sizePerSecond: 0.28 + laser * 0.1,
+      minMovingInput: 0.12,
     };
     weapon.stoneVisual = { ...(weapon.stoneVisual || {}), trail: "white" };
     weapon.effectTint = [0.64, 0.95, 1];
