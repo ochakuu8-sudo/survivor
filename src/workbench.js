@@ -240,12 +240,17 @@ function renderModuleEvolutionTree() {
   viewport.className = "workbench-craft-tree-viewport skill-node-map-scroller";
   viewport.setAttribute("aria-label", t("workbench.treeAria"));
 
-  const maxRequirementCount = Math.max(3, ...stoneEvolutionProgress(getStoneWeapon()).map((evolution) => (evolution.requirements || []).length));
+  const stoneWeapon = getStoneWeapon();
+  const progress = stoneEvolutionProgress(stoneWeapon);
+  const specialX = 96;
+  const materialStartX = 315;
   const requirementGap = 190;
-  const evolutionX = 80 + maxRequirementCount * requirementGap + 30;
-  const mapWidth = Math.max(820, evolutionX + 180);
   const rowHeight = 62;
-  const mapHeight = Math.max(396, STONE_EVOLUTIONS.length * rowHeight + 24);
+  const topPadding = 42;
+  const maxMaterialCount = Math.max(2, ...STONE_EVOLUTIONS.map((evolution) => (evolution.progress || []).filter((requirement) => findStoneItem(requirement.key)?.category !== "special").length));
+  const evolutionX = materialStartX + maxMaterialCount * requirementGap + 95;
+  const mapWidth = Math.max(930, evolutionX + 190);
+  const mapHeight = Math.max(660, STONE_SPECIAL_ITEMS.length * rowHeight + 24, STONE_EVOLUTIONS.length * rowHeight + 24);
   const map = document.createElement("div");
   map.className = "workbench-craft-node-map skill-node-map";
   map.style.width = `${mapWidth}px`;
@@ -258,20 +263,44 @@ function renderModuleEvolutionTree() {
   svg.setAttribute("preserveAspectRatio", "none");
   svg.setAttribute("aria-hidden", "true");
 
-  const stoneWeapon = getStoneWeapon();
-  const progress = stoneEvolutionProgress(stoneWeapon);
+  const specialPositions = new Map();
+  STONE_SPECIAL_ITEMS.forEach((item, index) => {
+    const position = { x: specialX, y: topPadding + index * rowHeight };
+    specialPositions.set(item.key, position);
+    map.appendChild(renderSpecialCatalogNode(item, position, selectedCraftItemKey === item.key));
+  });
+
   progress.forEach((evolution, rowIndex) => {
-    const y = 42 + rowIndex * rowHeight;
+    const y = topPadding + rowIndex * rowHeight;
+    const sourceEvolution = STONE_EVOLUTIONS[rowIndex];
     const requirements = evolution.requirements || [];
+    const materialRequirements = [];
+    const specialRequirements = [];
+
     requirements.forEach((requirement, requirementIndex) => {
-      const item = findStoneItem((STONE_EVOLUTIONS[rowIndex].progress || [])[requirementIndex]?.key);
-      const x = 80 + requirementIndex * requirementGap;
+      const item = findStoneItem((sourceEvolution.progress || [])[requirementIndex]?.key);
+      if (item?.category === "special") specialRequirements.push({ item, requirement });
+      else materialRequirements.push({ item, requirement });
+    });
+
+    specialRequirements.forEach(({ item, requirement }) => {
+      const from = specialPositions.get(item.key);
+      if (!from) return;
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", `M ${from.x + 64} ${from.y} C ${materialStartX - 90} ${from.y}, ${evolutionX - 150} ${y}, ${evolutionX - 66} ${y}`);
+      path.classList.add("skill-link", requirement.equipped ? "skill-link-owned" : "skill-link-locked");
+      svg.appendChild(path);
+    });
+
+    materialRequirements.forEach(({ item, requirement }, materialIndex) => {
+      const x = materialStartX + materialIndex * requirementGap;
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", `M ${x + 64} ${y} C ${x + 118} ${y}, ${evolutionX - 118} ${y}, ${evolutionX - 66} ${y}`);
       path.classList.add("skill-link", requirement.count >= requirement.need ? "skill-link-owned" : "skill-link-locked");
       svg.appendChild(path);
       map.appendChild(renderSpecialRecipeNode(item, requirement, { x, y }, selectedCraftItemKey === item?.key));
     });
+
     map.appendChild(renderEvolutionResultNode(evolution, {}, { x: evolutionX, y }, evolution.complete));
   });
 
@@ -282,6 +311,28 @@ function renderModuleEvolutionTree() {
     viewport.scrollLeft = 0;
   });
   return wrapper;
+}
+
+function renderSpecialCatalogNode(item, position, selected = false) {
+  const node = document.createElement("button");
+  const unlocked = isStoneSpecialUnlocked(item.key);
+  const counts = currentStoneItemCounts();
+  const owned = counts[item.key] || 0;
+  node.type = "button";
+  node.className = `workbench-craft-node workbench-special-node workbench-special-catalog-node ${selected ? "workbench-node-selected" : ""} ${unlocked ? "workbench-node-available" : "workbench-node-locked"}`;
+  node.style.setProperty("--node-x", `${position.x}px`);
+  node.style.setProperty("--node-y", `${position.y}px`);
+  node.setAttribute("aria-label", t("workbench.nodeAria", { name: item.name, owned, need: 1, status: unlocked ? t("workbench.unlocked") : missingRecipeText(item.recipe) }));
+  node.innerHTML = `
+    <span class="workbench-node-icon">${stoneItemIcon(item)}</span>
+    <span class="workbench-node-copy">
+      <strong>${item.name}</strong>
+      <span class="workbench-node-recipe">${recipeIconText(item.recipe)}</span>
+      <small>${t("workbench.rank", { rank: romanRank(stoneSpecialRank(item.key)) })}</small>
+    </span>
+  `;
+  node.addEventListener("click", () => selectCraftItem(item.key));
+  return node;
 }
 
 function renderSpecialRecipeNode(item, requirement, position, selected = false) {
