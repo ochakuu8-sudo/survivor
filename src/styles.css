@@ -4522,7 +4522,7 @@ button.workbench-craft-node:not(:disabled):hover {
   cursor: pointer;
 }
 
-#touchControls:not(.disabled) .craft-tree-button:not(.hidden) {
+ .craft-tree-button:not(.hidden) {
   display: grid;
   place-items: center;
 }
