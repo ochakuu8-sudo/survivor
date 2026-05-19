@@ -1559,16 +1559,16 @@ h1 {
   position: absolute;
   left: 0;
   top: 0;
-  width: 132px;
-  height: 132px;
+  width: 108px;
+  height: 108px;
   border: 2px solid rgba(255, 249, 242, 0.38);
   border-radius: 999px;
   background:
     linear-gradient(180deg, rgba(255, 249, 242, 0.12), rgba(85, 246, 199, 0.1)),
     rgba(33, 28, 78, 0.62);
   box-shadow:
-    0 8px 0 rgba(19, 15, 50, 0.45),
-    inset 0 0 0 12px rgba(255, 255, 255, 0.04);
+    0 7px 0 rgba(19, 15, 50, 0.45),
+    inset 0 0 0 10px rgba(255, 255, 255, 0.04);
   opacity: 0;
   pointer-events: none;
   touch-action: none;
@@ -1595,8 +1595,8 @@ h1 {
 }
 
 .stick::before {
-  width: 72px;
-  height: 72px;
+  width: 58px;
+  height: 58px;
   border: 2px solid rgba(157, 247, 255, 0.28);
 }
 
@@ -1610,16 +1610,16 @@ h1 {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 54px;
-  height: 54px;
+  width: 44px;
+  height: 44px;
   border: 2px solid rgba(255, 243, 196, 0.82);
   border-radius: 999px;
   background:
     linear-gradient(180deg, #55f6c7, #2ec6cf 52%, #2677c5),
     #55f6c7;
   box-shadow:
-    0 5px 0 rgba(19, 15, 50, 0.48),
-    inset 0 7px 0 rgba(255, 255, 255, 0.24);
+    0 4px 0 rgba(19, 15, 50, 0.48),
+    inset 0 6px 0 rgba(255, 255, 255, 0.24);
   transform: translate(-50%, -50%);
 }
 
@@ -4679,8 +4679,8 @@ button.workbench-craft-node:not(:disabled):hover {
   position: absolute;
   right: max(14px, env(safe-area-inset-right));
   bottom: max(76px, calc(env(safe-area-inset-bottom) + 76px));
-  width: 54px;
-  height: 54px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 2px solid rgba(255, 249, 242, 0.42);
   border-radius: 8px;

@@ -58,8 +58,8 @@ function updateVirtualMove(event) {
   const dx = pointer.x - pointer.startX;
   const dy = pointer.y - pointer.startY;
   const input = normalize(dx, dy);
-  const stickSize = hud.moveStick ? hud.moveStick.getBoundingClientRect().width : 128;
-  const radius = Math.max(34, stickSize * 0.34);
+  const stickSize = hud.moveStick ? hud.moveStick.getBoundingClientRect().width : 132;
+  const radius = Math.max(34, Math.min(45, stickSize * 0.42));
   const deadZone = radius * 0.18;
   const rawStrength = clamp((input.len - deadZone) / (radius - deadZone), 0, 1);
 
