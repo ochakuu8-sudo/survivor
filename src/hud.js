@@ -17,6 +17,7 @@ export function updateHud() {
   renderWeaponSwitch();
   renderCraftTreeButton();
   renderPauseStoneItems();
+  renderMaterialHud();
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
   if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "arena");
   syncTouchControls();
@@ -78,6 +79,16 @@ function renderHpGauge() {
     hud.hpGauge.classList.toggle("hp-gauge-critical", hpRatio <= 0.15);
     hud.hpGauge.classList.toggle("hp-gauge-barrier", barrier > 0);
   }
+}
+
+
+function renderMaterialHud() {
+  if (!hud.materialHud) return;
+  const isArena = game.mode === "arena";
+  hud.materialHud.classList.toggle("hidden", !isArena);
+  if (!isArena) return;
+  const inventory = ensureStoneMaterialInventory();
+  hud.materialHud.innerHTML = STONE_MATERIALS.map((item) => `<div class="material-hud-chip" title="${item.name}"><strong>${Math.max(0, Math.floor(inventory[item.key] || 0))}</strong><span aria-hidden="true">${stoneItemIcon(item)}</span></div>`).join("");
 }
 
 function renderPauseStoneItems() {

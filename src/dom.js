@@ -65,6 +65,7 @@ export const hud = {
   weaponSwitch: document.querySelector("#weaponSwitchBtn"),
   craftTreeBtn: document.querySelector("#craftTreeBtn"),
   pauseBtn: document.querySelector("#pauseBtn"),
+  materialHud: document.querySelector("#materialHud"),
   pauseMenu: document.querySelector("#pauseMenu"),
   pauseStoneItems: document.querySelector("#pauseStoneItems"),
   localeSelect: document.querySelector("#localeSelect"),
