@@ -4043,6 +4043,10 @@ h1 {
   background: rgba(255, 183, 64, 0.1);
 }
 
+.workbench-material-chip[aria-disabled="true"] {
+  opacity: 0.78;
+}
+
 .workbench-material-chip strong,
 .workbench-material-chip small {
   display: block;
@@ -4507,6 +4511,10 @@ button.workbench-craft-node:not(:disabled):hover {
     radial-gradient(circle at 8% 0%, rgba(255, 228, 107, 0.18), transparent 34%),
     rgba(15, 18, 55, 0.82);
   box-shadow: 0 10px 24px rgba(10, 8, 32, 0.24), inset 0 1px 0 rgba(255, 249, 242, 0.12);
+}
+
+.workbench-info-slot {
+  margin-top: 0.25rem;
 }
 
 .workbench-info-head {
