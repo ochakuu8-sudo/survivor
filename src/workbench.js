@@ -31,6 +31,7 @@ let selectedCraftItemKey = null;
 let pendingReplaceItemKey = null;
 let craftTreeViewportState = { left: 0, top: 0 };
 let workbenchInfoSlot = null;
+const MOBILE_WORKBENCH_MEDIA = "(max-width: 760px), (max-height: 640px)";
 
 export function openWorkbench(facility = null) {
   if (!game.player?.gear) return;
@@ -40,6 +41,7 @@ export function openWorkbench(facility = null) {
   hud.workbenchPanel?.classList.remove("hidden");
   statusText = facility ? t("workbench.facilityStatus") : t("workbench.status");
   ensureStoneMaterialInventory();
+  document.body.classList.add("workbench-tree-open");
   if (!selectedCraftItemKey) selectedCraftItemKey = STONE_SPECIAL_ITEMS[0]?.key || null;
   renderWorkbenchPanel();
   updateHud();
@@ -53,6 +55,7 @@ export function openCraftTreeReference() {
   hud.workbenchPanel?.classList.remove("hidden");
   statusText = t("workbench.referenceStatus");
   ensureStoneMaterialInventory();
+  document.body.classList.add("workbench-tree-open");
   if (!selectedCraftItemKey) selectedCraftItemKey = STONE_SPECIAL_ITEMS[0]?.key || null;
   renderWorkbenchPanel();
   updateHud();
@@ -64,6 +67,7 @@ export function closeWorkbench() {
   game.modeBeforeWorkbench = null;
   workbenchReadOnly = false;
   pendingReplaceItemKey = null;
+  document.body.classList.remove("workbench-tree-open");
   updateHud();
 }
 
@@ -124,28 +128,37 @@ export function renderWorkbenchPanel() {
   storageRoot.replaceChildren();
 
   const stoneWeapon = getStoneWeapon();
-  const inventory = ensureStoneMaterialInventory();
+  const mobileTreeMode = window.matchMedia(MOBILE_WORKBENCH_MEDIA).matches;
 
-  const materialCard = document.createElement("article");
-  materialCard.className = "workbench-weapon-card workbench-materials";
-  const materialTitle = document.createElement("h2");
-  materialTitle.textContent = t("workbench.materials");
-  const materialList = document.createElement("div");
-  materialList.className = "workbench-material-grid";
-  STONE_MATERIALS.forEach((material) => {
-    const row = document.createElement("div");
-    row.className = "workbench-material-chip";
-    row.title = `${material.name}: ${formatStoneItemEffectSummary(material)}`;
-    row.setAttribute("aria-label", t("workbench.materialAria", { name: material.name, count: inventory[material.key] || 0, summary: formatStoneItemEffectSummary(material) }));
-    row.innerHTML = `<span class="workbench-item-icon">${stoneItemIcon(material)}</span><strong>×${inventory[material.key] || 0}</strong>`;
-    materialList.append(row);
-  });
-  materialCard.append(materialTitle, materialList);
-  weaponsRoot.append(materialCard);
-  weaponsRoot.append(renderEquippedStoneItems(stoneWeapon));
+  if (mobileTreeMode) {
+    storageRoot.append(renderCompactMaterialBar());
+    const treeStage = document.createElement("div");
+    treeStage.className = "workbench-tree-stage";
+    treeStage.append(renderModuleEvolutionTree());
+    storageRoot.append(treeStage);
+  } else {
+    const inventory = ensureStoneMaterialInventory();
+    const materialCard = document.createElement("article");
+    materialCard.className = "workbench-weapon-card workbench-materials";
+    const materialTitle = document.createElement("h2");
+    materialTitle.textContent = t("workbench.materials");
+    const materialList = document.createElement("div");
+    materialList.className = "workbench-material-grid";
+    STONE_MATERIALS.forEach((material) => {
+      const row = document.createElement("div");
+      row.className = "workbench-material-chip";
+      row.title = `${material.name}: ${formatStoneItemEffectSummary(material)}`;
+      row.setAttribute("aria-label", t("workbench.materialAria", { name: material.name, count: inventory[material.key] || 0, summary: formatStoneItemEffectSummary(material) }));
+      row.innerHTML = `<span class="workbench-item-icon">${stoneItemIcon(material)}</span><strong>×${inventory[material.key] || 0}</strong>`;
+      materialList.append(row);
+    });
+    materialCard.append(materialTitle, materialList);
+    weaponsRoot.append(materialCard);
+    weaponsRoot.append(renderEquippedStoneItems(stoneWeapon));
+    storageRoot.append(renderSpecialItemList(stoneWeapon));
+    storageRoot.append(renderModuleEvolutionTree());
+  }
 
-  storageRoot.append(renderSpecialItemList(stoneWeapon));
-  storageRoot.append(renderModuleEvolutionTree());
   workbenchInfoSlot = document.createElement("div");
   workbenchInfoSlot.id = "workbenchInfoSlot";
   workbenchInfoSlot.className = "workbench-info-slot";
@@ -154,10 +167,28 @@ export function renderWorkbenchPanel() {
   updateWorkbenchInfoPanel();
 
   if (hud.workbenchStorageCount) {
+    if (mobileTreeMode) {
+      hud.workbenchStorageCount.textContent = "";
+      return;
+    }
     const unlocked = STONE_SPECIAL_ITEMS.filter((item) => isStoneSpecialUnlocked(item.key)).length;
     const completed = stoneEvolutionProgress(stoneWeapon).filter((evolution) => evolution.complete).length;
     hud.workbenchStorageCount.textContent = t("workbench.storageCount", { craftable: unlocked, total: STONE_SPECIAL_ITEMS.length, completed, evolutionTotal: STONE_EVOLUTIONS.length });
   }
+}
+
+function renderCompactMaterialBar() {
+  const inventory = ensureStoneMaterialInventory();
+  const bar = document.createElement("div");
+  bar.className = "workbench-material-bar";
+  STONE_MATERIALS.forEach((material) => {
+    const chip = document.createElement("div");
+    chip.className = "workbench-material-bar-chip";
+    chip.title = material.name;
+    chip.innerHTML = `<span class="workbench-item-icon">${stoneItemIcon(material)}</span><strong>${inventory[material.key] || 0}</strong>`;
+    bar.append(chip);
+  });
+  return bar;
 }
 
 function getStoneWeapon() {
@@ -437,7 +468,6 @@ function selectCraftItem(key) {
   selectedCraftItemKey = key;
   updateCraftSelectionUi();
   updateWorkbenchInfoPanel();
-  scrollInfoPanelIntoView();
 }
 
 function updateWorkbenchInfoPanel() {
@@ -454,7 +484,7 @@ function updateCraftSelectionUi() {
 
 function scrollInfoPanelIntoView() {
   if (!workbenchInfoSlot?.isConnected) return;
-  if (!window.matchMedia("(max-width: 760px), (max-height: 640px)").matches) return;
+  if (!window.matchMedia(MOBILE_WORKBENCH_MEDIA).matches) return;
   workbenchInfoSlot.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
 
