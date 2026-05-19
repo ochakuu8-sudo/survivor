@@ -429,8 +429,10 @@ function applyStatBonus(weapon, player, statBonus = {}) {
     else if (stat === "life") weapon.life *= 1 + amount;
     else if (stat === "bulletSpeed") weapon.bulletSpeed *= 1 + amount;
     else if (stat === "radius") weapon.radius *= 1 + amount;
+    else if (stat === "knockback") weapon.knockback *= 1 + amount;
     else if (stat === "knockbackFlat") weapon.knockback += amount;
     else if (stat === "explosionRadius") weapon.explosionRadius = Math.max(weapon.explosionRadius || 0, (weapon.explosionRadius || 0) + amount);
+    else if (stat === "maxHp") player.maxHp *= 1 + amount;
     else if (stat === "maxHpFlat") player.maxHp += amount;
     else if (stat === "pickupFlat") player.pickup += amount;
   });
@@ -440,9 +442,9 @@ function applyStoneMaterialBonuses(weapon, player) {
   const inventory = ensureStoneMaterialInventory();
   STONE_MATERIALS.forEach((material) => {
     const owned = Math.max(0, Math.floor(inventory[material.key] || 0));
-    for (let i = 0; i < owned; i += 1) {
-      applyStatBonus(weapon, player, material.statBonus);
-    }
+    if (!owned) return;
+    const scaledBonus = Object.fromEntries(Object.entries(material.statBonus || {}).map(([stat, value]) => [stat, (Number(value) || 0) * owned]));
+    applyStatBonus(weapon, player, scaledBonus);
   });
 }
 
