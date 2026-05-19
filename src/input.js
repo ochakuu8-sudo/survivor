@@ -43,8 +43,9 @@ function beginVirtualMove(event) {
 
 function showVirtualStick(x, y) {
   if (!hud.moveStick) return;
+  const offsetY = 26;
   hud.moveStick.style.left = `${x}px`;
-  hud.moveStick.style.top = `${y}px`;
+  hud.moveStick.style.top = `${y + offsetY}px`;
   hud.moveStick.classList.add("active");
 }
 
@@ -59,7 +60,7 @@ function updateVirtualMove(event) {
   const dy = pointer.y - pointer.startY;
   const input = normalize(dx, dy);
   const stickSize = hud.moveStick ? hud.moveStick.getBoundingClientRect().width : 132;
-  const radius = Math.max(34, Math.min(45, stickSize * 0.42));
+  const radius = Math.max(32, Math.min(42, stickSize * 0.46));
   const deadZone = radius * 0.18;
   const rawStrength = clamp((input.len - deadZone) / (radius - deadZone), 0, 1);
 

@@ -1559,28 +1559,28 @@ h1 {
   position: absolute;
   left: 0;
   top: 0;
-  width: 108px;
-  height: 108px;
-  border: 2px solid rgba(255, 249, 242, 0.38);
+  width: 82px;
+  height: 82px;
+  border: 1px solid rgba(255, 249, 242, 0.24);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 249, 242, 0.12), rgba(85, 246, 199, 0.1)),
-    rgba(33, 28, 78, 0.62);
+    radial-gradient(circle at 50% 50%, rgba(157, 247, 255, 0.12), transparent 58%),
+    rgba(20, 23, 54, 0.22);
   box-shadow:
-    0 7px 0 rgba(19, 15, 50, 0.45),
-    inset 0 0 0 10px rgba(255, 255, 255, 0.04);
+    0 3px 0 rgba(19, 15, 50, 0.22),
+    inset 0 0 0 6px rgba(255, 255, 255, 0.025);
   opacity: 0;
   pointer-events: none;
   touch-action: none;
-  backdrop-filter: blur(8px);
+  backdrop-filter: none;
   transform: translate(-50%, -50%) scale(0.82);
   transition:
-    opacity 100ms ease,
-    transform 100ms ease;
+    opacity 80ms ease,
+    transform 80ms ease;
 }
 
 .stick.active {
-  opacity: 1;
+  opacity: 0.58;
   transform: translate(-50%, -50%) scale(1);
 }
 
@@ -1595,31 +1595,36 @@ h1 {
 }
 
 .stick::before {
-  width: 58px;
-  height: 58px;
-  border: 2px solid rgba(157, 247, 255, 0.28);
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(157, 247, 255, 0.22);
 }
 
 .stick::after {
-  width: 12px;
-  height: 12px;
-  background: rgba(255, 243, 196, 0.58);
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 243, 196, 0.42);
 }
 
 .stick-thumb {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 44px;
-  height: 44px;
-  border: 2px solid rgba(255, 243, 196, 0.82);
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 243, 196, 0.58);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, #55f6c7, #2ec6cf 52%, #2677c5),
-    #55f6c7;
+    linear-gradient(
+      180deg,
+      rgba(85, 246, 199, 0.72),
+      rgba(46, 198, 207, 0.62) 52%,
+      rgba(38, 119, 197, 0.58)
+    ),
+    rgba(85, 246, 199, 0.62);
   box-shadow:
-    0 4px 0 rgba(19, 15, 50, 0.48),
-    inset 0 6px 0 rgba(255, 255, 255, 0.24);
+    0 2px 0 rgba(19, 15, 50, 0.28),
+    inset 0 4px 0 rgba(255, 255, 255, 0.18);
   transform: translate(-50%, -50%);
 }
 
@@ -2143,7 +2148,7 @@ h1 {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 480px), (max-height: 640px) {
   #hud {
     top: max(7px, env(safe-area-inset-top));
     left: max(7px, env(safe-area-inset-left));
@@ -2218,18 +2223,18 @@ h1 {
   }
 
   .stick {
-    width: 112px;
-    height: 112px;
+    width: 74px;
+    height: 74px;
   }
 
   .stick::before {
-    width: 60px;
-    height: 60px;
+    width: 38px;
+    height: 38px;
   }
 
   .stick-thumb {
-    width: 48px;
-    height: 48px;
+    width: 30px;
+    height: 30px;
   }
 }
 
@@ -2277,8 +2282,8 @@ h1 {
   }
 
   .stick {
-    width: 108px;
-    height: 108px;
+    width: 74px;
+    height: 74px;
   }
 }
 
