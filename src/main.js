@@ -8,7 +8,6 @@ import { openDebugPanel, setupDebug } from "./debug.js";
 import { continueFromSkillTree, enterDebugSkillTree } from "./skillTree.js";
 import { claimPendingAttachment, rerollPendingAttachment } from "./modding.js";
 import { claimTreasureReward, rerollTreasureReward } from "./treasure.js";
-import { cycleActiveWeapon } from "./weapons.js";
 import { updateHud } from "./hud.js";
 import { closeWorkbench, openCraftTreeReference } from "./workbench.js";
 import { getLocale, localizeDom, setLocale } from "./i18n.js";
@@ -57,15 +56,6 @@ if (hud.treasureReroll) hud.treasureReroll.addEventListener("click", rerollTreas
 if (hud.treasureTake) hud.treasureTake.addEventListener("click", claimTreasureReward);
 if (hud.workbenchClose) hud.workbenchClose.addEventListener("click", closeWorkbench);
 if (hud.craftTreeBtn) hud.craftTreeBtn.addEventListener("click", openCraftTreeReference);
-if (hud.weaponSwitch) {
-  hud.weaponSwitch.addEventListener("click", (event) => {
-    event.preventDefault();
-    if (game.mode !== "arena") return;
-    cycleActiveWeapon();
-    updateHud();
-  });
-}
-
 const atlas = buildAtlas();
 setAtlas(atlas);
 const initialDpr = prepareCanvas();
