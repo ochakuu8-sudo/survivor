@@ -35,6 +35,13 @@ function drawOutlinedSprite(ctx, w, h, draw, outline, outlineColor) {
   ctx.drawImage(source, 0, 0);
 }
 
+function drawEmojiSprite(ctx, w, h, emoji) {
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `${Math.floor(Math.min(w, h) * 0.82)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  ctx.fillText(emoji, w * 0.5, h * 0.52);
+}
+
 function px(ctx, x, y, w, h, color) {
   ctx.fillStyle = color;
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
@@ -1046,6 +1053,10 @@ export function buildAtlas() {
   add("materialHp", 48, 48, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, (target, width, height) => drawPixelMaterialIcon(target, width, height, { dark: "#24613d", mid: "#3dc56f", light: "#a6ffae", drawGlyph: drawHpGlyph }), 1, "rgba(17, 12, 43, 0.58)");
   });
+  add("materialPowerEmoji", 48, 48, (ctx, w, h) => { drawEmojiSprite(ctx, w, h, "💥"); });
+  add("materialFrequencyEmoji", 48, 48, (ctx, w, h) => { drawEmojiSprite(ctx, w, h, "⏩"); });
+  add("materialDurationEmoji", 48, 48, (ctx, w, h) => { drawEmojiSprite(ctx, w, h, "🎯"); });
+  add("materialHpEmoji", 48, 48, (ctx, w, h) => { drawEmojiSprite(ctx, w, h, "💚"); });
 
   add("goldCoin", 34, 34, (ctx, w, h) => {
     drawOutlinedSprite(ctx, w, h, drawPixelGoldCoin, 1, "rgba(93, 58, 16, 0.5)");

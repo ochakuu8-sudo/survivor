@@ -817,8 +817,9 @@ function drawCombatSword(room, view, camX, camY, zoom, drawX, drawY) {
       tint: [1, 0.96, 0.84],
     });
     const material = findStoneMaterial(room.fixedRewardKey);
-    if (material?.sprite) {
-      state.renderer.draw(material.sprite, screen.x, screen.y - 72 * zoom, 34 * zoom, 34 * zoom, {
+    const materialEmojiSprite = combatRoomMaterialEmojiSprite(material?.key);
+    if (materialEmojiSprite) {
+      state.renderer.draw(materialEmojiSprite, screen.x, screen.y - 72 * zoom, 34 * zoom, 34 * zoom, {
         rotation: Math.sin(game.elapsed * 3.1) * 0.06,
       });
     }
@@ -832,6 +833,14 @@ function drawCombatSword(room, view, camX, camY, zoom, drawX, drawY) {
     tint: [1, 0.8, 0.24],
     alpha: progress > 0 ? 0.92 : 0.24,
   });
+}
+
+function combatRoomMaterialEmojiSprite(materialKey) {
+  if (materialKey === "powerMaterial") return "materialPowerEmoji";
+  if (materialKey === "frequencyMaterial") return "materialFrequencyEmoji";
+  if (materialKey === "durationMaterial") return "materialDurationEmoji";
+  if (materialKey === "hpMaterial") return "materialHpEmoji";
+  return null;
 }
 
 function drawPlayer(player, view, camX, camY, zoom) {
