@@ -3890,8 +3890,7 @@ h1 {
 @media (max-width: 760px), (max-height: 640px) {
   body.workbench-tree-open {
     --workbench-top-bar-height: 48px;
-    --workbench-equipped-panel-height: clamp(72px, 14dvh, 120px);
-    --workbench-info-panel-max-height: clamp(72px, 14dvh, 120px);
+    --workbench-bottom-panel-height: clamp(72px, 14dvh, 120px);
     --workbench-panel-gap: 6px;
   }
 
@@ -3976,7 +3975,9 @@ h1 {
     left: 0;
     right: 0;
     bottom: calc(
-      env(safe-area-inset-bottom) + var(--workbench-info-panel-max-height) + var(--workbench-equipped-panel-height) + var(--workbench-panel-gap) * 3
+      max(6px, env(safe-area-inset-bottom))
+      + var(--workbench-bottom-panel-height) * 2
+      + var(--workbench-panel-gap) * 2
     );
     overflow: hidden;
     min-height: 120px;
@@ -3998,18 +3999,18 @@ h1 {
     right: 8px;
     bottom: calc(
       max(6px, env(safe-area-inset-bottom))
-      + min(var(--workbench-info-panel-max-height), 120px)
+      + var(--workbench-bottom-panel-height)
       + var(--workbench-panel-gap)
     );
     z-index: 46;
-    height: auto;
-    max-height: var(--workbench-equipped-panel-height);
-    overflow: visible;
+    height: var(--workbench-bottom-panel-height);
+    max-height: var(--workbench-bottom-panel-height);
+    overflow: hidden;
   }
 
   body.workbench-tree-open .workbench-equipped-compact {
-    height: auto;
-    max-height: var(--workbench-equipped-panel-height);
+    height: 100%;
+    max-height: 100%;
     overflow: hidden;
     padding: 6px;
     border-radius: 12px;
@@ -4026,7 +4027,7 @@ h1 {
   body.workbench-tree-open .workbench-equipped-compact-list {
     display: flex;
     gap: 6px;
-    max-height: calc(var(--workbench-equipped-panel-height) - 22px);
+    height: calc(100% - 20px);
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
@@ -4078,14 +4079,14 @@ h1 {
     right: 8px;
     bottom: max(6px, env(safe-area-inset-bottom));
     z-index: 47;
-    height: auto;
-    max-height: var(--workbench-info-panel-max-height);
-    overflow: visible;
+    height: var(--workbench-bottom-panel-height);
+    max-height: var(--workbench-bottom-panel-height);
+    overflow: hidden;
   }
 
   body.workbench-tree-open .workbench-info-panel {
-    height: auto;
-    max-height: var(--workbench-info-panel-max-height);
+    height: 100%;
+    max-height: 100%;
     margin: 0;
     overflow: auto;
     padding: 6px;
@@ -4214,8 +4215,7 @@ h1 {
 @media (max-height: 640px) {
   body.workbench-tree-open {
     --workbench-top-bar-height: 42px;
-    --workbench-equipped-panel-height: clamp(56px, 12dvh, 84px);
-    --workbench-info-panel-max-height: clamp(56px, 12dvh, 84px);
+    --workbench-bottom-panel-height: clamp(56px, 12dvh, 84px);
     --workbench-panel-gap: 4px;
   }
 }
