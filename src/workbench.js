@@ -244,7 +244,7 @@ function renderEquippedStoneItems(stoneWeapon) {
 
 function renderSpecialItemList(stoneWeapon) {
   const wrapper = document.createElement("div");
-  wrapper.className = "workbench-craft-tree skill-node-map-wrap";
+  wrapper.className = "workbench-special-list workbench-craft-tree skill-node-map-wrap";
   const grid = document.createElement("div");
   grid.className = "workbench-material-grid";
   STONE_SPECIAL_ITEMS.forEach((item) => {

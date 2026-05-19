@@ -3872,46 +3872,27 @@ h1 {
 }
 
 @media (max-width: 760px), (max-height: 640px) {
-  #workbenchPanel.panel {
+  body.workbench-tree-open #workbenchPanel.panel {
     position: fixed;
     inset: 0;
+    z-index: 40;
     width: 100dvw;
     height: 100dvh;
     max-height: none;
-    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
-    border-width: 0;
-    border-radius: 0;
+    padding: 0;
     overflow: hidden;
+    border: 0;
+    border-radius: 0;
     transform: none;
-    left: 0;
-    top: 0;
   }
 
-  #workbenchPanel .panel-head {
-    gap: 10px;
-    margin-bottom: 7px;
+  body.workbench-tree-open #workbenchPanel .panel-head {
+    display: contents;
   }
 
-  #workbenchPanel .panel-head h1 {
-    margin-top: 1px;
-    font-size: 1rem;
-    line-height: 1.05;
-  }
-
-  #workbenchPanel .panel-kicker {
-    font-size: 0.52rem;
-  }
-
-  #workbenchCloseBtn {
-    min-height: 30px;
-    padding: 0 10px;
-    font-size: 0.72rem;
-  }
-
-  .workbench-status {
-    margin-bottom: 7px;
-    font-size: 0.74rem;
-    line-height: 1.25;
+  body.workbench-tree-open #workbenchPanel .panel-head > div,
+  body.workbench-tree-open #workbenchPanel .workbench-status {
+    display: none !important;
   }
 
   .workbench-weapons,
@@ -3922,29 +3903,41 @@ h1 {
   #workbenchPanel .workbench-weapons,
   #workbenchPanel .workbench-storage-head,
   #workbenchStorageCount,
-  #workbenchPanel .workbench-craft-tree:first-child {
+  #workbenchPanel .workbench-special-list {
     display: none !important;
   }
 
-  #workbenchPanel .workbench-storage {
+  body.workbench-tree-open #workbenchPanel .workbench-storage {
+    position: absolute;
+    inset: 0;
     display: block;
-    min-height: 0;
     height: 100%;
-    padding-top: calc(48px + env(safe-area-inset-top));
-    padding-bottom: calc(230px + env(safe-area-inset-bottom));
+    padding: 0;
+    overflow: hidden;
   }
 
-  .workbench-material-bar {
+  body.workbench-tree-open #workbenchCloseBtn {
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top));
+    right: max(8px, env(safe-area-inset-right));
+    z-index: 30;
+    min-width: 56px;
+    min-height: 36px;
+  }
+
+  body.workbench-tree-open .workbench-material-bar {
     position: fixed;
     top: env(safe-area-inset-top);
     left: 0;
-    right: 0;
-    z-index: 14;
+    right: calc(72px + env(safe-area-inset-right));
+    z-index: 20;
     display: flex;
     gap: 6px;
-    padding: 8px 10px;
+    min-height: 44px;
+    padding: 6px 8px;
     background: rgba(20, 23, 54, 0.95);
     border-bottom: 1px solid rgba(157, 247, 255, 0.32);
+    overflow: hidden;
   }
 
   .workbench-material-bar-chip {
@@ -3957,13 +3950,18 @@ h1 {
     background: rgba(255, 255, 255, 0.08);
   }
 
-  .workbench-tree-stage {
-    height: 100%;
-    min-height: 0;
+  body.workbench-tree-open .workbench-tree-stage {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 48px);
+    left: 0;
+    right: 0;
+    bottom: calc(env(safe-area-inset-bottom) + 230px);
+    overflow: hidden;
   }
 
-  .workbench-tree-stage .workbench-craft-tree,
-  .workbench-tree-stage .workbench-craft-tree-viewport {
+  body.workbench-tree-open .workbench-tree-stage .workbench-craft-tree,
+  body.workbench-tree-open .workbench-tree-stage .workbench-craft-tree-viewport {
+    width: 100%;
     height: 100%;
     max-height: none;
     overflow: auto;
@@ -3971,14 +3969,13 @@ h1 {
     -webkit-overflow-scrolling: touch;
   }
 
-  .workbench-info-slot {
+  body.workbench-tree-open .workbench-info-slot {
     position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: 0;
-    z-index: 14;
+    left: 8px;
+    right: 8px;
+    bottom: max(6px, env(safe-area-inset-bottom));
+    z-index: 25;
     max-height: 220px;
-    padding-bottom: calc(6px + env(safe-area-inset-bottom));
     overflow: auto;
   }
 
