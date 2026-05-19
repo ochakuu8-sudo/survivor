@@ -3873,10 +3873,18 @@ h1 {
 
 @media (max-width: 760px), (max-height: 640px) {
   #workbenchPanel.panel {
-    width: min(1040px, calc(100dvw - 12px));
-    max-height: calc(100dvh - max(12px, calc(env(safe-area-inset-top) + env(safe-area-inset-bottom) + 8px)));
-    padding: 10px;
-    border-width: 2px;
+    position: fixed;
+    inset: 0;
+    width: 100dvw;
+    height: 100dvh;
+    max-height: none;
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+    border-width: 0;
+    border-radius: 0;
+    overflow: hidden;
+    transform: none;
+    left: 0;
+    top: 0;
   }
 
   #workbenchPanel .panel-head {
@@ -3909,6 +3917,74 @@ h1 {
   .workbench-weapons,
   .workbench-storage {
     gap: 7px;
+  }
+
+  #workbenchPanel .workbench-weapons,
+  #workbenchPanel .workbench-storage-head,
+  #workbenchStorageCount,
+  #workbenchPanel .workbench-craft-tree:first-child {
+    display: none !important;
+  }
+
+  #workbenchPanel .workbench-storage {
+    display: block;
+    min-height: 0;
+    height: 100%;
+    padding-top: calc(48px + env(safe-area-inset-top));
+    padding-bottom: calc(230px + env(safe-area-inset-bottom));
+  }
+
+  .workbench-material-bar {
+    position: fixed;
+    top: env(safe-area-inset-top);
+    left: 0;
+    right: 0;
+    z-index: 14;
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(20, 23, 54, 0.95);
+    border-bottom: 1px solid rgba(157, 247, 255, 0.32);
+  }
+
+  .workbench-material-bar-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .workbench-tree-stage {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .workbench-tree-stage .workbench-craft-tree,
+  .workbench-tree-stage .workbench-craft-tree-viewport {
+    height: 100%;
+    max-height: none;
+    overflow: auto;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .workbench-info-slot {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 0;
+    z-index: 14;
+    max-height: 220px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+    overflow: auto;
+  }
+
+  .workbench-info-panel {
+    max-height: 220px;
+    overflow: auto;
   }
 
   .workbench-weapon-card,
