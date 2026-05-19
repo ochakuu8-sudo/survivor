@@ -216,10 +216,10 @@ function renderSpecialItemList(stoneWeapon) {
     const card = document.createElement("button");
     card.type = "button";
     card.className = `workbench-material-chip ${unlocked ? "workbench-node-available" : "workbench-node-locked"}`;
-    card.disabled = workbenchReadOnly || !unlocked || equippedIndex >= 0;
+    card.disabled = !unlocked;
     const rank = stoneSpecialRank(item.key);
     card.innerHTML = `<span class="workbench-item-icon">${stoneItemIcon(item)}</span><strong>${item.name} ${romanRank(rank)}</strong><small>${unlocked ? (equippedIndex >= 0 ? t("workbench.equipped") : t("workbench.unlocked")) : t("workbench.locked")}</small><em>${requirementText(item.recipe)}</em>`;
-    card.addEventListener("click", () => equipSelectedItem(stoneWeapon, item.key));
+    card.addEventListener("click", () => selectCraftItem(item.key));
     grid.append(card);
   });
   wrapper.append(grid);
@@ -416,7 +416,6 @@ function renderModuleInfoPanel() {
       <div><dt>${t("workbench.effectLabel")}</dt><dd>${formatStoneItemEffectSummary(item)}</dd></div>
       <div><dt>${t("workbench.recipeLabel")}</dt><dd class="workbench-info-recipe">${recipeIconText(item.recipe)}</dd></div>
       <div><dt>${t("workbench.statusLabel")}</dt><dd>${unlocked ? t("stone.craftable") : t("workbench.lockedBy", { requirements: missingRecipeText(item.recipe) })}</dd></div>
-      <div><dt>${t("workbench.moduleRankHint")}</dt><dd>${t("workbench.noSpendHint")}</dd></div>
     </dl>
   `;
   panel.append(button);
@@ -424,6 +423,7 @@ function renderModuleInfoPanel() {
 }
 
 function selectCraftItem(key) {
+  if (!key || selectedCraftItemKey === key) return;
   selectedCraftItemKey = key;
   renderWorkbenchPanel();
 }
