@@ -198,6 +198,7 @@ button:disabled {
     0 3px 0 rgba(16, 55, 35, 0.76),
     inset 0 1px 0 rgba(255, 255, 255, 0.24);
   font-size: 1rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   line-height: 1;
   text-shadow:
@@ -237,6 +238,7 @@ button:disabled {
   color: #fff9f2;
   background: #ff4f68;
   font-size: 0.64rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   line-height: 1;
   box-shadow:
@@ -262,6 +264,7 @@ button:disabled {
   color: #6d4300;
   background: #ffe46b;
   font-size: 0.66rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   line-height: 1;
   box-shadow:
@@ -272,6 +275,7 @@ button:disabled {
 .hud-gold strong {
   color: #fff6bc;
   font-size: 1rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   line-height: 1;
   text-shadow:
@@ -290,6 +294,7 @@ button:disabled {
   min-width: 0;
   color: #fff9f2;
   font-size: 0.82rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   line-height: 1;
   text-align: center;
@@ -477,7 +482,7 @@ h1 {
   background: #ff5d96;
   color: #10273a;
   font-weight: 900;
-  font-size: 0.9rem;
+  font-size: 0.74rem;
   cursor: pointer;
 }
 
@@ -564,7 +569,8 @@ h1 {
   border-radius: 8px;
   color: #10273a;
   background: #55f6c7;
-  font-size: 0.9rem;
+  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   line-height: 1;
   box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.16);
@@ -714,7 +720,7 @@ h1 {
 
 .offer p {
   color: #d9f7ff;
-  font-size: 0.9rem;
+  font-size: 0.74rem;
   line-height: 1.42;
   overflow-wrap: anywhere;
 }
@@ -900,6 +906,7 @@ h1 {
   color: #10273a;
   background: #ffe46b;
   font-size: 0.72rem;
+  font-size: 0.72rem;
   font-weight: 1000;
 }
 
@@ -937,7 +944,7 @@ h1 {
 .storage-card-body strong {
   display: block;
   color: #fff9f2;
-  font-size: 0.9rem;
+  font-size: 0.74rem;
   line-height: 1.14;
   overflow-wrap: anywhere;
 }
@@ -1300,6 +1307,7 @@ h1 {
   color: #10273a;
   background: #ffe46b;
   font-size: 1.05rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.16);
 }
@@ -1357,7 +1365,7 @@ h1 {
   height: 48px;
   padding: 0;
   border: 2px solid rgba(255, 249, 242, 0.5);
-  border-radius: 12px;
+  border-radius: 8px;
   background: rgba(15, 11, 38, 0.78);
   color: #fff9f2;
   font-size: 1.1rem;
@@ -1381,7 +1389,7 @@ h1 {
   gap: 10px;
   margin-top: 16px;
   color: #d9f7ff;
-  font-size: 0.9rem;
+  font-size: 0.74rem;
   font-weight: 800;
 }
 
@@ -1624,7 +1632,7 @@ h1 {
   min-height: 48px;
   padding: 8px 12px;
   border: 2px solid rgba(36, 23, 55, 0.72);
-  border-radius: 10px;
+  border-radius: 8px;
   pointer-events: auto;
   color: #241737;
   background:
@@ -1846,7 +1854,7 @@ h1 {
   .offer-summary-chevron {
     flex: 0 0 auto;
     color: #9df7ff;
-    font-size: 0.9rem;
+    font-size: 0.74rem;
     transition: transform 0.18s ease;
   }
 
@@ -1958,7 +1966,8 @@ h1 {
     border-radius: 999px;
     background: #ffe46b;
     font-size: 0.64rem;
-    font-weight: 1000;
+    font-size: 0.72rem;
+  font-weight: 1000;
   }
 
   #shop .shop-wallet strong {
@@ -2409,6 +2418,7 @@ h1 {
   color: #84ffda;
   background: rgba(15, 18, 55, 0.78);
   font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   text-align: center;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
@@ -2530,6 +2540,7 @@ h1 {
   background: radial-gradient(circle at 50% 35%, #fff7ad, #fbbf24 62%, #f59e0b 100%);
   box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.18), 0 12px 24px rgba(245, 158, 11, 0.24);
   color: #7c2d12;
+  font-size: 0.72rem;
   font-weight: 1000;
   pointer-events: none;
 }
@@ -2569,7 +2580,7 @@ h1 {
   place-items: center;
   padding: 0;
   transform: translate(-50%, -50%);
-  border-radius: 14px;
+  border-radius: 8px;
   border: 2px solid rgba(255, 249, 242, 0.74);
   color: #10273a;
   touch-action: manipulation;
@@ -2591,7 +2602,7 @@ h1 {
   place-items: center;
   width: calc(var(--node-size) - 12px);
   height: calc(var(--node-size) - 12px);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(255, 249, 242, 0.82);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 3px 8px rgba(10, 8, 32, 0.18);
   color: #10273a;
@@ -2668,9 +2679,9 @@ h1 {
 .skill-node-detail-icon {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   background: linear-gradient(135deg, #55f6c7, #ffe46b);
   color: #10273a;
   font-size: 1.35rem;
@@ -2701,7 +2712,7 @@ h1 {
 
 .skill-node-detail dl > div {
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: 8px;
   background: rgba(15, 18, 55, 0.34);
 }
 
@@ -2769,6 +2780,7 @@ h1 {
   border-radius: 999px;
   color: #fff9f2;
   background: rgba(15, 18, 55, 0.52);
+  font-size: 0.72rem;
   font-weight: 1000;
 }
 
@@ -2795,7 +2807,7 @@ h1 {
   width: 100%;
   padding: 8px;
   border: 2px solid rgba(255, 249, 242, 0.16);
-  border-radius: 14px;
+  border-radius: 8px;
   color: #fff9f2;
   background: rgba(15, 18, 55, 0.52);
   box-shadow: 0 4px 0 rgba(10, 8, 32, 0.26);
@@ -2860,6 +2872,7 @@ h1 {
   background: rgba(255, 249, 242, 0.86);
   color: #10273a;
   font-size: 1.12rem;
+  font-size: 0.72rem;
   font-weight: 1000;
 }
 
@@ -2898,6 +2911,7 @@ h1 {
   color: #0f172a;
   background: #e2e8f0;
   font-size: 0.64rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   line-height: 1;
 }
@@ -2946,6 +2960,7 @@ h1 {
   color: #10273a;
   background: rgba(255, 228, 107, 0.9);
   font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   line-height: 1.2;
 }
@@ -2963,7 +2978,7 @@ h1 {
   margin-top: 2px;
   padding: 8px 10px;
   border: 1px dashed rgba(85, 246, 199, 0.3);
-  border-radius: 14px;
+  border-radius: 8px;
   color: rgba(217, 247, 255, 0.72);
   background: rgba(15, 18, 55, 0.38);
   font-size: 0.8rem;
@@ -3064,7 +3079,7 @@ h1 {
     height: var(--mobile-node-height, 42px);
     min-height: 0;
     padding: 4px;
-    border-radius: 12px;
+    border-radius: 8px;
     text-align: center;
     touch-action: manipulation;
   }
@@ -3122,13 +3137,13 @@ h1 {
   .mobile-skill-tree .skill-node-hub {
     width: var(--mobile-node-width, 48px);
     height: var(--mobile-node-height, 48px);
-    border-radius: 14px;
+    border-radius: 8px;
   }
 
   .mobile-skill-tree .skill-node-hub-icon {
     width: 28px;
     height: 28px;
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 0.82rem;
   }
 
@@ -3207,7 +3222,7 @@ h1 {
 
   .mobile-skill-bottom-sheet .skill-node-unlock {
     min-height: 48px;
-    border-radius: 14px;
+    border-radius: 8px;
   }
 }
 
@@ -3290,7 +3305,7 @@ h1 {
 
   .compact-skill-tier-heading {
     min-height: 30px;
-    border-radius: 14px;
+    border-radius: 8px;
   }
 
   .compact-skill-tier-heading small {
@@ -3308,7 +3323,7 @@ h1 {
   }
 
   .compact-skill-card-title-row strong {
-    font-size: 0.9rem;
+    font-size: 0.74rem;
   }
 
   .compact-skill-card-text {
@@ -3413,7 +3428,7 @@ h1 {
     padding: 6px 10px;
     align-items: center;
     border: 1px solid rgba(85, 246, 199, 0.24);
-    border-radius: 14px;
+    border-radius: 8px;
     background: rgba(15, 18, 55, 0.72);
     box-shadow: 0 6px 18px rgba(10, 8, 32, 0.24);
   }
@@ -3450,7 +3465,7 @@ h1 {
     gap: 1px;
     padding: 7px 10px 8px;
     border-color: rgba(255, 228, 107, 0.72);
-    border-radius: 14px;
+    border-radius: 8px;
     background: rgba(15, 18, 55, 0.82);
     box-shadow: 0 6px 18px rgba(10, 8, 32, 0.26), inset 0 1px 0 rgba(255, 249, 242, 0.16);
   }
@@ -3708,6 +3723,7 @@ h1 {
   border-radius: 0.55rem;
   color: #10273a;
   font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.14);
 }
@@ -3817,7 +3833,7 @@ h1 {
 .workbench-slot {
   min-height: 58px;
   padding: 10px;
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px dashed rgba(151, 209, 255, 0.34);
   background: rgba(255, 255, 255, 0.05);
 }
@@ -3946,7 +3962,7 @@ h1 {
     gap: 4px;
     min-width: 0;
     padding: 2px 6px;
-    border-radius: 10px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.08);
   }
 
@@ -3986,7 +4002,7 @@ h1 {
 
   .workbench-weapon-card,
   .workbench-storage-item {
-    border-radius: 12px;
+    border-radius: 8px;
   }
 
   .workbench-weapon-card,
@@ -4009,7 +4025,7 @@ h1 {
   .workbench-slot {
     min-height: 46px;
     padding: 7px;
-    border-radius: 10px;
+    border-radius: 8px;
   }
 
   .workbench-slot strong,
@@ -4197,6 +4213,7 @@ h1 {
   color: #10273a;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 44%), #ffe46b;
   font-size: 0.72rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.14);
 }
@@ -4377,6 +4394,7 @@ button.workbench-craft-node:not(:disabled):hover {
   color: #10273a;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent 44%), #ffe46b;
   font-size: 0.66rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.14);
 }
@@ -4409,6 +4427,7 @@ button.workbench-craft-node:not(:disabled):hover {
   color: #0f172a;
   background: rgba(132, 255, 218, 0.9);
   font-size: 0.54rem;
+  font-size: 0.72rem;
   font-weight: 1000;
   line-height: 1;
 }
@@ -4443,7 +4462,7 @@ button.workbench-craft-node:not(:disabled):hover {
     width: 150px;
     min-height: 44px;
     padding: 0.26rem 0.32rem;
-    border-radius: 10px;
+    border-radius: 8px;
   }
 
   .workbench-evolution-node {
@@ -4505,7 +4524,7 @@ button.workbench-craft-node:not(:disabled):hover {
   height: 54px;
   padding: 0;
   border: 2px solid rgba(255, 249, 242, 0.42);
-  border-radius: 14px;
+  border-radius: 8px;
   pointer-events: auto;
   color: #241737;
   background:
@@ -4575,10 +4594,10 @@ button.workbench-craft-node:not(:disabled):hover {
 }
 
 .workbench-info-panel {
-  margin-top: 0.6rem;
-  padding: 0.8rem;
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.55rem;
   border: 1px solid rgba(255, 228, 107, 0.44);
-  border-radius: 14px;
+  border-radius: 8px;
   color: #fff9f2;
   background:
     radial-gradient(circle at 8% 0%, rgba(255, 228, 107, 0.18), transparent 34%),
@@ -4590,78 +4609,63 @@ button.workbench-craft-node:not(:disabled):hover {
   margin-top: 0.25rem;
 }
 
+.workbench-info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .workbench-info-head {
   display: flex;
-  gap: 0.6rem;
+  flex: 1 1 auto;
+  gap: 0.5rem;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
+  min-width: 0;
 }
+
 
 .workbench-info-icon {
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: 34px;
+  height: 34px;
   border: 1px solid rgba(255, 249, 242, 0.32);
-  border-radius: 12px;
+  border-radius: 8px;
   color: #10273a;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.36), transparent 44%), #ffe46b;
-  font-size: 0.9rem;
+  font-size: 0.74rem;
   font-weight: 1000;
 }
 
 .workbench-info-head strong {
   display: block;
   color: #ffe46b;
-  font-size: 1rem;
-  line-height: 1.1;
+  font-size: 0.86rem;
+  line-height: 1.05;
 }
 
-.workbench-info-head small,
-.workbench-info-panel p,
-.workbench-info-panel dd {
+
+.workbench-info-head small {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   color: rgba(217, 247, 255, 0.86);
-}
-
-.workbench-info-panel p {
-  margin: 0 0 0.55rem;
-  line-height: 1.45;
-}
-
-.workbench-info-panel dl {
-  display: grid;
-  gap: 0.42rem;
-  margin: 0 0 0.7rem;
-}
-
-.workbench-info-panel dl > div {
-  display: grid;
-  grid-template-columns: 5.5rem minmax(0, 1fr);
-  gap: 0.5rem;
-  align-items: start;
-}
-
-.workbench-info-panel dt {
-  color: #9df7ff;
   font-size: 0.68rem;
-  font-weight: 1000;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.workbench-info-panel dd {
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 800;
+  line-height: 1.2;
 }
 
 .workbench-info-craft {
-  width: 100%;
-  min-height: 42px;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 96px;
+  min-height: 34px;
   border: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   background: linear-gradient(180deg, #ffe46b, #ffb347);
   color: #241737;
+  font-size: 0.72rem;
   font-weight: 1000;
   cursor: pointer;
   touch-action: manipulation;
@@ -4683,10 +4687,6 @@ button.workbench-craft-node:not(:disabled):hover {
     font-size: 1.35rem;
   }
 
-  .workbench-info-panel dl > div {
-    grid-template-columns: 1fr;
-    gap: 0.18rem;
-  }
 }
 
 .workbench-node-copy .workbench-node-recipe,
@@ -4707,7 +4707,7 @@ button.workbench-craft-node:not(:disabled):hover {
   gap: 6px;
   padding: 6px 8px;
   border: 2px solid rgba(255, 250, 210, 0.72);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(25, 83, 49, 0.72);
   box-shadow: 0 3px 0 rgba(16, 55, 35, 0.74), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   pointer-events: none;
