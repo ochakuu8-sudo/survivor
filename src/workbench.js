@@ -30,6 +30,7 @@ let workbenchReadOnly = false;
 let selectedCraftItemKey = null;
 let pendingReplaceItemKey = null;
 let craftTreeViewportState = { left: 0, top: 0 };
+let workbenchInfoSlot = null;
 
 export function openWorkbench(facility = null) {
   if (!game.player?.gear) return;
@@ -145,7 +146,12 @@ export function renderWorkbenchPanel() {
 
   storageRoot.append(renderSpecialItemList(stoneWeapon));
   storageRoot.append(renderModuleEvolutionTree());
-  storageRoot.append(renderModuleInfoPanel());
+  workbenchInfoSlot = document.createElement("div");
+  workbenchInfoSlot.id = "workbenchInfoSlot";
+  workbenchInfoSlot.className = "workbench-info-slot";
+  storageRoot.append(workbenchInfoSlot);
+  updateCraftSelectionUi();
+  updateWorkbenchInfoPanel();
 
   if (hud.workbenchStorageCount) {
     const unlocked = STONE_SPECIAL_ITEMS.filter((item) => isStoneSpecialUnlocked(item.key)).length;
@@ -216,7 +222,8 @@ function renderSpecialItemList(stoneWeapon) {
     const card = document.createElement("button");
     card.type = "button";
     card.className = `workbench-material-chip ${unlocked ? "workbench-node-available" : "workbench-node-locked"}`;
-    card.disabled = !unlocked;
+    card.dataset.craftItemKey = item.key;
+    card.setAttribute("aria-disabled", unlocked ? "false" : "true");
     const rank = stoneSpecialRank(item.key);
     card.innerHTML = `<span class="workbench-item-icon">${stoneItemIcon(item)}</span><strong>${item.name} ${romanRank(rank)}</strong><small>${unlocked ? (equippedIndex >= 0 ? t("workbench.equipped") : t("workbench.unlocked")) : t("workbench.locked")}</small><em>${requirementText(item.recipe)}</em>`;
     card.addEventListener("click", () => selectCraftItem(item.key));
@@ -316,6 +323,8 @@ function renderSpecialCatalogNode(item, position, selected = false) {
   const owned = counts[item.key] || 0;
   node.type = "button";
   node.className = `workbench-craft-node workbench-special-node workbench-special-catalog-node ${selected ? "workbench-node-selected" : ""} ${unlocked ? "workbench-node-available" : "workbench-node-locked"}`;
+  node.dataset.craftItemKey = item.key;
+  node.setAttribute("aria-disabled", unlocked ? "false" : "true");
   node.style.setProperty("--node-x", `${position.x}px`);
   node.style.setProperty("--node-y", `${position.y}px`);
   node.setAttribute("aria-label", t("workbench.nodeAria", { name: item.name, owned, need: 1, status: unlocked ? t("workbench.unlocked") : missingRecipeText(item.recipe) }));
@@ -338,6 +347,7 @@ function renderSpecialRecipeNode(item, requirement, position, selected = false) 
   const ready = requirement.type === "equipped" ? !!requirement.equipped : owned >= requirement.need;
   node.type = "button";
   node.className = `workbench-craft-node workbench-special-node ${selected ? "workbench-node-selected" : ""} ${ready ? "workbench-node-owned" : craftable ? "workbench-node-available" : "workbench-node-locked"}`;
+  if (item?.category === "special") node.dataset.craftItemKey = item.key;
   node.style.setProperty("--node-x", `${position.x}px`);
   node.style.setProperty("--node-y", `${position.y}px`);
   node.setAttribute("aria-label", t("workbench.nodeAria", { name: item?.name || requirement.name || requirement.key, owned, need: requirement.need, status: ready ? t("workbench.unlocked") : (item?.recipe ? missingRecipeText(item.recipe) : t("workbench.locked")) }));
@@ -423,9 +433,29 @@ function renderModuleInfoPanel() {
 }
 
 function selectCraftItem(key) {
-  if (!key || selectedCraftItemKey === key) return;
+  if (!key) return;
   selectedCraftItemKey = key;
-  renderWorkbenchPanel();
+  updateCraftSelectionUi();
+  updateWorkbenchInfoPanel();
+  scrollInfoPanelIntoView();
+}
+
+function updateWorkbenchInfoPanel() {
+  if (!workbenchInfoSlot?.isConnected) return;
+  workbenchInfoSlot.replaceChildren(renderModuleInfoPanel());
+}
+
+function updateCraftSelectionUi() {
+  if (!hud.workbenchPanel) return;
+  hud.workbenchPanel.querySelectorAll("[data-craft-item-key]").forEach((node) => {
+    node.classList.toggle("workbench-node-selected", node.dataset.craftItemKey === selectedCraftItemKey);
+  });
+}
+
+function scrollInfoPanelIntoView() {
+  if (!workbenchInfoSlot?.isConnected) return;
+  if (!window.matchMedia("(max-width: 760px), (max-height: 640px)").matches) return;
+  workbenchInfoSlot.scrollIntoView({ block: "nearest", behavior: "smooth" });
 }
 
 function currentStoneItemCounts() {
