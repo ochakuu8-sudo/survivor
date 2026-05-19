@@ -4222,6 +4222,7 @@ h1 {
 .workbench-craft-tree-viewport {
   max-height: min(580px, calc(100dvh - 150px));
   overflow: auto;
+  touch-action: pan-x pan-y;
 }
 
 .workbench-craft-node-map {
@@ -4259,6 +4260,7 @@ h1 {
 
 button.workbench-craft-node:not(:disabled) {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button.workbench-craft-node:not(:disabled):hover {
@@ -4581,6 +4583,7 @@ button.workbench-craft-node:not(:disabled):hover {
   color: #241737;
   font-weight: 1000;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .workbench-info-craft:disabled {
