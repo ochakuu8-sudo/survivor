@@ -247,32 +247,32 @@ export function formatStoneItemEffectSummary(item) {
     barrierMax: t("stone.stats.barrierMax"),
     weaponPowerBonus: t("stone.stats.weaponPowerBonus"),
   };
-  Object.entries(item.statBonus || {}).forEach(([stat, value]) => {
+  if (item.category !== "special") Object.entries(item.statBonus || {}).forEach(([stat, value]) => {
     const label = labels[stat] || stat;
     const sign = value > 0 ? "+" : "";
     if (Math.abs(value) > 0 && Math.abs(value) < 1) parts.push(`${label}${sign}${Math.round(value * 100)}%`);
     else parts.push(`${label}${sign}${value}`);
   });
   const behaviorLabels = {
-    ricochetCount: t("stone.behavior.ricochetCount"),
-    pierce: t("stone.behavior.pierce"),
-    explosionDamage: t("stone.behavior.explosionDamage"),
+    ricochetCount: t("stone.behaviorText.ricochetCount"),
+    pierce: t("stone.behaviorText.pierce"),
+    explosionDamage: t("stone.behaviorText.explosionDamage"),
     returning: t("stone.behavior.returning"),
     rolling: t("stone.behavior.rolling"),
     deployHazard: t("stone.behavior.deployHazard"),
     pullStrength: t("stone.behavior.pullStrength"),
     frost: t("stone.behavior.frost"),
     fuseTrail: t("stone.behavior.fuseTrail"),
-    damageTrail: t("stone.behavior.damageTrail"),
-    orbit: t("stone.behavior.orbit"),
-    satellite: t("stone.behavior.orbit"),
-    playerBeam: t("stone.behavior.playerBeam"),
-    machineGun: t("stone.behavior.machineGun"),
-    projectileCount: t("stone.behavior.multishot"),
-    criticalChance: t("stone.behavior.criticalChance"),
+    damageTrail: t("stone.behaviorText.damageTrail"),
+    orbit: t("stone.behaviorText.orbit"),
+    satellite: t("stone.behaviorText.satellite"),
+    playerBeam: t("stone.behaviorText.playerBeam"),
+    machineGun: t("stone.behaviorText.machineGun"),
+    projectileCount: t("stone.behaviorText.projectileCount"),
+    criticalChance: t("stone.behaviorText.criticalChance"),
     multishot: t("stone.behavior.multishot"),
     haste: t("stone.behavior.haste"),
-    heavy: t("stone.behavior.heavy"),
+    heavy: t("stone.behaviorText.heavy"),
     lifesteal: t("stone.behavior.lifesteal"),
     echo: t("stone.behavior.echo"),
     sniper: t("stone.behavior.sniper"),
@@ -345,15 +345,6 @@ export function recomputeStoneItems(weapon, player = game.player, { gainedKey = 
   }, {});
 
   applyStoneMaterialBonuses(weapon, player);
-
-  equipped.forEach((item) => {
-    const definition = findStoneSpecialItem(item?.key);
-    if (definition?.statBonus) {
-      const multiplier = stoneSpecialRankMultiplier(definition.key);
-      const rankedBonus = Object.fromEntries(Object.entries(definition.statBonus).map(([stat, value]) => [stat, value * multiplier]));
-      applyStatBonus(weapon, player, rankedBonus);
-    }
-  });
 
   applyStoneBehaviorItems(weapon, counts);
 
