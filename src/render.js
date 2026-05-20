@@ -858,6 +858,18 @@ function currentChargeStoneInfo(player) {
 
 function drawPlayer(player, view, camX, camY, zoom) {
   const screen = worldToScreen(player.x, player.y, view, camX, camY, zoom);
+  const activeWeaponIndex = Math.min(
+    Math.max(player.gear?.activeWeaponIndex || 0, 0),
+    Math.max(0, (player.gear?.weapons?.length || 1) - 1),
+  );
+  const activeWeapon = player.gear?.weapons?.[activeWeaponIndex];
+  if (activeWeapon?.range) {
+    const rangeSize = activeWeapon.range * 2 * zoom;
+    state.renderer.draw("white", screen.x, screen.y, rangeSize, rangeSize, {
+      alpha: 0.22,
+      tint: [0.68, 0.9, 1],
+    });
+  }
   const moving = Math.hypot(player.moveX, player.moveY) > 0.05;
   const walkPulse = moving ? Math.sin(player.walkTime * TAU) : 0;
   const sprite = moving
