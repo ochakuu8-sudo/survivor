@@ -498,7 +498,7 @@ const en = {
   "stone.item.flameStone.name": "Flame Boulder",
   "stone.item.flameStone.description": "HP + range: Leaves fire along the projectile path.",
   "stone.item.machineGunStone.name": "Machine Gun",
-  "stone.item.machineGunStone.description": "speed + speed: Attack power -20%, attack speed x1.5.",
+  "stone.item.machineGunStone.description": "speed + speed: Halve range and double attack speed.",
   "stone.item.laserStone.name": "Charge Boulder",
   "stone.item.laserStone.description": "power + range: Standing still charges damage and size over time; moving fires an empowered shot.",
   "stone.item.satelliteStone.name": "Orbit Boulder",

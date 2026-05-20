@@ -399,6 +399,13 @@ function applyStoneBehaviorItems(weapon, counts) {
     weapon.bulletSprite = "stoneHeavy";
   }
 
+
+  const machineGun = counts.machineGunStone || 0;
+  if (machineGun > 0) {
+    weapon.range = Math.max(32, weapon.range / 2);
+    weapon.fireRate = Math.min(5.5, weapon.fireRate * 2);
+  }
+
   const satellite = counts.satelliteStone || 0;
   if (satellite > 0) {
     weapon.satelliteStone = {

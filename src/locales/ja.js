@@ -496,7 +496,7 @@ const ja = {
   "stone.item.flameStone.name": "炎岩",
   "stone.item.flameStone.description": "HP + range: 弾の軌跡に炎が残る。",
   "stone.item.machineGunStone.name": "マシンガン",
-  "stone.item.machineGunStone.description": "speed + speed: 攻撃力 -20%、攻撃速度 1.5倍。",
+  "stone.item.machineGunStone.description": "speed + speed: 射程を半分にし、攻撃速度を2倍にする。",
   "stone.item.laserStone.name": "チャージ岩",
   "stone.item.laserStone.description": "power + range: 動かずにいるほど威力とサイズをチャージし、動くと強化弾を発射する。",
   "stone.item.satelliteStone.name": "回転岩",
