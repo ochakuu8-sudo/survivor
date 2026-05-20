@@ -29,6 +29,7 @@ export const WEAPON_POOL = [
       fireRate: 0.9,
       bulletSpeed: 360,
       life: 1.15,
+      range: 214,
       radius: 12,
       kick: 1.9,
       bulletGlow: "glowAmber",
