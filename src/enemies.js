@@ -76,7 +76,7 @@ function enemySpawnRamp(elapsed = game.floorElapsed || 0) {
 
 function enemyFloorStatMultiplier(wave = game.wave || 1) {
   const floor = Math.max(1, Math.floor(wave || 1));
-  return ENEMY_HP_PER_FLOOR_MULTIPLIER ** (floor - 1);
+  return 1 + (ENEMY_HP_PER_FLOOR_MULTIPLIER - 1) * (floor - 1);
 }
 
 function currentSpawnPlan(elapsed = game.floorElapsed || 0) {
