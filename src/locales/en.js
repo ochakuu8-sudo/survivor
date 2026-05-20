@@ -511,7 +511,7 @@ const en = {
   "stone.item.machineGunStone.name": "Machine Gun",
   "stone.item.machineGunStone.description": "speed + speed: Halve range and double attack speed.",
   "stone.item.laserStone.name": "Charge Boulder",
-  "stone.item.laserStone.description": "power + range: Standing still charges damage and size over time; moving fires an empowered shot.",
+  "stone.item.laserStone.description": "power + range: Moving charges damage and size over time; stopping fires an empowered shot.",
   "stone.item.satelliteStone.name": "Orbit Boulder",
   "stone.item.satelliteStone.description": "HP + speed: Stones orbit around you.",
   "stone.item.critStone.name": "Critical Stone",
