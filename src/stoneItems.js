@@ -404,6 +404,7 @@ function applyStoneBehaviorItems(weapon, counts) {
   if (machineGun > 0) {
     weapon.range = Math.max(32, weapon.range / 2);
     weapon.fireRate = Math.min(5.5, weapon.fireRate * 2);
+    weapon.jitter = Math.max(weapon.jitter || 0, Math.PI / 6);
   }
 
   const satellite = counts.satelliteStone || 0;
