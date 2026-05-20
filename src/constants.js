@@ -18,8 +18,8 @@ export const ELITE_SPAWN_SECONDS = Math.max(0, WAVE_DURATION_SECONDS - 15);
 export const BOSS_WAVE_INTERVAL = 3;
 export const WAVE_NODE_PRICE_BASE = 24;
 export const WAVE_NODE_PRICE_SCALE = 0.08;
-export const STONE_INITIAL_DAMAGE = 42;
-export const ENEMY_HP_PER_FLOOR_MULTIPLIER = 1.25;
+export const STONE_INITIAL_DAMAGE = 10;
+export const ENEMY_HP_PER_FLOOR_MULTIPLIER = 1.5;
 
 export const OFFER_TYPE_LABELS = {
   weapon: t("offer.type.weapon"),
