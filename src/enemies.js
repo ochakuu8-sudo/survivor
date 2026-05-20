@@ -1,4 +1,4 @@
-import { COLLISION_CELL_SIZE, ENEMY_HP_PER_FLOOR_MULTIPLIER, ENEMY_SPEED_RAMP_SECONDS, STONE_INITIAL_DAMAGE, TAU, TILE_SIZE } from "./constants.js";
+import { COLLISION_CELL_SIZE, ENEMY_HP_PER_FLOOR_MULTIPLIER, ENEMY_SPEED_RAMP_SECONDS, TAU, TILE_SIZE } from "./constants.js";
 import { enemyCollisionGrid, game, nextEnemyId } from "./state.js";
 import { distanceToSegmentSq, gridKey, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
@@ -74,7 +74,7 @@ function enemySpawnRamp(elapsed = game.floorElapsed || 0) {
   return Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
 }
 
-function enemyFloorHpMultiplier(wave = game.wave || 1) {
+function enemyFloorStatMultiplier(wave = game.wave || 1) {
   const floor = Math.max(1, Math.floor(wave || 1));
   return ENEMY_HP_PER_FLOOR_MULTIPLIER ** (floor - 1);
 }
@@ -355,17 +355,16 @@ export function spawnEnemy(forceType, options = {}) {
     y = spawnPoint.y;
   }
 
-  const baseHp = Math.round(STONE_INITIAL_DAMAGE * (options.boss ? 3.8 : options.elite ? 2.25 : 1));
   const enemy = {
     id: nextEnemyId(),
     kind: "melee",
     x,
     y,
     radius: 18,
-    hp: baseHp,
-    maxHp: baseHp,
+    hp: 12,
+    maxHp: 12,
     speed: 78,
-    attackDamage: 9,
+    attackDamage: 12,
     attackCooldown: 1.08,
     attackTimer: 0,
     sprite: "zombieA",
@@ -376,17 +375,17 @@ export function spawnEnemy(forceType, options = {}) {
 
   if (type === "runner") {
     enemy.radius = 16;
-    enemy.hp = Math.round(baseHp * 0.72);
+    enemy.hp = 8;
     enemy.maxHp = enemy.hp;
     enemy.speed = 122;
-    enemy.attackDamage = 7;
+    enemy.attackDamage = 10;
     enemy.attackCooldown = 0.76;
     enemy.sprite = "zombieB";
     enemy.readableSprite = "zombieBReadable";
   } else if (type === "bigZombie") {
     enemy.kind = "bigZombie";
     enemy.radius = 33;
-    enemy.hp = Math.round(baseHp * 5.4);
+    enemy.hp = 50;
     enemy.maxHp = enemy.hp;
     enemy.speed = 54;
     enemy.attackDamage = 18;
@@ -409,7 +408,7 @@ export function spawnEnemy(forceType, options = {}) {
   } else if (type === "orc") {
     enemy.kind = "orc";
     enemy.radius = 27;
-    enemy.hp = Math.round(baseHp * 2.85);
+    enemy.hp = Math.round(12 * 2.85);
     enemy.maxHp = enemy.hp;
     enemy.speed = 58;
     enemy.attackDamage = 0;
@@ -430,7 +429,7 @@ export function spawnEnemy(forceType, options = {}) {
   } else if (type === "archer") {
     enemy.kind = "archer";
     enemy.radius = 17;
-    enemy.hp = Math.round(baseHp * 0.8);
+    enemy.hp = 8;
     enemy.maxHp = enemy.hp;
     enemy.speed = 92;
     enemy.attackDamage = 0;
@@ -439,16 +438,20 @@ export function spawnEnemy(forceType, options = {}) {
     enemy.readableSprite = "skeletonArcherReadable";
     enemy.shotCooldown = 0.6 + Math.random() * 0.6;
     enemy.shotInterval = 2.4;
-    enemy.shotDamage = 16;
+    enemy.shotDamage = 6;
     enemy.shootRange = 320;
     enemy.preferredDistance = 220;
   }
 
   if (options.noDeathChest) enemy.noDeathChest = true;
 
-  const floorHpMultiplier = enemyFloorHpMultiplier();
-  enemy.maxHp = Math.max(1, Math.round(enemy.maxHp * floorHpMultiplier));
+  const floorStatMultiplier = enemyFloorStatMultiplier();
+  enemy.maxHp = Math.max(1, Math.round(enemy.maxHp * floorStatMultiplier));
   enemy.hp = enemy.maxHp;
+  if (Number.isFinite(enemy.attackDamage) && enemy.attackDamage > 0) enemy.attackDamage = Math.max(1, Math.round(enemy.attackDamage * floorStatMultiplier));
+  if (Number.isFinite(enemy.shotDamage) && enemy.shotDamage > 0) enemy.shotDamage = Math.max(1, Math.round(enemy.shotDamage * floorStatMultiplier));
+  if (Number.isFinite(enemy.chargeDamage) && enemy.chargeDamage > 0) enemy.chargeDamage = Math.max(1, Math.round(enemy.chargeDamage * floorStatMultiplier));
+  if (Number.isFinite(enemy.slamDamage) && enemy.slamDamage > 0) enemy.slamDamage = Math.max(1, Math.round(enemy.slamDamage * floorStatMultiplier));
 
   if (options.elite || options.boss) {
     enemy.elite = true;
