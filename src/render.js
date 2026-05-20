@@ -843,6 +843,19 @@ function combatRoomMaterialEmojiSprite(materialKey) {
   return null;
 }
 
+function currentChargeStoneInfo(player) {
+  if (!player?.gear?.weapons?.length) return null;
+  const activeIndex = Math.min(
+    Math.max(player.gear.activeWeaponIndex || 0, 0),
+    Math.max(0, player.gear.weapons.length - 1),
+  );
+  const weapon = player.gear.weapons[activeIndex];
+  if (!weapon?.chargeStone) return null;
+  const maxChargeTime = Math.max(0.1, weapon.chargeStone.maxChargeTime || 2.5);
+  const timer = Math.max(0, weapon.chargeStoneTimer || 0);
+  return { ratio: clamp(timer / maxChargeTime, 0, 1), pulse: timer };
+}
+
 function drawPlayer(player, view, camX, camY, zoom) {
   const screen = worldToScreen(player.x, player.y, view, camX, camY, zoom);
   const moving = Math.hypot(player.moveX, player.moveY) > 0.05;
@@ -853,10 +866,23 @@ function drawPlayer(player, view, camX, camY, zoom) {
   const lean = clamp(player.moveX, -1, 1) * 0.08;
   const invulnerable = (player.invulnerableTimer || 0) > 0;
   const blink = invulnerable && Math.sin(game.elapsed * 34) > 0;
+  const chargeInfo = currentChargeStoneInfo(player);
   state.renderer.draw("glowCyan", screen.x, screen.y + 4 * zoom, 94 * zoom, 82 * zoom, {
     alpha: invulnerable ? 0.34 : 0.2,
   });
   state.renderer.draw("shadow", screen.x, screen.y + 25 * zoom, 72 * (1 + Math.abs(walkPulse) * 0.08) * zoom, 32 * zoom, { alpha: 0.82 });
+  if (chargeInfo && chargeInfo.ratio > 0.01) {
+    const pulse = 1 + Math.sin(game.elapsed * (8 + chargeInfo.pulse * 2.5)) * 0.08;
+    const ringSize = (48 + chargeInfo.ratio * 38) * pulse * zoom;
+    state.renderer.draw("glowAmber", screen.x, screen.y + 3 * zoom, ringSize * 1.45, ringSize, {
+      alpha: 0.12 + chargeInfo.ratio * 0.34,
+      tint: [1, 0.86, 0.36],
+    });
+    state.renderer.draw("white", screen.x, screen.y + 20 * zoom, ringSize * chargeInfo.ratio, 5 * zoom, {
+      alpha: 0.78,
+      tint: [1, 0.92, 0.5],
+    });
+  }
   state.renderer.draw(sprite, screen.x, screen.y + (-3 + (moving ? walkPulse * 1.2 : 0)) * zoom, 62 * zoom, 62 * zoom, {
     alpha: blink ? 0.5 : 1,
     rotation: lean,

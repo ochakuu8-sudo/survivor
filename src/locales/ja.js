@@ -509,7 +509,7 @@ const ja = {
   "stone.item.machineGunStone.name": "マシンガン",
   "stone.item.machineGunStone.description": "speed + speed: 射程を半分にし、攻撃速度を2倍にする。",
   "stone.item.laserStone.name": "チャージ岩",
-  "stone.item.laserStone.description": "power + range: 動かずにいるほど威力とサイズをチャージし、動くと強化弾を発射する。",
+  "stone.item.laserStone.description": "power + range: 動いている間に威力とサイズをチャージし、止まると強化弾を発射する。",
   "stone.item.satelliteStone.name": "回転岩",
   "stone.item.satelliteStone.description": "HP + speed: 自分の周りを石が回る。",
   "stone.item.critStone.name": "クリティカル石",

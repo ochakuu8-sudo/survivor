@@ -463,7 +463,7 @@ export function autoShoot(dt = 0) {
   if (chargeStone) {
     const moveLen = Math.hypot(p.moveX || 0, p.moveY || 0);
     const isMoving = moveLen >= (chargeStone.minMovingInput || 0.1);
-    if (!isMoving) {
+    if (isMoving) {
       weapon.chargeStoneTimer = Math.min(chargeStone.maxChargeTime || 2.5, (weapon.chargeStoneTimer || 0) + dt);
       return;
     }
