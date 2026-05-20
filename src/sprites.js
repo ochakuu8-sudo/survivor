@@ -993,6 +993,14 @@ export function buildAtlas() {
   add("swordSlashRange", 128, 96, (ctx, w, h) => {
     drawPixelSwordSlashRange(ctx, w, h);
   });
+  add("weaponRangeRing", 128, 128, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = "rgba(255, 232, 96, 0.78)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, w * 0.49, 0, Math.PI * 2);
+    ctx.stroke();
+  });
   add("swordSlash", 112, 76, (ctx, w, h) => {
     drawPixelSwordSlash(ctx, w, h);
   });

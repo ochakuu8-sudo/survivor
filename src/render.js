@@ -865,9 +865,8 @@ function drawPlayer(player, view, camX, camY, zoom) {
   const activeWeapon = player.gear?.weapons?.[activeWeaponIndex];
   if (activeWeapon?.range) {
     const rangeSize = activeWeapon.range * 2 * zoom;
-    state.renderer.draw("white", screen.x, screen.y, rangeSize, rangeSize, {
-      alpha: 0.22,
-      tint: [0.68, 0.9, 1],
+    state.renderer.draw("weaponRangeRing", screen.x, screen.y, rangeSize, rangeSize, {
+      alpha: 0.46,
     });
   }
   const moving = Math.hypot(player.moveX, player.moveY) > 0.05;
