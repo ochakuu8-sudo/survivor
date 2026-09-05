@@ -1,3 +1,4 @@
+import { shortestDungeonDelta, wrapDungeonPoint } from './dungeon.js';
 import {rewardForFloor,saveProgress} from './progression.js';
 import { TAU } from "./constants.js";
 import { game } from "./state.js";
@@ -17,7 +18,8 @@ export function dropGold(enemy) {
       y: enemy.y + Math.sin(angle) * (enemy.radius * 0.24),
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      value: 1,
+      value: rewardForFloor(1,game.wave),
+      minted: true,
       radius: 10,
       roomId: enemy.roomId,
       age: 0,
@@ -28,7 +30,8 @@ export function dropGold(enemy) {
   }
 
   if (game.goldDrops.length > MAX_GOLD_DROPS) {
-    game.goldDrops.splice(0, game.goldDrops.length - MAX_GOLD_DROPS);
+    const excess = game.goldDrops.splice(0, game.goldDrops.length - MAX_GOLD_DROPS);
+    game.goldDrops[0].value += excess.reduce((sum, drop) => sum + coinValue(drop), 0);
   }
 }
 
@@ -41,20 +44,21 @@ export function updateGoldDrops(dt) {
 
   for (const drop of game.goldDrops) {
     drop.age += dt;
-    const dx = player.x - drop.x;
-    const dy = player.y - drop.y;
+    const { dx, dy } = shortestDungeonDelta(game.dungeon, drop.x, drop.y, player.x, player.y);
     const distanceSq = dx * dx + dy * dy;
     const distance = Math.sqrt(distanceSq) || 0.0001;
     const magnetized = drop.age >= drop.magnetDelay && distanceSq <= pickupRangeSq;
 
     if (magnetized) {
       const pull = 580 + clamp(1 - distance / pickupRange, 0, 1) * 760;
+      if (distance <= pull * dt) { collectGold(drop); continue; }
       drop.vx = (dx / distance) * pull;
       drop.vy = (dy / distance) * pull;
     }
 
     drop.x += drop.vx * dt;
     drop.y += drop.vy * dt;
+    wrapDungeonPoint(game.dungeon,drop);
     drop.vx *= magnetized ? 0.92 : 0.82;
     drop.vy *= magnetized ? 0.92 : 0.82;
 
@@ -70,7 +74,7 @@ export function updateGoldDrops(dt) {
 }
 
 function collectGold(drop) {
-  grantGold(drop.value);
+  creditGold(coinValue(drop));
   addEffect({
     type: "burst",
     x: drop.x,
@@ -92,16 +96,24 @@ function pointCountForEnemy(enemy) {
   return 1;
 }
 
-export function grantGold(value) {
-  const amount=Math.max(0,rewardForFloor(value,game.wave));
+function coinValue(drop) { return drop.minted ? drop.value : rewardForFloor(drop.value,game.wave); }
+export function creditGold(value) {
+  const amount = Math.max(0, Math.round(value));
   game.gold=(game.gold||0)+amount; game.runPoints=(game.runPoints||0)+amount;
   saveProgress(game);
+  return amount;
+}
+export function grantGold(value) { return creditGold(rewardForFloor(value,game.wave)); }
+export function collectAllGold() {
+  const total = game.goldDrops.reduce((sum,drop)=>sum+coinValue(drop),0);
+  game.goldDrops=[];
+  return creditGold(total);
 }
 export function collectRoomGold(room) {
   const d=game.dungeon;
   game.goldDrops=game.goldDrops.filter(drop=>{
     const tx=(drop.x-d.offsetX)/96,ty=(drop.y-d.offsetY)/96;
-    if(drop.roomId===room.id || (tx>=room.x && tx<room.x+room.w && ty>=room.y && ty<room.y+room.h)){grantGold(drop.value);return false;}
+    if((room.id != null && drop.roomId===room.id) || (tx>=room.x && tx<room.x+room.w && ty>=room.y && ty<room.y+room.h)){creditGold(coinValue(drop));return false;}
     return true;
   });
 }

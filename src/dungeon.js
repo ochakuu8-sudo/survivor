@@ -143,7 +143,8 @@ export function generateArenaDungeon(wave) {
     arena: true,
     wrapEdges: true,
   };
-  dungeon.obstacles = generateArenaObstacles(dungeon, rng);
+  // An uninterrupted plain; scenery is decorative only.
+  dungeon.obstacles = [];
   return dungeon;
 }
 

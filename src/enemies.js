@@ -1,10 +1,12 @@
+import { difficulty } from './difficulty.js';
+import { insertPeriodicEntity } from './spatial.js';
 import { COLLISION_CELL_SIZE, ENEMY_HP_PER_FLOOR_MULTIPLIER, ENEMY_SPEED_RAMP_SECONDS, TAU, TILE_SIZE } from "./constants.js";
 import { enemyCollisionGrid, game, nextEnemyId } from "./state.js";
 import { distanceToSegmentSq, gridKey, normalize } from "./utils/math.js";
 import { damagePlayer } from "./player.js";
 import { addEffect, addSparks, addTelegraphLine } from "./effects.js";
 import { viewSize, cameraZoom } from "./render.js";
-import { canStandAt, dungeonTileWorldCenter, isWalkableTile, moveActorWithDungeonCollision, shortestDungeonDelta, worldToDungeonTile } from "./dungeon.js";
+import { canStandAt, dungeonTileWorldCenter, isWalkableTile, moveActorWithDungeonCollision, shortestDungeonDelta, worldToDungeonTile, wrapDungeonPoint } from "./dungeon.js";
 
 const SPAWN_BATCH_INTERVAL_MIN = 2.4;
 const SPAWN_BATCH_INTERVAL_MAX = 5.2;
@@ -20,17 +22,13 @@ const MOBILE_SCREEN_ASPECT = 9 / 16;
 const OFFSCREEN_SPAWN_MARGIN = 72;
 const OFFSCREEN_SPAWN_NEAR_BAND = 360;
 const OFFSCREEN_SPAWN_ATTEMPTS = 96;
-const SAFETY_ENEMY_CAP = 3000;
+const SAFETY_ENEMY_CAP = 240;
 const ENEMY_PUSH_RADIUS_SCALE = 1.0;
 const ENEMY_PUSH_STRENGTH = 0.42;
 const ENEMY_PUSH_MAX_STEP = 5.5;
 
-function runProgress(elapsed = game.floorElapsed || 0) {
-  return Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
-}
-
-export function enemyRunSpeedMultiplier(elapsed = game.floorElapsed || 0) {
-  return 1 + runProgress(elapsed);
+export function enemyRunSpeedMultiplier() {
+  return difficulty(game.wave).speed;
 }
 
 function mobileScreenWorldSize(view, zoom) {
@@ -70,22 +68,12 @@ export function pickStrongestEnemyTypeForCurrentWave() {
   return unlockedTypes[unlockedTypes.length - 1]?.type || "walker";
 }
 
-function enemySpawnRamp(elapsed = game.floorElapsed || 0) {
-  return Math.min(1, Math.max(0, elapsed / ENEMY_SPEED_RAMP_SECONDS));
-}
+function enemyFloorStatMultiplier() { return difficulty(game.wave).hp; }
 
-function enemyFloorStatMultiplier(wave = game.wave || 1) {
-  const floor = Math.max(1, Math.floor(wave || 1));
-  return 1 + (ENEMY_HP_PER_FLOOR_MULTIPLIER - 1) * (floor - 1);
-}
-
-function currentSpawnPlan(elapsed = game.floorElapsed || 0) {
-  const ramp = enemySpawnRamp(elapsed);
-  const pressure = Math.pow(ramp, 1.35);
-  return {
-    interval: SPAWN_BATCH_INTERVAL_MAX - (SPAWN_BATCH_INTERVAL_MAX - SPAWN_BATCH_INTERVAL_MIN) * pressure,
-    batchSize: Math.round(SPAWN_BATCH_SIZE_MIN + (SPAWN_BATCH_SIZE_MAX - SPAWN_BATCH_SIZE_MIN) * pressure),
-  };
+export function currentSpawnPlan() {
+  const cfg = difficulty(game.wave);
+  const boss = game.encounter?.phase === 'boss';
+  return { interval: boss ? 5 : cfg.interval, batchSize: boss ? 2 : cfg.batch, cap: boss ? 18 : cfg.cap };
 }
 
 export function resetEnemySpawnTimer() {
@@ -95,11 +83,8 @@ export function resetEnemySpawnTimer() {
 }
 
 export function spawnOpeningEnemies() {
-  const positions = pickDistributedOpeningSpawnPoints(openingEnemyCount());
-
-  for (const position of positions) {
-    spawnEnemy(undefined, { position, offscreen: false });
-  }
+  // Start near the action, without filling distant parts of the map.
+  for (let i = 0; i < 12; i += 1) spawnEnemy(undefined, { offscreen: true });
 }
 
 function openingEnemyCount() {
@@ -207,7 +192,7 @@ function shuffleInPlace(points) {
 }
 
 export function spawnEnemies(dt) {
-  if (game.enemies.length >= SAFETY_ENEMY_CAP) {
+  if (game.enemies.length >= currentSpawnPlan().cap) {
     game.spawnClock = Math.min(game.spawnClock, currentSpawnPlan().interval * 0.5);
     return;
   }
@@ -217,7 +202,7 @@ export function spawnEnemies(dt) {
 
   const plan = currentSpawnPlan();
   game.spawnBatchSize = plan.batchSize;
-  const spawnCount = Math.min(plan.batchSize, SAFETY_ENEMY_CAP - game.enemies.length);
+  const spawnCount = Math.min(plan.batchSize, plan.cap - game.enemies.length);
   for (let i = 0; i < spawnCount; i += 1) {
     spawnEnemy(undefined, { offscreen: true });
   }
@@ -239,7 +224,7 @@ function pickWorldOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin) {
 function pickDungeonOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin, standRadius) {
   for (let i = 0; i < OFFSCREEN_SPAWN_ATTEMPTS; i += 1) {
     const side = Math.floor(Math.random() * 4);
-    const point = pointOnOffscreenSide(side, camX, camY, visibleW, visibleH, margin, OFFSCREEN_SPAWN_NEAR_BAND);
+    const point = wrapDungeonPoint(game.dungeon, pointOnOffscreenSide(side, camX, camY, visibleW, visibleH, margin, OFFSCREEN_SPAWN_NEAR_BAND));
     if (isDungeonSpawnPointValid(point, true, camX, camY, visibleW, visibleH, margin, standRadius)) return point;
   }
 
@@ -274,10 +259,8 @@ function isDungeonSpawnPointValid(point, requireOffscreen, camX, camY, visibleW,
 }
 
 function isPointOffscreen(point, camX, camY, visibleW, visibleH, margin) {
-  return point.x < camX - visibleW / 2 - margin ||
-    point.x > camX + visibleW / 2 + margin ||
-    point.y < camY - visibleH / 2 - margin ||
-    point.y > camY + visibleH / 2 + margin;
+  const delta = shortestDungeonDelta(game.dungeon, camX, camY, point.x, point.y);
+  return Math.abs(delta.dx) > visibleW / 2 + margin || Math.abs(delta.dy) > visibleH / 2 + margin;
 }
 
 function findNearestDungeonOffscreenSpawnPoint(camX, camY, visibleW, visibleH, margin, standRadius) {
@@ -333,7 +316,7 @@ export function spawnEnemy(forceType, options = {}) {
   const spawnStandRadius = enemySpawnStandRadius(type, options);
   const view = viewSize();
   const zoom = cameraZoom(view);
-  const spawnScreen = mobileScreenWorldSize(view, zoom);
+  const spawnScreen = { w: view.w / zoom, h: view.h / zoom };
   const visibleW = spawnScreen.w;
   const visibleH = spawnScreen.h;
   const margin = OFFSCREEN_SPAWN_MARGIN;
@@ -448,10 +431,10 @@ export function spawnEnemy(forceType, options = {}) {
   const floorStatMultiplier = enemyFloorStatMultiplier();
   enemy.maxHp = Math.max(1, Math.round(enemy.maxHp * floorStatMultiplier));
   enemy.hp = enemy.maxHp;
-  if (Number.isFinite(enemy.attackDamage) && enemy.attackDamage > 0) enemy.attackDamage = Math.max(1, Math.round(enemy.attackDamage * floorStatMultiplier));
-  if (Number.isFinite(enemy.shotDamage) && enemy.shotDamage > 0) enemy.shotDamage = Math.max(1, Math.round(enemy.shotDamage * floorStatMultiplier));
-  if (Number.isFinite(enemy.chargeDamage) && enemy.chargeDamage > 0) enemy.chargeDamage = Math.max(1, Math.round(enemy.chargeDamage * floorStatMultiplier));
-  if (Number.isFinite(enemy.slamDamage) && enemy.slamDamage > 0) enemy.slamDamage = Math.max(1, Math.round(enemy.slamDamage * floorStatMultiplier));
+  if (Number.isFinite(enemy.attackDamage) && enemy.attackDamage > 0) enemy.attackDamage = Math.max(1, Math.round(enemy.attackDamage * difficulty(game.wave).damage));
+  if (Number.isFinite(enemy.shotDamage) && enemy.shotDamage > 0) enemy.shotDamage = Math.max(1, Math.round(enemy.shotDamage * difficulty(game.wave).damage));
+  if (Number.isFinite(enemy.chargeDamage) && enemy.chargeDamage > 0) enemy.chargeDamage = Math.max(1, Math.round(enemy.chargeDamage * difficulty(game.wave).damage));
+  if (Number.isFinite(enemy.slamDamage) && enemy.slamDamage > 0) enemy.slamDamage = Math.max(1, Math.round(enemy.slamDamage * difficulty(game.wave).damage));
 
   if (options.elite || options.boss) {
     enemy.elite = true;
@@ -466,6 +449,7 @@ export function spawnEnemy(forceType, options = {}) {
   enemy.baseMaxHp = enemy.maxHp;
   enemy.baseSpeed = enemy.baseSpeed || enemy.speed;
   enemy.speed = enemy.baseSpeed * enemyRunSpeedMultiplier();
+  wrapDungeonPoint(game.dungeon, enemy);
   game.enemies.push(enemy);
   return enemy;
 }
@@ -474,6 +458,7 @@ export function updateEnemies(dt) {
   const p = game.player;
   const floorSpeed = enemyRunSpeedMultiplier();
   for (const enemy of game.enemies) {
+    if (enemy.dead) continue;
     if (enemy.baseSpeed == null) enemy.baseSpeed = enemy.speed;
     if ((enemy.slowTimer || 0) > 0) {
       enemy.slowTimer = Math.max(0, enemy.slowTimer - dt);
@@ -483,6 +468,7 @@ export function updateEnemies(dt) {
     enemy.speed = enemy.baseSpeed * floorSpeed * (enemy.slowMultiplier || 1);
     enemy.hit = Math.max(0, enemy.hit - dt * 5);
     if (!shouldEnemyChase(enemy, p)) continue;
+    if (enemy.boss && updateBossVolley(enemy, p, dt)) continue;
     if (enemy.kind === "archer") {
       updateArcher(enemy, p, dt);
     } else if (enemy.kind === "orc") {
@@ -498,7 +484,7 @@ export function updateEnemies(dt) {
 }
 
 function shouldEnemyChase(enemy, p) {
-  if (enemy.boss || enemy.elite || enemy.roomId === game.dungeon?.activeRoomId) return true;
+  if (game.dungeon?.arena || enemy.boss || enemy.elite || enemy.roomId === game.dungeon?.activeRoomId) return true;
   const delta = shortestDungeonDelta(game.dungeon, enemy.x, enemy.y, p.x, p.y);
   return delta.dx * delta.dx + delta.dy * delta.dy <= ENEMY_AGGRO_RANGE * ENEMY_AGGRO_RANGE;
 }
@@ -511,15 +497,7 @@ function buildEnemySeparationGrid() {
   enemyCollisionGrid.clear();
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
-    const cellX = Math.floor(enemy.x / COLLISION_CELL_SIZE);
-    const cellY = Math.floor(enemy.y / COLLISION_CELL_SIZE);
-    const key = gridKey(cellX, cellY);
-    let cell = enemyCollisionGrid.get(key);
-    if (!cell) {
-      cell = [];
-      enemyCollisionGrid.set(key, cell);
-    }
-    cell.push(enemy);
+    insertPeriodicEntity(enemyCollisionGrid, enemy, game.dungeon);
   }
   return enemyCollisionGrid;
 }
@@ -528,6 +506,7 @@ function resolveEnemySeparation() {
   if (game.enemies.length < 2) return;
 
   const grid = buildEnemySeparationGrid();
+  const seen = new Set();
   for (const [key, cell] of grid) {
     const [cellXText, cellYText] = key.split(":");
     const cellX = Number(cellXText);
@@ -541,6 +520,9 @@ function resolveEnemySeparation() {
 
           for (const other of otherCell) {
             if (other === enemy || other.id <= enemy.id) continue;
+            const pair = `${enemy.id}:${other.id}`;
+            if (seen.has(pair)) continue;
+            seen.add(pair);
             separateEnemyPair(enemy, other);
           }
         }
@@ -700,14 +682,14 @@ function updateOrc(enemy, p, dt) {
   if (enemy.orcState === "charging") {
     enemy.chargeTimer -= dt;
     if (enemy.chargeTimer <= 0) {
-      const dx = enemy.swingTargetX - enemy.x;
-      const dy = enemy.swingTargetY - enemy.y;
+      const { dx, dy } = shortestDungeonDelta(game.dungeon,enemy.x,enemy.y,enemy.swingTargetX,enemy.swingTargetY);
       const len = Math.hypot(dx, dy) || 1;
       const reachX = enemy.x + (dx / len) * enemy.swingRange;
       const reachY = enemy.y + (dy / len) * enemy.swingRange;
       const halfWidth = enemy.swingWidth * 0.5;
       const reach = halfWidth + p.radius;
-      const inRange = distanceToSegmentSq(p.x, p.y, enemy.x, enemy.y, reachX, reachY) <= reach * reach;
+      const playerDelta = shortestDungeonDelta(game.dungeon, enemy.x, enemy.y, p.x, p.y);
+      const inRange = distanceToSegmentSq(enemy.x + playerDelta.dx, enemy.y + playerDelta.dy, enemy.x, enemy.y, reachX, reachY) <= reach * reach;
       if (inRange) damagePlayer(enemy.slamDamage);
       addEffect({
         type: "line",
@@ -756,4 +738,32 @@ function updateOrc(enemy, p, dt) {
     const swingY = enemy.y + (dy / distance) * enemy.swingRange;
     addTelegraphLine(enemy.x, enemy.y, swingX, swingY, enemy.swingWidth, enemy.chargeDuration);
   }
+}
+
+function updateBossVolley(enemy, player, dt) {
+  if (!enemy.volleyCount) return false;
+  if (enemy.volleyWarning > 0) {
+    enemy.volleyWarning -= dt;
+    if (enemy.volleyWarning <= 0) {
+      for (let i = 0; i < enemy.volleyCount; i += 1) {
+        const angle = enemy.volleyAngle + (i - (enemy.volleyCount - 1) / 2) * .22;
+        game.enemyProjectiles.push({ x: enemy.x, y: enemy.y, vx: Math.cos(angle) * 245, vy: Math.sin(angle) * 245, radius: 9, damage: 5 + game.wave, life: 3, spinSeed: angle, spinRate: 8 });
+      }
+      enemy.volleyTimer = 4.5;
+    }
+    return true;
+  }
+  enemy.volleyTimer -= dt;
+  if (enemy.volleyTimer <= 0 && enemy.bigZombieState === 'chase') {
+    const delta = shortestDungeonDelta(game.dungeon, enemy.x, enemy.y, player.x, player.y);
+    if (Math.hypot(delta.dx, delta.dy) > 650) return false;
+    enemy.volleyAngle = Math.atan2(delta.dy, delta.dx);
+    enemy.volleyWarning = .85;
+    for (let i = 0; i < enemy.volleyCount; i += 1) {
+      const angle = enemy.volleyAngle + (i - (enemy.volleyCount - 1) / 2) * .22;
+      addTelegraphLine(enemy.x, enemy.y, enemy.x + Math.cos(angle) * 500, enemy.y + Math.sin(angle) * 500, 14, .85);
+    }
+    return true;
+  }
+  return false;
 }

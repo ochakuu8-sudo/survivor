@@ -1,6 +1,6 @@
 import {SKILLS} from './runSkills.js';
 export const SAVE_KEY='survivor.progression.v1';
-export function floorMultiplier(floor=1) {return Math.pow(1.45,Math.min(29,Math.max(0,Math.floor(floor)-1)));}
+export function floorMultiplier(floor=1) {return Math.pow(1.6,Math.min(29,Math.max(0,Math.floor(floor)-1)));}
 export function rewardForFloor(base,floor=1){return Math.max(0,Math.round(base*floorMultiplier(floor)));}
 export function readProgress(storage) {
  try {

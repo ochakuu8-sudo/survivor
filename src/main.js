@@ -1,3 +1,4 @@
+import { renderBossReward } from './arena.js';
 import { game, setAtlas, setRenderer, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { buildAtlas } from "./sprites.js";
@@ -21,6 +22,8 @@ syncLocaleSelect();
 window.addEventListener("survivor:locale-changed", () => {
   localizeDom();
   syncLocaleSelect();
+  if (game.mode === "upgradeTree") renderSkillTree();
+  renderBossReward();
   updateHud();
 });
 if (hud.localeSelect) {

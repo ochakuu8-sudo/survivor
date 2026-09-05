@@ -45,8 +45,7 @@ export function updateBullets(dt) {
       bullet.vy = Math.cos(orbitAngle) * orbit.radius * 0.72 * orbit.speed;
       bullet.angle = orbitAngle + Math.PI / 2;
     } else if (bullet.kind === "boomerang" && bullet.age >= (bullet.returnTime || 0.9)) {
-      const dx = game.player.x - bullet.x;
-      const dy = game.player.y - bullet.y;
+      const { dx, dy } = shortestDungeonDelta(game.dungeon,bullet.x,bullet.y,game.player.x,game.player.y);
       const len = Math.hypot(dx, dy) || 1;
       const speed = Math.hypot(bullet.vx, bullet.vy) || 520;
       bullet.vx = (dx / len) * speed;
@@ -122,8 +121,9 @@ export function updateBullets(dt) {
     let keep = true;
     const bulletCellX = Math.floor(bullet.x / COLLISION_CELL_SIZE);
     const bulletCellY = Math.floor(bullet.y / COLLISION_CELL_SIZE);
-    nearbyCells: for (let yOffset = -1; yOffset <= 1; yOffset += 1) {
-      for (let xOffset = -1; xOffset <= 1; xOffset += 1) {
+    const cellRange = Math.max(1, Math.ceil((bullet.radius + 64) / COLLISION_CELL_SIZE));
+    nearbyCells: for (let yOffset = -cellRange; yOffset <= cellRange; yOffset += 1) {
+      for (let xOffset = -cellRange; xOffset <= cellRange; xOffset += 1) {
         const cell = enemyGrid.get(gridKey(bulletCellX + xOffset, bulletCellY + yOffset));
         if (!cell) continue;
 
@@ -132,7 +132,7 @@ export function updateBullets(dt) {
           if (enemy.id === bullet.lastHitId && !allowsRepeatHits(bullet)) continue;
           if (allowsRepeatHits(bullet) && bullet.hitCooldowns?.has(enemy.id)) continue;
           const range = enemy.radius + bullet.radius;
-          if (distSq(bullet.x, bullet.y, enemy.x, enemy.y) > range * range) continue;
+          if (shortestDungeonDistanceSq(game.dungeon, bullet.x, bullet.y, enemy.x, enemy.y) > range * range) continue;
 
           bullet.hitIds.add(enemy.id);
           const killed = damageEnemy(enemy, bullet.damage, bullet.x, bullet.y, bullet.isMasterStone ? 6 : 3, bullet.isMasterStone ? 180 : 90, bullet);
@@ -143,6 +143,7 @@ export function updateBullets(dt) {
             const moveSpeed = Math.hypot(bullet.vx, bullet.vy) || 1;
             enemy.x += (bullet.vx / moveSpeed) * bullet.knockback;
             enemy.y += (bullet.vy / moveSpeed) * bullet.knockback;
+            wrapDungeonPoint(game.dungeon, enemy);
           }
 
           // Pierce resolves before ricochet; ricochet waits until pierce is spent.

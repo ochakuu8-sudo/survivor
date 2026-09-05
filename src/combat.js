@@ -1,10 +1,12 @@
+import { insertPeriodicEntity } from './spatial.js';
+import { recordArenaKill } from './arena.js';
 import { COLLISION_CELL_SIZE } from "./constants.js";
 import { game, enemyCollisionGrid } from "./state.js";
 import { angleDelta, clamp, distSq, distanceToSegmentSq, gridKey } from "./utils/math.js";
 import { addEffect, addSparks } from "./effects.js";
 import { damagePlayer } from "./player.js";
 import { dropGold } from "./gold.js";
-import { createTreasureChestAt, shortestDungeonDistanceSq, wrapDungeonPoint } from "./dungeon.js";
+import { createTreasureChestAt, shortestDungeonDistanceSq, shortestDungeonDelta, wrapDungeonPoint } from "./dungeon.js";
 
 export function damageEnemy(enemy, amount, impactX = enemy.x, impactY = enemy.y, sparkCount = 3, sparkSpeed = 90, source = null) {
   if (!enemy || enemy.dead) return false;
@@ -73,7 +75,8 @@ export function damageEnemiesInLine(x1, y1, x2, y2, halfWidth, amount, maxHits =
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
     const range = enemy.radius + halfWidth;
-    if (distanceToSegmentSq(enemy.x, enemy.y, x1, y1, x2, y2) > range * range) continue;
+    const delta = shortestDungeonDelta(game.dungeon,x1,y1,enemy.x,enemy.y);
+    if (distanceToSegmentSq(x1+delta.dx, y1+delta.dy, x1, y1, x2, y2) > range * range) continue;
     hits.push({
       enemy,
       distance: distSq(x1, y1, enemy.x, enemy.y),
@@ -95,8 +98,7 @@ export function damageEnemiesInCone(x, y, angle, range, halfAngle, amount, sourc
   let hits = 0;
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
-    const dx = enemy.x - x;
-    const dy = enemy.y - y;
+    const { dx, dy } = shortestDungeonDelta(game.dungeon,x,y,enemy.x,enemy.y);
     const distance = Math.hypot(dx, dy);
     if (distance > range + enemy.radius) continue;
     if (Math.abs(angleDelta(Math.atan2(dy, dx), angle)) > halfAngle) continue;
@@ -126,15 +128,7 @@ export function buildEnemyGrid() {
   enemyCollisionGrid.clear();
   for (const enemy of game.enemies) {
     if (enemy.dead) continue;
-    const cellX = Math.floor(enemy.x / COLLISION_CELL_SIZE);
-    const cellY = Math.floor(enemy.y / COLLISION_CELL_SIZE);
-    const key = gridKey(cellX, cellY);
-    let cell = enemyCollisionGrid.get(key);
-    if (!cell) {
-      cell = [];
-      enemyCollisionGrid.set(key, cell);
-    }
-    cell.push(enemy);
+    insertPeriodicEntity(enemyCollisionGrid, enemy, game.dungeon);
   }
   return enemyCollisionGrid;
 }
@@ -144,7 +138,8 @@ export function killEnemy(enemy, source = null) {
   enemy.dead = true;
   game.totalKills += 1;
   game.waveKills += 1;
-  dropGold(enemy);
+  recordArenaKill(enemy);
+  if (!enemy.boss || !game.dungeon?.arena) dropGold(enemy);
   healPlayerFromKill(source);
   if ((enemy.elite || enemy.boss) && !enemy.noDeathChest) createTreasureChestAt(enemy.x, enemy.y, enemy.boss ? "Boss Chest" : "Elite Chest");
   if (enemy.radius > 22) {

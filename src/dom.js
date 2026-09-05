@@ -2,6 +2,9 @@ export const canvas = document.querySelector("#game");
 export const worldLabels = document.querySelector("#worldLabels");
 
 export const hud = {
+  bossReward: document.querySelector("#bossReward"),
+  encounterGauge: document.querySelector("#encounterGauge"),
+  encounterFill: document.querySelector("#encounterFill"),
   wave: document.querySelector("#waveText"),
   time: document.querySelector("#timeText"),
   hpText: document.querySelector("#hpText"),

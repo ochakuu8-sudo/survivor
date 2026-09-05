@@ -1,3 +1,4 @@
+import { difficulty } from './difficulty.js';
 import { MAX_WEAPONS } from "./constants.js";
 import { t } from "./i18n.js";
 import { game } from "./state.js";
@@ -11,6 +12,7 @@ import { enterShop } from "./game.js";
 import { updateHud } from "./hud.js";
 
 export function setupDebug() {
+  hud.dbgNextWave.textContent = t("debug.nextWave");
   populateWeaponSelect();
   populateAttachmentSelect();
 
@@ -42,8 +44,7 @@ export function setupDebug() {
   });
   hud.dbgNextWave.addEventListener("click", () => {
     if (!game.player?.gear?.weapons?.length) return;
-    game.floorElapsed = (game.floorElapsed || 0) + 60;
-    game.runPoints = (game.runPoints || 0) + 20;
+    if (game.encounter?.phase === "horde") game.encounter.kills = difficulty(game.wave).kills;
     updateHud();
   });
 }

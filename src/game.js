@@ -1,44 +1,31 @@
+import { resetArenaProgress, updateArenaProgress, spawnArenaHorde, advanceDifficulty } from './arena.js';
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
 import { canvas, hud } from "./dom.js";
-import { EXIT_HOLD_SECONDS, INITIAL_WEAPON_ONLY_RUN, INTERACTION_HOLD_SECONDS, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS, TILE_SIZE } from "./constants.js";
+import { INITIAL_WEAPON_ONLY_RUN, MAX_FRAME_DELTA_SECONDS, MAX_STORED_ATTACHMENTS, TARGET_FRAME_SECONDS } from "./constants.js";
 import { clamp, lerp } from "./utils/math.js";
-import { autoShoot, getActiveWeapon, updateDroneWeapons, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
+import { autoShoot, updateDroneWeapons, updateOrbitWeapons, updateWeaponTimers } from "./weapons.js";
 import { snapshotPlayerBaseStats } from "./attachments.js";
-import { pickStrongestEnemyTypeForCurrentWave, resetEnemySpawnTimer, spawnEnemies, spawnEnemy, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
-import {
-  ROOM_COMBAT,
-  COMBAT_ROOM_ELITE,
-  createTreasureChestAt,
-  generateDungeon,
-  getDungeonRoomAtWorld,
-  hasReachedCombatRoomSword,
-  hasReachedDungeonExit,
-  lockDungeonRoom,
-  roomSpawnPoints,
-  shortestDungeonDelta,
-  unlockDungeonRoom,
-  wrapDungeonPoint,
-} from "./dungeon.js";
+import { resetEnemySpawnTimer, spawnOpeningEnemies, updateEnemies } from "./enemies.js";
+import { generateArenaDungeon, shortestDungeonDelta, wrapDungeonPoint } from './dungeon.js';
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
-import { updateGoldDrops, grantGold, collectRoomGold } from "./gold.js";
-import { updateTreasureChests } from "./treasure.js";
+import { updateGoldDrops } from "./gold.js";
 import { updateMovement } from "./player.js";
 import { pickStarterWeapon, prepareStarterPick, renderStarterPick } from "./shop.js";
 import { enterUpgradeTree, hideSkillTree, initSkillProgress, applyPurchasedSkillTreeToActiveWeapon } from "./skillTree.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
-import { beginStoneItemReward, hideModdingPanel } from "./modding.js";
-import { updateFacilities } from "./workbench.js";
-import { findStoneMaterial } from "./data/stoneItems.js";
+import { hideModdingPanel } from "./modding.js";
 import { t } from "./i18n.js";
 
 export function resetRun() {
   game.mode = "weaponSelect";
   game.debugSkillTreeMode = false;
   game.wave = 1;
+  resetArenaProgress();
+  state.keys.clear();
   game.exitHoldTimer = 0;
   game.elapsed = 0;
   game.floorElapsed = 0;
@@ -50,19 +37,6 @@ export function resetRun() {
   game.runPoints = 0;
   game.runResult = null;
   game.runPhase = 1;
-  game.spawnedMilestones = {
-    elite90: false,
-    elite180: false,
-    boss270: false,
-    weaponLv2: false,
-    weaponLv3: false,
-    weaponLv4: false,
-    weaponLv5: false,
-    weaponLv6: false,
-    weaponLv7: false,
-    weaponLv8: false,
-    weaponLv9: false,
-  };
   game.gold = 0;
   game.goldGainBonus = 0;
   game.waveStartHealBonus = 0;
@@ -101,7 +75,7 @@ export function resetRun() {
       storageAttachmentsMax: MAX_STORED_ATTACHMENTS,
     },
   };
-  game.dungeon = generateDungeon(game.wave);
+  game.dungeon = generateArenaDungeon(1);
   game.player.x = game.dungeon.start.x;
   game.player.y = game.dungeon.start.y;
   game.player.invulnerableTimer = 0;
@@ -153,19 +127,6 @@ export function startArenaWithSelectedWeapon() {
   game.spawnClock = 0;
   game.spawnBatchSize = 0;
   game.eliteSpawned = false;
-  game.spawnedMilestones = {
-    elite90: false,
-    elite180: false,
-    boss270: false,
-    weaponLv2: false,
-    weaponLv3: false,
-    weaponLv4: false,
-    weaponLv5: false,
-    weaponLv6: false,
-    weaponLv7: false,
-    weaponLv8: false,
-    weaponLv9: false,
-  };
   game.enemies = [];
   game.bullets = [];
   game.enemyProjectiles = [];
@@ -175,7 +136,7 @@ export function startArenaWithSelectedWeapon() {
   game.treasureReward = null;
   game.pendingAttachmentReward = null;
   game.modeBeforeAttachmentReward = null;
-  game.dungeon = generateDungeon(game.wave);
+  game.dungeon = generateArenaDungeon(1);
   game.player.x = game.dungeon.start.x;
   game.player.y = game.dungeon.start.y;
   game.camera.x = game.player.x;
@@ -191,8 +152,7 @@ export function startArenaWithSelectedWeapon() {
 }
 
 export function startNextWave() {
-  game.wave += 1;
-  startArenaWithSelectedWeapon();
+  return advanceDifficulty();
 }
 
 function applyWaveStartRecovery() {
@@ -210,17 +170,6 @@ export function endRun() {
   finishRun("dead");
 }
 
-export function calculateRunBonus(result) {
-  const t = game.floorElapsed || 0;
-  let bonus = 0;
-  if (t >= 60) bonus += 10;
-  if (t >= 120) bonus += 15;
-  if (t >= 180) bonus += 20;
-  if (t >= 240) bonus += 25;
-  if (result === "clear") bonus += 50;
-  return bonus;
-}
-
 export function formatTime(seconds) {
   const safe = Math.max(0, Math.floor(seconds || 0));
   const m = Math.floor(safe / 60);
@@ -230,8 +179,8 @@ export function formatTime(seconds) {
 
 export function finishRun(result) {
   if (game.mode === "result") return;
-  const survivalTime = game.floorElapsed || 0;
-  const bonusPoints = calculateRunBonus(result);
+  const survivalTime = game.runElapsed || 0;
+  const bonusPoints = 0;
   const totalEarnedPoints = (game.runPoints || 0) + bonusPoints;
 
   game.mode = "result";
@@ -240,6 +189,8 @@ export function finishRun(result) {
     survivalTime,
     kills: game.totalKills,
     waveKills: game.waveKills,
+    difficulty: game.wave,
+    bosses: game.bossesDefeated,
     runPoints: game.runPoints || 0,
     bonusPoints,
     totalEarnedPoints,
@@ -264,6 +215,8 @@ function showRunResult() {
     result: r?.result === "clear" ? t("result.clear") : t("result.over"),
     time,
     best,
+    difficulty: r?.difficulty || 1,
+    bosses: r?.bosses || 0,
     kills: r?.kills || 0,
     runPoints: r?.runPoints || 0,
     bonusPoints: r?.bonusPoints || 0,
@@ -289,7 +242,7 @@ export function resumeGame() {
   hud.debugPanel?.classList.add("hidden");
 }
 
-function update(dt) {
+export function update(dt) {
   if (game.mode === "upgradeTree") return;
   game.elapsed += dt;
   game.damageFlash = Math.max(0, game.damageFlash - dt * 2.4);
@@ -302,17 +255,15 @@ function update(dt) {
   }
 
   game.floorElapsed += dt;
+  game.runElapsed += dt;
   const p = game.player;
   p.invulnerableTimer = Math.max(0, (p.invulnerableTimer || 0) - dt);
 
   updateMovement(dt);
-  updateTreasureChests(dt);
-  updateFacilities(dt);
-  if (game.mode !== "arena") return;
-  updateDungeonExit(dt);
+
   updateWeaponTimers(p, dt);
 
-  updateDungeonRoomEvents(dt);
+  spawnArenaHorde(dt);
   updateEnemies(dt);
   updateBullets(dt);
   updateEnemyProjectiles(dt);
@@ -326,121 +277,11 @@ function update(dt) {
 
   if (p.hp <= 0) {
     finishRun("dead");
+  } else {
+    updateArenaProgress(dt);
   }
 
   updateHud();
-}
-
-function updateDungeonRoomEvents(dt) {
-  const dungeon = game.dungeon;
-  const player = game.player;
-  if (!dungeon || !player || dungeon.arena) {
-    spawnEnemies(dt);
-    updateRunEvents();
-    return;
-  }
-
-  const room = getDungeonRoomAtWorld(dungeon, player.x, player.y);
-  if (room?.type === ROOM_COMBAT && !room.cleared && !room.entered) {
-    updateCombatRoomSwordTrigger(dungeon, room, player, dt);
-  } else {
-    resetCombatRoomSwordTrigger(dungeon);
-  }
-
-  const activeRoom = dungeon.rooms?.find((entry) => entry.id === dungeon.activeRoomId);
-  if (activeRoom?.type === ROOM_COMBAT && activeRoom.locked) {
-    const alive = game.enemies.some((enemy) => !enemy.dead && enemy.roomId === activeRoom.id);
-    if (!alive) clearCombatRoom(dungeon, activeRoom);
-  }
-}
-
-function resetCombatRoomSwordTrigger(dungeon) {
-  const previousRoom = dungeon?.rooms?.find((entry) => entry.id === dungeon.combatSwordHoldRoomId);
-  if (previousRoom) previousRoom.swordHoldTimer = 0;
-  if (dungeon) dungeon.combatSwordHoldRoomId = null;
-}
-
-function updateCombatRoomSwordTrigger(dungeon, room, player, dt) {
-  if (dungeon.combatSwordHoldRoomId !== room.id) resetCombatRoomSwordTrigger(dungeon);
-  dungeon.combatSwordHoldRoomId = room.id;
-
-  if (!hasReachedCombatRoomSword(dungeon, room, player)) {
-    resetCombatRoomSwordTrigger(dungeon);
-    return;
-  }
-
-  room.swordHoldTimer = Math.min(INTERACTION_HOLD_SECONDS, (room.swordHoldTimer || 0) + dt);
-  if (room.swordHoldTimer >= INTERACTION_HOLD_SECONDS) {
-    resetCombatRoomSwordTrigger(dungeon);
-    startCombatRoom(dungeon, room);
-  }
-}
-
-function startCombatRoom(dungeon, room) {
-  room.entered = true;
-  room.cleared = false;
-  dungeon.activeRoomId = room.id;
-  lockDungeonRoom(dungeon, room);
-  const isElite = room.combatKind === COMBAT_ROOM_ELITE;
-  const count = Math.max(4, Math.min(isElite ? 12 : 14, 3 + game.wave + Math.floor(room.w * room.h / 14)));
-  const points = roomSpawnPoints(dungeon, room, count + (isElite ? 1 : 0), isElite ? 28 : 22);
-  if (isElite && points.length > 0) {
-    const bossPoint = points.shift();
-    const boss = spawnEnemy("bigZombie", { position: bossPoint, offscreen: false, noDeathChest: true });
-    if (boss) boss.roomId = room.id;
-  }
-  const roomTypes = ["walker", "archer", "runner"];
-  for (let i = 0; i < points.length && i < count; i += 1) {
-    const enemyType = roomTypes[(room.id + i + (game.wave || 1)) % roomTypes.length];
-    const enemy = spawnEnemy(enemyType, { position: points[i], offscreen: false });
-    if (enemy) enemy.roomId = room.id;
-  }
-  game.shake = Math.max(game.shake, isElite ? 5 : 3);
-}
-
-function clearCombatRoom(dungeon, room) {
-  room.cleared = true;
-  dungeon.activeRoomId = null;
-  unlockDungeonRoom(dungeon, room);
-  collectRoomGold(room);
-  grantGold(room.combatKind === COMBAT_ROOM_ELITE ? 25 : 12);
-  room.rewardClaimed = true;
-  game.shake = Math.max(game.shake, 4);
-}
-
-function updateDungeonExit(dt) {
-  const p = game.player;
-  if (!p || !game.dungeon?.exit) return;
-  if (!hasReachedDungeonExit(p)) {
-    game.exitHoldTimer = 0;
-    return;
-  }
-  game.exitHoldTimer = Math.min(EXIT_HOLD_SECONDS, (game.exitHoldTimer || 0) + dt);
-  if (game.exitHoldTimer >= EXIT_HOLD_SECONDS) {
-    game.exitHoldTimer = 0;
-    startNextWave();
-  }
-}
-
-function updateRunEvents() {
-  const t = game.floorElapsed || 0;
-  const m = game.spawnedMilestones || (game.spawnedMilestones = { elite90: false, elite180: false, boss270: false });
-  const eliteType = pickStrongestEnemyTypeForCurrentWave();
-
-  if (!m.elite90 && t >= 90) {
-    m.elite90 = true;
-    spawnEnemy(eliteType, { elite: true });
-  }
-
-  if (!m.elite180 && t >= 180) {
-    m.elite180 = true;
-    spawnEnemy(eliteType, { elite: true });
-  }
-
-  if (!m.boss270 && t >= 270) {
-    m.boss270 = true;
-    spawnEnemy(eliteType, { elite: true, boss: true });
-  }
 }
 
 function updateCamera(dt) {

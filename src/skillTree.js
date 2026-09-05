@@ -1,3 +1,5 @@
+import { renderBossReward } from './arena.js';
+import { difficulty } from './difficulty.js';
 import {readProgress,saveProgress,floorMultiplier,rewardForFloor} from './progression.js';
 import {game, keys} from './state.js';
 import {hud} from './dom.js';
@@ -9,10 +11,11 @@ const ja = () => getLocale() === 'ja';
 const name = n => ja() ? n.ja : n.en;
 export function initSkillProgress() { const saved=readProgress(); game.gold=saved.gold; game.treePurchases = {weapon:saved.purchased}; game.activeFinal=saved.activeFinal; game.totalSkillPoints=0; game.freeNodeCredits={weapon:0}; game.modeBeforeSkillTree=null; }
 export function enterUpgradeTree() {
-  if (!['arena','pause'].includes(game.mode)) return;
+  if (!['arena','pause','bossReward'].includes(game.mode)) return;
   mapScale=window.innerWidth<=760?.65:.85;
   mapScroll={x:Math.max(0,(840*mapScale-(window.innerWidth<=760?window.innerWidth-48:window.innerWidth-360))/2),y:0};
   game.modeBeforeSkillTree=game.mode; game.mode='upgradeTree'; keys.clear();
+  hud.bossReward?.classList.add('hidden');
   hud.pauseMenu.classList.add('hidden'); hud.skillTree.classList.remove('hidden');
   renderSkillTree(); updateHud();
 }
@@ -21,6 +24,7 @@ export function hideSkillTree() { hud.skillTree.classList.add('hidden'); }
 export function continueFromSkillTree() {
   if (game.mode !== 'upgradeTree') return;
   hideSkillTree(); game.mode=game.modeBeforeSkillTree || 'arena'; game.modeBeforeSkillTree=null; keys.clear();
+  if (game.mode === 'bossReward') renderBossReward();
   if (game.mode === 'pause') hud.pauseMenu.classList.remove('hidden');
   updateHud();
 }
@@ -36,10 +40,10 @@ export function renderSkillTree() {
   const head=document.createElement('div'); head.className='gold-skill-head';
   const title=document.createElement('h1'); title.textContent=ja()?'石のスキルツリー':'Stone skills';
   const cash=document.createElement('strong'); cash.textContent=game.gold+' G';
-  const close=document.createElement('button'); close.textContent=ja()?'戦闘に戻る':'Resume'; close.onclick=continueFromSkillTree;
+  const close=document.createElement('button'); close.textContent=game.modeBeforeSkillTree==='bossReward' ? (ja()?'報酬画面に戻る':'Back to rewards') : (ja()?'戦闘に戻る':'Resume'); close.onclick=continueFromSkillTree;
   head.append(title,cash,close); panel.append(head);
   const economy=document.createElement('p'); economy.className='economy-summary';
-  economy.textContent=(ja()?'B':'Floor ')+game.wave+' · ×'+floorMultiplier(game.wave).toFixed(2)+(ja()?' 報酬 / 通常部屋 ':' rewards / Room ')+rewardForFloor(12,game.wave)+' G / '+(ja()?'エリート ':'Elite ')+rewardForFloor(25,game.wave)+' G'; panel.append(economy);
+  economy.textContent=(ja()?'難易度 ':'Difficulty ')+game.wave+' / 5 · ×'+floorMultiplier(game.wave).toFixed(2)+(ja()?' 報酬 · ボス報酬 ':' rewards · Boss reward ')+rewardForFloor(difficulty(game.wave).bossReward,game.wave)+' G'; panel.append(economy);
   const hint=document.createElement('p'); hint.textContent=ja()?'通貨と強化は自動保存され、死亡後も引き継ぎます。最終形態は購入済みから１つ選択。価格は固定です。':'Gold and skills are saved across runs. Select one unlocked final form. Node prices are fixed.'; panel.append(hint);
   if(game.saveFailed){const warning=document.createElement('p');warning.textContent=ja()?'保存できません。この画面を閉じると進行が失われる可能性があります。':'Saving unavailable. Progress may be lost when this page closes.';panel.append(warning);}
   const layout=document.createElement('div');layout.className='constellation-layout';

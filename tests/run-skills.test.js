@@ -36,7 +36,7 @@ test('skills stack once, health heals once, floor keeps progress, restart restor
  const w=game.player.gear.weapons[0];assert.equal(w.damage,12.5);assert.equal(w.explosionDamage,4.375);assert.equal(game.player.hp,22);assert.equal(game.player.maxHp,42);
  const stats={damage:w.damage,radius:w.radius,explosion:w.explosionDamage,hp:game.player.hp};
  applyPurchasedSkillTreeToActiveWeapon();assert.deepEqual({damage:w.damage,radius:w.radius,explosion:w.explosionDamage,hp:game.player.hp},stats);
- continueFromSkillTree();startNextWave();assert.equal(game.player.gear.weapons[0],w);assert.equal(game.player.maxHp,42);assert.equal(game.treePurchases.weapon.health,true);
+ continueFromSkillTree();game.mode="bossReward";game.encounter.phase="reward";assert.equal(startNextWave(),true);assert.equal(game.player.gear.weapons[0],w);assert.equal(game.player.maxHp,42);assert.equal(game.treePurchases.weapon.health,true);
  const balance=game.gold;resetRun();assert.equal(game.gold,balance);assert.equal(game.treePurchases.weapon.health,true);assert.equal(game.player.maxHp,42);assert.equal(game.player.gear.weapons[0].damage,12.5);
 });
 test('every skill yields finite stats and final changes are implemented',()=>{
@@ -60,7 +60,7 @@ test('room completion collects only relevant coins',()=>{
 
 const {readProgress,saveProgress,rewardForFloor,SAVE_KEY}=await import('../src/progression.js');
 test('economy grows by floor while node prices remain fixed',()=>{
- const prices=SKILLS.map(n=>n.cost);assert.equal(rewardForFloor(12,1),12);assert.equal(rewardForFloor(12,5),53);assert.ok(rewardForFloor(12,10)>rewardForFloor(12,5));assert.deepEqual(SKILLS.map(n=>n.cost),prices);
+ const prices=SKILLS.map(n=>n.cost);assert.equal(rewardForFloor(12,1),12);assert.equal(rewardForFloor(12,5),79);assert.ok(rewardForFloor(12,10)>rewardForFloor(12,5));assert.deepEqual(SKILLS.map(n=>n.cost),prices);
 });
 test('save loading rejects malformed values and unknown nodes',()=>{
  saved.set(SAVE_KEY,'broken');assert.equal(readProgress().gold,0);

@@ -4944,3 +4944,31 @@ button.workbench-craft-node:not(:disabled):hover {
 .constellation-detail h2{font-size:23px;color:#ffe0a6;}.constellation-detail p{line-height:1.7;}.constellation-detail button{margin-top:12px;padding:12px;}
 .constellation-controls{display:flex;gap:6px;justify-content:flex-start;padding:0 0 8px;}.constellation-controls button{min-width:38px;padding:5px 12px;}
 @media(max-width:760px){#skillTree.gold-skill-panel{padding:12px;height:97dvh;max-height:97dvh;}.constellation-layout{grid-template-columns:1fr;grid-template-rows:minmax(180px,1fr) auto;gap:8px;}#skillTree .constellation-detail{max-height:210px;width:100%;padding:12px;}#skillTree .constellation-detail h2{font-size:18px;margin:0 0 8px;}.constellation-detail p{font-size:12px;margin:4px 0;}#skillTree .gold-skill-head h1{font-size:18px;}}
+
+/* Arena progress remains readable in a narrow embedded viewport. */
+.hud-block.hud-objective {
+  top: max(14px, env(safe-area-inset-top));
+  left: 50%; right: auto; transform: translateX(-50%);
+  width: min(420px, calc(100vw - 300px)); max-width: none;
+  justify-content: center; text-align: center;
+}
+.hud-objective strong { white-space: normal; line-height: 1.3; justify-content: center; }
+#encounterGauge {
+  position: fixed; z-index: 5; pointer-events: none;
+  top: max(58px, calc(env(safe-area-inset-top) + 44px));
+  left: 50%; transform: translateX(-50%);
+  width: min(360px, calc(100vw - 310px)); height: 8px;
+  border: 1px solid #f5e9b7; border-radius: 8px; overflow: hidden;
+  background: #193a2be8;
+}
+#encounterFill { height: 100%; background: #f6d35d; transition: width .15s linear; }
+#encounterGauge.is-boss #encounterFill { background: #f06c66; }
+.boss-reward-gold { color: #eec660; font-size: 2.4rem; font-weight: 900; margin: 12px 0; }
+.boss-reward-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.boss-reward-actions button { flex: 1 1 150px; min-height: 48px; }
+#bossReward p { line-height: 1.6; }
+@media (max-width: 600px) {
+  .hud-block.hud-objective { top: max(96px, calc(env(safe-area-inset-top) + 84px)); width: calc(100vw - 28px); }
+  #encounterGauge { top: max(141px, calc(env(safe-area-inset-top) + 129px)); width: min(300px, calc(100vw - 60px)); }
+  .hud-objective strong { font-size: .75rem; }
+}

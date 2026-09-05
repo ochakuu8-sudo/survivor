@@ -1,3 +1,5 @@
+import { difficulty } from './difficulty.js';
+import { shortestDungeonDelta } from './dungeon.js';
 import {SKILLS, skillStatus} from './runSkills.js';
 import {getLocale} from './i18n.js';
 import { t } from "./i18n.js";
@@ -10,7 +12,8 @@ import { STONE_MATERIALS } from "./data/stoneItems.js";
 import { COMBAT_ROOM_ELITE, ROOM_COMBAT, ROOM_START, ROOM_STAIRS, ROOM_TREASURE, ROOM_WORKBENCH, getDungeonRoomAtWorld } from "./dungeon.js";
 
 export function updateHud() {
-  hud.wave.textContent = "Run";
+  hud.wave.textContent = String(game.wave || 1);
+  renderEncounterGauge();
   hud.time.textContent = objectiveText();
   if (hud.gold) hud.gold.textContent = String(game.gold || 0);
   if (hud.shopGold) hud.shopGold.textContent = String(game.gold || 0);
@@ -33,30 +36,36 @@ function objectiveText() {
   if (game.mode === "pause") return t("pause.label");
   if (game.mode === "result") return game.runResult?.result === "clear" ? t("result.clear") : t("gameOver.kicker");
   if (game.mode === "over") return t("gameOver.kicker");
-  if (game.mode === "arena") {
-    const elapsed = Math.max(0, Math.floor(game.floorElapsed || 0));
-    const m = Math.floor(elapsed / 60);
-    const sec = String(elapsed % 60).padStart(2, "0");
-    const weapon = getActiveWeapon();
-    const floor = game.wave || 1;
-    return t("hud.objective.dungeon", { floor, objective: currentRoomObjective(), time: `${m}:${sec}`, weapon: weapon?.name || t("skill.weaponFallback") });
+  if (game.mode === 'bossReward') return getLocale() === 'ja' ? 'ボス撃破 / 強化の時間' : 'Boss defeated / Upgrade';
+  if (game.mode === 'arena') {
+    const ja = getLocale() === 'ja';
+    const e = game.encounter;
+    const cfg = difficulty(game.wave);
+    const tier = (ja ? '難易度 ' : 'Difficulty ') + game.wave + '/5';
+    if (e?.phase === 'warning') return tier + (ja ? ' · ボス出現！' : ' · BOSS INCOMING!');
+    if (e?.phase === 'boss' && e.boss) {
+      const delta = shortestDungeonDelta(game.dungeon,game.player.x,game.player.y,e.boss.x,e.boss.y);
+      const arrows = ['→','↘','↓','↙','←','↖','↑','↗'];
+      const arrow = arrows[(Math.round(Math.atan2(delta.dy,delta.dx)/(Math.PI/4))+8)%8];
+      return cfg.bossName[ja ? 0 : 1] + ' ' + arrow + ' ' + Math.max(0,Math.ceil(e.boss.hp)) + '/' + e.boss.maxHp;
+    }
+    return tier + (ja ? ' · ボスまで ' : ' · Boss ') + (e?.kills || 0) + '/' + cfg.kills;
   }
-  return t("hud.objective.preparing");
+  return t('hud.objective.preparing');
 }
 
-function currentRoomObjective() {
-  const room = getDungeonRoomAtWorld(game.dungeon, game.player?.x || 0, game.player?.y || 0);
-  if (!room) return t("hud.room.path");
-  if (room.type === ROOM_COMBAT) {
-    const label = room.combatKind === COMBAT_ROOM_ELITE ? t("hud.room.combat.elite") : t("hud.room.combat.normal");
-    if (room.locked) return t("hud.room.combat.locked", { label });
-    return room.cleared ? t("hud.room.combat.cleared", { label }) : t("hud.room.combat.ready", { label });
-  }
-  if (room.type === ROOM_TREASURE) return t("hud.room.treasure");
-  if (room.type === ROOM_WORKBENCH) return t("hud.room.workbench");
-  if (room.type === ROOM_STAIRS) return t("hud.room.stairs");
-  if (room.type === ROOM_START) return t("hud.room.start");
-  return t("hud.room.explore");
+function renderEncounterGauge() {
+  if (!hud.encounterGauge) return;
+  const e = game.encounter;
+  const boss = e?.phase === 'boss' && e.boss;
+  const max = boss ? e.boss.maxHp : difficulty(game.wave).kills;
+  const value = Math.max(0,Math.min(max,boss ? e.boss.hp : (e?.kills || 0)));
+  hud.encounterGauge.classList.toggle('hidden',game.mode !== 'arena');
+  hud.encounterGauge.classList.toggle('is-boss',Boolean(boss));
+  hud.encounterGauge.setAttribute('aria-valuemax',String(max));
+  hud.encounterGauge.setAttribute('aria-valuenow',String(Math.ceil(value)));
+  hud.encounterGauge.setAttribute('aria-label',getLocale()==='ja' ? (boss ? 'ボスHP' : 'ボス出現までの討伐数') : (boss ? 'Boss HP' : 'Kills to boss'));
+  hud.encounterFill.style.width = (100*value/max)+'%';
 }
 
 function renderHpGauge() {
