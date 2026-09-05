@@ -1,3 +1,4 @@
+import {rewardForFloor,saveProgress} from './progression.js';
 import { TAU } from "./constants.js";
 import { game } from "./state.js";
 import { clamp } from "./utils/math.js";
@@ -18,6 +19,7 @@ export function dropGold(enemy) {
       vy: Math.sin(angle) * speed,
       value: 1,
       radius: 10,
+      roomId: enemy.roomId,
       age: 0,
       magnetDelay: 0.12 + Math.random() * 0.16,
       spin: Math.random() * TAU,
@@ -68,9 +70,7 @@ export function updateGoldDrops(dt) {
 }
 
 function collectGold(drop) {
-  const amount = Math.max(1, Math.round(drop.value * (1 + (game.goldGainBonus || 0))));
-  game.runPoints = (game.runPoints || 0) + amount;
-  game.gold = (game.gold || 0) + amount;
+  grantGold(drop.value);
   addEffect({
     type: "burst",
     x: drop.x,
@@ -90,4 +90,18 @@ function pointCountForEnemy(enemy) {
   if (enemy.kind === "archer" || enemy.readableSprite === "skeletonArcherReadable") return 2;
   if (enemy.readableSprite === "zombieBReadable") return 2;
   return 1;
+}
+
+export function grantGold(value) {
+  const amount=Math.max(0,rewardForFloor(value,game.wave));
+  game.gold=(game.gold||0)+amount; game.runPoints=(game.runPoints||0)+amount;
+  saveProgress(game);
+}
+export function collectRoomGold(room) {
+  const d=game.dungeon;
+  game.goldDrops=game.goldDrops.filter(drop=>{
+    const tx=(drop.x-d.offsetX)/96,ty=(drop.y-d.offsetY)/96;
+    if(drop.roomId===room.id || (tx>=room.x && tx<room.x+room.w && ty>=room.y && ty<room.y+room.h)){grantGold(drop.value);return false;}
+    return true;
+  });
 }

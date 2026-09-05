@@ -1,3 +1,5 @@
+import {SKILLS, skillStatus} from './runSkills.js';
+import {getLocale} from './i18n.js';
 import { t } from "./i18n.js";
 import { game, pointer } from "./state.js";
 import { hud } from "./dom.js";
@@ -24,7 +26,7 @@ export function updateHud() {
 
 function objectiveText() {
   if (game.mode === "weaponSelect") return t("hud.objective.weaponSelect");
-  if (game.mode === "upgradeTree") return t("debug.skillTree");
+  if (game.mode === "upgradeTree") return getLocale()==="ja" ? "スキル購入" : "Skills";
   if (game.mode === "treasure") return t("treasure.label");
   if (game.mode === "modding") return t("modding.label");
   if (game.mode === "workbench") return t("workbench.label");
@@ -81,24 +83,10 @@ function renderHpGauge() {
 }
 
 
-function renderMaterialHud() {
-  if (!hud.materialHud) return;
-  const isArena = game.mode === "arena";
-  hud.materialHud.classList.toggle("hidden", !isArena);
-  if (!isArena) return;
-  const inventory = ensureStoneMaterialInventory();
-  hud.materialHud.innerHTML = STONE_MATERIALS.map((item) => `<div class="material-hud-chip" title="${item.name}"><strong>${Math.max(0, Math.floor(inventory[item.key] || 0))}</strong><span aria-hidden="true">${stoneItemIcon(item)}</span></div>`).join("");
-}
+function renderMaterialHud() { hud.materialHud?.classList.add('hidden'); }
 
 function renderPauseStoneItems() {
-  if (!hud.pauseStoneItems) return;
-  const weapon = getActiveWeapon();
-  const progress = stoneEvolutionProgress(weapon)
-    .map((evolution) => `${evolution.complete ? "✓ " : ""}${evolution.name}: ${evolution.requirements.map((req) => req.type === "equipped" ? `${req.name} ${req.equipped ? t("workbench.equipped") : t("workbench.requiresEquipped")}` : `${req.name} ${Math.min(req.count, req.need)}/${req.need}`).join(" + ")}`)
-    .join("<br>");
-  const materials = ensureStoneMaterialInventory();
-  const materialText = STONE_MATERIALS.map((item) => `${stoneItemIcon(item)} ${item.shortName || item.name}×${materials[item.key] || 0}`).join(" / ");
-  hud.pauseStoneItems.innerHTML = `<strong>${t("pause.materials")}</strong><p>${materialText}</p><strong>${t("pause.items")}</strong><p>${formatStoneItemSummary(weapon)}</p><strong>${t("pause.evolution")}</strong><p>${progress}</p>`;
+ if(hud.pauseStoneItems) hud.pauseStoneItems.textContent=SKILLS.filter(n=>game.treePurchases.weapon[n.id]).map(n=>getLocale()==='ja'?n.ja:n.en).join(' / ') || (getLocale()==='ja'?'敵を倒してGを集め、スキルを購入しよう。':'Defeat enemies for gold and buy skills.');
 }
 
 function renderCraftTreeButton() {
@@ -106,6 +94,8 @@ function renderCraftTreeButton() {
   const isArena = game.mode === "arena";
   hud.craftTreeBtn.classList.toggle("hidden", !isArena);
   hud.craftTreeBtn.disabled = !isArena;
+  hud.craftTreeBtn.textContent = 'K ✦';
+  hud.craftTreeBtn.classList.toggle('can-buy',SKILLS.some(n=>skillStatus(n,game.treePurchases.weapon,game.gold)==='available'));
   hud.craftTreeBtn.title = t("workbench.craftTreeButton");
   hud.craftTreeBtn.setAttribute("aria-label", t("workbench.craftTreeButton"));
 }

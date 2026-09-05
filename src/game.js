@@ -23,11 +23,11 @@ import {
 import { updateBullets } from "./bullets.js";
 import { updateParticles } from "./effects.js";
 import { updateEffects, updateEnemyProjectiles } from "./combat.js";
-import { updateGoldDrops } from "./gold.js";
+import { updateGoldDrops, grantGold, collectRoomGold } from "./gold.js";
 import { updateTreasureChests } from "./treasure.js";
 import { updateMovement } from "./player.js";
 import { pickStarterWeapon, prepareStarterPick, renderStarterPick } from "./shop.js";
-import { enterUpgradeTree, hideSkillTree, initSkillProgress } from "./skillTree.js";
+import { enterUpgradeTree, hideSkillTree, initSkillProgress, applyPurchasedSkillTreeToActiveWeapon } from "./skillTree.js";
 import { updateHud } from "./hud.js";
 import { render } from "./render.js";
 import { beginStoneItemReward, hideModdingPanel } from "./modding.js";
@@ -39,6 +39,7 @@ export function resetRun() {
   game.mode = "weaponSelect";
   game.debugSkillTreeMode = false;
   game.wave = 1;
+  game.exitHoldTimer = 0;
   game.elapsed = 0;
   game.floorElapsed = 0;
   game.waveClearCount = 0;
@@ -79,7 +80,7 @@ export function resetRun() {
     hp: 30,
     maxHp: 30,
     speed: 215,
-    pickup: 150,
+    pickup: 280,
     armor: 0,
     barrier: 0,
     barrierMax: 0,
@@ -137,6 +138,8 @@ export function resetRun() {
   prepareStarterPick();
   if (INITIAL_WEAPON_ONLY_RUN) {
     pickStarterWeapon(0);
+    applyPurchasedSkillTreeToActiveWeapon();
+    updateHud();
   } else {
     renderStarterPick();
     updateHud();
@@ -287,6 +290,7 @@ export function resumeGame() {
 }
 
 function update(dt) {
+  if (game.mode === "upgradeTree") return;
   game.elapsed += dt;
   game.damageFlash = Math.max(0, game.damageFlash - dt * 2.4);
   game.shake = Math.max(0, game.shake - dt * 45);
@@ -304,6 +308,7 @@ function update(dt) {
   updateMovement(dt);
   updateTreasureChests(dt);
   updateFacilities(dt);
+  if (game.mode !== "arena") return;
   updateDungeonExit(dt);
   updateWeaponTimers(p, dt);
 
@@ -397,20 +402,9 @@ function clearCombatRoom(dungeon, room) {
   room.cleared = true;
   dungeon.activeRoomId = null;
   unlockDungeonRoom(dungeon, room);
-  if (room.combatKind === COMBAT_ROOM_ELITE) {
-    const chest = createTreasureChestAt(
-      dungeon.offsetX + (room.cx + 0.5) * TILE_SIZE,
-      dungeon.offsetY + (room.cy + 0.5) * TILE_SIZE,
-      t("modding.source.combatRoom"),
-      { rewardKind: "baseMaterialChoice" },
-    );
-    if (chest) chest.roomId = room.id;
-  } else if (room.fixedRewardKey) {
-    beginStoneItemReward({ key: room.fixedRewardKey }, { source: "combatRoom" });
-    const material = findStoneMaterial(room.fixedRewardKey);
-    room.rewardClaimed = true;
-    room.rewardName = material?.name || t("modding.material");
-  }
+  collectRoomGold(room);
+  grantGold(room.combatKind === COMBAT_ROOM_ELITE ? 25 : 12);
+  room.rewardClaimed = true;
   game.shake = Math.max(game.shake, 4);
 }
 

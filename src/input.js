@@ -1,10 +1,16 @@
 import { game, keys, pointer } from "./state.js";
 import { canvas, hud } from "./dom.js";
 import { clamp, normalize } from "./utils/math.js";
-import { continueFromSkillTree } from "./skillTree.js";
+import { continueFromSkillTree, enterUpgradeTree } from "./skillTree.js";
 
 export function bindInput() {
   window.addEventListener("keydown", (event) => {
+    if (['KeyK','Escape'].includes(event.code) && !event.repeat) {
+      event.preventDefault();
+      if(game.mode==='upgradeTree') continueFromSkillTree(); else if(event.code==='KeyK') enterUpgradeTree();
+      return;
+    }
+    if(game.mode !== 'arena') return;
     keys.add(event.code);
     if ((event.code === "Space" || event.code === "Enter") && game.mode === "upgradeTree") {
       continueFromSkillTree();
@@ -19,7 +25,7 @@ export function bindInput() {
 
   window.addEventListener("pointerup", endVirtualMove);
   window.addEventListener("pointercancel", endVirtualMove);
-  window.addEventListener("blur", resetVirtualMove);
+  window.addEventListener("blur", () => { keys.clear(); resetVirtualMove(); });
 }
 
 function beginVirtualMove(event) {

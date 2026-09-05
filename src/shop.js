@@ -26,7 +26,7 @@ export const WEAPON_POOL = [
       rarity: "normal",
       variantSummary: t("weapon.stone.summary"), variantSummaryKey: "weapon.stone.summary",
       damage: STONE_INITIAL_DAMAGE,
-      fireRate: 0.9,
+      fireRate: 1.2,
       bulletSpeed: 360,
       life: 1.15,
       range: 214,

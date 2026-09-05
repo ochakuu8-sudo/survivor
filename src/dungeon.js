@@ -155,7 +155,7 @@ function assignRoomTypes(dungeon, rng, startRoom, exitRoom, wave) {
     room.id = index;
     room.type = ROOM_COMBAT;
     room.combatKind = COMBAT_ROOM_NORMAL;
-    room.fixedRewardKey = pickCombatRoomMaterial(index, wave);
+    room.fixedRewardKey = null;
     room.cleared = false;
     room.entered = false;
     room.locked = false;
@@ -221,7 +221,7 @@ function generateFacilities(dungeon, rng, startRoom, exitRoom, wave) {
         radius: 34,
         opened: false,
         holdTimer: 0,
-        cost: treasureVaultCost(wave),
+        cost: 0,
       });
     }
   }

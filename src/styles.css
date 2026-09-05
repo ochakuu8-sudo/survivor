@@ -4898,3 +4898,49 @@ button.workbench-craft-node:not(:disabled):hover {
 .material-hud-chip span {
   font-size: 0.95rem;
 }
+
+.gold-skill-panel { width:min(1100px,96vw); max-height:92dvh; overflow:auto; padding:24px; }
+.gold-skill-head {display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:-24px;background:#242047;padding:14px 0;z-index:2;}
+.gold-skill-head h1 {font-size:24px; margin:0;}
+.gold-skill-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;}
+.gold-node {background:#17172d;border:2px solid #53516c;border-radius:12px;padding:14px;margin:12px 0;min-height:260px;color:#eee;}
+.gold-node h2 {font-size:18px;}.gold-node p {font-size:14px;}.gold-node small{display:block;color:#c7d7df;margin:8px 0;}
+.gold-node button {width:100%;}.gold-node.available {border-color:#60e8bd;}.gold-node.owned {border-color:#edcc65;background:#303025;}
+.gold-node button:disabled {opacity:.65;color:#eee;}.craft-tree-button.can-buy {box-shadow:0 0 0 3px #ffe56b,0 0 20px #ffe56b;}
+@media(max-width:760px){.gold-skill-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}.gold-skill-panel{padding:12px;}.gold-node{padding:10px;}.gold-skill-head{top:-12px;}.gold-skill-head h1{font-size:18px;}}
+@media(max-width:420px){.gold-skill-grid{grid-template-columns:1fr;}.gold-node{min-height:0;}}
+
+.gold-node button:disabled {opacity:1;background:#35354b;color:#cbd2e3;cursor:default;}
+
+.skill-root{text-align:center;border:2px solid #f0cb78;background:#252541;border-radius:30px;padding:18px;font-weight:700;margin:18px auto 30px;max-width:340px;box-shadow:0 0 24px #f0cb7822;}
+.skill-branch{position:relative;border-top:2px solid #696780;padding-top:20px;}
+.skill-branch>h2{text-align:center;font-size:18px;color:#edcd88;}
+.skill-branch .gold-node{position:relative;margin-top:28px;min-height:0;}
+.skill-branch .gold-node:before{content:'';position:absolute;width:2px;height:30px;top:-30px;left:50%;background:#696780;}
+.skill-branch .gold-node.owned:before,.skill-branch .gold-node.available:before{background:#7fe0b7;box-shadow:0 0 8px #7fe0b7;}
+.skill-branch .gold-node.locked{border-style:dashed;}
+.economy-summary{color:#ffdd8d;background:#17172d;padding:12px;border-radius:8px;}
+
+/* Compact connected skill map; descriptions live outside the map. */
+#skillTree.gold-skill-panel{width:min(1200px,97vw);height:94dvh;max-height:94dvh;display:flex;flex-direction:column;overflow:hidden;padding:20px;background:linear-gradient(125deg,#171d31,#24223f);border-color:#777594;}
+#skillTree.hidden{display:none!important;}
+#skillTree .gold-skill-head{position:static;padding:0 0 12px;background:transparent;flex-shrink:0;}
+#skillTree .economy-summary{margin:0 0 6px;padding:8px 12px;font-size:12px;}
+#skillTree>p{font-size:12px;margin:4px 0 8px;}
+.constellation-layout{display:grid;grid-template-columns:minmax(0,1fr) 275px;gap:18px;flex:1;min-height:0;}
+.constellation-viewport{overflow:auto;min-height:0;border:1px solid #3e4960;border-radius:14px;background:radial-gradient(ellipse at 50% 0,#35405b55,transparent 65%),radial-gradient(#778ca426 1px,transparent 1px),#101725;background-size:auto,24px 24px,auto;cursor:grab;overscroll-behavior:contain;touch-action:pan-x pan-y;}
+.constellation-spacer{position:relative;margin:0 auto;}
+.constellation-map{width:840px;height:1130px;position:absolute;transform-origin:0 0;}
+.constellation-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.constellation-link{fill:none;stroke:#485267;stroke-width:2;stroke-linejoin:round;}
+.constellation-link.owned{stroke:#64c5ac;stroke-width:3;}.constellation-link.route{stroke:#f1d18b;stroke-width:3;filter:drop-shadow(0 0 5px #edbd6255);}
+.constellation-hub{position:absolute;transform:translate(-50%,-50%) rotate(45deg);width:54px;height:54px;display:grid;place-items:center;border:2px solid #f3d394;color:#ffdf97;background:#3a3440;box-shadow:0 0 28px #f1c87833;font-size:30px;border-radius:12px;}
+.constellation-caption{position:absolute;top:18px;width:100%;text-align:center;font-size:11px;letter-spacing:3px;color:#c8c1ad;}
+#skillTree .constellation-node{position:absolute;transform:translate(-50%,-28px);background:transparent;border:0;padding:0;width:140px;display:flex;flex-direction:column;align-items:center;gap:5px;color:#b7c6d8;box-shadow:none;cursor:pointer;}
+.node-gem{height:54px;width:54px;border-radius:50%;display:grid;place-items:center;background:#1f2d40;border:2px solid #66758a;font-size:26px;box-shadow:0 0 0 6px #121b29;}
+.node-title{font-size:14px;font-weight:700;line-height:1.15;background:#101725d9;padding:2px 6px;border-radius:4px;}.node-cost{font-size:11px;color:#e1c58f;background:#101725;}
+.constellation-node.locked .node-gem{background:#182130;border-style:dashed;color:#718096;}.constellation-node.available .node-gem{border-color:#80dac1;color:#adf6dd;box-shadow:0 0 0 6px #121b29,0 0 25px #64dabc44;}.constellation-node.owned .node-gem{background:#25463f;border-color:#7de5c4;color:#b6f7da;}.constellation-node.selected .node-gem{outline:3px solid #f4d095;outline-offset:5px;color:#ffe2a9;}.constellation-node.final-node .node-gem{border-radius:12px;border-color:#bda4e6;background:#302641;}.constellation-node:focus-visible{outline:2px solid #fff;border-radius:10px;}
+#skillTree .constellation-detail{margin:0;min-height:0;overflow:auto;border:1px solid #777084;background:#1b2134;padding:20px;border-radius:14px;align-self:start;max-height:100%;}
+.constellation-detail h2{font-size:23px;color:#ffe0a6;}.constellation-detail p{line-height:1.7;}.constellation-detail button{margin-top:12px;padding:12px;}
+.constellation-controls{display:flex;gap:6px;justify-content:flex-start;padding:0 0 8px;}.constellation-controls button{min-width:38px;padding:5px 12px;}
+@media(max-width:760px){#skillTree.gold-skill-panel{padding:12px;height:97dvh;max-height:97dvh;}.constellation-layout{grid-template-columns:1fr;grid-template-rows:minmax(180px,1fr) auto;gap:8px;}#skillTree .constellation-detail{max-height:210px;width:100%;padding:12px;}#skillTree .constellation-detail h2{font-size:18px;margin:0 0 8px;}.constellation-detail p{font-size:12px;margin:4px 0;}#skillTree .gold-skill-head h1{font-size:18px;}}

@@ -1,3 +1,4 @@
+import {rewardForFloor} from './progression.js';
 import {
   BACKGROUND_CACHE_LIMIT,
   EXIT_HOLD_SECONDS,
@@ -71,7 +72,7 @@ function updateWorldLabels(view, camX, camY, zoom) {
     const label = worldLabels.children[index];
     const pos = visiblePositionForDraw(facility, camX, camY);
     const screen = worldToScreen(pos.x, pos.y - 58, view, camX, camY, zoom);
-    label.textContent = `${facility.cost}G`;
+    label.textContent = "+"+rewardForFloor(20,game.wave)+" G";
     label.style.transform = `translate(${Math.round(screen.x)}px, ${Math.round(screen.y)}px) translate(-50%, -50%)`;
     label.classList.remove("hidden");
   });
@@ -963,6 +964,13 @@ function drawTreasureChest(chest, view, camX, camY, zoom, drawX = chest.x, drawY
 function drawFacility(facility, view, camX, camY, zoom, drawX = facility.x, drawY = facility.y) {
   const screen = worldToScreen(drawX, drawY, view, camX, camY, zoom);
   const bob = Math.sin(game.elapsed * 2.5 + (facility.x + facility.y) * 0.01) * 1.2 * zoom;
+  if(facility.type==='workbench') {
+    const tint=facility.used?[0.3,0.4,0.3]:[0.3,1,0.65];
+    state.renderer.draw('white',screen.x,screen.y,54*zoom,18*zoom,{tint});
+    state.renderer.draw('white',screen.x,screen.y,18*zoom,54*zoom,{tint});
+    if(!facility.used) drawHoldProgress(screen.x,screen.y+46*zoom,facility.holdTimer/INTERACTION_HOLD_SECONDS,64*zoom,zoom,tint);
+    return;
+  }
   if (facility.type === "treasureVault") {
     const opened = facility.opened;
     state.renderer.draw("shadow", screen.x, screen.y + 18 * zoom, 72 * zoom, 20 * zoom, { alpha: 0.58 });
