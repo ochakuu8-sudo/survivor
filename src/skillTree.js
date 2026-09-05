@@ -11,29 +11,30 @@ import {
   FAMILY_IDS,
   WEAPON_NODES,
   closure,
-  validateBuild,
   buyNode,
   costFor,
   canRespec,
-  activateNode,
-  setBuild,
   refundNode,
   applyRecipe,
   quoteRecipe,
   buyMastery,
   masteryCost,
+  syncBuild,
+  equipSpecial,
+  unlockSpecial,
 } from "./buildModel.js";
+import { stoneSummary } from "./stoneCombat.js";
 import { BuildCombat } from "./buildCombat.js";
 import { DEBUG_FREE_SKILLS } from "./buildSettings.js";
 import { damageEnemy } from "./combat.js";
 import { shortestDungeonDelta, wrapDungeonPoint } from "./dungeon.js";
 import { grantGold } from "./gold.js";
 export const WEAPON_SKILL_TREES = { stone: SKILLS };
-let selected = "A01",
+let selected = "B10",
   filter = "",
   scale = 0.8,
   scroll = { x: 500, y: 250 },
-  recipeId = "01",
+  recipeId = "04",
   notice = "",
   fitMap = false;
 const el = (tag, cls, text) => {
@@ -54,6 +55,7 @@ export function initSkillProgress() {
   game.gold = s.gold;
   game.treePurchases = { weapon: s.purchased };
   game.activeSkills = s.active;
+  game.equippedSpecial = s.equippedSpecial;
   game.skillPaid = s.paid;
   game.masteryRank = s.rank;
   game.freeSkillClaimed = s.freeClaimed;
@@ -64,6 +66,7 @@ export function initSkillProgress() {
   game.buildCombat = null;
 }
 export function applyPurchasedSkillTreeToActiveWeapon() {
+  syncBuild(game);
   const p = game.player;
   if (!p) return;
   if (!game.buildCombat)
@@ -126,8 +129,18 @@ function changed(result = "") {
 }
 export function purchaseNode(id) {
   if (game.mode !== "upgradeTree") return false;
+  const before = new Set(Object.keys(game.treePurchases.weapon));
   const ok = buyNode(game, id);
-  if (ok) changed();
+  if (ok) {
+    const unlocked = SKILLS.filter(
+      (n) => n.special && game.treePurchases.weapon[n.id] && !before.has(n.id),
+    );
+    changed(
+      unlocked.length
+        ? `特殊石を解放：${unlocked.map((n) => n.name).join("・")}。選んで装備できます。`
+        : "特性を石ころに追加しました",
+    );
+  }
   return ok;
 }
 function position(n) {
@@ -148,6 +161,7 @@ function position(n) {
   return { x: 1100 + Math.cos(a) * r, y: 1100 + Math.sin(a) * r };
 }
 export function renderSkillTree() {
+  syncBuild(game);
   const panel = hud.skillTree;
   panel.className = "panel gold-skill-panel expanded-tree";
   panel.replaceChildren();
@@ -165,20 +179,38 @@ export function renderSkillTree() {
   const info = el(
     "p",
     "economy-summary",
-    `習得 ${Object.keys(owned).length}/180 · 有効 ${active.length}/20 · 大ノード ${active.filter((id) => NODE_MAP.get(id)?.major).length}/4 · 基礎成長 Lv.${game.masteryRank || 0}`,
+    `特性 ${active.filter((id) => !NODE_MAP.get(id).special).length}/108 · 特殊石解放 ${SKILLS.filter((n) => n.special && owned[n.id]).length}/72 · 特殊石装備 ${game.equippedSpecial ? 1 : 0}/1 · 基礎成長 Lv.${game.masteryRank || 0}`,
   );
   panel.append(info);
+  const stoneCard = el("div", "equipped-stone-card");
+  stoneCard.append(el("span", "equipped-stone-gem", "◆"));
+  const stoneText = el("div", "equipped-stone-text");
+  stoneText.append(
+    el("small", "", "装備中の石 / 特殊性能は1つ"),
+    el("h2", "", NODE_MAP.get(game.equippedSpecial)?.name || "石ころ"),
+    el("p", "", stoneSummary(active)),
+  );
+  if (game.equippedSpecial)
+    stoneText.append(
+      el("small", "", NODE_MAP.get(game.equippedSpecial).effect),
+    );
+  else
+    stoneText.append(
+      el("small", "", "特性を重ね、星形のノードから特殊石を解放しよう。"),
+    );
+  stoneCard.append(stoneText);
+  panel.append(stoneCard);
   panel.append(
     el(
       "p",
       "",
       game.debugFreeSkills
-        ? "デバッグ版：全180ノードの習得コストは0。構成の上限と前提は有効です。"
+        ? "デバッグ版：特性の習得コストはすべて0 G。特性はすべて同じ石に加算。必要な特性が揃うと特殊石を自動解放。"
         : !game.freeSkillClaimed
           ? "習得0から開始。最初の入口ノードは無料で選べます。"
           : editable
             ? "構成変更・100%返金が可能です。Gと購入済みスキルは再挑戦後も引き継ぎます。"
-            : "戦闘中は追加購入・有効化ができます。取り外しと返金はボス撃破後に。",
+            : "戦闘中も特性を追加できます。特殊石の交換と返金はボス撃破後に。",
     ),
   );
   if (notice || game.saveFailed)
@@ -295,12 +327,13 @@ export function renderSkillTree() {
       n.requires_all.every((id) => owned[id]) && game.gold >= costFor(game, n);
     const b = button("", () => {
       selected = n.id;
+      if (n.special) recipeId = RECIPES.find((r) => r.specialId === n.id).id;
       renderSkillTree();
     });
     b.className =
       "constellation-node " +
       (owned[n.id] ? "owned" : available ? "available" : "locked") +
-      (active.includes(n.id) ? " equipped" : "") +
+      (game.equippedSpecial === n.id ? " equipped" : "") +
       (selected === n.id ? " selected" : "") +
       (n.major ? " final-node" : "") +
       (!match ? " dimmed" : "");
@@ -308,7 +341,7 @@ export function renderSkillTree() {
     b.style.top = p.y + "px";
     b.setAttribute(
       "aria-label",
-      `${n.id} ${n.name} ${active.includes(n.id) ? "有効" : owned[n.id] ? "購入済み" : costFor(game, n) + "G"}`,
+      `${n.id} ${n.name} ${n.special ? (game.equippedSpecial === n.id ? "装備中" : owned[n.id] ? "解放済み" : "未解放") : owned[n.id] ? "習得済み" : costFor(game, n) + "G"}`,
     );
     b.setAttribute("aria-pressed", String(selected === n.id));
     b.dataset.nodeId = n.id;
@@ -316,7 +349,7 @@ export function renderSkillTree() {
       el(
         "span",
         "node-gem",
-        active.includes(n.id)
+        n.special
           ? "✦"
           : n.family === "X"
             ? "∞"
@@ -330,7 +363,7 @@ export function renderSkillTree() {
       el(
         "span",
         "node-cost",
-        `${n.id} · ${active.includes(n.id) ? "有効" : owned[n.id] ? "✓" : costFor(game, n) + " G"}`,
+        `${n.id} · ${n.special ? (game.equippedSpecial === n.id ? "装備中" : owned[n.id] ? "解放済" : n.requires_all.filter((id) => owned[id]).length + "/" + n.requires_all.length) : owned[n.id] ? "習得済" : costFor(game, n) + " G"}`,
       ),
     );
     map.append(b);
@@ -392,10 +425,53 @@ export function renderSkillTree() {
     el(
       "small",
       "",
-      `${n.major ? "大ノード · " : ""}${WEAPON_NODES.has(n.id) ? "武装 · " : ""}前提：${n.requires_all.map((id) => NODE_MAP.get(id).name).join(" ＋ ") || "なし"}`,
+      `${n.special ? "特殊石 · 全条件を満たすと自動解放" : "通常特性 · 習得すると石に常時適用"}`,
     ),
   );
-  if (!owned[n.id])
+  if (n.requires_all.length) {
+    detail.append(
+      el(
+        "h3",
+        "",
+        n.special
+          ? `解放条件 ${n.requires_all.filter((id) => owned[id]).length}/${n.requires_all.length}（すべて必要）`
+          : "前提ノード",
+      ),
+    );
+    for (const id of n.requires_all) {
+      const parent = NODE_MAP.get(id);
+      detail.append(
+        button(`${owned[id] ? "✓" : "○"} ${parent.name}`, () => {
+          selected = id;
+          renderSkillTree();
+        }),
+      );
+    }
+  }
+  if (n.special) {
+    detail.append(
+      button(
+        game.equippedSpecial === n.id
+          ? "特殊石を外す"
+          : owned[n.id]
+            ? "この特殊石を装備"
+            : "未解放：条件を揃えよう",
+        () =>
+          changed(
+            equipSpecial(game, game.equippedSpecial === n.id ? null : n.id),
+          ),
+        !owned[n.id] || !editable,
+      ),
+    );
+    if (!owned[n.id])
+      detail.append(
+        el("small", "", "各条件を押すと、その特性までのルートを確認できます。"),
+      );
+    if (!editable)
+      detail.append(
+        el("small", "", "交換は出撃前・ボス撃破後・結果画面で可能です。"),
+      );
+  } else if (!owned[n.id])
     detail.append(
       button(
         `習得 ${costFor(game, n)} G`,
@@ -403,40 +479,18 @@ export function renderSkillTree() {
         game.gold < costFor(game, n) || n.requires_all.some((id) => !owned[id]),
       ),
     );
-  else {
+  else
     detail.append(
+      el("p", "trait-applied", "✓ この特性は石ころに適用中"),
       button(
-        active.includes(n.id) ? "有効から外す" : "有効化",
-        () =>
-          changed(
-            active.includes(n.id)
-              ? setBuild(
-                  game,
-                  active.filter((id) => !closure([id]).includes(n.id)),
-                )
-              : activateNode(game, n.id),
-          ),
-        active.includes(n.id) && !editable,
-      ),
-    );
-    detail.append(
-      button(
-        `前提にする子も返金（本ノード ${game.skillPaid[n.id] || 0} G）`,
+        `この特性と依存する特性を返金`,
         () => changed(refundNode(game, n.id)),
         !editable,
       ),
     );
-  }
-  const preview = el("div", "skill-motion-preview");
-  preview.dataset.family = n.family;
-  preview.append(el("span", "", "◆"), el("span", "", "·"), el("span", "", "○"));
-  detail.append(
-    preview,
-    el("small", "", "形状プレビュー / 実際の範囲と周期は戦闘で確認できます"),
-  );
-  detail.append(el("h3", "", "ビルドレシピ 60"));
+  detail.append(el("h3", "", "特殊石図鑑 72"));
   const select = el("select");
-  select.setAttribute("aria-label", "ビルドレシピ");
+  select.setAttribute("aria-label", "特殊石図鑑");
   RECIPES.forEach((r) => {
     const o = el("option", "", `${r.id} ${r.name}`);
     o.value = r.id;
@@ -453,17 +507,29 @@ export function renderSkillTree() {
     el("p", "", recipe.play),
     el("small", "", recipe.weakness_and_boss),
   );
-  const q = quoteRecipe(game, recipe);
+  const needed = closure([recipe.specialId]).filter(
+    (id) => !NODE_MAP.get(id).special,
+  );
+  const q = quoteRecipe(game, {
+    core: [...active.filter((id) => !NODE_MAP.get(id).special), ...needed],
+  });
   detail.append(
     el(
       "small",
       "",
-      `返金 ${q.refund} G → 購入 ${q.cost} G → 残り ${q.balance} G`,
+      `未習得の前提をまとめて習得：${q.cost} G（いまの特性は残ります）`,
     ),
     button(
-      "このレシピへ振り直す",
-      () => changed(applyRecipe(game, recipe)),
-      !editable || q.balance < 0 || !!q.error,
+      owned[recipe.specialId]
+        ? "解放済み：特殊石を装備"
+        : `前提をまとめて習得 ${q.cost} G`,
+      () =>
+        changed(
+          owned[recipe.specialId]
+            ? equipSpecial(game, recipe.specialId)
+            : unlockSpecial(game, recipe.specialId),
+        ),
+      q.balance < 0 || (owned[recipe.specialId] && !editable),
     ),
   );
   detail.append(
@@ -479,7 +545,14 @@ export function renderSkillTree() {
       game.gold < masteryCost(game),
     ),
   );
-  detail.append(el("h3", "", "保存構成"));
+  detail.append(
+    el("h3", "", "保存構成"),
+    el(
+      "small",
+      "",
+      "読込は通常特性も保存時の構成へ振り直します。差額は全額返金。",
+    ),
+  );
   for (let i = 0; i < 6; i++) {
     const row = el("div", "preset-row");
     row.append(
@@ -505,6 +578,7 @@ export function renderSkillTree() {
         game.gold = 0;
         game.treePurchases.weapon = {};
         game.activeSkills = [];
+        game.equippedSpecial = null;
         game.skillPaid = {};
         game.masteryRank = 0;
         game.freeSkillClaimed = false;

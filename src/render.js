@@ -673,7 +673,7 @@ function drawBuildCombat(view,camX,camY,zoom){
   if(o.line){drawWorldLine(pos.x,pos.y,pos.x+o.line.dx,pos.y+o.line.dy,Math.max(3,radius),view,camX,camY,zoom,{tint,alpha:.65*o.life/o.maxLife});continue;}
   const ground=o.type==='zone'||o.type==='delay'||!o.type;
   if(ground){state.renderer.draw('glowCyan',s.x,s.y,radius*2*zoom,radius*2*zoom,{tint,alpha:o.type==='zone'?.22:.42*o.life/o.maxLife});}
-  else{const size=(o.giant?70:o.type==='turret'?32:o.type==='mine'?22:o.king?40:o.type==='bullet'?15:26)*zoom;
+  else{const size=(o.giant?70:o.type==='turret'?32:o.type==='mine'?22:o.king?40:o.type==='bullet'?Math.max(15,(o.radius||8)*2):26)*zoom;
    state.renderer.draw('glowCyan',s.x,s.y,size*1.8,size*1.8,{tint,alpha:.25});
    state.renderer.draw('stoneHeavy',s.x,s.y,size,size*.8,{tint,rotation:o.type==='bullet'?Math.atan2(o.vy,o.vx):combat.time*.8,alpha:o.type==='clone'?.55:1});
    if(o.type==='turret'){const t=combat.target(o,430);if(t){const d=combat.delta(o,t),a=Math.atan2(d.dy,d.dx);drawWorldLine(pos.x,pos.y,pos.x+Math.cos(a)*25,pos.y+Math.sin(a)*25,7,view,camX,camY,zoom,{tint});}}

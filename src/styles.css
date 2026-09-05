@@ -4974,3 +4974,8 @@ button.workbench-craft-node:not(:disabled):hover {
   .hud-objective strong { font-size: .75rem; }
 }
 .tree-family-label{position:absolute;transform:translate(-50%,-50%);font-size:22px;color:#b9cec6;font-weight:700;white-space:nowrap;pointer-events:none}.expanded-tree{z-index:60!important}.expanded-tree .node-title{max-width:110px}
+
+/* One assembled stone remains visible while exploring its prerequisites. */
+.equipped-stone-card{display:flex;align-items:center;gap:16px;padding:12px 18px;margin:4px 0 8px;border:1px solid #aa9163;border-radius:12px;background:linear-gradient(110deg,#3b3345,#182536);flex-shrink:0;min-width:0}
+.equipped-stone-gem{font-size:44px;color:#ffda8b;text-shadow:0 0 24px #ecb96588}.equipped-stone-text{min-width:0}.equipped-stone-text h2{margin:3px 0;color:#ffe0a6;font-size:21px}.equipped-stone-text p{margin:3px 0;color:#b5e9dc;font-size:12px;line-height:1.5;max-height:38px;overflow:auto}.equipped-stone-text small{font-size:11px;color:#c4c6d0}.trait-applied{color:#a7edcf}.expanded-tree .final-node.owned .node-gem{background:#57462d;border-color:#f8d082;color:#ffe8af}.expanded-tree .final-node.equipped .node-gem{background:#967044;border-color:#ffe4a9;box-shadow:0 0 22px #f4c86f77}.expanded-tree .final-node.locked .node-gem{border-style:dashed;opacity:.7}
+@media(max-width:760px){.equipped-stone-card{padding:8px 10px;gap:9px}.equipped-stone-gem{font-size:28px}.equipped-stone-text h2{font-size:16px}.equipped-stone-text>small:last-child{display:none}#skillTree .constellation-detail{max-height:240px}.constellation-layout{grid-template-rows:minmax(100px,1fr) minmax(100px,.8fr)}}

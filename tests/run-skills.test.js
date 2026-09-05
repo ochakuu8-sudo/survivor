@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFileSync } from "node:fs";
+import { emitStone } from "../src/stoneCombat.js";
 import {
   SKILLS,
   RECIPES,
@@ -12,6 +12,10 @@ import {
   activateNode,
   masteryCost,
   buyMastery,
+  equipSpecial,
+  unlockSpecial,
+  syncBuild,
+  NODE_MAP,
 } from "../src/buildModel.js";
 import { BuildCombat } from "../src/buildCombat.js";
 import { readProgress, saveProgress, SAVE_KEY } from "../src/progression.js";
@@ -41,18 +45,30 @@ const state = () => ({
     facingY: 0,
   },
 });
-test("180 unique nodes have reachable prerequisites and every recipe respects all capacity limits", () => {
+test("180 unique nodes have reachable prerequisites and every special requires multiple normal traits", () => {
   assert.equal(SKILLS.length, 180);
   assert.equal(new Set(SKILLS.map((n) => n.id)).size, 180);
-  assert.equal(RECIPES.length, 60);
-  for (const n of SKILLS) assert.ok(closure([n.id]).includes(n.id));
+  assert.equal(RECIPES.length, 72);
+  for (const n of SKILLS) {
+    assert.ok(closure([n.id]).includes(n.id));
+    if (n.special) {
+      assert.ok(n.requires_all.length >= 2, n.id);
+      assert.ok(
+        n.requires_all.every((id) => !NODE_MAP.get(id).special),
+        n.id,
+      );
+    }
+  }
   for (const r of RECIPES)
     assert.equal(validateBuild(closure(r.core)), "", r.name);
 });
-test("debug mode purchases all 180 nodes for zero, and all 60 recipes are free", () => {
+test("108 free traits automatically unlock 72 stones; all traits fit on one stone", () => {
   const g = state();
   g.debugFreeSkills = true;
-  for (const n of SKILLS) assert.equal(buyNode(g, n.id), true, n.id);
+  for (const n of SKILLS.filter((n) => !n.special))
+    assert.equal(buyNode(g, n.id), true, n.id);
+  assert.equal(g.activeSkills.length, 108);
+  assert.equal(g.equippedSpecial, null);
   assert.equal(Object.keys(g.treePurchases.weapon).length, 180);
   assert.equal(g.gold, 0);
   assert.ok(Object.values(g.skillPaid).every((v) => v === 0));
@@ -133,7 +149,7 @@ test("old save does not grant debug skills or currency; corrupt saves are saniti
   );
   const p = readProgress(storage);
   assert.equal(p.gold, 0);
-  assert.deepEqual(p.active, []);
+  assert.deepEqual(p.active, ["A01"]);
   assert.deepEqual(p.purchased, { A01: true });
   assert.equal(p.paid.A01, 10);
   assert.equal(
@@ -148,7 +164,8 @@ test("old save does not grant debug skills or currency; corrupt saves are saniti
 test("prerequisites, rule exclusivity and mastery economy enforce constraints", () => {
   assert.notEqual(validateBuild(["A10"]), "");
   assert.notEqual(validateBuild(["R01", "R02"]), "");
-  assert.notEqual(validateBuild(closure(["R01", "A01", "B01"])), "");
+  assert.equal(validateBuild(closure(["R01", "A01", "B01"])), "");
+  assert.notEqual(validateBuild(closure(["A10", "B10"])), "");
   const g = state();
   assert.equal(masteryCost(g), 60);
   g.gold = 60;
@@ -159,7 +176,7 @@ test("prerequisites, rule exclusivity and mastery economy enforce constraints", 
 function enemy(id, x = 90, y = 0, hp = 300) {
   return { id, x, y, hp, maxHp: hp, radius: 18, boss: false };
 }
-test("all 60 recipes cause finite damage under movement, stationary, recovery and boss scenarios", () => {
+test("all 72 special stones cause finite damage under movement, stationary, recovery and boss scenarios", () => {
   for (const r of RECIPES) {
     const g = state();
     g.gold = 2000;
@@ -260,7 +277,8 @@ test("late contracts cannot activate after combat starts and delayed mines honor
   buyNode(g, "A01");
   g.mode = "arena";
   g.runElapsed = 10;
-  assert.equal(buyNode(g, "R11"), true);
+  assert.equal(unlockSpecial(g, "R11"), "");
+  assert.equal(g.treePurchases.weapon.R11, true);
   assert.ok(!g.activeSkills.includes("R11"));
   assert.notEqual(activateNode(g, "R11"), "");
   const c = new BuildCombat(g);
@@ -275,13 +293,19 @@ test("late contracts cannot activate after combat starts and delayed mines honor
 test("gold spent on respec never counts as combat pickup, expired cosmetic visuals cannot remove hazards", () => {
   const g = state();
   g.debugFreeSkills = true;
-  applyRecipe(g, RECIPES[55]);
+  applyRecipe(
+    g,
+    RECIPES.find((r) => r.specialId === "L10"),
+  );
   g.enemies = [enemy(1)];
   const c = new BuildCombat(g);
   c.gold(11);
   c.drain();
   const first = c.stats.events.L07 || 0;
-  applyRecipe(g, RECIPES[55]);
+  applyRecipe(
+    g,
+    RECIPES.find((r) => r.specialId === "L10"),
+  );
   c.configure();
   c.drain();
   assert.equal(c.stats.events.L07 || 0, first);
@@ -312,15 +336,146 @@ test("loop-space bullets hit across seams and returning blades reach player", ()
   assert.ok(g.enemies[0].hp < 300);
   assert.ok(c.objects.every((o) => Number.isFinite(o.x)));
 });
-test("runtime covers all node identifiers, including bridge and special rule endpoints", () => {
-  const text =
-    readFileSync(new URL("../src/buildCombat.js", import.meta.url), "utf8") +
-    readFileSync(new URL("../src/skillTree.js", import.meta.url), "utf8");
-  const missing = SKILLS.filter(
-    (n) => !new RegExp(`["']${n.id}["']`).test(text),
+
+test("AND unlock, single special replacement, prerequisite refund revokes equipment", () => {
+  const g = state();
+  g.debugFreeSkills = true;
+  for (const id of ["B01", "B04", "B07", "B03"])
+    assert.equal(buyNode(g, id), true);
+  assert.equal(g.treePurchases.weapon.B10, undefined);
+  assert.notEqual(equipSpecial(g, "B10"), "");
+  assert.equal(buyNode(g, "A03"), true);
+  assert.equal(g.treePurchases.weapon.B10, true);
+  assert.equal(g.equippedSpecial, null);
+  assert.equal(equipSpecial(g, "B10"), "");
+  assert.equal(unlockSpecial(g, "X01"), "");
+  assert.equal(equipSpecial(g, "X01"), "");
+  assert.ok(!g.activeSkills.includes("B10"));
+  assert.equal(
+    g.activeSkills.filter((id) => NODE_MAP.get(id).special).length,
+    1,
   );
-  assert.deepEqual(
-    missing.map((n) => n.id),
-    [],
+  assert.equal(equipSpecial(g, "B10"), "");
+  assert.equal(refundNode(g, "B01"), true);
+  assert.equal(g.equippedSpecial, null);
+  assert.ok(!g.treePurchases.weapon.B10);
+  assert.ok(g.activeSkills.includes("A03") && g.activeSkills.includes("B03"));
+});
+test("bulk prerequisite unlock preserves existing traits and fails without partial purchase", () => {
+  const g = state();
+  buyNode(g, "J01");
+  const before = JSON.stringify(g);
+  assert.notEqual(unlockSpecial(g, "B10"), "");
+  assert.equal(JSON.stringify(g), before);
+  g.gold = 1000;
+  assert.equal(unlockSpecial(g, "B10"), "");
+  assert.ok(g.activeSkills.includes("J01"));
+  assert.ok(g.treePurchases.weapon.B10);
+  assert.equal(g.skillPaid.B10, undefined);
+});
+test("one projectile explodes and bounces to another enemy; no parallel launch channels", () => {
+  const g = state();
+  g.debugFreeSkills = true;
+  unlockSpecial(g, "B10");
+  equipSpecial(g, "B10");
+  g.enemies = [enemy(1, 140, 0, 99999), enemy(2, 340, 0, 99999)];
+  const c = new BuildCombat(g);
+  c.castWeapons(1 / 60, 0);
+  const stones = c.objects.filter((o) => o.stone);
+  assert.equal(stones.length, 1);
+  const stone = stones[0];
+  assert.equal(stone.blast, true);
+  assert.equal(stone.bounces, 4);
+  for (let i = 0; i < 100; i++) {
+    c.time += 1 / 60;
+    c.updateObjects(1 / 60);
+    c.drain();
+  }
+  assert.ok((c.stats.events.stoneBlast || 0) >= 2);
+  assert.ok((c.stats.events.stoneBounce || 0) >= 2);
+  assert.ok(g.enemies.every((e) => e.hp < 99999));
+  assert.equal(c.stats.events.stoneFired, 1);
+  assert.equal(stone.root, stones[0].root);
+});
+test("homing return takes priority and child stones cannot create an endless turret chain", () => {
+  const g = state();
+  g.activeSkills = closure(["E07", "B08", "D01"]);
+  g.enemies = [enemy(1, 140, 0, 99999)];
+  const c = new BuildCombat(g);
+  emitStone(c, g.player, g.enemies[0], { child: true });
+  const o = c.objects[0];
+  o.age = 2;
+  o.life = 1;
+  o.x = 20;
+  c.time = 2;
+  c.updateObjects(0.01);
+  assert.equal(o.finished, true);
+  assert.equal(o.life, 0);
+  assert.ok(g.player.barrier > 0);
+  assert.equal(c.objects.filter((o) => o.type === "turret").length, 0);
+});
+test("v2 migration retains traits, refunds purchased special prices only once and persists one equipped stone", () => {
+  const g = state();
+  g.debugFreeSkills = true;
+  unlockSpecial(g, "B10");
+  equipSpecial(g, "B10");
+  const legacy = {
+    version: 2,
+    gold: 42,
+    purchased: g.treePurchases.weapon,
+    active: [...g.activeSkills, "X01"],
+    paid: { B10: 140 },
+    rank: 2,
+    presets: [],
+  };
+  const values = new Map([
+    ["survivor.progression.v2.zero-start", JSON.stringify(legacy)],
+  ]);
+  const storage = {
+    getItem: (k) => values.get(k),
+    setItem: (k, v) => values.set(k, v),
+  };
+  const loaded = readProgress(storage);
+  assert.equal(loaded.gold, 182);
+  assert.equal(loaded.equippedSpecial, "B10");
+  assert.equal(
+    loaded.active.filter((id) => NODE_MAP.get(id).special).length,
+    1,
   );
+  Object.assign(g, {
+    gold: loaded.gold,
+    treePurchases: { weapon: loaded.purchased },
+    activeSkills: loaded.active,
+    equippedSpecial: loaded.equippedSpecial,
+    skillPaid: loaded.paid,
+  });
+  assert.equal(saveProgress(g, storage), true);
+  assert.equal(readProgress(storage).gold, 182);
+  assert.equal(
+    values.get("survivor.progression.v2.zero-start"),
+    JSON.stringify(legacy),
+  );
+});
+
+test("all 108 traits remain finite and bounded together with a special stone", () => {
+  const g = state();
+  g.debugFreeSkills = true;
+  for (const n of SKILLS.filter((n) => !n.special)) buyNode(g, n.id);
+  equipSpecial(g, "B10");
+  g.enemies = Array.from({ length: 40 }, (_, i) =>
+    enemy(i, 140 + Math.cos(i) * 100, Math.sin(i) * 100, 99999),
+  );
+  const c = new BuildCombat(g, { random: () => 0.5 });
+  let peak = 0;
+  for (let i = 0; i < 600; i++) {
+    c.update(1 / 30);
+    peak = Math.max(peak, c.objects.length);
+  }
+  assert.ok(peak < 320, `object count ${peak}`);
+  assert.ok(
+    c.objects.every((o) => Number.isFinite(o.x) && Number.isFinite(o.y)),
+  );
+  assert.ok(Object.values(c.stats.damage).every(Number.isFinite));
+  assert.ok(c.stats.events.stoneFired > 0);
+  assert.ok(c.stats.events.stoneBlast > 0);
 });

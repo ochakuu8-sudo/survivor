@@ -1,5 +1,6 @@
 import { difficulty } from './difficulty.js';
 import { shortestDungeonDelta } from './dungeon.js';
+import { stoneSummary } from './stoneCombat.js';
 import {SKILLS, costFor} from './buildModel.js';
 import {getLocale} from './i18n.js';
 import { t } from "./i18n.js";
@@ -95,7 +96,7 @@ function renderHpGauge() {
 function renderMaterialHud() { hud.materialHud?.classList.add('hidden'); }
 
 function renderPauseStoneItems() {
- if(hud.pauseStoneItems) hud.pauseStoneItems.textContent=SKILLS.filter(n=>game.activeSkills?.includes(n.id)).map(n=>n.name).join(' / ') || '有効スキル 0 · 最初の入口は無料です。';
+ if(hud.pauseStoneItems) hud.pauseStoneItems.textContent=(SKILLS.find(n=>n.id===game.equippedSpecial)?.name || '石ころ')+' · '+stoneSummary(game.activeSkills || []);
 }
 
 function renderCraftTreeButton() {
@@ -104,7 +105,7 @@ function renderCraftTreeButton() {
   hud.craftTreeBtn.classList.toggle("hidden", !isArena);
   hud.craftTreeBtn.disabled = !isArena;
   hud.craftTreeBtn.textContent = 'K ✦';
-  hud.craftTreeBtn.classList.toggle('can-buy',SKILLS.some(n=>!game.treePurchases.weapon[n.id]&&n.requires_all.every(id=>game.treePurchases.weapon[id])&&game.gold>=costFor(game,n)));
+  hud.craftTreeBtn.classList.toggle('can-buy',SKILLS.some(n=>!n.special&&!game.treePurchases.weapon[n.id]&&n.requires_all.every(id=>game.treePurchases.weapon[id])&&game.gold>=costFor(game,n)));
   hud.craftTreeBtn.title = t("workbench.craftTreeButton");
   hud.craftTreeBtn.setAttribute("aria-label", t("workbench.craftTreeButton"));
 }

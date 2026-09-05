@@ -1,4 +1,4 @@
-import { WEAPON_NODES } from "./buildModel.js";
+import { castStone, emitStone, stepStone, stoneBlast } from "./stoneCombat.js";
 
 const TAU = Math.PI * 2;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -45,7 +45,7 @@ export class BuildCombat {
   }
   configure() {
     this.ids = new Set(this.g.activeSkills || []);
-    this.weapons = [...this.ids].filter((id) => WEAPON_NODES.has(id));
+
     this.power = 10 * 1.25 ** (this.g.masteryRank || 0);
   }
   has(id) {
@@ -235,8 +235,11 @@ export class BuildCombat {
           depth,
         );
       if (this.has("X06"))
-        for (const o of this.objects.filter((o) => o.type === "minion")) {
+        for (const o of this.objects.filter(
+          (o) => o.type === "minion" || (o.stone && o.homing),
+        )) {
           o.target = e;
+          if (o.stone) o.homing = e;
           o.rush = 1;
         }
     }
@@ -393,7 +396,7 @@ export class BuildCombat {
       if (this.has("H05")) {
         this.ammo = Math.min(this.has("A09") ? 1 : 6, this.ammo + 1);
         if (!this.has("A03"))
-          for (const key of ["A01", "A02", "B01", "B02", "B03", "basic"])
+          for (const key of ["stone"])
             this.timers[key] = Math.max(
               this.time,
               (this.timers[key] || this.time) - 0.1,
@@ -410,7 +413,7 @@ export class BuildCombat {
     const s = e.buildStatus || {};
     if (this.has("E03") && (id !== "E03" || this.has("E06")) && depth < 3)
       this.defer("E03", () => this.spirit(e, depth + 1), depth);
-    if (this.has("B06") && id.startsWith("B"))
+    if (this.has("B06") && id.startsWith("B") && id !== "B06" && depth < 3)
       this.defer(
         "B06",
         () => this.radial(e, 4, this.power * 0.35, "B06"),
@@ -457,6 +460,8 @@ export class BuildCombat {
     const actual = this.p.hp - before,
       over = amount - actual;
     this.event(id);
+    if (this.has("R03") && this.ready("counterStone", 0.5))
+      emitStone(this, this.p, this.target());
     if (this.has("J04")) {
       const e = this.target(this.p, 400);
       if (e)
@@ -481,7 +486,7 @@ export class BuildCombat {
     )
       this.bloodBuff = Math.min(0.6, (this.bloodBuff || 0) + amount * 0.04);
     if (this.has("X07")) {
-      const o = this.objects.find((o) => o.type === "guardian");
+      const o = this.objects.find((o) => o.stone && this.has("E02"));
       if (o)
         this.defer("X07", (d) => this.area(o, 90, this.power * 0.35, "X07", d));
     }
@@ -497,7 +502,8 @@ export class BuildCombat {
       return 0;
     }
     const guardian = this.objects.find(
-      (o) => o.type === "guardian" && !o.used && this.distance(o, this.p) < 160,
+      (o) =>
+        o.stone && this.has("E02") && !o.used && this.distance(o, this.p) < 160,
     );
     if (this.has("E05") && guardian) {
       guardian.used = true;
@@ -508,6 +514,8 @@ export class BuildCombat {
     const shield = Math.min(amount, this.p.barrier || 0);
     this.p.barrier = Math.max(0, (this.p.barrier || 0) - shield);
     if (shield > 0) {
+      if (this.has("R03") && this.ready("counterStone", 0.5))
+        emitStone(this, this.p, this.target());
       if (this.has("J05"))
         this.defer("J05", (d) =>
           this.area(this.p, 95, this.power * 0.9, "J05", d),
@@ -756,284 +764,21 @@ export class BuildCombat {
     )
       this.hit(e, this.power * 3, "I12", false, 0, true);
   }
-  castWeapons(dt, traveled) {
-    const p = this.p,
-      has = (id) => this.has(id),
-      P = this.power;
-    let rate = (this.haste > this.time ? 1.4 : 1) * (has("R02") ? 1.4 : 1);
-    if (has("H11")) rate *= 1 + this.charge * 0.5;
-    if (has("G11")) rate *= 0.75;
-    const stopped = this.still > 0.35,
-      steady =
-        stopped || (has("K08") && this.time - (this.lastStop || 0) < 0.6);
-    if (stopped) this.lastStop = this.time;
-    if (has("K02") && steady) rate *= 1.15;
-    if (has("K05") && steady) rate *= 1.35;
-    const shooting = !has("R03") && (!has("K05") || steady);
-    const aim = has("X18") || has("L03") ? "strong" : "near";
-    const target = this.target(p, 700, aim);
-    if (has("J03") && p.hp > 4) rate *= 1.15;
-    const enabled = (id) => this.weapons.includes(id);
-    if (shooting) {
-      const basicCount = this.weapons.length;
-      if (
-        (!basicCount ||
-          (has("R02") && basicCount < 3) ||
-          (!this.weapons.some((id) => ["A", "B", "G", "I"].includes(id[0])) &&
-            (has("F01") || has("G01") || has("I01")) &&
-            basicCount < 3)) &&
-        target &&
-        this.ready("basic", 0.65 / rate)
-      )
-        this.bullet(p, target, P, "A00", { weapon: true });
-      if (
-        enabled("A01") &&
-        target &&
-        this.ready("A01", (has("A10") ? 1.3 : 0.7) / rate)
-      ) {
-        let t = target;
-        if (has("A04")) {
-          let score = -1;
-          for (const candidate of this.near(p, 650).slice(0, 24)) {
-            const d = this.delta(p, candidate),
-              l = Math.hypot(d.dx, d.dy) || 1;
-            const n = this.near(p, 650).filter((e) => {
-              const q = this.delta(p, e);
-              return (
-                q.dx * d.dx + q.dy * d.dy > 0 &&
-                Math.abs(q.dx * d.dy - q.dy * d.dx) / l < 30
-              );
-            }).length;
-            if (n > score) {
-              score = n;
-              t = candidate;
-            }
-          }
-        }
-        const d = this.delta(p, t),
-          l = Math.hypot(d.dx, d.dy) || 1,
-          end = { x: p.x + (d.dx / l) * 650, y: p.y + (d.dy / l) * 650 };
-        let damage = P * (has("A10") ? 2.8 : 1.2);
-        if (has("A07") && this.near(t, 100).length <= 1) damage *= 1.6;
-        this.line(p, end, has("A10") ? 24 : 9, damage, "A01", true, has("A10"));
-      }
-      if (enabled("A02") && target && this.ready("A02", 0.85 / rate)) {
-        const count = 5,
-          spread = has("A08") ? 0.075 : 0.2;
-        for (let i = 0; i < count; i++)
-          this.bullet(p, target, P * 0.48, "A02", {
-            angle: (i - 2) * spread + (has("A05") && i < 2 ? Math.PI : 0),
-            weapon: true,
-            scatter: has("A11"),
-            life: 0.8,
-          });
-      }
-      if (enabled("A03")) {
-        if (this.reload > 0) {
-          this.reload -= dt;
-          if (this.reload <= 0) {
-            this.ammo = has("A09") ? 1 : 6;
-            if (has("A12") && target)
-              this.line(p, target, 22, P * 2.5, "A12", true, true);
-          }
-        } else if (target && this.ready("A03", 0.15 / rate)) {
-          this.bullet(p, target, P * 0.35, "A03", { weapon: true });
-          this.ammo--;
-          if (this.ammo <= 0) {
-            this.reload = has("A09") ? 0.45 : 1.1;
-            if (has("A06")) this.radial(p, 8, P * 0.3, "A06");
-            if (has("X14")) this.gravity(P * 0.4, "X14");
-          }
-        }
-      }
-      if (enabled("B01") && target && this.ready("B01", 0.85 / rate))
-        this.bullet(p, target, P, "B01", {
-          weapon: true,
-          bounces: has("B07") ? 4 : 2,
-          bounceRange: has("B04") ? 260 : 150,
-        });
-      if (enabled("B02") && target && this.ready("B02", 1.3 / rate))
-        this.bullet(p, target, P, "B02", {
-          weapon: true,
-          returning: true,
-          life: 2.4,
-        });
-      if (enabled("B03") && target && this.ready("B03", 1 / rate))
-        this.bullet(p, target, P * 0.6, "B03", {
-          weapon: true,
-          blast: true,
-          heavy: true,
-        });
-      if (enabled("G03") && target && this.ready("G03", 0.5 / rate)) {
-        const t = has("G06")
-          ? this.near(p, 600).sort(
-              (a, b) => (b.buildStatus?.cold || 0) - (a.buildStatus?.cold || 0),
-            )[0] || target
-          : target;
-        this.bullet(p, t, P * 0.5, "G03", {
-          weapon: true,
-          homing: t,
-          speed: 190,
-          cold: 2,
-        });
-      }
-      if (enabled("I02") && target && this.ready("I02", 0.4 / rate))
-        this.bullet(p, target, P * 0.25, "I02", { weapon: true, poison: 1 });
-    }
-    // Non-projectile weapon channels retain their own clocks and spatial behavior.
-    if (!has("R03")) {
-      if (
-        (enabled("C01") || this.goldOrbit > this.time) &&
-        this.ready("orbit", 0.16)
-      ) {
-        const rings = has("C10") ? 2 : 1;
-        for (let ring = 0; ring < rings; ring++)
-          for (let i = 0; i < 3; i++) {
-            const radius = ring ? 65 : has("C04") ? 180 : 110;
-            const r =
-                radius * (has("C07") ? 1 + 0.28 * Math.sin(this.time * 2) : 1),
-              a =
-                this.time *
-                  (ring ? -2.7 : 2) *
-                  (this.fastOrbit > this.time ? 1.7 : 1) +
-                (i * TAU) / 3;
-            const at = { x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r };
-            this.effect("C01", at.x, at.y, 13, 0.2);
-            for (const e of this.near(at, 15))
-              this.hit(e, P * 0.25, "C01", true);
-            if (
-              has("X09") &&
-              this.ready("satTurret:" + i, 0.8) &&
-              this.objects.some(
-                (o) => o.type === "turret" && this.distance(o, at) < 100,
-              ) &&
-              target
-            )
-              this.bullet(at, target, P * 0.35, "X09");
-            if (has("X19") && p.barrier > 0)
-              this.g.enemyProjectiles = this.g.enemyProjectiles.filter((b) => {
-                if (this.distance(at, b) > 24) return true;
-                p.barrier = Math.max(0, p.barrier - 0.2);
-                return false;
-              });
-          }
-      }
-      if (enabled("C02") && this.ready("cloak", 0.55)) {
-        const r = this.armorBurst > this.time ? 145 : 75;
-        for (const e of this.near(p, r)) {
-          const s = (e.buildStatus ??= {});
-          s.pressure = has("C08") ? Math.min(1, (s.pressure || 0) + 0.12) : 0;
-          this.hit(e, P * (0.55 + s.pressure), "C02", true);
-          if (has("C05")) {
-            s.bleedLeft = 2;
-          }
-        }
-        this.effect("C02", p.x, p.y, r);
-      }
-      if (enabled("C03") && this.ready("gravity", 3)) this.gravity(P, "C03");
-      if (
-        enabled("D01") &&
-        stopped &&
-        this.ready("turret", 2.5 * this.summonRate())
-      ) {
-        const at = has("D10")
-          ? { x: p.x + ((this.serial % 3) - 1) * 65, y: p.y - 40 }
-          : p;
-        this.spawn("turret", at, 8, "D01");
-      }
-      this.mineWalk = (this.mineWalk || 0) + traveled;
-      if (enabled("D02") && this.mineWalk >= 95) {
-        this.mineWalk -= 95;
-        this.spawn("mine", p, 10, "D02");
-      }
-      if (enabled("D03") && this.ready("quake", 2.5 * this.summonRate()))
-        this.zone(p, 95, 5, "D03", "quake");
-      if (enabled("E01") && this.ready("minion", 2.2 * this.summonRate())) {
-        this.spawn("minion", p, 5, "E01", {
-          strength: 1,
-          wardUntil: this.nextMinionWard ? this.time + 1.5 : 0,
-        });
-        this.nextMinionWard = false;
-      }
-      if (
-        enabled("E02") &&
-        this.ready("guardian", this.summonRate() * (has("E11") ? 7 : 4))
-      ) {
-        if (!has("E11") || !this.objects.some((o) => o.type === "guardian"))
-          this.spawn("guardian", p, 10, "E02", { giant: has("E11") });
-      }
-      if (enabled("F02")) {
-        const e = this.target(p, 140);
-        if (!e)
-          this.heat = Math.min(5, this.heat + dt / (has("R08") ? 1.5 : 1));
-        else if (this.ready("heat", 1.2)) {
-          let amount = P * (1 + this.heat * 0.6);
-          if (has("F11") || (has("F08") && this.heat >= 4))
-            this.area(p, has("F11") ? 210 : 140, amount, "F02", 0, true);
-          else this.hit(e, amount, "F02", true, 0, true);
-          this.heat = has("F05") ? this.heat * 0.25 : 0;
-        }
-      }
-      this.fireWalk = (this.fireWalk || 0) + traveled;
-      if (enabled("F03") && this.fireWalk >= 75) {
-        this.fireWalk -= 75;
-        this.zone(p, 48, 3, "F03", "fire");
-        if (has("F12")) {
-          this.path ??= [];
-          this.path.push({ x: p.x, y: p.y });
-          if (this.path.length > 32) this.path.shift();
-          if (this.path.length > 10 && this.distance(this.path[0], p) < 100) {
-            const origin = this.path[0],
-              sum = this.path.reduce(
-                (s, q) => {
-                  const d = this.delta(origin, q);
-                  s.x += d.dx;
-                  s.y += d.dy;
-                  return s;
-                },
-                { x: 0, y: 0 },
-              );
-            this.zone(
-              {
-                x: origin.x + sum.x / this.path.length,
-                y: origin.y + sum.y / this.path.length,
-              },
-              160,
-              2,
-              "F12",
-              "fire",
-            );
-            this.path = [];
-          }
-        }
-      }
-      if (enabled("G02") && this.ready("frost", 2)) {
-        for (const e of this.near(p, 210)) {
-          this.cold(e, 2);
-          this.hit(e, P * 0.35, "G02");
-        }
-        this.effect("G02", p.x, p.y, 210, 0.5);
-        if (has("G05")) this.zone(p, 170, 2.5, "G05", "ice");
-      }
-      if (enabled("H01") && this.ready("lightning", 1 / rate)) {
-        const e = has("H07")
-          ? this.g.enemies.find(
-              (e) => !e.dead && e.buildStatus?.lightMark > 0,
-            ) || target
-          : target;
-        if (e) this.lightning(e, P * 1.2);
-      }
-    }
+  castWeapons(dt) {
+    castStone(this, dt);
   }
-  gravity(damage, id) {
-    const center = this.has("C06")
-      ? this.target() || this.p
-      : {
-          x: this.p.x + (this.p.facingX || 1) * 80,
-          y: this.p.y + (this.p.facingY || 0) * 80,
-        };
-    const count = this.near(center, 200).length;
-    for (const e of this.near(center, 200)) {
+  gravity(damage, id, impactPoint = null) {
+    const center =
+      impactPoint ||
+      (this.has("C06")
+        ? this.target() || this.p
+        : {
+            x: this.p.x + (this.p.facingX || 1) * 80,
+            y: this.p.y + (this.p.facingY || 0) * 80,
+          });
+    const range = this.has("C06") ? 200 : 130;
+    const count = this.near(center, range).length;
+    for (const e of this.near(center, range)) {
       const d = this.delta(e, center);
       if (!e.boss) {
         e.x += d.dx * 0.65;
@@ -1065,6 +810,10 @@ export class BuildCombat {
       o.life -= dt;
       o.age += dt;
       o.tick -= dt;
+      if (o.stone) {
+        stepStone(this, o, dt);
+        continue;
+      }
       if (o.type === "bullet") {
         const prev = { x: o.x, y: o.y };
         if (o.returning && o.life < o.maxLife / 2) {
@@ -1085,7 +834,7 @@ export class BuildCombat {
             continue;
           }
         }
-        if (o.homing && !o.homing.dead) {
+        if (o.homing && !o.homing.dead && !o.returnPhase) {
           const d = this.delta(o, o.homing),
             l = Math.hypot(d.dx, d.dy) || 1;
           o.vx = (d.dx / l) * 190;
@@ -1179,8 +928,20 @@ export class BuildCombat {
             430,
             this.has("D04") ? "strong" : "near",
           );
-          if (target)
-            this.bullet(o, target, this.power * 0.55, "D01", { weapon: true });
+          if (target) {
+            if (o.stoneAnchor) {
+              for (let i = 0; i < (this.has("D10") ? 3 : 1); i++)
+                emitStone(this, o, target, {
+                  child: true,
+                  root: o.root,
+                  factor: 0.45,
+                  angle: this.has("D10") ? (i - 1) * 0.18 : 0,
+                });
+            } else
+              this.bullet(o, target, this.power * 0.55, "D01", {
+                weapon: true,
+              });
+          }
         }
       } else if (o.type === "mine") {
         if (o.fuse != null) o.fuse -= dt;
@@ -1330,11 +1091,14 @@ export class BuildCombat {
       if (o.life <= 0 && !o.ended) {
         o.ended = true;
         if (o.type === "delay") {
-          this.area(o, o.radius, o.damage, o.id);
+          if (o.stonePayload)
+            stoneBlast(this, o, o.radius, o.damage, o.id, o.stonePayload);
+          else this.area(o, o.radius, o.damage, o.id);
           if (o.id === "B09" && this.has("B12"))
             this.spawn("delay", o, 0.8, "B12", {
               radius: o.radius,
               damage: o.damage * 0.7,
+              stonePayload: o.stonePayload,
             });
         }
         if (o.type === "minion" && this.has("E10")) {

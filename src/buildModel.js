@@ -6,8 +6,8 @@ export const FAMILIES = [
   "投射・射撃周期",
   "反射・帰還・破砕",
   "周回・近接・重力",
-  "砲台・罠・領域",
-  "召喚・護衛・消費",
+  "定着・罠・領域",
+  "追尾・護衛・継承",
   "燃焼・蓄熱・爆燃",
   "冷却・凍結・破砕",
   "放電・命中・会心",
@@ -15,10 +15,11 @@ export const FAMILIES = [
   "生命・防壁・反撃",
   "移動・停止・無傷",
   "回収・蓄財・報酬",
-  "領域をつなぐ反応",
-  "特殊ルール",
+  "複合特殊石",
+  "誓約の特殊石",
 ];
 export const FAMILY_IDS = [..."ABCDEFGHIJKL", "X", "R"];
+// These are trajectory/payload traits, never independent weapon slots.
 export const WEAPON_NODES = new Set([
   "A01",
   "A02",
@@ -61,15 +62,9 @@ export function validateBuild(ids) {
     return "不明または重複したノードです";
   const s = new Set(ids);
   if (ids.some((id) => NODE_MAP.get(id).requires_all.some((p) => !s.has(p))))
-    return "前提ノードを有効にしてください";
-  if (ids.length > 20) return "有効ノードは20個までです";
-  if (ids.filter((id) => NODE_MAP.get(id).major).length > 4)
-    return "大ノードは4個までです";
-  if (ids.filter((id) => id.startsWith("R")).length > 1)
-    return "特殊ルールは1個までです";
-  const weapons = ids.filter((id) => WEAPON_NODES.has(id)).length;
-  if (!s.has("R03") && weapons > (s.has("R01") ? 1 : 3))
-    return s.has("R01") ? "一器入魂では武装は1個までです" : "武装は3個までです";
+    return "必要な特性ノードをすべて習得してください";
+  if (ids.filter((id) => NODE_MAP.get(id).special).length > 1)
+    return "装備できる特殊石は1個までです";
   return "";
 }
 export function emptyProgress() {
@@ -77,6 +72,7 @@ export function emptyProgress() {
     gold: 0,
     purchased: {},
     active: [],
+    equippedSpecial: null,
     paid: {},
     rank: 0,
     freeClaimed: false,
@@ -84,10 +80,31 @@ export function emptyProgress() {
   };
 }
 export function ensureBuild(g) {
+  g.treePurchases ??= { weapon: {} };
+  g.treePurchases.weapon ??= {};
   g.activeSkills ??= [];
   g.skillPaid ??= {};
   g.masteryRank ??= 0;
   g.buildPresets ??= Array(6).fill(null);
+  if (g.equippedSpecial === undefined)
+    g.equippedSpecial =
+      g.activeSkills.find((id) => NODE_MAP.get(id)?.special) || null;
+}
+// Purchased ordinary traits are permanent and always applied. Special stones are derived unlocks.
+export function syncBuild(g) {
+  ensureBuild(g);
+  const owned = g.treePurchases.weapon;
+  for (const n of SKILLS.filter((n) => n.special)) {
+    if (n.requires_all.every((id) => owned[id])) owned[n.id] = true;
+    else delete owned[n.id];
+  }
+  if (!NODE_MAP.get(g.equippedSpecial)?.special || !owned[g.equippedSpecial])
+    g.equippedSpecial = null;
+  g.activeSkills = SKILLS.filter((n) => owned[n.id] && !n.special).map(
+    (n) => n.id,
+  );
+  if (g.equippedSpecial) g.activeSkills.push(g.equippedSpecial);
+  return g.activeSkills;
 }
 export function canRespec(g) {
   return (
@@ -97,8 +114,9 @@ export function canRespec(g) {
   );
 }
 export function costFor(g, n) {
-  return (g.debugFreeSkills ?? DEBUG_FREE_SKILLS) ||
-    (!g.freeSkillClaimed && !n.requires_all.length && !n.major)
+  return n.special ||
+    (g.debugFreeSkills ?? DEBUG_FREE_SKILLS) ||
+    (!g.freeSkillClaimed && !n.requires_all.length)
     ? 0
     : n.cost;
 }
@@ -115,42 +133,42 @@ export function buyNode(g, id) {
   ensureBuild(g);
   const n = NODE_MAP.get(id),
     owned = g.treePurchases.weapon;
-  if (!n || owned[id] || n.requires_all.some((p) => !owned[p])) return false;
+  if (!n || n.special || owned[id] || n.requires_all.some((p) => !owned[p]))
+    return false;
   const cost = costFor(g, n);
   if (g.gold < cost) return false;
   g.gold -= cost;
   owned[id] = true;
   g.skillPaid[id] = cost;
-  if (cost === 0) g.freeSkillClaimed = true;
-  const next = closure([...g.activeSkills, id]);
-  if (!validateBuild(next) && (!["R11", "L12"].includes(id) || canRespec(g)))
-    g.activeSkills = next;
+  g.freeSkillClaimed = true;
+  syncBuild(g);
   return true;
 }
-export function setBuild(g, ids) {
+export function equipSpecial(g, id) {
   ensureBuild(g);
-  if (!canRespec(g)) return "構成変更は出撃前・ボス撃破後・結果画面で行えます";
-  const error = validateBuild(ids);
-  if (error) return error;
-  if (ids.some((id) => !g.treePurchases.weapon[id]))
-    return "未購入のノードがあります";
-  g.activeSkills = [...ids];
+  if (!canRespec(g))
+    return "特殊石の交換は出撃前・ボス撃破後・結果画面で行えます";
+  if (
+    id !== null &&
+    (!NODE_MAP.get(id)?.special || !g.treePurchases.weapon[id])
+  )
+    return "必要な特性ノードをすべて習得すると解放されます";
+  g.equippedSpecial = id;
+  syncBuild(g);
   return "";
 }
 export function activateNode(g, id) {
-  ensureBuild(g);
-  if (["R11", "L12"].includes(id) && !canRespec(g))
-    return "契約は難易度開始前に選択してください";
-  const next = closure([...g.activeSkills, id]);
-  const err = validateBuild(next);
-  if (err) return err;
-  if (next.some((n) => !g.treePurchases.weapon[n]))
-    return "前提を購入してください";
-  g.activeSkills = next;
-  return "";
+  return equipSpecial(g, id);
+}
+export function setBuild(g, ids) {
+  const error = validateBuild(ids);
+  if (error) return error;
+  return equipSpecial(g, ids.find((id) => NODE_MAP.get(id).special) || null);
 }
 export function refundNode(g, id) {
-  if (!canRespec(g)) return false;
+  ensureBuild(g);
+  if (!canRespec(g) || !g.treePurchases.weapon[id] || NODE_MAP.get(id)?.special)
+    return false;
   const remove = Object.keys(g.treePurchases.weapon).filter((n) =>
     closure([n]).includes(id),
   );
@@ -159,7 +177,7 @@ export function refundNode(g, id) {
     delete g.skillPaid[n];
     delete g.treePurchases.weapon[n];
   }
-  g.activeSkills = g.activeSkills.filter((n) => !remove.includes(n));
+  syncBuild(g);
   return true;
 }
 export function quoteRecipe(g, recipe) {
@@ -171,14 +189,14 @@ export function quoteRecipe(g, recipe) {
   let free = !g.freeSkillClaimed;
   const costs = {};
   for (const id of ids) {
-    if (owned[id]) continue;
     const n = NODE_MAP.get(id);
+    if (owned[id] || n.special) continue;
     costs[id] =
       (g.debugFreeSkills ?? DEBUG_FREE_SKILLS) ||
-      (free && !n.requires_all.length && !n.major)
+      (free && !n.requires_all.length)
         ? 0
         : n.cost;
-    if (costs[id] === 0) free = false;
+    if (!n.requires_all.length) free = false;
   }
   const cost = Object.values(costs).reduce((s, n) => s + n, 0);
   return {
@@ -199,15 +217,35 @@ export function applyRecipe(g, recipe) {
   const paid = {},
     purchased = {};
   for (const id of q.ids) {
+    if (NODE_MAP.get(id).special) continue;
     purchased[id] = true;
     paid[id] = g.treePurchases.weapon[id] ? g.skillPaid[id] || 0 : q.costs[id];
   }
   g.gold = q.balance;
   g.treePurchases.weapon = purchased;
   g.skillPaid = paid;
-  g.activeSkills = q.ids;
+  g.equippedSpecial = q.ids.find((id) => NODE_MAP.get(id).special) || null;
   g.freeSkillClaimed ||= Object.values(q.costs).includes(0);
+  syncBuild(g);
   return "";
+}
+// Add the missing prerequisites without discarding the player's existing traits.
+export function unlockSpecial(g, id) {
+  ensureBuild(g);
+  const n = NODE_MAP.get(id);
+  if (!n?.special) return "特殊石を選んでください";
+  const wanted = closure([id]).filter((id) => !NODE_MAP.get(id).special);
+  const q = quoteRecipe(g, {
+    core: [
+      ...g.activeSkills.filter((id) => !NODE_MAP.get(id).special),
+      ...wanted,
+    ],
+  });
+  if (q.balance < 0) return `あと${-q.balance} G必要です`;
+  // Normal prerequisites are at most three levels deep; topological purchase order.
+  for (let pass = 0; pass < 4; pass++)
+    for (const key of wanted) if (!g.treePurchases.weapon[key]) buyNode(g, key);
+  return g.treePurchases.weapon[id] ? "" : "前提を習得できませんでした";
 }
 export function masteryCost(g) {
   return Math.round(60 * 2.2 ** Math.min(30, g.masteryRank || 0));
