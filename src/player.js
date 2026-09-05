@@ -42,6 +42,13 @@ export function updateMovement(dt) {
 export function damagePlayer(amount) {
   const p = game.player;
   if (game.debugInvincible || (p.invulnerableTimer || 0) > 0) return 0;
+  if(game.buildCombat){
+    const incoming=Math.max(1,amount*100/(100+Math.max(-20,p.armor)*8));
+    const damage=game.buildCombat.playerDamage(incoming);
+    p.hp=clamp(p.hp-damage,0,p.maxHp);p.invulnerableTimer=PLAYER_INVULNERABLE_SECONDS;
+    game.damageFlash=Math.max(game.damageFlash,damage>0?.3:.1);game.shake=Math.max(game.shake,damage>0?4:2);
+    return damage;
+  }
   if ((p.barrier || 0) > 0) {
     p.barrier = Math.max(0, p.barrier - 1);
     p.invulnerableTimer = PLAYER_INVULNERABLE_SECONDS;

@@ -4,7 +4,7 @@ import test, { beforeEach } from 'node:test';
 const saved = new Map();
 globalThis.localStorage = { getItem: k => saved.get(k) || null, setItem: (k, v) => saved.set(k, v) };
 class Element {
-  constructor() { this.style = { setProperty() {} }; this.classList = { add() {}, remove() {}, toggle() {} }; this.children = []; this.width = 1280; this.height = 720; }
+  constructor() { this.dataset={}; this.style = { setProperty() {} }; this.classList = { add() {}, remove() {}, toggle() {} }; this.children = []; this.width = 1280; this.height = 720; }
   appendChild(x) { this.children.push(x); } append(...x) { this.children.push(...x); } replaceChildren(...x) { this.children = x; }
   setAttribute() {} removeAttribute() {} addEventListener() {} querySelector() { return new Element(); }
   getBoundingClientRect() { return { width: 1280, height: 720, left: 0, top: 0 }; }
@@ -92,13 +92,13 @@ test('boss reward pays once, preserves position and map, pauses combat, and retu
   update(10); updateArenaProgress(10);
   assert.equal(game.runElapsed, elapsed); assert.equal(game.gold, gold);
   enterUpgradeTree(); assert.equal(game.mode, 'upgradeTree');
-  assert.equal(purchaseNode('rapid'), true);
+  assert.equal(purchaseNode('A01'), true);
   update(10); assert.equal(game.runElapsed, elapsed);
   continueFromSkillTree(); assert.equal(game.mode, 'bossReward');
   assert.equal(advanceDifficulty(), true); assert.equal(advanceDifficulty(), false);
   assert.equal(game.wave, 2); assert.equal(game.dungeon, d);
   assert.deepEqual({ x: game.player.x, y: game.player.y }, pos);
-  assert.equal(game.treePurchases.weapon.rapid, true);
+  assert.equal(game.treePurchases.weapon.A01, true);
 });
 
 test('five boss victories clear the run and retain gold and skills on restart', () => {

@@ -1,6 +1,6 @@
 import { difficulty } from './difficulty.js';
 import { shortestDungeonDelta } from './dungeon.js';
-import {SKILLS, skillStatus} from './runSkills.js';
+import {SKILLS, costFor} from './buildModel.js';
 import {getLocale} from './i18n.js';
 import { t } from "./i18n.js";
 import { game, pointer } from "./state.js";
@@ -95,7 +95,7 @@ function renderHpGauge() {
 function renderMaterialHud() { hud.materialHud?.classList.add('hidden'); }
 
 function renderPauseStoneItems() {
- if(hud.pauseStoneItems) hud.pauseStoneItems.textContent=SKILLS.filter(n=>game.treePurchases.weapon[n.id]).map(n=>getLocale()==='ja'?n.ja:n.en).join(' / ') || (getLocale()==='ja'?'敵を倒してGを集め、スキルを購入しよう。':'Defeat enemies for gold and buy skills.');
+ if(hud.pauseStoneItems) hud.pauseStoneItems.textContent=SKILLS.filter(n=>game.activeSkills?.includes(n.id)).map(n=>n.name).join(' / ') || '有効スキル 0 · 最初の入口は無料です。';
 }
 
 function renderCraftTreeButton() {
@@ -104,7 +104,7 @@ function renderCraftTreeButton() {
   hud.craftTreeBtn.classList.toggle("hidden", !isArena);
   hud.craftTreeBtn.disabled = !isArena;
   hud.craftTreeBtn.textContent = 'K ✦';
-  hud.craftTreeBtn.classList.toggle('can-buy',SKILLS.some(n=>skillStatus(n,game.treePurchases.weapon,game.gold)==='available'));
+  hud.craftTreeBtn.classList.toggle('can-buy',SKILLS.some(n=>!game.treePurchases.weapon[n.id]&&n.requires_all.every(id=>game.treePurchases.weapon[id])&&game.gold>=costFor(game,n)));
   hud.craftTreeBtn.title = t("workbench.craftTreeButton");
   hud.craftTreeBtn.setAttribute("aria-label", t("workbench.craftTreeButton"));
 }

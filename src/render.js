@@ -1,4 +1,5 @@
 import {rewardForFloor} from './progression.js';
+import {COLORS} from './buildCombat.js';
 import {
   BACKGROUND_CACHE_LIMIT,
   EXIT_HOLD_SECONDS,
@@ -372,6 +373,7 @@ function drawWorld(view, camX, camY, zoom) {
   }
 
   drawGoldDrops(view, camX, camY, zoom, frameStats);
+  drawBuildCombat(view,camX,camY,zoom);
 
   const actors = [];
   for (const obstacle of game.dungeon?.obstacles || []) {
@@ -661,6 +663,23 @@ function drawOrbitWeapons(view, camX, camY, zoom) {
       alpha: 0.72,
     });
   }
+}
+
+function drawBuildCombat(view,camX,camY,zoom){
+ const combat=game.buildCombat;if(!combat)return;
+ for(const o of [...combat.objects,...combat.visuals]){
+  const pos=visiblePositionForDraw(o,camX,camY),radius=o.radius||(o.giant?55:18);if(!isVisibleWorld(pos.x,pos.y,radius,view,camX,camY,zoom,128))continue;
+  const s=worldToScreen(pos.x,pos.y,view,camX,camY,zoom),tint=o.tint||COLORS[o.id?.[0]]||COLORS.A;
+  if(o.line){drawWorldLine(pos.x,pos.y,pos.x+o.line.dx,pos.y+o.line.dy,Math.max(3,radius),view,camX,camY,zoom,{tint,alpha:.65*o.life/o.maxLife});continue;}
+  const ground=o.type==='zone'||o.type==='delay'||!o.type;
+  if(ground){state.renderer.draw('glowCyan',s.x,s.y,radius*2*zoom,radius*2*zoom,{tint,alpha:o.type==='zone'?.22:.42*o.life/o.maxLife});}
+  else{const size=(o.giant?70:o.type==='turret'?32:o.type==='mine'?22:o.king?40:o.type==='bullet'?15:26)*zoom;
+   state.renderer.draw('glowCyan',s.x,s.y,size*1.8,size*1.8,{tint,alpha:.25});
+   state.renderer.draw('stoneHeavy',s.x,s.y,size,size*.8,{tint,rotation:o.type==='bullet'?Math.atan2(o.vy,o.vx):combat.time*.8,alpha:o.type==='clone'?.55:1});
+   if(o.type==='turret'){const t=combat.target(o,430);if(t){const d=combat.delta(o,t),a=Math.atan2(d.dy,d.dx);drawWorldLine(pos.x,pos.y,pos.x+Math.cos(a)*25,pos.y+Math.sin(a)*25,7,view,camX,camY,zoom,{tint});}}
+  }
+ }
+ for(const e of game.enemies){if(e.dead)continue;const st=e.buildStatus||{},tags=[st.burn>0?'F':null,st.cold>0?'G':null,st.poison>0?'I':null,st.curse?'H':null,e.bounty?'L':null].filter(Boolean);if(!tags.length)continue;const p=visiblePositionForDraw(e,camX,camY),s=worldToScreen(p.x,p.y-e.radius-10,view,camX,camY,zoom);tags.forEach((tag,i)=>state.renderer.draw('white',s.x+(i-(tags.length-1)/2)*7*zoom,s.y,5*zoom,5*zoom,{tint:COLORS[tag]}));}
 }
 
 function drawEffects(view, camX, camY, zoom, frameStats) {

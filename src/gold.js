@@ -18,7 +18,7 @@ export function dropGold(enemy) {
       y: enemy.y + Math.sin(angle) * (enemy.radius * 0.24),
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      value: rewardForFloor(1,game.wave),
+      value: Math.max(1,Math.round(rewardForFloor(1,game.wave)*(enemy.buildRewardMultiplier||1))),
       minted: true,
       radius: 10,
       roomId: enemy.roomId,
@@ -100,10 +100,11 @@ function coinValue(drop) { return drop.minted ? drop.value : rewardForFloor(drop
 export function creditGold(value) {
   const amount = Math.max(0, Math.round(value));
   game.gold=(game.gold||0)+amount; game.runPoints=(game.runPoints||0)+amount;
+  game.buildCombat?.gold(amount);
   saveProgress(game);
   return amount;
 }
-export function grantGold(value) { return creditGold(rewardForFloor(value,game.wave)); }
+export function grantGold(value,boss=false) { const ids=game.activeSkills||[];return creditGold(rewardForFloor(value,game.wave)*(ids.includes('R11')?1.25:1)*(boss&&ids.includes('L12')?1.5:1)); }
 export function collectAllGold() {
   const total = game.goldDrops.reduce((sum,drop)=>sum+coinValue(drop),0);
   game.goldDrops=[];

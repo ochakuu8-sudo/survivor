@@ -9,7 +9,8 @@ export function addEffect(effect) {
     maxLife: effect.maxLife || life,
   });
   if (game.effects.length > 90) {
-    game.effects.splice(0, game.effects.length - 90);
+    const cosmetic=game.effects.findIndex(e=>!['telegraph','telegraphLine','damageLine','poisonPool','delayedStone'].includes(e.type));
+    if(cosmetic>=0)game.effects.splice(cosmetic,1);
   }
 }
 

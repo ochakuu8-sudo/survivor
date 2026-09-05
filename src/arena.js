@@ -71,8 +71,10 @@ export function updateArenaProgress(dt) {
     e.phase = 'reward'; // Guard before any reward or UI side effects.
     game.bossesDefeated += 1;
     collectAllGold();
-    game.lastBossReward = grantGold(difficulty(game.wave).bossReward);
-    game.player.hp = Math.min(game.player.maxHp, game.player.hp + Math.ceil(game.player.maxHp * .3));
+    game.lastBossReward = grantGold(difficulty(game.wave).bossReward,true);
+    if(game.buildCombat)game.buildCombat.heal(Math.ceil(game.player.maxHp*.3),'bossHeal');
+    else game.player.hp = Math.min(game.player.maxHp, game.player.hp + Math.ceil(game.player.maxHp * .3));
+    if(game.buildCombat){game.buildCombat.objects=[];game.buildCombat.queue=[];game.buildCombat.visuals=[];}
     game.enemies = []; game.bullets = []; game.enemyProjectiles = []; game.effects = [];
     keys.clear(); resetVirtualMove();
     if (game.wave === DIFFICULTIES.length) {

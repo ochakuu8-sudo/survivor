@@ -32,7 +32,8 @@ if (hud.localeSelect) {
   });
 }
 
-hud.restart.addEventListener("click", resetRun);
+const prepareRun=()=>{resetRun();enterUpgradeTree();};
+hud.restart.addEventListener("click", prepareRun);
 
 hud.pauseBtn.addEventListener("click", pauseGame);
 hud.resumeBtn.addEventListener("click", resumeGame);
@@ -50,7 +51,7 @@ if (import.meta.env.DEV && hud.pauseDebugBtn) {
 } else if (hud.pauseDebugBtn) {
   hud.pauseDebugBtn.classList.add("hidden");
 }
-hud.pauseRestartBtn.addEventListener("click", resetRun);
+hud.pauseRestartBtn.addEventListener("click", prepareRun);
 if (hud.skillTreeContinue) hud.skillTreeContinue.addEventListener("click", continueFromSkillTree);
 
 if (hud.moddingReroll) hud.moddingReroll.addEventListener("click", rerollPendingAttachment);
@@ -68,6 +69,7 @@ renderer.resize(canvas.width, canvas.height, initialDpr);
 bindInput();
 if (import.meta.env.DEV) setupDebug();
 resetRun();
+enterUpgradeTree();
 resize();
 timing.lastFrame = performance.now();
 requestAnimationFrame(frame);

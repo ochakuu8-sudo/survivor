@@ -270,9 +270,8 @@ export function update(dt) {
   updateParticles(dt);
   updateGoldDrops(dt);
   updateEffects(dt);
-  autoShoot(dt);
-  updateOrbitWeapons(dt);
-  updateDroneWeapons(dt);
+  if(game.buildCombat)game.buildCombat.update(dt);
+  else {autoShoot(dt);updateOrbitWeapons(dt);updateDroneWeapons(dt);}
   updateCamera(dt);
 
   if (p.hp <= 0) {
