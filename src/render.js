@@ -667,7 +667,7 @@ function drawOrbitWeapons(view, camX, camY, zoom) {
 
 function drawBuildCombat(view,camX,camY,zoom){
  const combat=game.buildCombat;if(!combat)return;
- for(const o of [...combat.objects,...combat.visuals]){
+ for(const o of [...combat.objects,...combat.visuals,...(game.loot?.worldDrops||[]).map(d=>({...d,type:"weaponDrop",id:"L00",radius:20,tint:[1,.75,.2]}))]){
   const pos=visiblePositionForDraw(o,camX,camY),radius=o.radius||(o.giant?55:18);if(!isVisibleWorld(pos.x,pos.y,radius,view,camX,camY,zoom,128))continue;
   const s=worldToScreen(pos.x,pos.y,view,camX,camY,zoom),tint=o.tint||COLORS[o.id?.[0]]||COLORS.A;
   if(o.line){drawWorldLine(pos.x,pos.y,pos.x+o.line.dx,pos.y+o.line.dy,Math.max(3,radius),view,camX,camY,zoom,{tint,alpha:.65*o.life/o.maxLife});continue;}

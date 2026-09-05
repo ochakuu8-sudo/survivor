@@ -1,3 +1,5 @@
+import { receiveWeapon,collectWeaponDrops } from './lootModel.js';
+import { saveProgress } from './progression.js';
 import { resetArenaProgress, updateArenaProgress, spawnArenaHorde, advanceDifficulty } from './arena.js';
 import * as state from "./state.js";
 import { game, resetWeaponId, timing } from "./state.js";
@@ -179,6 +181,7 @@ export function formatTime(seconds) {
 
 export function finishRun(result) {
   if (game.mode === "result") return;
+  collectWeaponDrops(game);saveProgress(game);
   const survivalTime = game.runElapsed || 0;
   const bonusPoints = 0;
   const totalEarnedPoints = (game.runPoints || 0) + bonusPoints;
@@ -269,6 +272,7 @@ export function update(dt) {
   updateEnemyProjectiles(dt);
   updateParticles(dt);
   updateGoldDrops(dt);
+  if(game.loot){const kept=[];let changed=false;for(const d of game.loot.worldDrops){const delta=shortestDungeonDelta(game.dungeon,d.x,d.y,p.x,p.y),distance=Math.hypot(delta.dx,delta.dy);if(distance<Math.max(90,p.pickup||150)){if(distance<600*dt+20){receiveWeapon(game,d.weapon);changed=true;continue;}d.x+=delta.dx/distance*600*dt;d.y+=delta.dy/distance*600*dt;wrapDungeonPoint(game.dungeon,d);}kept.push(d);}game.loot.worldDrops=kept;if(changed)saveProgress(game);}
   updateEffects(dt);
   if(game.buildCombat)game.buildCombat.update(dt);
   else {autoShoot(dt);updateOrbitWeapons(dt);updateDroneWeapons(dt);}
@@ -278,8 +282,10 @@ export function update(dt) {
     finishRun("dead");
   } else {
     updateArenaProgress(dt);
+    if(game.mode==='arena'&&game.loot.inbox.length){game.inventoryOverflow=true;enterUpgradeTree();}
   }
 
+  if(game.lootDirty){saveProgress(game);game.lootDirty=false;}
   updateHud();
 }
 

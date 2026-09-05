@@ -1,3 +1,4 @@
+import { awardKill } from './lootModel.js';
 import { insertPeriodicEntity } from './spatial.js';
 import { recordArenaKill } from './arena.js';
 import { COLLISION_CELL_SIZE } from "./constants.js";
@@ -139,6 +140,8 @@ export function killEnemy(enemy, source = null) {
   game.totalKills += 1;
   game.waveKills += 1;
   recordArenaKill(enemy);
+  awardKill(game,enemy);
+  if(game.loot)game.lootDirty=true;
   if (!enemy.boss || !game.dungeon?.arena) dropGold(enemy);
   healPlayerFromKill(source);
   if ((enemy.elite || enemy.boss) && !enemy.noDeathChest) createTreasureChestAt(enemy.x, enemy.y, enemy.boss ? "Boss Chest" : "Elite Chest");

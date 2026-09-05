@@ -46,7 +46,7 @@ export class BuildCombat {
   configure() {
     this.ids = new Set(this.g.activeSkills || []);
 
-    this.power = 10 * 1.25 ** (this.g.masteryRank || 0);
+    this.power = this.g.loot ? this.g.weaponPower : 10 * 1.25 ** (this.g.masteryRank || 0);
   }
   has(id) {
     return this.ids.has(id);

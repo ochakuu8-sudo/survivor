@@ -18,7 +18,7 @@ import {
   NODE_MAP,
 } from "../src/buildModel.js";
 import { BuildCombat } from "../src/buildCombat.js";
-import { readProgress, saveProgress, SAVE_KEY } from "../src/progression.js";
+import { readProgress, saveProgress, SAVE_KEY } from "../src/legacyProgression.js";
 const state = () => ({
   debugFreeSkills: false,
   mode: "weaponSelect",

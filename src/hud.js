@@ -1,3 +1,4 @@
+import { equipped,levelInfo,weaponSlots,WEAPON_MAP } from './lootModel.js';
 import { difficulty } from './difficulty.js';
 import { shortestDungeonDelta } from './dungeon.js';
 import { stoneSummary } from './stoneCombat.js';
@@ -23,6 +24,8 @@ export function updateHud() {
   renderCraftTreeButton();
   renderPauseStoneItems();
   renderMaterialHud();
+  const lootStatus=document.querySelector('#lootStatus'),weapon=equipped(game);
+  if(lootStatus&&weapon){const level=levelInfo(weapon.xp);lootStatus.textContent=`${WEAPON_MAP.get(weapon.kind).name} Lv.${level.level} · ${weaponSlots(weapon)}枠 · XP ${level.current}/${level.next||'MAX'}${game.lootNotice&&(game.elapsed||0)-(game.lootNoticeAt||0)<7?' / '+game.lootNotice:''}`;lootStatus.classList.toggle('hidden',game.mode!=='arena');}
   hud.hitFlash.style.background = `rgba(255, 56, 77, ${game.damageFlash})`;
   if (hud.pauseBtn) hud.pauseBtn.classList.toggle("hidden", game.mode !== "arena");
   syncTouchControls();
@@ -30,7 +33,7 @@ export function updateHud() {
 
 function objectiveText() {
   if (game.mode === "weaponSelect") return t("hud.objective.weaponSelect");
-  if (game.mode === "upgradeTree") return getLocale()==="ja" ? "スキル購入" : "Skills";
+  if (game.mode === "upgradeTree") return getLocale()==="ja" ? "武器庫" : "Skills";
   if (game.mode === "treasure") return t("treasure.label");
   if (game.mode === "modding") return t("modding.label");
   if (game.mode === "workbench") return t("workbench.label");
@@ -104,10 +107,9 @@ function renderCraftTreeButton() {
   const isArena = game.mode === "arena";
   hud.craftTreeBtn.classList.toggle("hidden", !isArena);
   hud.craftTreeBtn.disabled = !isArena;
-  hud.craftTreeBtn.textContent = 'K ✦';
-  hud.craftTreeBtn.classList.toggle('can-buy',SKILLS.some(n=>!n.special&&!game.treePurchases.weapon[n.id]&&n.requires_all.every(id=>game.treePurchases.weapon[id])&&game.gold>=costFor(game,n)));
-  hud.craftTreeBtn.title = t("workbench.craftTreeButton");
-  hud.craftTreeBtn.setAttribute("aria-label", t("workbench.craftTreeButton"));
+  hud.craftTreeBtn.textContent = 'K 武器庫';
+  hud.craftTreeBtn.classList.toggle('can-buy',!!game.loot?.inventory.some(w=>w.isNew));
+  hud.craftTreeBtn.title='武器庫';hud.craftTreeBtn.setAttribute('aria-label','武器庫');
 }
 
 export function syncTouchControls() {
